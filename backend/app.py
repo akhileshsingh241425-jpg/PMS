@@ -14,7 +14,7 @@ def create_app():
     Migrate(app, db)
     bcrypt.init_app(app)
     frontend_url = app.config.get('FRONTEND_URL', 'http://localhost:5174')
-    CORS(app, origins=[frontend_url, 'http://localhost:5173', 'http://localhost:3000'], supports_credentials=True)
+    CORS(app, origins=[frontend_url, '*'], supports_credentials=True)
 
     @app.route('/api/health', methods=['GET'])
     def health():

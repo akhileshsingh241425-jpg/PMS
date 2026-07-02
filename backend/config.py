@@ -1,9 +1,7 @@
 import os
 
 class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY')
-    if not SECRET_KEY:
-        raise RuntimeError('SECRET_KEY environment variable is required')
+    SECRET_KEY = os.environ.get('SECRET_KEY', os.urandom(24).hex())
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///pms_v2.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     JWT_EXPIRY_HOURS = int(os.environ.get('JWT_EXPIRY_HOURS', 24))

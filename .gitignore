@@ -8,3 +8,5 @@ uploads/
 .DS_Store
 venv/
 .venv/
+# passenger_wsgi.py needed for deployment, keep it
+# frontend/dist/ needed for deployment, keep it
