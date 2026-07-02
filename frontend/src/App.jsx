@@ -1,65 +1,50 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider } from './contexts/AuthContext'
-import ProtectedRoute from './components/ProtectedRoute'
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { ToastProvider } from './contexts/ToastContext'
+import ErrorBoundary from './components/ErrorBoundary'
 import Layout from './components/Layout'
 import Login from './pages/Login'
-import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
-import Users from './pages/Users'
-import Clients from './pages/Clients'
-import Leads from './pages/Leads'
-import Projects from './pages/Projects'
-import Accounts from './pages/Accounts'
 import Opportunities from './pages/Opportunities'
-import Tasks from './pages/Tasks'
-import Meetings from './pages/Meetings'
-import Reminders from './pages/Reminders'
-import PurchaseOrders from './pages/PurchaseOrders'
-import Invoices from './pages/Invoices'
-import Billings from './pages/Billings'
-import Reports from './pages/Reports'
-import Attendance from './pages/Attendance'
-import Employees from './pages/Employees'
-import Certificates from './pages/Certificates'
-import Expenses from './pages/Expenses'
-import { Outlet } from 'react-router-dom'
+import Leads from './pages/Leads'
+import Accounts from './pages/Accounts'
+import Projects from './pages/Projects'
+import UsersPage from './pages/Users'
+import { ClientLogin, ClientPortalDashboard } from './pages/ClientPortal'
+
+function Protected({ children }) {
+  const { user } = useAuth()
+  if (!user) return <Navigate to="/login" replace />
+  return children
+}
 
 function AppLayout() {
   return <Layout><Outlet /></Layout>
 }
 
-function App() {
+export default function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-            <Route index element={<Dashboard />} />
-            <Route path="users" element={<Users />} />
-            <Route path="opportunities" element={<Opportunities />} />
-            <Route path="leads" element={<Leads />} />
-            <Route path="accounts" element={<Accounts />} />
-            <Route path="clients" element={<Clients />} />
-            <Route path="projects" element={<Projects />} />
-            <Route path="tasks" element={<Tasks />} />
-            <Route path="meetings" element={<Meetings />} />
-            <Route path="reminders" element={<Reminders />} />
-            <Route path="purchase-orders" element={<PurchaseOrders />} />
-            <Route path="invoices" element={<Invoices />} />
-            <Route path="billings" element={<Billings />} />
-            <Route path="reports" element={<Reports />} />
-            <Route path="attendance" element={<Attendance />} />
-            <Route path="employees" element={<Employees />} />
-            <Route path="certificates" element={<Certificates />} />
-            <Route path="expenses" element={<Expenses />} />
-          </Route>
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </AuthProvider>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <AuthProvider>
+          <ToastProvider>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/client-login" element={<ClientLogin />} />
+              <Route path="/client-portal" element={<ClientPortalDashboard />} />
+              <Route path="*" element={<Navigate to="/login" replace />} />
+              <Route path="/" element={<Protected><AppLayout /></Protected>}>
+                <Route index element={<Dashboard />} />
+                <Route path="opportunities" element={<Opportunities />} />
+                <Route path="leads" element={<Leads />} />
+                <Route path="accounts" element={<Accounts />} />
+                <Route path="projects" element={<Projects />} />
+                <Route path="users" element={<UsersPage />} />
+              </Route>
+            </Routes>
+          </ToastProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   )
 }
-
-export default App

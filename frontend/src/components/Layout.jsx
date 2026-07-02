@@ -1,95 +1,153 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import {
-  LayoutDashboard, Users, LogOut, Menu, X, UserCircle,
-  FileText, Building2, Briefcase, CreditCard, BarChart3, Bell, Target,
-  Calendar, Clock, ClipboardList, Receipt, DollarSign, TrendingUp,
-  CheckSquare, UserCheck, Award, Wallet, ChevronDown
-} from 'lucide-react'
-import { useState } from 'react'
+import { LayoutDashboard, Target, FileText, Building2, Briefcase, Users, LogOut, ChevronRight, Bell } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import api from '../services/api'
 
-const navItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard', roles: ['super_admin', 'it_manager', 'admin_manager', 'hr_manager', 'employee'] },
-  { to: '/opportunities', icon: Target, label: 'Opportunities', roles: ['super_admin', 'it_manager', 'admin_manager', 'employee'] },
-  { to: '/leads', icon: FileText, label: 'Leads', roles: ['super_admin', 'it_manager', 'admin_manager', 'employee'] },
-  { to: '/accounts', icon: Building2, label: 'Accounts', roles: ['super_admin', 'it_manager', 'admin_manager'] },
-  { to: '/projects', icon: Briefcase, label: 'Projects', roles: ['super_admin', 'it_manager', 'admin_manager', 'employee'] },
-  { to: '/tasks', icon: CheckSquare, label: 'Tasks', roles: ['super_admin', 'it_manager', 'admin_manager', 'hr_manager', 'employee'] },
-  { to: '/meetings', icon: Calendar, label: 'Meetings', roles: ['super_admin', 'it_manager', 'admin_manager', 'hr_manager', 'employee'] },
-  { to: '/reminders', icon: Bell, label: 'Reminders', roles: ['super_admin', 'it_manager', 'admin_manager', 'hr_manager', 'employee'] },
-  { to: '/purchase-orders', icon: ClipboardList, label: 'Purchase Order', roles: ['super_admin', 'it_manager', 'admin_manager'] },
-  { to: '/invoices', icon: Receipt, label: 'Invoices', roles: ['super_admin', 'it_manager', 'admin_manager'] },
-  { to: '/billings', icon: DollarSign, label: 'Billings', roles: ['super_admin', 'it_manager', 'admin_manager'] },
-  { to: '/reports', icon: TrendingUp, label: 'Reports', roles: ['super_admin', 'it_manager', 'admin_manager'] },
-  { to: '/attendance', icon: Clock, label: 'Attendance', roles: ['super_admin', 'it_manager', 'hr_manager', 'employee'] },
-  { to: '/clients', icon: Building2, label: 'Clients', roles: ['super_admin', 'it_manager', 'admin_manager', 'employee'] },
-  { to: '/employees', icon: Users, label: 'Employees', roles: ['super_admin', 'it_manager', 'hr_manager'] },
-  { to: '/certificates', icon: Award, label: 'Certificates', roles: ['super_admin', 'it_manager', 'admin_manager'] },
-  { to: '/expenses', icon: Wallet, label: 'Expenses', roles: ['super_admin', 'it_manager', 'admin_manager', 'hr_manager', 'employee'] },
+const nav = [
+  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/opportunities', icon: Target, label: 'Opportunities' },
+  { to: '/leads', icon: FileText, label: 'Leads' },
+  { to: '/accounts', icon: Building2, label: 'Accounts' },
+  { to: '/projects', icon: Briefcase, label: 'Projects' },
+  { to: '/users', icon: Users, label: 'Team' },
+
 ]
 
-export default function Layout({ children }) {
-  const { user, logout, hasRole } = useAuth()
-  const location = useLocation()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+function NotifBell() {
+  const [count, setCount] = useState(0)
+  const [notifs, setNotifs] = useState([])
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  const fetchCount = async () => {
+    try { const r = await api.get('/api/notifications/unread-count'); setCount(r.data.count) } catch (e) {}
+  }
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    fetchCount()
+    const iv = setInterval(fetchCount, 30000)
+    return () => clearInterval(iv)
+  }, [])
+
+  const toggle = async () => {
+    setOpen(!open)
+    if (!open) {
+      try { const r = await api.get('/api/notifications?unread_only=true'); setNotifs(r.data.notifications) } catch (e) {}
+    }
+  }
+
+  const markRead = async (id) => {
+    try { await api.put(`/api/notifications/${id}/read`); fetchCount(); setNotifs(prev => prev.filter(n => n.id !== id)) } catch (e) {}
+  }
+
+  const markAllRead = async () => {
+    try { await api.put('/api/notifications/read-all'); setCount(0); setNotifs([]) } catch (e) {}
+  }
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const handleClick = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-20 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
+    <div ref={ref} className="relative">
+      <button onClick={toggle} className="relative p-2 rounded-lg hover:bg-slate-100 text-slate-500">
+        <Bell className="w-5 h-5" />
+        {count > 0 && <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">{count > 9 ? '9+' : count}</span>}
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-xl border border-slate-200 z-50 max-h-96 overflow-y-auto">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+            <p className="text-sm font-semibold text-slate-900">Notifications</p>
+            {count > 0 && <button onClick={markAllRead} className="text-xs text-indigo-600 hover:underline">Mark all read</button>}
+          </div>
+          {notifs.length === 0 ? (
+            <p className="text-sm text-slate-400 text-center py-8">No new notifications</p>
+          ) : (
+            notifs.map(n => (
+              <div key={n.id} className="px-4 py-3 border-b border-slate-50 hover:bg-slate-50 cursor-pointer" onClick={() => { markRead(n.id); if (n.module_type === 'project' && n.module_id) { const tab = n.type === 'finding_query' ? 'queries' : n.type === 'meeting_request' ? 'meeting_requests' : ''; window.location.href = `/projects?projectId=${n.module_id}&tab=${tab}` } }}>
+                <p className="text-sm font-medium text-slate-900">{n.title}</p>
+                <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{n.message}</p>
+                <p className="text-[10px] text-slate-400 mt-1">{n.created_at?.slice(0, 16).replace('T', ' ')}</p>
+              </div>
+            ))
+          )}
+        </div>
       )}
+    </div>
+  )
+}
 
-      <aside className={`fixed inset-y-0 left-0 z-30 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 lg:translate-x-0 lg:static lg:inset-auto ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="flex items-center gap-2 px-6 h-16 border-b border-gray-200">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+export default function Layout({ children }) {
+  const { user, logout } = useAuth()
+  const { pathname } = useLocation()
+  const [collapsed, setCollapsed] = useState(false)
+
+  return (
+    <div className="flex h-screen bg-slate-50">
+      {/* Dark Sidebar */}
+      <aside className={`${collapsed ? 'w-16' : 'w-56'} bg-slate-900 flex flex-col transition-all duration-200 shrink-0`}>
+        {/* Logo */}
+        <div className="h-14 flex items-center px-4 border-b border-slate-700">
+          <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-lg flex items-center justify-center shrink-0">
             <span className="text-white font-bold text-sm">P</span>
           </div>
-          <span className="font-semibold text-lg">PMS</span>
+          {!collapsed && <span className="ml-3 font-semibold text-white text-sm">PMS <span className="text-slate-400 text-xs">v2</span></span>}
         </div>
 
-        <nav className="p-4 space-y-1 overflow-y-auto h-[calc(100vh-4rem)]">
-          {navItems.filter(item => item.roles.some(r => hasRole(r))).map(item => {
-            const isActive = location.pathname === item.to
+        {/* Nav */}
+        <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto">
+          {nav.map(item => {
+            const active = pathname === item.to
             return (
-              <Link
-                key={item.to}
-                to={item.to}
-                onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'bg-blue-50 text-blue-700'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                }`}
-              >
-                <item.icon className="w-5 h-5" />
-                {item.label}
+              <Link key={item.to} to={item.to}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                  active
+                    ? 'bg-gradient-to-r from-violet-600/20 to-indigo-600/20 text-white border border-violet-500/30'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                }`}>
+                <item.icon className={`w-5 h-5 shrink-0 ${active ? 'text-violet-400' : ''}`} />
+                {!collapsed && <span>{item.label}</span>}
               </Link>
             )
           })}
         </nav>
-      </aside>
 
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-6">
-          <button className="lg:hidden p-2 rounded-lg hover:bg-gray-100" onClick={() => setSidebarOpen(true)}>
-            <Menu className="w-5 h-5" />
-          </button>
-
-          <div className="flex items-center gap-4 ml-auto">
-            <div className="flex items-center gap-2">
-              <UserCircle className="w-8 h-8 text-gray-400" />
-              <div className="hidden sm:block">
-                <p className="text-sm font-medium">{user?.first_name} {user?.last_name}</p>
-                <p className="text-xs text-gray-500">{user?.roles?.join(', ')}</p>
-              </div>
+        {/* User section at bottom */}
+        <div className="p-3 border-t border-slate-700">
+          <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3'}`}>
+            <div className="w-8 h-8 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center shrink-0">
+              <span className="text-white text-xs font-bold">{user?.first_name?.[0]}{user?.last_name?.[0]}</span>
             </div>
-            <button onClick={logout} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500" title="Logout">
-              <LogOut className="w-5 h-5" />
+            {!collapsed && (
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-white truncate">{user?.full_name}</p>
+                <p className="text-xs text-slate-400 truncate">{user?.designation || user?.roles?.[0]?.replace(/_/g,' ')}</p>
+              </div>
+            )}
+            <button onClick={logout} className="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-white shrink-0" title="Logout">
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
-        </header>
+        </div>
 
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+        {/* Collapse toggle */}
+        <button onClick={() => setCollapsed(!collapsed)}
+          className="h-8 flex items-center justify-center border-t border-slate-700 text-slate-500 hover:text-white hover:bg-slate-800 transition-colors">
+          <ChevronRight className={`w-4 h-4 transition-transform ${collapsed ? '' : 'rotate-180'}`} />
+        </button>
+      </aside>
+
+      {/* Main content */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <header className="h-14 bg-white border-b border-slate-200 flex items-center justify-end px-6 gap-3 shrink-0">
+          <NotifBell />
+        </header>
+        <main className="flex-1 overflow-y-auto p-6">
           {children}
         </main>
       </div>
