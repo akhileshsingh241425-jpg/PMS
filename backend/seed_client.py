@@ -2,26 +2,26 @@
 import sys
 sys.path.insert(0, '.')
 from app import create_app
-from models import db, ClientUser, Account
+from models import db, User, Account
 
 app = create_app()
 with app.app_context():
-    # Get IFCI account
     acc = Account.query.filter_by(company_name='IFCI Limited').first()
     if not acc:
         print("ERROR: IFCI account not found. Run seed_data.py first.")
         exit(1)
 
-    # Check if client user exists
-    existing = ClientUser.query.filter_by(email='vivek@ifci.com').first()
+    existing = User.query.filter_by(email='vivek@ifci.com').first()
     if existing:
         print(f"Client user already exists: {existing.email}")
     else:
-        client = ClientUser(
+        client = User(
             email='vivek@ifci.com',
-            name='Vivek Gupta',
+            first_name='Vivek',
+            last_name='Gupta',
             phone='9811111001',
-            company_name='IFCI Limited',
+            role='client',
+            client_company_name='IFCI Limited',
             account_id=acc.id,
         )
         client.set_password('client123')
@@ -29,9 +29,7 @@ with app.app_context():
         db.session.commit()
         print(f"Client user created!")
 
-    print("\n===== CLIENT PORTAL LOGIN =====")
-    print(f"URL: http://localhost:5174/client-login")
+    print(f"\n===== CLIENT PORTAL LOGIN =====")
     print(f"Email: vivek@ifci.com")
     print(f"Password: client123")
     print(f"Company: IFCI Limited")
-    print("================================")

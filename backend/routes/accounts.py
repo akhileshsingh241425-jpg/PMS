@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
-from models import db, Account, Lead, Opportunity, Project, Task, Meeting, Reminder, Note
-from middleware.auth import login_required, permission_required
+from models import db, Account, Project, Task, Meeting, Note
+from middleware.auth import login_required, role_required
 from utils import generate_id, paginate
 
 account_bp = Blueprint('accounts', __name__, url_prefix='/api/accounts')
@@ -18,13 +18,11 @@ def list_accounts(current_user):
     result = paginate(query, request)
     ids = [a.id for a in result['items']]
     proj_counts = dict(db.session.query(Project.account_id, db.func.count(Project.id)).filter(Project.account_id.in_(ids)).group_by(Project.account_id).all()) if ids else {}
-    lead_counts = dict(db.session.query(Lead.account_id, db.func.count(Lead.id)).filter(Lead.account_id.in_(ids)).group_by(Lead.account_id).all()) if ids else {}
-    opp_counts = dict(db.session.query(Opportunity.account_id, db.func.count(Opportunity.id)).filter(Opportunity.account_id.in_(ids)).group_by(Opportunity.account_id).all()) if ids else {}
-    return jsonify({'accounts': [a.to_dict(counts={'projects': proj_counts.get(a.id, 0), 'leads': lead_counts.get(a.id, 0), 'opportunities': opp_counts.get(a.id, 0)}) for a in result['items']], 'pagination': {'page': result['page'], 'per_page': result['per_page'], 'total': result['total'], 'pages': result['pages']}})
+    return jsonify({'accounts': [a.to_dict(counts={'projects': proj_counts.get(a.id, 0)}) for a in result['items']], 'pagination': {'page': result['page'], 'per_page': result['per_page'], 'total': result['total'], 'pages': result['pages']}})
 
 
 @account_bp.route('', methods=['POST'])
-@permission_required('accounts_create')
+@login_required
 def create_account(current_user):
     data = request.get_json()
     if not data.get('company_name'):
@@ -58,14 +56,12 @@ def get_account(current_user, aid):
     acc = Account.query.get_or_404(aid)
     return jsonify({
         'account': acc.to_dict(),
-        'opportunities': [o.to_dict() for o in Opportunity.query.filter_by(account_id=aid).order_by(Opportunity.updated_at.desc()).all()],
-        'leads': [l.to_dict() for l in Lead.query.filter_by(account_id=aid).order_by(Lead.updated_at.desc()).all()],
         'projects': [p.to_dict() for p in Project.query.filter_by(account_id=aid).order_by(Project.updated_at.desc()).all()],
     })
 
 
 @account_bp.route('/<int:aid>', methods=['PUT'])
-@permission_required('accounts_edit')
+@login_required
 def update_account(current_user, aid):
     acc = Account.query.get_or_404(aid)
     data = request.get_json()

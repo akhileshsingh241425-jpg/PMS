@@ -1,6 +1,4 @@
 from .auth import auth_bp
-from .opportunities import opp_bp
-from .leads import lead_bp
 from .accounts import account_bp
 from .projects import project_bp
 from .activities import activity_bp
@@ -8,5 +6,3 @@ from .client_portal import portal_bp
 from .queries import queries_bp
 from .dashboard import dash_bp
 from .meeting_requests import meeting_req_bp
-from .notifications import notif_bp
-from .admin import admin_bp

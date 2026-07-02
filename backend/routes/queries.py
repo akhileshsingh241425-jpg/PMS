@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import db, Project
+from models import db
 from models.client_portal import FindingQuery
 from middleware.auth import login_required, role_required
 
@@ -16,13 +16,11 @@ def list_queries(current_user):
         query = query.filter_by(status=st)
     if aid := request.args.get('account_id'):
         query = query.filter_by(account_id=int(aid))
-    return jsonify({
-        'queries': [q.to_dict() for q in query.order_by(FindingQuery.created_at.desc()).all()]
-    })
+    return jsonify({'queries': [q.to_dict() for q in query.order_by(FindingQuery.created_at.desc()).all()]})
 
 
 @queries_bp.route('/<int:qid>/respond', methods=['PUT'])
-@role_required('super_admin')
+@role_required('admin')
 def respond_query(current_user, qid):
     q = FindingQuery.query.get_or_404(qid)
     data = request.get_json()

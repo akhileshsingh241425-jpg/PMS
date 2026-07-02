@@ -23,14 +23,14 @@ def list_meeting_requests(current_user):
 
 
 @meeting_req_bp.route('/<int:mid>/respond', methods=['PUT'])
-@role_required('super_admin')
+@role_required('admin')
 def respond_meeting_request(current_user, mid):
     m = MeetingRequest.query.get_or_404(mid)
     data = request.get_json()
     if not data.get('status'):
         return jsonify({'error': 'status is required (Confirmed/Rescheduled/Cancelled)'}), 400
     if data['status'] not in ('Confirmed', 'Rescheduled', 'Cancelled'):
-        return jsonify({'error': 'Invalid status. Must be Confirmed, Rescheduled, or Cancelled'}), 400
+        return jsonify({'error': 'Invalid status'}), 400
     m.status = data['status']
     if data.get('confirmed_date'):
         m.confirmed_date = datetime.fromisoformat(data['confirmed_date'])

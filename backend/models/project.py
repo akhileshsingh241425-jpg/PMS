@@ -3,12 +3,9 @@ from datetime import datetime
 from sqlalchemy.orm import validates
 
 PROJECT_STAGES = [
-    'Initiated', 'Onboarding', 'Planning', 'Information Gathering',
-    'Execution', 'Internal Review', 'Client Review', 'Remediation Support',
-    'Final Delivery', 'Invoice Raised', 'Payment Pending',
-    'Partial Payment Received', 'Full Payment Received', 'Closed',
-    'On Hold', 'Delayed', 'Cancelled', 'Awaiting Client Response',
-    'Awaiting Documents', 'Awaiting Payment', 'Escalated',
+    'Initiated', 'Planning', 'Execution', 'Internal Review',
+    'Client Review', 'Completed', 'Closed',
+    'On Hold', 'Cancelled',
 ]
 
 
@@ -21,8 +18,7 @@ class Project(db.Model):
     stage = db.Column(db.String(50), default='Initiated', index=True)
     service_type = db.Column(db.String(100))
     account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False, index=True)
-    lead_id = db.Column(db.Integer, db.ForeignKey('leads.id', ondelete='SET NULL'), index=True)
-    pm_id = db.Column(db.Integer, db.ForeignKey('users.id'), index=True)  # Project Manager
+    pm_id = db.Column(db.Integer, db.ForeignKey('users.id'), index=True)
     total_value = db.Column(db.Float)
     start_date = db.Column(db.Date)
     target_date = db.Column(db.Date)
@@ -55,7 +51,6 @@ class Project(db.Model):
             'service_type': self.service_type,
             'account_id': self.account_id,
             'account_name': self.account.company_name if self.account else None,
-            'lead_id': self.lead_id,
             'pm_id': self.pm_id,
             'pm_name': self.pm.full_name if self.pm else None,
             'total_value': self.total_value,
@@ -96,9 +91,9 @@ class ProjectDocument(db.Model):
     file_name = db.Column(db.String(255), nullable=False)
     file_path = db.Column(db.String(500), nullable=False)
     file_type = db.Column(db.String(50))
-    category = db.Column(db.String(50))  # Report, Certificate, Proposal, PO, Other
+    category = db.Column(db.String(50))
     is_client_visible = db.Column(db.Boolean, default=False)
-    review_status = db.Column(db.String(30))  # Pending, Approved, Rejected
+    review_status = db.Column(db.String(30))
     reviewer_remarks = db.Column(db.Text)
     reviewed_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
     uploaded_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
@@ -128,7 +123,7 @@ class ProjectTeam(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete='CASCADE'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
-    role_in_project = db.Column(db.String(100))  # Lead, Auditor, Analyst
+    role_in_project = db.Column(db.String(100))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     user = db.relationship('User', foreign_keys=[user_id])

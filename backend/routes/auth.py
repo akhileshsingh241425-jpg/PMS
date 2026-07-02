@@ -1,7 +1,7 @@
 import os, secrets
 from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify, current_app
-from models import db, User, Role, UserRole, Department
+from models import db, User
 from middleware.auth import generate_token, login_required, role_required
 from utils import generate_id, rate_limit
 
@@ -11,14 +11,12 @@ DESIGNATIONS = [
     'Director', 'CEO', 'CTO', 'Project Lead', 'Senior Consultant',
     'Security Consultant', 'Senior Auditor', 'Auditor', 'Junior Auditor',
     'Security Analyst', 'Junior Analyst', 'BD Manager', 'BD Executive',
-    'Admin Manager', 'Finance Manager', 'Accounts Executive', 'Other'
+    'Admin Manager', 'Finance Manager', 'Other'
 ]
-CERTS = ['CEH', 'CISSP', 'CISA', 'CISM', 'ISO 27001 LA', 'DISA', 'OSCP', 'CRTP', 'CompTIA Security+']
 
 
 @auth_bp.route('/bootstrap', methods=['POST'])
 def bootstrap():
-    """First user — becomes Super Admin. Only works when DB is empty."""
     if User.query.first():
         return jsonify({'error': 'Users already exist. Login as admin to add more.'}), 403
     data = request.get_json()
@@ -26,14 +24,10 @@ def bootstrap():
         return jsonify({'error': 'email, password, first_name required'}), 400
 
     user = User(emp_id='ADMIN001', email=data['email'], first_name=data['first_name'],
-                last_name=data.get('last_name'), phone=data.get('phone'), designation='Director')
+                last_name=data.get('last_name'), phone=data.get('phone'),
+                designation='Director', role='admin')
     user.set_password(data['password'])
     db.session.add(user)
-    db.session.flush()
-
-    role = Role.query.filter_by(code='super_admin').first()
-    if role:
-        db.session.add(UserRole(user_id=user.id, role_id=role.id))
     db.session.commit()
     return jsonify({'message': 'Admin created', 'token': generate_token(user), 'user': user.to_dict()}), 201
 
@@ -43,6 +37,18 @@ def bootstrap():
 def login():
     data = request.get_json()
     user = User.query.filter_by(email=data.get('email')).first()
+    if not user or not user.check_password(data.get('password', '')):
+        return jsonify({'error': 'Invalid credentials'}), 401
+    if not user.is_active:
+        return jsonify({'error': 'Account inactive'}), 403
+    return jsonify({'token': generate_token(user), 'user': user.to_dict()})
+
+
+@auth_bp.route('/client-login', methods=['POST'])
+@rate_limit(max_requests=10, window_seconds=60)
+def client_login():
+    data = request.get_json()
+    user = User.query.filter_by(email=data.get('email'), role='client').first()
     if not user or not user.check_password(data.get('password', '')):
         return jsonify({'error': 'Invalid credentials'}), 401
     if not user.is_active:
@@ -64,7 +70,7 @@ def list_users(current_user):
 
 
 @auth_bp.route('/users', methods=['POST'])
-@role_required('super_admin')
+@role_required('admin')
 def create_user(current_user):
     data = request.get_json()
     if not data.get('email') or not data.get('password') or not data.get('first_name'):
@@ -72,64 +78,37 @@ def create_user(current_user):
     if User.query.filter_by(email=data['email']).first():
         return jsonify({'error': 'Email already exists'}), 409
 
-    # Auto emp_id
-    dept = Department.query.get(data.get('department_id')) if data.get('department_id') else None
-    prefix = dept.code if dept else 'EMP'
-    emp_id = generate_id(User, prefix, field='emp_id')
-
+    emp_id = generate_id(User, 'EMP', field='emp_id')
     user = User(
         emp_id=emp_id, email=data['email'], first_name=data['first_name'],
         last_name=data.get('last_name'), phone=data.get('phone'),
-        designation=data.get('designation'), department_id=data.get('department_id'),
-        manager_id=data.get('manager_id'), certifications=data.get('certifications', []),
-        experience_years=data.get('experience_years'),
+        designation=data.get('designation'), department=data.get('department'),
+        role=data.get('role', 'user'),
     )
     user.set_password(data['password'])
     db.session.add(user)
-    db.session.flush()
-
-    for rid in data.get('role_ids', []):
-        if Role.query.get(rid):
-            db.session.add(UserRole(user_id=user.id, role_id=rid))
     db.session.commit()
     return jsonify({'message': 'User created', 'user': user.to_dict()}), 201
 
 
 @auth_bp.route('/users/<int:uid>', methods=['PUT'])
-@role_required('super_admin')
+@role_required('admin')
 def update_user(current_user, uid):
     user = User.query.get_or_404(uid)
     data = request.get_json()
-    for f in ['first_name', 'last_name', 'phone', 'designation', 'department_id', 'manager_id', 'certifications', 'experience_years', 'is_active']:
+    for f in ['first_name', 'last_name', 'phone', 'designation', 'department', 'role', 'is_active']:
         if f in data:
             setattr(user, f, data[f])
     if data.get('password'):
         user.set_password(data['password'])
-    if 'role_ids' in data:
-        UserRole.query.filter_by(user_id=user.id).delete()
-        for rid in data['role_ids']:
-            if Role.query.get(rid):
-                db.session.add(UserRole(user_id=user.id, role_id=rid))
     db.session.commit()
     return jsonify({'message': 'Updated', 'user': user.to_dict()})
-
-
-@auth_bp.route('/roles', methods=['GET'])
-@login_required
-def list_roles(current_user):
-    return jsonify({'roles': [{'id': r.id, 'name': r.name, 'code': r.code, 'description': r.description} for r in Role.query.all()]})
-
-
-@auth_bp.route('/departments', methods=['GET'])
-@login_required
-def list_departments(current_user):
-    return jsonify({'departments': [{'id': d.id, 'name': d.name, 'code': d.code} for d in Department.query.all()]})
 
 
 @auth_bp.route('/designations', methods=['GET'])
 @login_required
 def list_designations(current_user):
-    return jsonify({'designations': DESIGNATIONS, 'certifications': CERTS})
+    return jsonify({'designations': DESIGNATIONS})
 
 
 @auth_bp.route('/forgot-password', methods=['POST'])

@@ -1,8 +1,7 @@
-from datetime import datetime
-from flask import Blueprint, request, jsonify
-from models import db, Project, Task, Meeting, Note
-from models.client_portal import FindingQuery, MeetingRequest, DocumentRevisionRequest, ClientUpload
-from middleware.auth import login_required, role_required
+from flask import Blueprint, jsonify
+from models import db, Project, Task
+from models.client_portal import FindingQuery, MeetingRequest
+from middleware.auth import login_required
 
 dash_bp = Blueprint('dashboard', __name__, url_prefix='/api/dashboard')
 
@@ -16,22 +15,17 @@ def overview(current_user):
     ).count()
     open_queries = FindingQuery.query.filter_by(status='Open').count()
     pending_meetings = MeetingRequest.query.filter_by(status='Requested').count()
-    pending_revisions = DocumentRevisionRequest.query.filter_by(status='Submitted').count()
+    my_tasks = Task.query.filter_by(assigned_to=current_user.id).count()
 
     stage_dist = db.session.query(
         Project.stage, db.func.count(Project.id)
     ).group_by(Project.stage).all()
-
-    recent_queries = FindingQuery.query.order_by(
-        FindingQuery.created_at.desc()
-    ).limit(10).all()
 
     return jsonify({
         'total_projects': total_projects,
         'active_projects': active_projects,
         'open_queries': open_queries,
         'pending_meetings': pending_meetings,
-        'pending_revisions': pending_revisions,
+        'my_tasks': my_tasks,
         'stage_distribution': {s: c for s, c in stage_dist},
-        'recent_queries': [q.to_dict() for q in recent_queries],
     })

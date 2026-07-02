@@ -1,15 +1,20 @@
 from datetime import datetime
 from flask import Blueprint, request, jsonify
 import os
-from models import db, Project, ProjectRemark, ProjectDocument, ProjectTeam, Task, Meeting, Reminder, Note, User
-from models.client_portal import FindingQuery, MeetingRequest
-from models.project import PROJECT_STAGES
-from middleware.auth import login_required, permission_required, role_required
+from models import db, Project, ProjectRemark, ProjectDocument, ProjectTeam, Task, Meeting, Note, User
+from models.client_portal import MeetingRequest, FindingQuery
+from middleware.auth import login_required, role_required
 from utils import validate_file, safe_filename, generate_id, paginate
 
 project_bp = Blueprint('projects', __name__, url_prefix='/api/projects')
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'uploads', 'projects')
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+PROJECT_STAGES = [
+    'Initiated', 'Planning', 'Execution', 'Internal Review',
+    'Client Review', 'Completed', 'Closed',
+    'On Hold', 'Cancelled',
+]
 
 
 @project_bp.route('', methods=['GET'])
@@ -28,14 +33,13 @@ def list_projects(current_user):
 
 
 @project_bp.route('', methods=['POST'])
-@permission_required('projects_create')
+@login_required
 def create_project(current_user):
     data = request.get_json()
     if not data.get('title') or not data.get('account_id'):
         return jsonify({'error': 'title and account_id required'}), 400
     try:
         account_id = int(data['account_id'])
-        lead_id = int(data['lead_id']) if data.get('lead_id') else None
         pm_id = int(data['pm_id']) if data.get('pm_id') else None
         total_value = float(data['total_value']) if data.get('total_value') else None
         start_date = datetime.strptime(data['start_date'], '%Y-%m-%d').date() if data.get('start_date') else None
@@ -49,7 +53,6 @@ def create_project(current_user):
         stage=data.get('stage', 'Initiated'),
         service_type=data.get('service_type'),
         account_id=account_id,
-        lead_id=lead_id,
         pm_id=pm_id,
         total_value=total_value,
         start_date=start_date,
@@ -71,17 +74,16 @@ def get_project(current_user, pid):
         'remarks': [r.to_dict() for r in proj.remarks],
         'documents': [d.to_dict() for d in proj.documents],
         'team': [t.to_dict() for t in proj.team],
-        'tasks': [t.to_dict() for t in Task.query.filter_by(module_type='project', module_id=pid).order_by(Task.created_at.desc()).all()],
-        'meetings': [m.to_dict() for m in Meeting.query.filter_by(module_type='project', module_id=pid).order_by(Meeting.created_at.desc()).all()],
-        'reminders': [r.to_dict() for r in Reminder.query.filter_by(module_type='project', module_id=pid).order_by(Reminder.remind_at.desc()).all()],
-        'notes': [n.to_dict() for n in Note.query.filter_by(module_type='project', module_id=pid).order_by(Note.created_at.desc()).all()],
+        'tasks': [t.to_dict() for t in Task.query.filter_by(project_id=pid).order_by(Task.created_at.desc()).all()],
+        'meetings': [m.to_dict() for m in Meeting.query.filter_by(project_id=pid).order_by(Meeting.created_at.desc()).all()],
+        'notes': [n.to_dict() for n in Note.query.filter_by(project_id=pid).order_by(Note.created_at.desc()).all()],
         'queries': [q.to_dict() for q in FindingQuery.query.filter_by(project_id=pid).order_by(FindingQuery.created_at.desc()).all()],
         'meeting_requests': [m.to_dict() for m in MeetingRequest.query.filter_by(project_id=pid).order_by(MeetingRequest.created_at.desc()).all()],
     })
 
 
 @project_bp.route('/<int:pid>', methods=['PUT'])
-@permission_required('projects_edit')
+@login_required
 def update_project(current_user, pid):
     proj = Project.query.get_or_404(pid)
     data = request.get_json()
@@ -143,12 +145,11 @@ def upload_doc(current_user, pid):
 
 
 @project_bp.route('/documents/<int:did>/review', methods=['POST'])
-@role_required('super_admin')
+@role_required('admin')
 def review_doc(current_user, did):
-    """Manager approves/rejects a document."""
     doc = ProjectDocument.query.get_or_404(did)
     data = request.get_json()
-    doc.review_status = data.get('status', 'Approved')  # Approved or Rejected
+    doc.review_status = data.get('status', 'Approved')
     doc.reviewer_remarks = data.get('remarks')
     doc.reviewed_by = current_user.id
     if data.get('status') == 'Approved' and data.get('make_client_visible'):
