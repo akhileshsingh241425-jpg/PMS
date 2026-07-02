@@ -1,5 +1,5 @@
 import os
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_from_directory, request
 from flask_cors import CORS
 from flask_migrate import Migrate
 from config import Config
@@ -7,14 +7,14 @@ from models import db, bcrypt, Role, Department, Permission
 
 
 def create_app():
-    app = Flask(__name__)
+    frontend_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', 'dist')
+    app = Flask(__name__, static_folder=frontend_dir, static_url_path='')
     app.config.from_object(Config)
 
     db.init_app(app)
     Migrate(app, db)
     bcrypt.init_app(app)
-    frontend_url = app.config.get('FRONTEND_URL', 'http://localhost:5174')
-    CORS(app, origins=[frontend_url, '*'], supports_credentials=True)
+    CORS(app, origins=['*'], supports_credentials=True)
 
     @app.route('/api/health', methods=['GET'])
     def health():
@@ -22,7 +22,9 @@ def create_app():
 
     @app.errorhandler(404)
     def not_found(e):
-        return jsonify({'error': 'Not found'}), 404
+        if request.path.startswith('/api/'):
+            return jsonify({'error': 'Not found'}), 404
+        return send_from_directory(frontend_dir, 'index.html')
 
     @app.errorhandler(500)
     def server_error(e):
@@ -41,6 +43,13 @@ def create_app():
     app.register_blueprint(meeting_req_bp)
     app.register_blueprint(notif_bp)
     app.register_blueprint(admin_bp)
+
+    @app.route('/', defaults={'path': ''})
+    @app.route('/<path:path>')
+    def catch_all(path):
+        if path.startswith('api/'):
+            return jsonify({'error': 'Not found'}), 404
+        return send_from_directory(frontend_dir, 'index.html')
 
     with app.app_context():
         db.create_all()
