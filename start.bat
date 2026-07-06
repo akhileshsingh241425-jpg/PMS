@@ -1,11 +1,12 @@
 @echo off
-title PMS v2 - INFOCUS-IT
+title PMS - Project Management System
 color 0A
 cd /d "%~dp0"
+set "ROOT=%~dp0"
 
 echo.
 echo ========================================================
-echo   PMS v2 - INFOCUS-IT Project Management System
+echo   PMS - Project Management System
 echo ========================================================
 echo.
 echo   Backend:  http://localhost:5002
@@ -17,25 +18,39 @@ echo.
 echo ========================================================
 echo.
 
-:: Kill any old processes on ports 5002 and 5174
+:: Kill old backend/frontend processes
 echo Cleaning up old processes...
-for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":5002 "') do (
-    if not "%%a"=="0" taskkill /f /pid %%a >nul 2>&1
+for /f "tokens=5 delims= " %%a in ('netstat -ano ^| findstr /c:":5002 "') do (
+    if not "%%a"=="" taskkill /f /pid %%a >nul 2>&1
 )
-for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":5174 "') do (
-    if not "%%a"=="0" taskkill /f /pid %%a >nul 2>&1
+for /f "tokens=5 delims= " %%a in ('netstat -ano ^| findstr /c:":5174 "') do (
+    if not "%%a"=="" taskkill /f /pid %%a >nul 2>&1
 )
 timeout /t 2 /nobreak >nul
 
+:: Force re-seed: delete old DB so schema matches current models
+cd /d "%ROOT%backend"
+if exist "instance\pms_v2.db" (
+    echo Removing old database to sync schema...
+    del /q "instance\pms_v2.db"
+)
+if exist "instance\.seeded" del /q "instance\.seeded"
+
+echo Seeding fresh database...
+python seed_data.py
+python seed_client.py
+echo seeded > "instance\.seeded"
+cd /d "%ROOT%"
+
+echo.
 echo Starting Backend Server (Port 5002)...
-start "PMS-V2-Backend" cmd /c "set SECRET_KEY=dev-secret-key-change-in-production&& set DATABASE_URL=sqlite:///pms_v2.db&& set FRONTEND_URL=http://localhost:5174&& cd /d "%~dp0backend" && python run.py"
+start "PMS-Backend" /d "%ROOT%backend" cmd /c "set FRONTEND_URL=http://localhost:5174 && python run.py"
 echo Backend started.
 echo.
-echo Waiting 3 seconds...
 timeout /t 3 /nobreak >nul
 echo.
 echo Starting Frontend (Port 5174)...
-start "PMS-V2-Frontend" cmd /c "cd /d "%~dp0frontend" && call npm run dev"
+start "PMS-Frontend" /d "%ROOT%frontend" cmd /c "call npm run dev"
 echo Frontend started.
 echo.
 echo ========================================================

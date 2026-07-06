@@ -59,7 +59,11 @@ export function AuthProvider({ children }) {
     navigate('/login')
   }
 
-  const hasRole = useCallback((...roles) => user?.roles?.some(r => roles.includes(r)), [user])
+  const hasRole = useCallback((...roles) => {
+    if (!user) return false
+    if (user.role && roles.includes(user.role)) return true
+    return user.roles?.some(r => roles.includes(r))
+  }, [user])
 
   console.log('[AuthProvider] render, loading:', loading)
   if (loading) return <div className="flex items-center justify-center h-screen"><p className="text-gray-400">Loading...</p></div>

@@ -11,10 +11,22 @@ import Accounts from './pages/Accounts'
 import Projects from './pages/Projects'
 import UsersPage from './pages/Users'
 import { ClientLogin, ClientPortalDashboard } from './pages/ClientPortal'
+import InfocusitCRM from './pages/InfocusitCRM'
+import AccountsDetailPage from './pages/AccountsDetailPage'
+import OpportunitiesDetailPage from './pages/OpportunitiesDetailPage'
+import LeadsDetailPage from './pages/LeadsDetailPage'
+import ProjectsDetailPage from './pages/ProjectsDetailPage'
 
 function Protected({ children }) {
   const { user } = useAuth()
   if (!user) return <Navigate to="/login" replace />
+  return children
+}
+
+function AdminRoute({ children }) {
+  const { user } = useAuth()
+  if (!user) return <Navigate to="/login" replace />
+  if (user.role !== 'admin') return <Navigate to="/" replace />
   return children
 }
 
@@ -32,15 +44,20 @@ export default function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/client-login" element={<ClientLogin />} />
               <Route path="/client-portal" element={<ClientPortalDashboard />} />
-              <Route path="*" element={<Navigate to="/login" replace />} />
+              <Route path="/crm" element={<InfocusitCRM />} />
               <Route path="/" element={<Protected><AppLayout /></Protected>}>
                 <Route index element={<Dashboard />} />
                 <Route path="opportunities" element={<Opportunities />} />
+                <Route path="opportunities/:id" element={<OpportunitiesDetailPage />} />
                 <Route path="leads" element={<Leads />} />
+                <Route path="leads/:id" element={<LeadsDetailPage />} />
                 <Route path="accounts" element={<Accounts />} />
+                <Route path="accounts/:id" element={<AccountsDetailPage />} />
                 <Route path="projects" element={<Projects />} />
-                <Route path="users" element={<UsersPage />} />
+                <Route path="projects/:id" element={<ProjectsDetailPage />} />
+                <Route path="users" element={<AdminRoute><UsersPage /></AdminRoute>} />
               </Route>
+              <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
           </ToastProvider>
         </AuthProvider>

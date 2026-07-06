@@ -90,10 +90,10 @@ with app.app_context():
     # PROJECTS
     projects_data = [
         {'title': 'IFCI Cloud Security Audit 2026', 'acc': 0, 'service': 'Cloud Security Audit', 'pm': baljeet.id, 'value': 350000, 'stage': 'Execution', 'team': [rishav.id, shivam.id, amit.id]},
-        {'title': 'ICSI Web Application VAPT', 'acc': 1, 'service': 'VAPT', 'pm': baljeet.id, 'value': 250000, 'stage': 'Internal Review', 'team': [rishav.id, priya.id]},
+        {'title': 'ICSI Web Application VAPT', 'acc': 1, 'service': 'VAPT', 'pm': baljeet.id, 'value': 250000, 'stage': 'Internal QA', 'team': [rishav.id, priya.id]},
         {'title': 'Amplus SCADA Network Audit', 'acc': 2, 'service': 'Network Security Audit', 'pm': naveen.id, 'value': 400000, 'stage': 'Client Review', 'team': [shivam.id, amit.id]},
         {'title': 'IFCI IS Audit FY26', 'acc': 0, 'service': 'IS Audit', 'pm': naveen.id, 'value': 200000, 'stage': 'Planning', 'team': [priya.id]},
-        {'title': 'Videonetics Thick Client Audit', 'acc': 3, 'service': 'Application Security', 'pm': baljeet.id, 'value': 200000, 'stage': 'Initiated', 'team': [rishav.id]},
+        {'title': 'Videonetics Thick Client Audit', 'acc': 3, 'service': 'Application Security', 'pm': baljeet.id, 'value': 200000, 'stage': 'Created', 'team': [rishav.id]},
     ]
 
     for i, p in enumerate(projects_data):
@@ -115,7 +115,7 @@ with app.app_context():
             db.session.add(ProjectTeam(project_id=proj.id, user_id=uid, role_in_project='Auditor'))
 
         db.session.add(ProjectRemark(project_id=proj.id, text=f"Project initiated. Team assigned. Starting {p['service']} for {acc_objects[p['acc']].company_name}.", created_by=p['pm']))
-        if p['stage'] not in ['Initiated', 'Planning']:
+        if p['stage'] not in ['Created', 'Planning']:
             db.session.add(ProjectRemark(project_id=proj.id, text="Work in progress. Tools configured, scanning started.", created_by=p['team'][0]))
 
         db.session.add(Task(title=f"Setup tools for {p['service']}", project_id=proj.id, status='Completed', priority='High', assigned_to=p['team'][0], created_by=p['pm']))

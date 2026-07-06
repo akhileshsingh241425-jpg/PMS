@@ -6,6 +6,12 @@ bcrypt = Bcrypt()
 
 from .user import User
 from .account import Account
-from .project import Project, ProjectRemark, ProjectDocument, ProjectTeam
-from .activity import Task, Meeting, Note
+from .project import Project, ProjectRemark, ProjectRemarkReaction, ProjectDocument, ProjectTeam
+from .activity import Task, TaskChecklistItem, TaskComment, Meeting, Note
 from .client_portal import MeetingRequest, ClientUpload, FindingQuery
+from .lead import Lead, LeadRemark, LeadRemarkReaction, LeadDocument, LeadActivity, LeadNote, LeadAuditLog
+from .opportunity import Opportunity, OpportunityRemark, OpportunityDocument, OpportunityActivity, OpportunityNote
+from .notification import Notification
+from .contact import Contact
+from .enterprise import ProjectRisk, ProjectIssue, ProjectMilestone, ProjectInvoice, ProjectTimesheet, ProjectChangeRequest, ApprovalHistory
+from .rbac import AuditLog, has_permission, is_higher_role, should_notify

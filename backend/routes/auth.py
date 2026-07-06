@@ -1,7 +1,7 @@
 import os, secrets
 from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify, current_app
-from models import db, User
+from models import db, User, ProjectTeam
 from middleware.auth import generate_token, login_required, role_required
 from utils import generate_id, rate_limit
 
@@ -63,10 +63,22 @@ def me(current_user):
 
 
 @auth_bp.route('/users', methods=['GET'])
-@login_required
+@role_required('admin')
 def list_users(current_user):
     users = User.query.order_by(User.created_at.desc()).all()
-    return jsonify({'users': [u.to_dict() for u in users]})
+    result = []
+    for u in users:
+        d = u.to_dict()
+        team_members = ProjectTeam.query.filter_by(user_id=u.id).all()
+        d['projects'] = [{
+            'id': tm.project.id,
+            'proj_id': tm.project.proj_id,
+            'title': tm.project.title,
+            'stage': tm.project.stage,
+            'team_member_id': tm.id,
+        } for tm in team_members if tm.project]
+        result.append(d)
+    return jsonify({'users': result})
 
 
 @auth_bp.route('/users', methods=['POST'])

@@ -1,7 +1,7 @@
 from datetime import datetime
 from flask import Blueprint, request, jsonify
 import os
-from models import db, Project, ProjectRemark, ProjectDocument, ProjectTeam, Task, Meeting, Note, User
+from models import db, Project, ProjectRemark, ProjectRemarkReaction, ProjectDocument, ProjectTeam, Task, Meeting, Note, User, ProjectRisk, ProjectIssue, ProjectMilestone, ProjectInvoice, ProjectTimesheet, ProjectChangeRequest, ApprovalHistory
 from models.client_portal import MeetingRequest, FindingQuery
 from middleware.auth import login_required, role_required
 from utils import validate_file, safe_filename, generate_id, paginate
@@ -11,9 +11,8 @@ UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'uploads',
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 PROJECT_STAGES = [
-    'Initiated', 'Planning', 'Execution', 'Internal Review',
-    'Client Review', 'Completed', 'Closed',
-    'On Hold', 'Cancelled',
+    'Created', 'Planning', 'Kickoff', 'Execution', 'Internal QA', 'Client Review', 'UAT', 'Go Live', 'Completed',
+    'AMC/Support', 'Archived', 'On Hold', 'Cancelled',
 ]
 
 
@@ -21,6 +20,14 @@ PROJECT_STAGES = [
 @login_required
 def list_projects(current_user):
     query = Project.query
+    if current_user.role != 'admin':
+        from models import ProjectTeam
+        user_project_ids = [t.project_id for t in ProjectTeam.query.filter_by(user_id=current_user.id).all()]
+        query = query.filter(db.or_(
+            Project.pm_id == current_user.id,
+            Project.created_by == current_user.id,
+            Project.id.in_(user_project_ids),
+        ))
     if s := request.args.get('search'):
         query = query.filter(db.or_(Project.title.ilike(f'%{s}%'), Project.proj_id.ilike(f'%{s}%')))
     if st := request.args.get('stage'):
@@ -38,9 +45,11 @@ def create_project(current_user):
     data = request.get_json()
     if not data.get('title') or not data.get('account_id'):
         return jsonify({'error': 'title and account_id required'}), 400
+    if not data.get('pm_id'):
+        return jsonify({'error': 'Project Manager (pm_id) is required'}), 400
     try:
         account_id = int(data['account_id'])
-        pm_id = int(data['pm_id']) if data.get('pm_id') else None
+        pm_id = int(data['pm_id'])
         total_value = float(data['total_value']) if data.get('total_value') else None
         start_date = datetime.strptime(data['start_date'], '%Y-%m-%d').date() if data.get('start_date') else None
         target_date = datetime.strptime(data['target_date'], '%Y-%m-%d').date() if data.get('target_date') else None
@@ -50,7 +59,7 @@ def create_project(current_user):
         proj_id=generate_id(Project, 'PRJ'),
         title=data['title'],
         description=data.get('description'),
-        stage=data.get('stage', 'Initiated'),
+        stage=data.get('stage', 'Created'),
         service_type=data.get('service_type'),
         account_id=account_id,
         pm_id=pm_id,
@@ -69,16 +78,29 @@ def create_project(current_user):
 @login_required
 def get_project(current_user, pid):
     proj = Project.query.get_or_404(pid)
+    all_tasks = Task.query.filter_by(project_id=pid).order_by(Task.created_at.desc()).all()
+    open_tasks = [t for t in all_tasks if t.status != 'Completed']
+    team = ProjectTeam.query.filter_by(project_id=pid).all()
+    member_ids = [t.user_id for t in team if t.user_id]
     return jsonify({
         'project': proj.to_dict(),
         'remarks': [r.to_dict() for r in proj.remarks],
         'documents': [d.to_dict() for d in proj.documents],
-        'team': [t.to_dict() for t in proj.team],
-        'tasks': [t.to_dict() for t in Task.query.filter_by(project_id=pid).order_by(Task.created_at.desc()).all()],
+        'team': [t.to_dict() for t in team],
+        'tasks': [t.to_dict() for t in all_tasks],
+        'open_tasks_count': len(open_tasks),
+        'team_member_ids': member_ids,
         'meetings': [m.to_dict() for m in Meeting.query.filter_by(project_id=pid).order_by(Meeting.created_at.desc()).all()],
         'notes': [n.to_dict() for n in Note.query.filter_by(project_id=pid).order_by(Note.created_at.desc()).all()],
         'queries': [q.to_dict() for q in FindingQuery.query.filter_by(project_id=pid).order_by(FindingQuery.created_at.desc()).all()],
         'meeting_requests': [m.to_dict() for m in MeetingRequest.query.filter_by(project_id=pid).order_by(MeetingRequest.created_at.desc()).all()],
+        'risks': [r.to_dict() for r in ProjectRisk.query.filter_by(project_id=pid).order_by(ProjectRisk.created_at.desc()).all()],
+        'issues': [i.to_dict() for i in ProjectIssue.query.filter_by(project_id=pid).order_by(ProjectIssue.created_at.desc()).all()],
+        'milestones': [m.to_dict() for m in ProjectMilestone.query.filter_by(project_id=pid).order_by(ProjectMilestone.due_date.asc()).all()],
+        'invoices': [i.to_dict() for i in ProjectInvoice.query.filter_by(project_id=pid).order_by(ProjectInvoice.created_at.desc()).all()],
+        'timesheets': [t.to_dict() for t in ProjectTimesheet.query.filter_by(project_id=pid).order_by(ProjectTimesheet.date.desc()).all()],
+        'change_requests': [c.to_dict() for c in ProjectChangeRequest.query.filter_by(project_id=pid).order_by(ProjectChangeRequest.created_at.desc()).all()],
+        'approval_history': [a.to_dict() for a in ApprovalHistory.query.filter_by(module_type='project', module_id=pid).order_by(ApprovalHistory.created_at.desc()).all()],
     })
 
 
@@ -105,6 +127,27 @@ def update_project(current_user, pid):
     return jsonify({'project': proj.to_dict()})
 
 
+@project_bp.route('/<int:pid>/remarks/<int:rid>/react', methods=['POST'])
+@login_required
+def toggle_reaction(current_user, pid, rid):
+    r = ProjectRemark.query.get_or_404(rid)
+    if r.project_id != pid:
+        return jsonify({'error': 'Remark not in project'}), 404
+    data = request.get_json()
+    emoji = data.get('emoji')
+    if not emoji:
+        return jsonify({'error': 'emoji required'}), 400
+    existing = ProjectRemarkReaction.query.filter_by(remark_id=rid, user_id=current_user.id, emoji=emoji).first()
+    if existing:
+        db.session.delete(existing)
+        db.session.commit()
+    else:
+        rr = ProjectRemarkReaction(remark_id=rid, user_id=current_user.id, emoji=emoji)
+        db.session.add(rr)
+        db.session.commit()
+    return jsonify({'remark': r.to_dict()})
+
+
 @project_bp.route('/<int:pid>/remarks', methods=['POST'])
 @login_required
 def add_remark(current_user, pid):
@@ -116,6 +159,18 @@ def add_remark(current_user, pid):
     db.session.add(r)
     db.session.commit()
     return jsonify({'remark': r.to_dict()}), 201
+
+
+@project_bp.route('/<int:pid>/remarks/<int:rid>', methods=['PUT'])
+@login_required
+def update_remark(current_user, pid, rid):
+    r = ProjectRemark.query.filter_by(id=rid, project_id=pid).first_or_404()
+    data = request.get_json()
+    if not data.get('text'):
+        return jsonify({'error': 'text required'}), 400
+    r.text = data['text']
+    db.session.commit()
+    return jsonify({'remark': r.to_dict()})
 
 
 @project_bp.route('/<int:pid>/documents', methods=['POST'])
@@ -142,6 +197,22 @@ def upload_doc(current_user, pid):
     db.session.add(doc)
     db.session.commit()
     return jsonify({'document': doc.to_dict()}), 201
+
+
+@project_bp.route('/documents/<int:did>', methods=['GET'])
+@login_required
+def serve_document(current_user, did):
+    d = ProjectDocument.query.get_or_404(did)
+    if not os.path.exists(d.file_path):
+        return jsonify({'error': 'File not found'}), 404
+    from flask import send_file
+    mimetype = 'application/octet-stream'
+    ext = d.file_name.rsplit('.', 1)[-1].lower() if '.' in d.file_name else ''
+    if ext in ('jpg','jpeg'): mimetype = 'image/jpeg'
+    elif ext == 'png': mimetype = 'image/png'
+    elif ext in ('gif','webp','bmp','svg'): mimetype = f'image/{ext}'
+    elif ext == 'pdf': mimetype = 'application/pdf'
+    return send_file(d.file_path, mimetype=mimetype, as_attachment=False, download_name=d.file_name)
 
 
 @project_bp.route('/documents/<int:did>/review', methods=['POST'])
@@ -188,6 +259,42 @@ def remove_team_member(current_user, tid):
     db.session.delete(member)
     db.session.commit()
     return jsonify({'message': 'Removed'})
+
+
+@project_bp.route('/<int:pid>/meetings', methods=['POST'])
+@login_required
+def add_meeting(current_user, pid):
+    Project.query.get_or_404(pid)
+    data = request.get_json()
+    if not data.get('title'):
+        return jsonify({'error': 'title required'}), 400
+    meeting_date = None
+    if data.get('meeting_date'):
+        meeting_date = datetime.fromisoformat(data['meeting_date'].replace('Z', '+00:00'))
+    m = Meeting(
+        title=data['title'],
+        description=data.get('description'),
+        project_id=pid,
+        meeting_date=meeting_date,
+        status=data.get('status', 'Scheduled'),
+        created_by=current_user.id,
+    )
+    db.session.add(m)
+    db.session.commit()
+    return jsonify({'meeting': m.to_dict()}), 201
+
+
+@project_bp.route('/<int:pid>/notes', methods=['POST'])
+@login_required
+def add_note(current_user, pid):
+    Project.query.get_or_404(pid)
+    data = request.get_json()
+    if not data.get('content'):
+        return jsonify({'error': 'content required'}), 400
+    n = Note(project_id=pid, content=data['content'], created_by=current_user.id)
+    db.session.add(n)
+    db.session.commit()
+    return jsonify({'note': n.to_dict()}), 201
 
 
 @project_bp.route('/stages', methods=['GET'])

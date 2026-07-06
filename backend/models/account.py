@@ -27,6 +27,7 @@ class Account(db.Model):
 
     creator = db.relationship('User', foreign_keys=[created_by])
     projects = db.relationship('Project', back_populates='account', lazy='dynamic')
+    contacts = db.relationship('Contact', backref='account', lazy='dynamic', cascade='all, delete-orphan')
 
     def to_dict(self, counts=None):
         return {
@@ -47,7 +48,10 @@ class Account(db.Model):
             'industry': self.industry,
             'account_type': self.account_type,
             'status': self.status,
-            'projects_count': counts['projects'] if counts else self.projects.count() if hasattr(self, 'projects') else 0,
+            'projects_count': counts['projects'] if counts and 'projects' in counts else self.projects.count() if hasattr(self, 'projects') else 0,
+            'leads_count': counts['leads'] if counts and 'leads' in counts else 0,
+            'opportunities_count': counts['opportunities'] if counts and 'opportunities' in counts else 0,
+            'contacts_count': counts['contacts'] if counts and 'contacts' in counts else self.contacts.count() if hasattr(self, 'contacts') else 0,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
         }

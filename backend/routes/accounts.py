@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import db, Account, Project, Task, Meeting, Note
+from models import db, Account, Project, ProjectDocument, Task, Meeting, Note, MeetingRequest, FindingQuery, Lead, Opportunity, Contact
 from middleware.auth import login_required, role_required
 from utils import generate_id, paginate
 
@@ -10,6 +10,13 @@ account_bp = Blueprint('accounts', __name__, url_prefix='/api/accounts')
 @login_required
 def list_accounts(current_user):
     query = Account.query
+    if current_user.role != 'admin':
+        from models import ProjectTeam, Project
+        user_project_ids = [t.project_id for t in ProjectTeam.query.filter_by(user_id=current_user.id).all()]
+        query = query.filter(db.or_(
+            Account.created_by == current_user.id,
+            Account.id.in_(db.session.query(Project.account_id).filter(Project.id.in_(user_project_ids))),
+        ))
     if s := request.args.get('search'):
         query = query.filter(db.or_(Account.company_name.ilike(f'%{s}%'), Account.acc_id.ilike(f'%{s}%')))
     if st := request.args.get('status'):
@@ -18,7 +25,10 @@ def list_accounts(current_user):
     result = paginate(query, request)
     ids = [a.id for a in result['items']]
     proj_counts = dict(db.session.query(Project.account_id, db.func.count(Project.id)).filter(Project.account_id.in_(ids)).group_by(Project.account_id).all()) if ids else {}
-    return jsonify({'accounts': [a.to_dict(counts={'projects': proj_counts.get(a.id, 0)}) for a in result['items']], 'pagination': {'page': result['page'], 'per_page': result['per_page'], 'total': result['total'], 'pages': result['pages']}})
+    lead_counts = dict(db.session.query(Lead.account_id, db.func.count(Lead.id)).filter(Lead.account_id.in_(ids)).group_by(Lead.account_id).all()) if ids else {}
+    opp_counts = dict(db.session.query(Opportunity.account_id, db.func.count(Opportunity.id)).filter(Opportunity.account_id.in_(ids)).group_by(Opportunity.account_id).all()) if ids else {}
+    contact_counts = dict(db.session.query(Contact.account_id, db.func.count(Contact.id)).filter(Contact.account_id.in_(ids)).group_by(Contact.account_id).all()) if ids else {}
+    return jsonify({'accounts': [a.to_dict(counts={'projects': proj_counts.get(a.id, 0), 'leads': lead_counts.get(a.id, 0), 'opportunities': opp_counts.get(a.id, 0), 'contacts': contact_counts.get(a.id, 0)}) for a in result['items']], 'pagination': {'page': result['page'], 'per_page': result['per_page'], 'total': result['total'], 'pages': result['pages']}})
 
 
 @account_bp.route('', methods=['POST'])
@@ -54,9 +64,23 @@ def create_account(current_user):
 @login_required
 def get_account(current_user, aid):
     acc = Account.query.get_or_404(aid)
+    projects = Project.query.filter_by(account_id=aid).order_by(Project.updated_at.desc()).all()
+    proj_ids = [p.id for p in projects]
+    opportunities = Opportunity.query.filter_by(account_id=aid).order_by(Opportunity.updated_at.desc()).all()
+    leads = Lead.query.filter_by(account_id=aid).order_by(Lead.updated_at.desc()).all()
+    contacts = Contact.query.filter_by(account_id=aid).order_by(Contact.is_primary.desc(), Contact.created_at.desc()).all()
     return jsonify({
         'account': acc.to_dict(),
-        'projects': [p.to_dict() for p in Project.query.filter_by(account_id=aid).order_by(Project.updated_at.desc()).all()],
+        'contacts': [c.to_dict() for c in contacts],
+        'projects': [p.to_dict() for p in projects],
+        'opportunities': [o.to_dict() for o in opportunities],
+        'leads': [l.to_dict() for l in leads],
+        'documents': [d.to_dict() for d in ProjectDocument.query.filter(ProjectDocument.project_id.in_(proj_ids)).order_by(ProjectDocument.uploaded_at.desc()).all()] if proj_ids else [],
+        'tasks': [t.to_dict() for t in Task.query.filter(Task.project_id.in_(proj_ids)).order_by(Task.created_at.desc()).all()] if proj_ids else [],
+        'meetings': [m.to_dict() for m in Meeting.query.filter(Meeting.project_id.in_(proj_ids)).order_by(Meeting.meeting_date.desc()).all()] if proj_ids else [],
+        'notes': [n.to_dict() for n in Note.query.filter(Note.project_id.in_(proj_ids)).order_by(Note.created_at.desc()).all()] if proj_ids else [],
+        'meeting_requests': [mr.to_dict() for mr in MeetingRequest.query.filter_by(account_id=aid).order_by(MeetingRequest.created_at.desc()).all()],
+        'finding_queries': [fq.to_dict() for fq in FindingQuery.query.filter_by(account_id=aid).order_by(FindingQuery.created_at.desc()).all()],
     })
 
 

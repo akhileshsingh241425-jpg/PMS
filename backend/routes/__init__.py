@@ -6,3 +6,8 @@ from .client_portal import portal_bp
 from .queries import queries_bp
 from .dashboard import dash_bp
 from .meeting_requests import meeting_req_bp
+from .notifications import notif_bp
+from .leads import leads_bp
+from .opportunities import opp_bp
+from .contacts import contact_bp
+from .enterprise import enterprise_bp

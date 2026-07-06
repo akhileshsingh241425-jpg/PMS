@@ -2,6 +2,41 @@ from . import db
 from datetime import datetime
 
 
+class TaskChecklistItem(db.Model):
+    __tablename__ = 'task_checklist_items'
+    id = db.Column(db.Integer, primary_key=True)
+    task_id = db.Column(db.Integer, db.ForeignKey('tasks.id', ondelete='CASCADE'), nullable=False, index=True)
+    text = db.Column(db.String(255), nullable=False)
+    is_completed = db.Column(db.Boolean, default=False)
+    completed_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'task_id': self.task_id, 'text': self.text,
+            'is_completed': self.is_completed,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class TaskComment(db.Model):
+    __tablename__ = 'task_comments'
+    id = db.Column(db.Integer, primary_key=True)
+    task_id = db.Column(db.Integer, db.ForeignKey('tasks.id', ondelete='CASCADE'), nullable=False, index=True)
+    text = db.Column(db.Text, nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    author = db.relationship('User', foreign_keys=[created_by])
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'task_id': self.task_id, 'text': self.text,
+            'author_name': self.author.full_name if self.author else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+
 class Task(db.Model):
     __tablename__ = 'tasks'
     id = db.Column(db.Integer, primary_key=True)
@@ -11,6 +46,8 @@ class Task(db.Model):
     status = db.Column(db.String(30), default='Open')
     priority = db.Column(db.String(20), default='Normal')
     due_date = db.Column(db.Date)
+    estimated_hours = db.Column(db.Float)
+    actual_hours = db.Column(db.Float)
     assigned_to = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), index=True)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
     completed_at = db.Column(db.DateTime)
@@ -18,6 +55,8 @@ class Task(db.Model):
 
     assignee = db.relationship('User', foreign_keys=[assigned_to])
     creator = db.relationship('User', foreign_keys=[created_by])
+    checklist = db.relationship('TaskChecklistItem', backref='task', lazy='dynamic', cascade='all, delete-orphan')
+    comments = db.relationship('TaskComment', backref='task', lazy='dynamic', cascade='all, delete-orphan', order_by='TaskComment.created_at.asc()')
 
     def to_dict(self):
         return {
@@ -25,10 +64,16 @@ class Task(db.Model):
             'project_id': self.project_id,
             'status': self.status, 'priority': self.priority,
             'due_date': self.due_date.isoformat() if self.due_date else None,
+            'estimated_hours': self.estimated_hours,
+            'actual_hours': self.actual_hours,
             'assigned_to': self.assigned_to,
             'assigned_name': self.assignee.full_name if self.assignee else None,
             'created_by_name': self.creator.full_name if self.creator else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
+            'completed_at': self.completed_at.isoformat() if self.completed_at else None,
+            'checklist_count': self.checklist.count(),
+            'checklist_completed': self.checklist.filter_by(is_completed=True).count(),
+            'comment_count': self.comments.count(),
         }
 
 

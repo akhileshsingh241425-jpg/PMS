@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react'
-import { useAuth } from '../contexts/AuthContext'
+import { useNavigate } from 'react-router-dom'
+import { useToast } from '../contexts/ToastContext'
 import api from '../services/api'
 import {
-  Plus, Search, X, Target, ChevronLeft, User, Phone, Mail, Globe,
-  MessageSquare, Send, Calendar, Clock, DollarSign, Building2,
-  CheckCircle, ArrowRight, Edit3, Tag, TrendingUp, Briefcase
+  Plus, Search, X, Target,
+  DollarSign, TrendingUp, CheckCircle, Edit3
 } from 'lucide-react'
 import Pagination from '../components/Pagination'
 import { TableSkeleton } from '../components/LoadingSkeleton'
-import { useToast } from '../contexts/ToastContext'
 
 const STAGES = [
   { name: 'Prospecting', prob: 10, color: 'bg-slate-500' },
@@ -27,6 +26,7 @@ const SOURCES = ['Referral', 'Website', 'LinkedIn', 'Cold Call', 'Email Campaign
 const SERVICES = ['VAPT', 'IS Audit', 'ISMS Implementation', 'RBI Audit', 'Compliance Audit', 'Cloud Security Audit', 'Network Security Audit', 'Application Security', 'Red Team Assessment', 'SOC Setup', 'Other']
 
 export default function Opportunities() {
+  const navigate = useNavigate()
   const [opps, setOpps] = useState([])
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
@@ -38,7 +38,6 @@ export default function Opportunities() {
   const toast = useToast()
   const [showForm, setShowForm] = useState(false)
   const [editOpp, setEditOpp] = useState(null)
-  const [selectedOpp, setSelectedOpp] = useState(null)
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); loadUsers() }, [])
@@ -69,72 +68,68 @@ export default function Opportunities() {
   const activeCount = opps.filter(o => !['Closed Won', 'Closed Lost'].includes(o.stage)).length
   const wonCount = opps.filter(o => o.stage === 'Closed Won').length
 
-  if (selectedOpp) {
-    return <OpportunityDetail opp={selectedOpp} onBack={() => { setSelectedOpp(null); load() }} users={users} />
-  }
-
   return (
     <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Opportunities</h1>
+          <h1 className="text-2xl font-serif font-bold text-slate-900">Opportunities</h1>
           <p className="text-slate-500 text-sm mt-1">Manage your sales pipeline from first contact to deal closure</p>
         </div>
         <button onClick={openCreate}
-          className="flex items-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white px-5 py-2.5 rounded-lg hover:opacity-90 text-sm font-medium shadow-md">
+          className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5  hover:opacity-90 text-sm font-medium ">
           <Plus className="w-4 h-4" /> New Opportunity
         </button>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
+        <div className="bg-white  border border-slate-200 p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-violet-100 rounded-lg flex items-center justify-center"><Target className="w-5 h-5 text-violet-600" /></div>
+            <div className="w-10 h-10 bg-violet-100  flex items-center justify-center"><Target className="w-5 h-5 text-violet-600" /></div>
             <div><p className="text-2xl font-bold text-slate-900">{opps.length}</p><p className="text-xs text-slate-500">Total Opportunities</p></div>
           </div>
         </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
+        <div className="bg-white  border border-slate-200 p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center"><TrendingUp className="w-5 h-5 text-blue-600" /></div>
+            <div className="w-10 h-10 bg-blue-100  flex items-center justify-center"><TrendingUp className="w-5 h-5 text-blue-600" /></div>
             <div><p className="text-2xl font-bold text-slate-900">{activeCount}</p><p className="text-xs text-slate-500">Active Pipeline</p></div>
           </div>
         </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
+        <div className="bg-white  border border-slate-200 p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center"><DollarSign className="w-5 h-5 text-emerald-600" /></div>
+            <div className="w-10 h-10 bg-emerald-100  flex items-center justify-center"><DollarSign className="w-5 h-5 text-emerald-600" /></div>
             <div><p className="text-2xl font-bold text-slate-900">₹{(totalValue / 100000).toFixed(1)}L</p><p className="text-xs text-slate-500">Pipeline Value</p></div>
           </div>
         </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
+        <div className="bg-white  border border-slate-200 p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center"><CheckCircle className="w-5 h-5 text-green-600" /></div>
+            <div className="w-10 h-10 bg-green-100  flex items-center justify-center"><CheckCircle className="w-5 h-5 text-green-600" /></div>
             <div><p className="text-2xl font-bold text-slate-900">{wonCount}</p><p className="text-xs text-slate-500">Deals Won</p></div>
           </div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-slate-200 mb-6">
+      <div className="bg-white  border border-slate-200 mb-6">
         <div className="p-4 flex flex-wrap gap-3 items-center border-b border-slate-100">
           <div className="relative flex-1 min-w-[250px] max-w-md">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && load()}
-              className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
+              className="w-full pl-10 pr-4 py-2.5 border border-slate-200  text-sm outline-none  focus:border-violet-500"
               placeholder="Search by company name, contact, ID..." />
           </div>
           <select value={stageFilter} onChange={e => setStageFilter(e.target.value)}
-            className="px-3 py-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-violet-500 min-w-[180px]">
+            className="px-3 py-2.5 border border-slate-200  text-sm outline-none  min-w-[180px]">
             <option value="">All Stages</option>
             {STAGES.map(s => <option key={s.name} value={s.name}>{s.name} ({s.prob}%)</option>)}
           </select>
           <select value={assignedFilter} onChange={e => setAssignedFilter(e.target.value)}
-            className="px-3 py-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-violet-500 min-w-[160px]">
+            className="px-3 py-2.5 border border-slate-200  text-sm outline-none  min-w-[160px]">
             <option value="">All Assignees</option>
             {users.filter(u => u.is_active).map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
           </select>
-          <button onClick={load} className="px-4 py-2.5 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-200">Apply</button>
+          <button onClick={load} className="px-4 py-2.5 bg-slate-100 text-slate-700  text-sm font-medium hover:bg-slate-200">Apply</button>
         </div>
 
         {/* Table */}
@@ -165,11 +160,11 @@ export default function Opportunities() {
                   <p className="text-sm text-slate-400 mt-1">Create your first opportunity to start tracking deals</p>
                 </td></tr>
               ) : opps.map(o => (
-                <tr key={o.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => setSelectedOpp(o)}>
+                <tr key={o.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => navigate(`/opportunities/${o.id}`)}>
                   <td className="px-5 py-4 text-sm font-semibold text-violet-600">{o.opp_id}</td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-violet-100 rounded-full flex items-center justify-center shrink-0">
+                      <div className="w-8 h-8 bg-violet-100  flex items-center justify-center shrink-0">
                         <span className="text-violet-600 text-xs font-bold">{o.company_name?.[0]}</span>
                       </div>
                       <span className="text-sm font-medium text-slate-900">{o.company_name}</span>
@@ -180,7 +175,7 @@ export default function Opportunities() {
                   <td className="px-5 py-4 text-sm text-slate-600">{o.source || '—'}</td>
                   <td className="px-5 py-4 text-sm font-semibold text-emerald-600">{o.estimated_value ? `₹${o.estimated_value.toLocaleString()}` : '—'}</td>
                   <td className="px-5 py-4">
-                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium text-white ${STAGES.find(s => s.name === o.stage)?.color || 'bg-slate-500'}`}>
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-1  text-xs font-medium text-white ${STAGES.find(s => s.name === o.stage)?.color || 'bg-slate-500'}`}>
                       {o.stage}
                     </span>
                   </td>
@@ -188,7 +183,7 @@ export default function Opportunities() {
                   <td className="px-5 py-4 text-xs text-slate-500">{o.created_at?.slice(0, 10)}</td>
                   <td className="px-5 py-4 text-xs text-slate-500">{o.updated_at?.slice(0, 10)}</td>
                   <td className="px-5 py-4" onClick={e => e.stopPropagation()}>
-                    <button onClick={() => openEdit(o)} className="p-1.5 rounded hover:bg-slate-100" title="Edit">
+                    <button onClick={() => openEdit(o)} className="p-1.5  hover:bg-slate-100" title="Edit">
                       <Edit3 className="w-4 h-4 text-slate-400" />
                     </button>
                   </td>
@@ -205,7 +200,6 @@ export default function Opportunities() {
     </div>
   )
 }
-
 // ═══════════════════════════════════════════════════════════
 // OPPORTUNITY FORM — Full professional form with all fields
 // ═══════════════════════════════════════════════════════════
@@ -250,53 +244,51 @@ function OpportunityForm({ editData, users, onClose, onSaved }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 backdrop-blur-sm overflow-y-auto py-8" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-4" onClick={e => e.stopPropagation()}>
+      <div className="bg-white   w-full max-w-3xl mx-4" onClick={e => e.stopPropagation()}>
         {/* Form Header */}
         <div className="flex items-center justify-between px-8 py-5 border-b border-slate-200">
           <div>
-            <h2 className="text-xl font-bold text-slate-900">{editData ? 'Edit Opportunity' : 'Create New Opportunity'}</h2>
+            <h2 className="text-xl font-serif font-bold text-slate-900">{editData ? 'Edit Opportunity' : 'Create New Opportunity'}</h2>
             <p className="text-sm text-slate-500 mt-0.5">Fill in all details about the potential deal</p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100"><X className="w-5 h-5 text-slate-400" /></button>
+          <button onClick={onClose} className="p-2  hover:bg-slate-100"><X className="w-5 h-5 text-slate-400" /></button>
         </div>
 
         <form onSubmit={save} className="px-8 py-6">
-          {error && <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>}
+          {error && <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200  text-sm text-red-700">{error}</div>}
 
           {/* Section: Company Information */}
           <div className="mb-8">
-            <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-violet-500" /> Company Information
-            </h3>
+            <h3 className="text-sm font-bold text-slate-700 border-b border-slate-200 pb-1 mb-4">Company Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">Company Name <span className="text-red-500">*</span></label>
                 <input value={form.company_name} onChange={e => f('company_name', e.target.value)} required
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
+                  className="w-full px-4 py-3 border border-slate-300  text-sm outline-none  focus:border-violet-500"
                   placeholder="Enter company name (e.g., IFCI Limited)" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">Contact Person</label>
                 <input value={form.contact_name} onChange={e => f('contact_name', e.target.value)}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
+                  className="w-full px-4 py-3 border border-slate-300  text-sm outline-none  focus:border-violet-500"
                   placeholder="Key person name" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">Contact Email</label>
                 <input type="email" value={form.contact_email} onChange={e => f('contact_email', e.target.value)}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
+                  className="w-full px-4 py-3 border border-slate-300  text-sm outline-none  focus:border-violet-500"
                   placeholder="email@company.com" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">Contact Phone</label>
                 <input value={form.contact_phone} onChange={e => f('contact_phone', e.target.value)}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
+                  className="w-full px-4 py-3 border border-slate-300  text-sm outline-none  focus:border-violet-500"
                   placeholder="+91 98765 43210" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">Source / Reference</label>
                 <select value={form.source} onChange={e => f('source', e.target.value)}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500">
+                  className="w-full px-4 py-3 border border-slate-300  text-sm outline-none  focus:border-violet-500">
                   <option value="">-- Select Source --</option>
                   {SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
@@ -306,14 +298,12 @@ function OpportunityForm({ editData, users, onClose, onSaved }) {
 
           {/* Section: Deal Details */}
           <div className="mb-8">
-            <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
-              <DollarSign className="w-4 h-4 text-emerald-500" /> Deal Details
-            </h3>
+            <h3 className="text-sm font-bold text-slate-700 border-b border-slate-200 pb-1 mb-4">Deal Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">Service Interest</label>
                 <select value={form.service_interest} onChange={e => f('service_interest', e.target.value)}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500">
+                  className="w-full px-4 py-3 border border-slate-300  text-sm outline-none  focus:border-violet-500">
                   <option value="">-- Select Service --</option>
                   {SERVICES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
@@ -321,25 +311,25 @@ function OpportunityForm({ editData, users, onClose, onSaved }) {
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">Estimated Deal Value (₹)</label>
                 <input type="number" value={form.estimated_value} onChange={e => f('estimated_value', e.target.value)}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
+                  className="w-full px-4 py-3 border border-slate-300  text-sm outline-none  focus:border-violet-500"
                   placeholder="e.g., 250000" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">Stage</label>
                 <select value={form.stage} onChange={e => f('stage', e.target.value)}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500">
+                  className="w-full px-4 py-3 border border-slate-300  text-sm outline-none  focus:border-violet-500">
                   {STAGES.map(s => <option key={s.name} value={s.name}>{s.name} ({s.prob}%)</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">Expected Close Date</label>
                 <input type="date" value={form.expected_close_date} onChange={e => f('expected_close_date', e.target.value)}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500" />
+                  className="w-full px-4 py-3 border border-slate-300  text-sm outline-none  focus:border-violet-500" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">Assigned To</label>
                 <select value={form.assigned_to} onChange={e => f('assigned_to', e.target.value)}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500">
+                  className="w-full px-4 py-3 border border-slate-300  text-sm outline-none  focus:border-violet-500">
                   <option value="">-- Select Person --</option>
                   {users.filter(u => u.is_active).map(u => <option key={u.id} value={u.id}>{u.full_name} ({u.designation || u.roles?.[0]})</option>)}
                 </select>
@@ -349,19 +339,17 @@ function OpportunityForm({ editData, users, onClose, onSaved }) {
 
           {/* Section: Description */}
           <div className="mb-8">
-            <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-blue-500" /> Description & Notes
-            </h3>
+            <h3 className="text-sm font-bold text-slate-700 border-b border-slate-200 pb-1 mb-4">Description & Notes</h3>
             <textarea value={form.description} onChange={e => f('description', e.target.value)} rows={4}
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 resize-none"
+              className="w-full px-4 py-3 border border-slate-300  text-sm outline-none  focus:border-violet-500 resize-none"
               placeholder="Describe the opportunity — what the client is looking for, any specific requirements, timeline expectations, who referred them, etc." />
           </div>
 
           {/* Actions */}
           <div className="flex items-center justify-between pt-5 border-t border-slate-200">
-            <button type="button" onClick={onClose} className="px-5 py-2.5 text-sm text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 font-medium">Cancel</button>
+            <button type="button" onClick={onClose} className="px-5 py-2.5 text-sm text-slate-600 bg-slate-100  hover:bg-slate-200 font-medium">Cancel</button>
             <button type="submit" disabled={saving}
-              className="px-8 py-2.5 text-sm text-white bg-gradient-to-r from-violet-600 to-indigo-600 rounded-lg hover:opacity-90 font-medium shadow-md disabled:opacity-50">
+              className="px-8 py-2.5 text-sm text-white bg-blue-600  hover:opacity-90 font-medium  disabled:opacity-50">
               {saving ? 'Saving...' : editData ? 'Update Opportunity' : 'Create Opportunity'}
             </button>
           </div>
@@ -371,196 +359,7 @@ function OpportunityForm({ editData, users, onClose, onSaved }) {
   )
 }
 
-// ═══════════════════════════════════════════════════════════
-// OPPORTUNITY DETAIL — Full page with all sections
-// ═══════════════════════════════════════════════════════════
-function OpportunityDetail({ opp, onBack, users }) {
-  const toast = useToast()
-  const [data, setData] = useState(null)
-  const [remarkText, setRemarkText] = useState('')
-  const [sending, setSending] = useState(false)
-  const [converting, setConverting] = useState(false)
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { fetchDetail() }, [opp.id])
-  const fetchDetail = async () => { try { const r = await api.get(`/api/opportunities/${opp.id}`); setData(r.data) } catch (e) {} }
 
-  const addRemark = async (e) => {
-    e.preventDefault(); if (!remarkText.trim()) return; setSending(true)
-    try { await api.post(`/api/opportunities/${opp.id}/remarks`, { text: remarkText }); setRemarkText(''); fetchDetail() }
-    catch (e) {} finally { setSending(false) }
-  }
 
-  const changeStage = async (stage) => {
-    if (stage === 'Closed Lost') {
-      const reason = prompt('Why was this opportunity lost? (This is required)')
-      if (!reason) return
-      await api.put(`/api/opportunities/${opp.id}`, { stage, loss_reason: reason })
-    } else {
-      await api.put(`/api/opportunities/${opp.id}`, { stage })
-    }
-    fetchDetail()
-  }
 
-  const convertToLead = async () => {
-    if (!confirm('This will create a Lead from this opportunity. Continue?')) return
-    setConverting(true)
-    try {
-      const r = await api.post(`/api/opportunities/${opp.id}/convert-to-lead`)
-      toast(`Lead ${r.data.lead.lead_id} created!`)
-      onBack()
-    } catch (e) { toast(e.response?.data?.error || 'Conversion failed', 'error') }
-    finally { setConverting(false) }
-  }
-
-  if (!data) return <div className="flex items-center justify-center h-64"><p className="text-slate-400 animate-pulse">Loading opportunity details...</p></div>
-  const { opportunity: o, remarks } = data
-
-  return (
-    <div className="max-w-5xl mx-auto">
-      {/* Back */}
-      <button onClick={onBack} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 mb-5">
-        <ChevronLeft className="w-4 h-4" /> Back to Opportunities
-      </button>
-
-      {/* Header Card */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm mb-6 overflow-hidden">
-        <div className="bg-gradient-to-r from-violet-600 to-indigo-600 px-8 py-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-white">{o.company_name}</h1>
-              <p className="text-violet-200 text-sm mt-1">{o.opp_id} · {o.service_interest || 'No service specified'} · Created {o.created_at?.slice(0, 10)}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-3xl font-bold text-white">{o.estimated_value ? `₹${o.estimated_value.toLocaleString()}` : '—'}</p>
-              <p className="text-violet-200 text-xs">Deal Value</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Stage Progress */}
-        <div className="px-8 py-4 border-b border-slate-100 bg-slate-50">
-          <p className="text-xs font-semibold text-slate-500 uppercase mb-3">Pipeline Stage</p>
-          <div className="flex flex-wrap gap-2">
-            {STAGES.map(s => (
-              <button key={s.name} onClick={() => changeStage(s.name)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
-                  o.stage === s.name
-                    ? `${s.color} text-white border-transparent shadow-md`
-                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                }`}>
-                {s.name} <span className="opacity-70">({s.prob}%)</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Convert to Lead button */}
-        {o.stage === 'Closed Won' && (
-          <div className="px-8 py-3 bg-emerald-50 border-b border-emerald-100">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-emerald-700 font-medium">🎉 Opportunity Won! Ready to convert to Lead.</p>
-              <button onClick={convertToLead} disabled={converting}
-                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 shadow-sm">
-                <ArrowRight className="w-4 h-4" /> {converting ? 'Converting...' : 'Convert to Lead'}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Detail Grid */}
-        <div className="px-8 py-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <DetailField icon={User} label="Contact Person" value={o.contact_name} />
-            <DetailField icon={Mail} label="Email" value={o.contact_email} />
-            <DetailField icon={Phone} label="Phone" value={o.contact_phone} />
-            <DetailField icon={Tag} label="Source" value={o.source} />
-            <DetailField icon={Briefcase} label="Service Interest" value={o.service_interest} />
-            <DetailField icon={Calendar} label="Expected Close" value={o.expected_close_date} />
-            <DetailField icon={User} label="Assigned To" value={o.assigned_name} />
-            <DetailField icon={Clock} label="Last Updated" value={o.updated_at?.slice(0, 10)} />
-            <DetailField icon={Target} label="Probability" value={`${o.probability}%`} />
-          </div>
-
-          {o.description && (
-            <div className="mt-6 pt-6 border-t border-slate-100">
-              <p className="text-xs font-semibold text-slate-500 uppercase mb-2">Description</p>
-              <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{o.description}</p>
-            </div>
-          )}
-
-          {o.loss_reason && (
-            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-xs font-semibold text-red-600 uppercase mb-1">Loss Reason</p>
-              <p className="text-sm text-red-700">{o.loss_reason}</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Conversation Log */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-8 py-5 border-b border-slate-200">
-          <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-violet-500" /> Conversation Log
-          </h2>
-          <p className="text-sm text-slate-500 mt-0.5">Track all conversations, follow-ups, and updates</p>
-        </div>
-
-        {/* Add Remark */}
-        <div className="px-8 py-4 bg-slate-50 border-b border-slate-200">
-          <form onSubmit={addRemark} className="flex gap-3">
-            <input value={remarkText} onChange={e => setRemarkText(e.target.value)}
-              className="flex-1 px-4 py-3 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 bg-white"
-              placeholder="Add a remark (e.g., BS 25/06 — Called client, discussed requirements...)" />
-            <button type="submit" disabled={sending || !remarkText.trim()}
-              className="px-5 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50 flex items-center gap-2 shadow-sm">
-              <Send className="w-4 h-4" /> {sending ? 'Adding...' : 'Add Remark'}
-            </button>
-          </form>
-        </div>
-
-        {/* Remarks Timeline */}
-        <div className="px-8 py-6">
-          {(!remarks || remarks.length === 0) ? (
-            <div className="text-center py-8">
-              <MessageSquare className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-              <p className="text-slate-500">No conversation history yet</p>
-              <p className="text-sm text-slate-400 mt-1">Add your first remark to start tracking this opportunity</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {remarks.map(r => (
-                <div key={r.id} className="flex gap-3">
-                  <div className="w-9 h-9 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                    <span className="text-white text-xs font-bold">{r.author?.split(' ').map(n => n[0]).join('') || '?'}</span>
-                  </div>
-                  <div className="flex-1">
-                    <div className="bg-slate-50 rounded-xl px-4 py-3 border border-slate-100">
-                      <p className="text-sm text-slate-800 leading-relaxed">{r.text}</p>
-                    </div>
-                    <p className="text-xs text-slate-400 mt-1.5 px-1">{r.author} · {r.created_at?.slice(0, 16).replace('T', ' ')}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function DetailField({ icon: Icon, label, value }) {
-  return (
-    <div className="flex items-start gap-3">
-      <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-        <Icon className="w-4 h-4 text-slate-500" />
-      </div>
-      <div>
-        <p className="text-xs font-medium text-slate-500 uppercase">{label}</p>
-        <p className="text-sm text-slate-900 mt-0.5">{value || '—'}</p>
-      </div>
-    </div>
-  )
-}

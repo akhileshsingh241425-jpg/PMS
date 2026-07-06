@@ -3,9 +3,8 @@ from datetime import datetime
 from sqlalchemy.orm import validates
 
 PROJECT_STAGES = [
-    'Initiated', 'Planning', 'Execution', 'Internal Review',
-    'Client Review', 'Completed', 'Closed',
-    'On Hold', 'Cancelled',
+    'Created', 'Planning', 'Kickoff', 'Execution', 'Internal QA', 'Client Review', 'UAT', 'Go Live', 'Completed',
+    'AMC/Support', 'Archived', 'On Hold', 'Cancelled',
 ]
 
 
@@ -15,7 +14,7 @@ class Project(db.Model):
     proj_id = db.Column(db.String(20), unique=True, nullable=False)
     title = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text)
-    stage = db.Column(db.String(50), default='Initiated', index=True)
+    stage = db.Column(db.String(50), default='Created', index=True)
     service_type = db.Column(db.String(100))
     account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False, index=True)
     pm_id = db.Column(db.Integer, db.ForeignKey('users.id'), index=True)
@@ -59,6 +58,9 @@ class Project(db.Model):
             'actual_end_date': self.actual_end_date.isoformat() if self.actual_end_date else None,
             'is_client_review_enabled': self.is_client_review_enabled,
             'team_count': len(self.team),
+            'team_names': ', '.join(tm.user.full_name for tm in self.team if tm.user) if self.team else '',
+            'creator_name': self.creator.full_name if self.creator else None,
+            'closed_by_name': None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
         }
@@ -74,6 +76,15 @@ class ProjectRemark(db.Model):
 
     author = db.relationship('User', foreign_keys=[created_by])
     project = db.relationship('Project', back_populates='remarks')
+    reactions = db.relationship('ProjectRemarkReaction', backref='remark', lazy='dynamic', cascade='all, delete-orphan')
+
+    def get_reactions(self):
+        grouped = {}
+        for r in self.reactions:
+            u = User.query.get(r.user_id)
+            name = u.full_name if u else 'Unknown'
+            grouped.setdefault(r.emoji, []).append(name)
+        return grouped
 
     def to_dict(self):
         return {
@@ -81,6 +92,7 @@ class ProjectRemark(db.Model):
             'text': self.text,
             'author': self.author.full_name if self.author else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
+            'reactions': self.get_reactions(),
         }
 
 
@@ -115,7 +127,21 @@ class ProjectDocument(db.Model):
             'reviewed_by_name': self.reviewer.full_name if self.reviewer else None,
             'uploaded_by_name': self.uploader.full_name if self.uploader else None,
             'uploaded_at': self.uploaded_at.isoformat() if self.uploaded_at else None,
+            'file_url': f'/api/projects/documents/{self.id}' if self.file_path else None,
         }
+
+
+class ProjectRemarkReaction(db.Model):
+    __tablename__ = 'project_remark_reactions'
+    id = db.Column(db.Integer, primary_key=True)
+    remark_id = db.Column(db.Integer, db.ForeignKey('project_remarks.id', ondelete='CASCADE'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    emoji = db.Column(db.String(10), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    __table_args__ = (db.UniqueConstraint('remark_id', 'user_id', 'emoji'),)
+
+    def to_dict(self):
+        return {'id': self.id, 'remark_id': self.remark_id, 'user_id': self.user_id, 'emoji': self.emoji}
 
 
 class ProjectTeam(db.Model):
@@ -137,4 +163,5 @@ class ProjectTeam(db.Model):
             'user_name': self.user.full_name if self.user else None,
             'designation': self.user.designation if self.user else None,
             'role_in_project': self.role_in_project,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
         }

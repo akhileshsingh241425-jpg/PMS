@@ -43,38 +43,29 @@ export default function Dashboard() {
     <div>
       {/* Welcome */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, {user?.first_name}</h1>
+        <h1 className="text-2xl font-serif font-bold text-slate-900">Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, {user?.first_name}</h1>
         <p className="text-slate-500 text-sm mt-1">Here's your pipeline overview</p>
       </div>
 
       {/* Stats */}
       {loading ? <StatCardSkeleton /> : (
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {cards.map(c => (
-          <Link key={c.label} to={c.to} className="group bg-white rounded-xl border border-slate-200 p-5 hover:shadow-lg hover:border-slate-300 transition-all">
-            <div className="flex items-center justify-between mb-3">
-              <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${c.color} flex items-center justify-center`}>
-                <c.icon className="w-5 h-5 text-white" />
-              </div>
-              <ArrowUpRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors" />
-            </div>
+          <Link key={c.label} to={c.to} className="border border-slate-300 p-4 hover:bg-slate-50 bg-white">
             <p className="text-2xl font-bold text-slate-900">{c.value}</p>
-            <p className="text-sm text-slate-500 mt-0.5">{c.label}</p>
+            <p className="text-xs text-slate-500 mt-0.5">{c.label}</p>
           </Link>
         ))}
       </div>
       )}
 
       {/* Quick start */}
-      <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 text-white">
-        <div className="flex items-center gap-3 mb-3">
-          <TrendingUp className="w-6 h-6 text-violet-400" />
-          <h2 className="font-semibold text-lg">Quick Start</h2>
-        </div>
-        <p className="text-slate-300 text-sm mb-4">Begin your workflow — create an opportunity, track through stages, convert to lead, and manage projects.</p>
-        <div className="flex gap-3">
-          <Link to="/opportunities" className="px-4 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-lg text-sm font-medium hover:opacity-90">New Opportunity</Link>
-          <Link to="/projects" className="px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-sm font-medium hover:bg-white/20">View Projects</Link>
+      <div className="border border-slate-300 p-5 bg-slate-50">
+        <h2 className="text-sm font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">Quick Start</h2>
+        <p className="text-xs text-slate-500 mb-3">Begin your workflow — create an opportunity, track through stages, convert to lead, and manage projects.</p>
+        <div className="flex gap-2">
+          <Link to="/opportunities" className="px-4 py-1.5 bg-blue-700 text-white text-xs font-medium hover:bg-blue-800">New Opportunity</Link>
+          <Link to="/projects" className="px-4 py-1.5 border border-slate-300 text-xs text-slate-700 hover:bg-slate-100 bg-white">View Projects</Link>
         </div>
       </div>
     </div>

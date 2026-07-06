@@ -4,6 +4,7 @@ from flask_cors import CORS
 from flask_migrate import Migrate
 from config import Config
 from models import db, bcrypt
+from email_utils import init_mail
 
 
 def create_app():
@@ -14,6 +15,7 @@ def create_app():
     db.init_app(app)
     Migrate(app, db)
     bcrypt.init_app(app)
+    init_mail(app)
     CORS(app, origins=['*'], supports_credentials=True)
 
     @app.route('/api/health', methods=['GET'])
@@ -30,7 +32,7 @@ def create_app():
     def server_error(e):
         return jsonify({'error': 'Internal server error'}), 500
 
-    from routes import auth_bp, account_bp, project_bp, activity_bp, portal_bp, queries_bp, dash_bp, meeting_req_bp
+    from routes import auth_bp, account_bp, project_bp, activity_bp, portal_bp, queries_bp, dash_bp, meeting_req_bp, notif_bp, leads_bp, opp_bp, contact_bp, enterprise_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(account_bp)
     app.register_blueprint(project_bp)
@@ -39,6 +41,11 @@ def create_app():
     app.register_blueprint(queries_bp)
     app.register_blueprint(dash_bp)
     app.register_blueprint(meeting_req_bp)
+    app.register_blueprint(notif_bp)
+    app.register_blueprint(leads_bp)
+    app.register_blueprint(opp_bp)
+    app.register_blueprint(contact_bp)
+    app.register_blueprint(enterprise_bp)
 
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')

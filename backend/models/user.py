@@ -14,6 +14,7 @@ class User(db.Model):
     designation = db.Column(db.String(100))
     role = db.Column(db.String(20), default='user')  # admin, user, client
     department = db.Column(db.String(100))
+    reporting_manager_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), index=True)
     # Client-specific fields (when role='client')
     account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), index=True)
     client_company_name = db.Column(db.String(255))
@@ -29,6 +30,8 @@ class User(db.Model):
 
     def check_password(self, pw):
         return bcrypt.check_password_hash(self.password_hash, pw)
+
+    manager = db.relationship('User', foreign_keys=[reporting_manager_id], remote_side='User.id')
 
     @property
     def full_name(self):
@@ -46,6 +49,7 @@ class User(db.Model):
             'designation': self.designation,
             'role': self.role,
             'department': self.department,
+            'reporting_manager_id': self.reporting_manager_id,
             'account_id': self.account_id,
             'client_company_name': self.client_company_name,
             'is_active': self.is_active,

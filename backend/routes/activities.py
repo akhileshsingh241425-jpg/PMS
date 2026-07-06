@@ -1,6 +1,6 @@
 from datetime import datetime
 from flask import Blueprint, request, jsonify
-from models import db, Task, Meeting, Note
+from models import db, Task, TaskChecklistItem, TaskComment, Meeting, Note
 from middleware.auth import login_required, role_required
 
 activity_bp = Blueprint('activities', __name__, url_prefix='/api')
@@ -37,6 +37,16 @@ def create_task(current_user):
     return jsonify({'task': task.to_dict()}), 201
 
 
+@activity_bp.route('/tasks/<int:tid>', methods=['GET'])
+@login_required
+def get_task(current_user, tid):
+    task = Task.query.get_or_404(tid)
+    return jsonify({
+        'task': task.to_dict(),
+        'checklist': [i.to_dict() for i in TaskChecklistItem.query.filter_by(task_id=tid).order_by(TaskChecklistItem.created_at.asc()).all()],
+        'comments': [c.to_dict() for c in TaskComment.query.filter_by(task_id=tid).order_by(TaskComment.created_at.asc()).all()],
+    })
+
 @activity_bp.route('/tasks/<int:tid>', methods=['PUT'])
 @login_required
 def update_task(current_user, tid):
@@ -47,6 +57,10 @@ def update_task(current_user, tid):
     for f in ['title', 'description', 'status', 'priority']:
         if f in data:
             setattr(task, f, data[f])
+    if 'estimated_hours' in data:
+        task.estimated_hours = float(data['estimated_hours']) if data['estimated_hours'] else None
+    if 'actual_hours' in data:
+        task.actual_hours = float(data['actual_hours']) if data['actual_hours'] else None
     if 'assigned_to' in data:
         task.assigned_to = int(data['assigned_to']) if data['assigned_to'] else None
     if data.get('status') == 'Completed':
@@ -59,6 +73,78 @@ def update_task(current_user, tid):
 @role_required('admin')
 def delete_task(current_user, tid):
     db.session.delete(Task.query.get_or_404(tid))
+    db.session.commit()
+    return jsonify({'message': 'Deleted'})
+
+
+# TASK CHECKLIST
+@activity_bp.route('/tasks/<int:tid>/checklist', methods=['GET'])
+@login_required
+def list_checklist(current_user, tid):
+    Task.query.get_or_404(tid)
+    items = TaskChecklistItem.query.filter_by(task_id=tid).order_by(TaskChecklistItem.created_at.asc()).all()
+    return jsonify({'checklist': [i.to_dict() for i in items]})
+
+@activity_bp.route('/tasks/<int:tid>/checklist', methods=['POST'])
+@login_required
+def add_checklist_item(current_user, tid):
+    Task.query.get_or_404(tid)
+    data = request.get_json()
+    if not data.get('text'):
+        return jsonify({'error': 'text required'}), 400
+    item = TaskChecklistItem(task_id=tid, text=data['text'])
+    db.session.add(item)
+    db.session.commit()
+    return jsonify({'item': item.to_dict()}), 201
+
+@activity_bp.route('/checklist/<int:cid>', methods=['PUT'])
+@login_required
+def update_checklist_item(current_user, cid):
+    item = TaskChecklistItem.query.get_or_404(cid)
+    data = request.get_json()
+    if 'is_completed' in data:
+        item.is_completed = data['is_completed']
+        item.completed_by = current_user.id if data['is_completed'] else None
+    if 'text' in data:
+        item.text = data['text']
+    db.session.commit()
+    return jsonify({'item': item.to_dict()})
+
+@activity_bp.route('/checklist/<int:cid>', methods=['DELETE'])
+@login_required
+def delete_checklist_item(current_user, cid):
+    db.session.delete(TaskChecklistItem.query.get_or_404(cid))
+    db.session.commit()
+    return jsonify({'message': 'Deleted'})
+
+
+# TASK COMMENTS
+@activity_bp.route('/tasks/<int:tid>/comments', methods=['GET'])
+@login_required
+def list_comments(current_user, tid):
+    Task.query.get_or_404(tid)
+    comments = TaskComment.query.filter_by(task_id=tid).order_by(TaskComment.created_at.asc()).all()
+    return jsonify({'comments': [c.to_dict() for c in comments]})
+
+@activity_bp.route('/tasks/<int:tid>/comments', methods=['POST'])
+@login_required
+def add_comment(current_user, tid):
+    Task.query.get_or_404(tid)
+    data = request.get_json()
+    if not data.get('text'):
+        return jsonify({'error': 'text required'}), 400
+    c = TaskComment(task_id=tid, text=data['text'], created_by=current_user.id)
+    db.session.add(c)
+    db.session.commit()
+    return jsonify({'comment': c.to_dict()}), 201
+
+@activity_bp.route('/comments/<int:cid>', methods=['DELETE'])
+@login_required
+def delete_comment(current_user, cid):
+    c = TaskComment.query.get_or_404(cid)
+    if c.created_by != current_user.id and current_user.role != 'admin':
+        return jsonify({'error': 'Not authorized'}), 403
+    db.session.delete(c)
     db.session.commit()
     return jsonify({'message': 'Deleted'})
 

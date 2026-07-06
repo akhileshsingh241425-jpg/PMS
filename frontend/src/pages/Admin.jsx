@@ -24,7 +24,7 @@ export default function Admin() {
   const [expandedUser, setExpandedUser] = useState(null)
   const [saving, setSaving] = useState({})
 
-  if (!hasRole('super_admin')) return <div className="text-center py-12 text-red-500 font-medium">Access Denied — Super Admin only</div>
+  if (!hasRole('admin')) return <div className="text-center py-12 text-red-500 font-medium">Access Denied — Admin only</div>
 
   useEffect(() => { load() }, [])
 
@@ -87,17 +87,17 @@ export default function Admin() {
     <div className="max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2"><Shield className="w-6 h-6 text-indigo-600" /> Admin Panel</h1>
+          <h1 className="text-2xl font-serif font-bold text-slate-900">Admin Panel</h1>
           <p className="text-sm text-slate-500">Manage employees, roles, permissions & project assignments</p>
         </div>
-        <button onClick={load} className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-lg text-sm hover:bg-slate-200"><RefreshCw className="w-4 h-4" /> Refresh</button>
+        <button onClick={load} className="flex items-center gap-2 px-4 py-2 bg-slate-100 border border-slate-300 text-sm hover:bg-slate-200"><RefreshCw className="w-4 h-4" /> Refresh</button>
       </div>
 
       {/* Search */}
       <div className="relative mb-6">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
         <input value={search} onChange={e => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full pl-10 pr-4 py-3 border border-slate-300 text-sm"
           placeholder="Search by name, email, or designation..." />
       </div>
 
@@ -107,13 +107,13 @@ export default function Admin() {
       {/* Employee List */}
       <div className="space-y-3">
         {filtered.map(emp => (
-          <div key={emp.id} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          <div key={emp.id} className="bg-white  border border-slate-200 overflow-hidden">
             {/* Header */}
             <div
               onClick={() => setExpandedUser(expandedUser === emp.id ? null : emp.id)}
               className="flex items-center gap-4 p-4 cursor-pointer hover:bg-slate-50"
             >
-              <div className="w-10 h-10 bg-gradient-to-br from-indigo-400 to-violet-500 rounded-full flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 bg-blue-100  flex items-center justify-center shrink-0">
                 <span className="text-white text-xs font-bold">
                   {emp.full_name?.split(' ').map(n => n[0]).join('')}
                 </span>
@@ -127,7 +127,7 @@ export default function Admin() {
                 <span className="flex items-center gap-1"><Key className="w-3 h-3" />{emp.roles?.join(', ') || 'No role'}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full ${emp.is_active ? 'bg-green-500' : 'bg-red-500'}`} />
+                <span className={`w-2 h-2  ${emp.is_active ? 'bg-green-500' : 'bg-red-500'}`} />
                 {expandedUser === emp.id ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
               </div>
             </div>
@@ -149,9 +149,9 @@ export default function Admin() {
                   {emp.projects?.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
                       {emp.projects.map(p => (
-                        <span key={p.id} className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700">
+                        <span key={p.id} className="px-3 py-1.5 bg-white border border-slate-200  text-xs font-medium text-slate-700">
                           {p.proj_id} — {p.title?.slice(0, 30)}
-                          <span className={`ml-2 px-1.5 py-0.5 rounded text-[10px] ${p.stage === 'Closed' || p.stage === 'Cancelled' ? 'bg-slate-100 text-slate-500' : 'bg-emerald-100 text-emerald-700'}`}>{p.stage}</span>
+                          <span className={`ml-2 px-1.5 py-0.5  text-[10px] ${p.stage === 'Closed' || p.stage === 'Cancelled' ? 'bg-slate-100 text-slate-500' : 'bg-emerald-100 text-emerald-700'}`}>{p.stage}</span>
                         </span>
                       ))}
                     </div>
@@ -163,13 +163,13 @@ export default function Admin() {
                   <h4 className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-1"><Key className="w-4 h-4" /> Roles</h4>
                   <div className="flex flex-wrap gap-2">
                     {[{ id: 1, code: 'super_admin', name: 'Super Admin' }, { id: 2, code: 'project_lead', name: 'Project Lead' }, { id: 3, code: 'consultant', name: 'Consultant' }, { id: 4, code: 'bd_executive', name: 'BD Executive' }, { id: 5, code: 'employee', name: 'Employee' }].map(role => (
-                      <label key={role.id} className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-xs font-medium transition-all ${
+                      <label key={role.id} className={`flex items-center gap-2 px-3 py-2  border cursor-pointer text-xs font-medium transition-all ${
                         emp.role_ids?.includes(role.id) ? 'bg-indigo-50 border-indigo-300 text-indigo-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
                       }`}>
                         <input type="checkbox" checked={emp.role_ids?.includes(role.id) || false}
                           onChange={() => toggleRole(emp, role.id)}
                           disabled={saving[`role-${emp.id}`]}
-                          className="rounded text-indigo-600 focus:ring-indigo-500" />
+                          className=" text-indigo-600 focus:ring-indigo-500" />
                         {role.name}
                       </label>
                     ))}
@@ -181,7 +181,7 @@ export default function Admin() {
                   <h4 className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-1"><Shield className="w-4 h-4" /> Module Access Permissions</h4>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                     {Object.entries(groupedPerms).map(([module, perms]) => (
-                      <div key={module} className="bg-white rounded-lg border border-slate-200 p-3">
+                      <div key={module} className="bg-white  border border-slate-200 p-3">
                         <p className="text-xs font-semibold text-slate-500 uppercase mb-2">{PERMISSION_LABELS[module]?.label || module}</p>
                         <div className="space-y-1.5">
                           {perms.map(perm => {
@@ -192,7 +192,7 @@ export default function Admin() {
                                 <button
                                   onClick={() => togglePermission(emp, perm.code, isGranted)}
                                   disabled={saving[savingKey]}
-                                  className={`w-5 h-5 rounded flex items-center justify-center text-white text-xs transition-all ${
+                                  className={`w-5 h-5  flex items-center justify-center text-white text-xs transition-all ${
                                     saving[savingKey] ? 'bg-slate-300' : isGranted ? 'bg-green-500' : 'bg-red-400'
                                   }`}
                                 >
@@ -215,3 +215,5 @@ export default function Admin() {
     </div>
   )
 }
+
+
