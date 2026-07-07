@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import db, Account, Project, ProjectDocument, Task, Meeting, Note, MeetingRequest, FindingQuery, Lead, Opportunity, Contact
+from models import db, Account, Project, ProjectDocument, Task, Meeting, Note, MeetingRequest, FindingQuery, Lead, Opportunity, Contact, ProjectTeam
 from middleware.auth import login_required, role_required
 from utils import generate_id, paginate
 
@@ -10,13 +10,6 @@ account_bp = Blueprint('accounts', __name__, url_prefix='/api/accounts')
 @login_required
 def list_accounts(current_user):
     query = Account.query
-    if current_user.role != 'admin':
-        from models import ProjectTeam, Project
-        user_project_ids = [t.project_id for t in ProjectTeam.query.filter_by(user_id=current_user.id).all()]
-        query = query.filter(db.or_(
-            Account.created_by == current_user.id,
-            Account.id.in_(db.session.query(Project.account_id).filter(Project.id.in_(user_project_ids))),
-        ))
     if s := request.args.get('search'):
         query = query.filter(db.or_(Account.company_name.ilike(f'%{s}%'), Account.acc_id.ilike(f'%{s}%')))
     if st := request.args.get('status'):
