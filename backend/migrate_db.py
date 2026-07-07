@@ -12,7 +12,11 @@ conn = sqlite3.connect(db_path)
 c = conn.cursor()
 
 MIGRATIONS = {
-    'users': [('reporting_manager_id', 'INTEGER REFERENCES users(id)')],
+    'users': [
+        ('reporting_manager_id', 'INTEGER REFERENCES users(id)'),
+        ('certifications', 'TEXT'),
+        ('experience_years', 'FLOAT'),
+    ],
     'leads': [
         ('closed_by', 'INTEGER'), ('approval_status', 'VARCHAR(20)'),
         ('approved_by', 'INTEGER'), ('approved_at', 'DATETIME'),
@@ -58,6 +62,31 @@ if 'lead_proposals' not in tables:
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )''')
     print('  lead_proposals table created')
+
+if 'project_reports' not in tables:
+    c.execute('''CREATE TABLE project_reports (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER NOT NULL REFERENCES projects(id),
+        report_type VARCHAR(20) NOT NULL, title VARCHAR(255) NOT NULL, description TEXT,
+        file_name VARCHAR(255) NOT NULL, file_path VARCHAR(500) NOT NULL, version INTEGER DEFAULT 1,
+        uploaded_by INTEGER REFERENCES users(id), uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )''')
+    print('  project_reports table created')
+
+if 'teams' not in tables:
+    c.execute('''CREATE TABLE teams (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR(100) NOT NULL,
+        description TEXT, leader_id INTEGER REFERENCES users(id),
+        created_by INTEGER REFERENCES users(id), created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )''')
+    print('  teams table created')
+
+if 'team_members' not in tables:
+    c.execute('''CREATE TABLE team_members (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, team_id INTEGER NOT NULL REFERENCES teams(id),
+        user_id INTEGER NOT NULL REFERENCES users(id), created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(team_id, user_id)
+    )''')
+    print('  team_members table created')
 
 conn.commit()
 conn.close()

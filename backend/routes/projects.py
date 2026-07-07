@@ -1,7 +1,7 @@
 from datetime import datetime
 from flask import Blueprint, request, jsonify
 import os
-from models import db, Project, ProjectRemark, ProjectRemarkReaction, ProjectDocument, ProjectTeam, Task, Meeting, Note, User, ProjectRisk, ProjectIssue, ProjectMilestone, ProjectInvoice, ProjectTimesheet, ProjectChangeRequest, ApprovalHistory
+from models import db, Project, ProjectRemark, ProjectRemarkReaction, ProjectDocument, ProjectReport, ProjectTeam, Task, Meeting, Note, User, ProjectRisk, ProjectIssue, ProjectMilestone, ProjectInvoice, ProjectTimesheet, ProjectChangeRequest, ApprovalHistory
 from models.client_portal import MeetingRequest, FindingQuery
 from middleware.auth import login_required, role_required
 from utils import validate_file, safe_filename, generate_id, paginate
@@ -21,7 +21,6 @@ PROJECT_STAGES = [
 def list_projects(current_user):
     query = Project.query
     if current_user.role != 'admin':
-        from models import ProjectTeam
         user_project_ids = [t.project_id for t in ProjectTeam.query.filter_by(user_id=current_user.id).all()]
         query = query.filter(db.or_(
             Project.pm_id == current_user.id,
@@ -295,6 +294,71 @@ def add_note(current_user, pid):
     db.session.add(n)
     db.session.commit()
     return jsonify({'note': n.to_dict()}), 201
+
+
+UPLOAD_DIR_REPORTS = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'uploads', 'reports')
+os.makedirs(UPLOAD_DIR_REPORTS, exist_ok=True)
+
+
+@project_bp.route('/<int:pid>/reports', methods=['GET'])
+@login_required
+def list_reports(current_user, pid):
+    Project.query.get_or_404(pid)
+    reports = ProjectReport.query.filter_by(project_id=pid).order_by(ProjectReport.uploaded_at.desc()).all()
+    return jsonify({'reports': [r.to_dict() for r in reports]})
+
+
+@project_bp.route('/<int:pid>/reports', methods=['POST'])
+@login_required
+def upload_report(current_user, pid):
+    Project.query.get_or_404(pid)
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file'}), 400
+    file = request.files['file']
+    valid, err = validate_file(file)
+    if not valid:
+        return jsonify({'error': err}), 400
+    report_type = request.form.get('report_type', 'working')
+    if report_type not in ('working', 'final'):
+        return jsonify({'error': 'report_type must be working or final'}), 400
+    title = request.form.get('title', file.filename)
+    fname = safe_filename(f'report_proj_{pid}', file.filename)
+    path = os.path.join(UPLOAD_DIR_REPORTS, fname)
+    file.save(path)
+    report = ProjectReport(
+        project_id=pid,
+        report_type=report_type,
+        title=title,
+        description=request.form.get('description', ''),
+        file_name=file.filename,
+        file_path=path,
+        version=int(request.form.get('version', 1)),
+        uploaded_by=current_user.id,
+    )
+    db.session.add(report)
+    db.session.commit()
+    return jsonify({'report': report.to_dict()}), 201
+
+
+@project_bp.route('/<int:pid>/reports/<int:rid>', methods=['DELETE'])
+@login_required
+def delete_report(current_user, pid, rid):
+    r = ProjectReport.query.filter_by(id=rid, project_id=pid).first_or_404()
+    if os.path.exists(r.file_path):
+        os.remove(r.file_path)
+    db.session.delete(r)
+    db.session.commit()
+    return jsonify({'message': 'Report deleted'})
+
+
+@project_bp.route('/reports/<int:rid>', methods=['GET'])
+@login_required
+def serve_report(current_user, rid):
+    r = ProjectReport.query.get_or_404(rid)
+    if not os.path.exists(r.file_path):
+        return jsonify({'error': 'File not found'}), 404
+    from flask import send_file
+    return send_file(r.file_path, as_attachment=False, download_name=r.file_name)
 
 
 @project_bp.route('/stages', methods=['GET'])

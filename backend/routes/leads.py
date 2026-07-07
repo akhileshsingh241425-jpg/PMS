@@ -194,6 +194,47 @@ def close_lead(current_user, lid):
     return jsonify({'lead': lead.to_dict()})
 
 
+@leads_bp.route('/<int:lid>/convert-to-account', methods=['POST'])
+@login_required
+def convert_lead_to_account(current_user, lid):
+    lead = Lead.query.get_or_404(lid)
+    if lead.stage not in ('Lead Closed (Won)', 'Purchase Order'):
+        return jsonify({'error': 'Lead must be in Lead Closed (Won) or Purchase Order stage to convert.'}), 400
+    if lead.account_id:
+        return jsonify({'error': 'Account already linked to this lead.'}), 400
+
+    data = request.get_json() or {}
+    acc = Account(
+        acc_id=generate_id(Account, 'ACC'),
+        company_name=data.get('company_name', lead.company_name),
+        contact_name=data.get('contact_name', lead.contact_name),
+        contact_email=data.get('contact_email', lead.contact_email),
+        contact_phone=data.get('contact_phone', lead.contact_phone),
+        website=data.get('website', lead.website),
+        address=data.get('address', lead.address),
+        state=data.get('state', lead.state),
+        pincode=data.get('pincode', lead.pincode),
+        industry=data.get('industry', lead.service_type),
+        created_by=current_user.id,
+    )
+    db.session.add(acc)
+    db.session.flush()
+
+    lead.account_id = acc.id
+    lead.stage = 'Converted to Account'
+    lead.account_created_by = current_user.id
+    lead.account_created_at = datetime.utcnow()
+    lead.is_readonly = True
+
+    _audit(lid, 'Converted to Account', lead.stage, f'Account {acc.acc_id} created', current_user.id)
+    _notify(lead.created_by, 'Lead Converted',
+            f'Lead {lead.lead_id} ({lead.company_name}) converted to account {acc.acc_id}.',
+            'lead', lead.id, 'success')
+
+    db.session.commit()
+    return jsonify({'lead': lead.to_dict(), 'account': acc.to_dict()}), 201
+
+
 @leads_bp.route('/<int:lid>/request-approval', methods=['POST'])
 @login_required
 def request_approval(current_user, lid):

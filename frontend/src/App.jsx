@@ -16,6 +16,8 @@ import AccountsDetailPage from './pages/AccountsDetailPage'
 import OpportunitiesDetailPage from './pages/OpportunitiesDetailPage'
 import LeadsDetailPage from './pages/LeadsDetailPage'
 import ProjectsDetailPage from './pages/ProjectsDetailPage'
+import TeamsPage from './pages/TeamsPage'
+import MyWorkspacePage from './pages/MyWorkspacePage'
 
 function Protected({ children }) {
   const { user } = useAuth()
@@ -55,6 +57,8 @@ export default function App() {
                 <Route path="accounts/:id" element={<AccountsDetailPage />} />
                 <Route path="projects" element={<Projects />} />
                 <Route path="projects/:id" element={<ProjectsDetailPage />} />
+                <Route path="teams" element={<TeamsPage />} />
+                <Route path="my-workspace" element={<MyWorkspacePage />} />
                 <Route path="users" element={<AdminRoute><UsersPage /></AdminRoute>} />
               </Route>
               <Route path="*" element={<Navigate to="/login" replace />} />

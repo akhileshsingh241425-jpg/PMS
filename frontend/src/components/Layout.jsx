@@ -1,15 +1,17 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { LayoutDashboard, Target, FileText, Building2, Briefcase, Users, LogOut, Bell, Search, ChevronLeft, ChevronRight } from 'lucide-react'
+import { LayoutDashboard, Target, FileText, Building2, Briefcase, Users, LogOut, Bell, Search, ChevronLeft, ChevronRight, UserCircle } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import api from '../services/api'
 
 const nav = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/my-workspace', icon: UserCircle, label: 'My Workspace' },
   { to: '/opportunities', icon: Target, label: 'Opportunities' },
   { to: '/leads', icon: FileText, label: 'Leads' },
   { to: '/accounts', icon: Building2, label: 'Accounts' },
   { to: '/projects', icon: Briefcase, label: 'Projects' },
+  { to: '/teams', icon: Users, label: 'Teams' },
 ]
 
 function NotifBell() {
@@ -80,10 +82,12 @@ function NotifBell() {
 
 const pageTitles = {
   '/': 'Dashboard',
+  '/my-workspace': 'My Workspace',
   '/opportunities': 'Opportunities',
   '/leads': 'Leads',
   '/accounts': 'Accounts',
   '/projects': 'Projects',
+  '/teams': 'Teams',
   '/users': 'Team',
 }
 
@@ -91,6 +95,29 @@ export default function Layout({ children }) {
   const { user, logout } = useAuth()
   const { pathname } = useLocation()
   const [collapsed, setCollapsed] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState([])
+  const [searchOpen, setSearchOpen] = useState(false)
+  const searchRef = useRef(null)
+  const searchTimer = useRef(null)
+
+  useEffect(() => {
+    const handleClick = (e) => { if (searchRef.current && !searchRef.current.contains(e.target)) setSearchOpen(false) }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  const doSearch = (q) => {
+    setSearchQuery(q)
+    if (searchTimer.current) clearTimeout(searchTimer.current)
+    if (q.length < 2) { setSearchResults([]); setSearchOpen(false); return }
+    searchTimer.current = setTimeout(async () => {
+      try { const r = await api.get(`/api/search?q=${encodeURIComponent(q)}`); setSearchResults(r.data.results); setSearchOpen(true) }
+      catch (e) {}
+    }, 300)
+  }
+
+  const searchColors = { lead: '#5B21B6', account: '#059669', project: '#2563EB', contact: '#DB2777' }
 
   const pageTitle = Object.entries(pageTitles).find(([path]) => pathname.startsWith(path))?.[1] || ''
 
@@ -206,13 +233,30 @@ export default function Layout({ children }) {
             </button>
             <span style={{ fontSize: 16, fontWeight: 700, color: '#1A1A2E' }}>{pageTitle}</span>
             <span style={{ width: 1, height: 16, background: '#E5E7EB' }} />
-            <div style={{ position: 'relative' }}>
+            <div ref={searchRef} style={{ position: 'relative' }}>
               <Search className="w-3.5 h-3.5" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
-              <input placeholder="Search anything..." style={{
+              <input value={searchQuery} onChange={e => doSearch(e.target.value)} placeholder="Search anything..." style={{
                 width: 240, padding: '7px 10px 7px 32px', borderRadius: 8,
                 border: '1px solid #E5E7EB', fontSize: 13, outline: 'none',
                 fontFamily: 'inherit', background: '#F9FAFB',
               }} />
+              {searchOpen && searchResults.length > 0 && (
+                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4, background: '#fff', borderRadius: 8, border: '1px solid #E5E7EB', zIndex: 100, maxHeight: 360, overflowY: 'auto', boxShadow: '0 8px 24px rgba(0,0,0,.1)' }}>
+                  {searchResults.map((r, i) => (
+                    <Link key={`${r.type}-${r.id}`} to={r.url} onClick={() => { setSearchOpen(false); setSearchQuery(''); setSearchResults([]) }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', textDecoration: 'none', borderBottom: i < searchResults.length - 1 ? '1px solid #F3F4F6' : 'none', transition: 'background .1s' }}
+                      onMouseEnter={e => e.currentTarget.style.background = '#F9FAFB'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                      <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: '#fff', background: searchColors[r.type], padding: '2px 8px', borderRadius: 4, flexShrink: 0 }}>{r.type}</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#1F2937' }}>{r.title}</div>
+                        {r.subtitle && <div style={{ fontSize: 11, color: '#9CA3AF' }}>{r.subtitle}</div>}
+                      </div>
+                      {r.label && <span style={{ fontSize: 11, color: searchColors[r.type], fontWeight: 700, flexShrink: 0 }}>{r.label}</span>}
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

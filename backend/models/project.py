@@ -165,3 +165,36 @@ class ProjectTeam(db.Model):
             'role_in_project': self.role_in_project,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
+
+
+class ProjectReport(db.Model):
+    __tablename__ = 'project_reports'
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete='CASCADE'), nullable=False, index=True)
+    report_type = db.Column(db.String(20), nullable=False)
+    title = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text)
+    file_name = db.Column(db.String(255), nullable=False)
+    file_path = db.Column(db.String(500), nullable=False)
+    version = db.Column(db.Integer, default=1)
+    uploaded_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    uploader = db.relationship('User', foreign_keys=[uploaded_by])
+    project = db.relationship('Project', backref=db.backref('reports', lazy='dynamic', order_by='ProjectReport.uploaded_at.desc()', cascade='all, delete-orphan'))
+
+    def to_dict(self):
+        from flask import request as flask_request
+        base_url = flask_request.host_url.rstrip('/') if flask_request else ''
+        return {
+            'id': self.id,
+            'project_id': self.project_id,
+            'report_type': self.report_type,
+            'title': self.title,
+            'description': self.description,
+            'file_name': self.file_name,
+            'version': self.version,
+            'uploaded_by_name': self.uploader.full_name if self.uploader else None,
+            'uploaded_at': self.uploaded_at.isoformat() if self.uploaded_at else None,
+            'file_url': f"{base_url}/api/projects/reports/{self.id}",
+        }

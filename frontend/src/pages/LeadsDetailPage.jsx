@@ -75,6 +75,9 @@ export default function LeadsDetailPage() {
   const [showProposalForm, setShowProposalForm] = useState(false)
   const [proposalForm, setProposalForm] = useState({ amount: '', version: 1, status: 'Draft', notes: '' })
   const [editingProposal, setEditingProposal] = useState(null)
+  const [showConvertModal, setShowConvertModal] = useState(false)
+  const [converting, setConverting] = useState(false)
+  const [convertForm, setConvertForm] = useState({})
   const editorRef = useRef(null)
   const fileRef = useRef(null)
   const remarkInputRef = useRef(null)
@@ -111,7 +114,29 @@ export default function LeadsDetailPage() {
     } catch (e) { toast(e.response?.data?.error || 'Failed', 'error') }
   }
 
-  const addRemark = async (e) => {
+  const openConvertModal = () => {
+    setConvertForm({
+      company_name: l?.company_name || '',
+      contact_name: l?.contact_name || '',
+      contact_email: l?.contact_email || '',
+      contact_phone: l?.contact_phone || '',
+      website: l?.website || '',
+      address: l?.address || '',
+      industry: l?.service_type || '',
+    })
+    setShowConvertModal(true)
+  }
+
+  const convertToAccount = async () => {
+    setConverting(true)
+    try {
+      const r = await api.post(`/api/leads/${id}/convert-to-account`, convertForm)
+      setShowConvertModal(false)
+      toast(`Account ${r.data.account.acc_id} created`)
+      loadDetail()
+    } catch (e) { toast(e.response?.data?.error || 'Conversion failed', 'error') }
+    finally { setConverting(false) }
+  }
     e.preventDefault(); if (!remarkText.trim()) return; setSending(true)
     try { await api.post(`/api/leads/${id}/remarks`, { text: remarkText }); setRemarkText(''); loadDetail(); toast('Remark added') }
     catch (e) { toast(e.response?.data?.error || 'Failed', 'error') }
@@ -262,6 +287,9 @@ export default function LeadsDetailPage() {
             </div>
             <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
               <ActionBtn icon={<EditIcon />} label="Edit" onClick={() => setShowEdit(true)} primary />
+              {(l.stage === 'Lead Closed (Won)' || l.stage === 'Purchase Order') && !l.account_id && (
+                <ActionBtn icon={<BriefcaseIcon />} label="Convert to Account" onClick={openConvertModal} success />
+              )}
               {l.stage === 'Lead Closed (Won)' && l.approval_status !== 'pending_approval' && l.approval_status !== 'approved' && !l.account_id && (
                 <ActionBtn label="Request Approval" onClick={requestApproval} />
               )}
@@ -549,6 +577,67 @@ export default function LeadsDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* ═══ CONVERT TO ACCOUNT MODAL ═══ */}
+      {showConvertModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={() => setShowConvertModal(false)}>
+          <div style={{ background: '#fff', borderRadius: 16, width: 520, maxWidth: '100%', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,.15)' }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '20px 24px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#1A1A2E' }}>Create Account</span>
+                <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>Convert lead to a client account</div>
+              </div>
+              <button onClick={() => setShowConvertModal(false)} style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', background: '#F0F2F8', cursor: 'pointer', fontSize: 14, color: '#6B7280', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+            </div>
+            <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 4, display: 'block' }}>Company Name <span style={{ color: '#DC2626' }}>*</span></label>
+                  <input value={convertForm.company_name} onChange={e => setConvertForm({ ...convertForm, company_name: e.target.value })} required
+                    style={{ width: '100%', padding: '10px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 4, display: 'block' }}>Contact Name</label>
+                  <input value={convertForm.contact_name} onChange={e => setConvertForm({ ...convertForm, contact_name: e.target.value })}
+                    style={{ width: '100%', padding: '10px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 4, display: 'block' }}>Email</label>
+                  <input value={convertForm.contact_email} onChange={e => setConvertForm({ ...convertForm, contact_email: e.target.value })}
+                    style={{ width: '100%', padding: '10px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 4, display: 'block' }}>Phone</label>
+                  <input value={convertForm.contact_phone} onChange={e => setConvertForm({ ...convertForm, contact_phone: e.target.value })}
+                    style={{ width: '100%', padding: '10px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 4, display: 'block' }}>Website</label>
+                  <input value={convertForm.website} onChange={e => setConvertForm({ ...convertForm, website: e.target.value })}
+                    style={{ width: '100%', padding: '10px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 4, display: 'block' }}>Industry</label>
+                  <input value={convertForm.industry} onChange={e => setConvertForm({ ...convertForm, industry: e.target.value })}
+                    style={{ width: '100%', padding: '10px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
+                </div>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 4, display: 'block' }}>Address</label>
+                  <input value={convertForm.address} onChange={e => setConvertForm({ ...convertForm, address: e.target.value })}
+                    style={{ width: '100%', padding: '10px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
+                </div>
+              </div>
+            </div>
+            <div style={{ padding: '12px 24px', borderTop: `1px solid ${C.border}`, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <button onClick={() => setShowConvertModal(false)} style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: '#F0F2F8', color: '#374151', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+              <button onClick={convertToAccount} disabled={converting || !convertForm.company_name.trim()}
+                style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: '#059669', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: converting || !convertForm.company_name.trim() ? 0.6 : 1 }}>
+                {converting ? 'Creating...' : 'Create Account'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ═══ PROPOSAL FORM MODAL ═══ */}
       {showProposalForm && (

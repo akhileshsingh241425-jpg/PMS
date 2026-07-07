@@ -15,6 +15,8 @@ class User(db.Model):
     role = db.Column(db.String(20), default='user')  # admin, user, client
     department = db.Column(db.String(100))
     reporting_manager_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), index=True)
+    certifications = db.Column(db.Text)  # JSON array
+    experience_years = db.Column(db.Float)
     # Client-specific fields (when role='client')
     account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), index=True)
     client_company_name = db.Column(db.String(255))
@@ -38,6 +40,13 @@ class User(db.Model):
         return f'{self.first_name} {self.last_name or ""}'.strip()
 
     def to_dict(self):
+        import json
+        certs = []
+        if self.certifications:
+            try: certs = json.loads(self.certifications)
+            except: pass
+        role_map = {'admin': 1, 'super_admin': 1, 'project_manager': 2, 'user': 5, 'employee': 5, 'client': 6}
+        role_id = role_map.get(self.role, 5)
         return {
             'id': self.id,
             'emp_id': self.emp_id,
@@ -50,6 +59,11 @@ class User(db.Model):
             'role': self.role,
             'department': self.department,
             'reporting_manager_id': self.reporting_manager_id,
+            'roles': [self.role],
+            'role_ids': [role_id],
+            'permissions': {},
+            'certifications': certs,
+            'experience_years': self.experience_years,
             'account_id': self.account_id,
             'client_company_name': self.client_company_name,
             'is_active': self.is_active,

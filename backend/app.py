@@ -32,7 +32,7 @@ def create_app():
     def server_error(e):
         return jsonify({'error': 'Internal server error'}), 500
 
-    from routes import auth_bp, account_bp, project_bp, activity_bp, portal_bp, queries_bp, dash_bp, meeting_req_bp, notif_bp, leads_bp, opp_bp, contact_bp, enterprise_bp
+    from routes import auth_bp, account_bp, project_bp, activity_bp, portal_bp, queries_bp, dash_bp, meeting_req_bp, notif_bp, leads_bp, opp_bp, contact_bp, enterprise_bp, admin_bp, search_bp, team_bp, me_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(account_bp)
     app.register_blueprint(project_bp)
@@ -46,6 +46,10 @@ def create_app():
     app.register_blueprint(opp_bp)
     app.register_blueprint(contact_bp)
     app.register_blueprint(enterprise_bp)
+    app.register_blueprint(admin_bp)
+    app.register_blueprint(search_bp)
+    app.register_blueprint(team_bp)
+    app.register_blueprint(me_bp)
 
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')

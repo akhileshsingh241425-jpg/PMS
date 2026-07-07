@@ -110,6 +110,10 @@ export default function ProjectsDetailPage() {
   const [editForm, setEditForm] = useState({})
   useEffect(() => { if (data?.project) setEditForm({ title: data.project.title, description: data.project.description, service_type: data.project.service_type, pm_id: data.project.pm_id || '', total_value: data.project.total_value || '', start_date: data.project.start_date || '', target_date: data.project.target_date || '' }) }, [data?.project])
   const [mstoneForm, setMstoneForm] = useState(null)
+  const [reports, setReports] = useState([])
+  const [reportUploading, setReportUploading] = useState(false)
+  const reportFileRef = useRef(null)
+  const reportTypeRef = useRef('working')
 
   const fetchData = async () => {
     try { const r = await api.get(`/api/projects/${id}`); setData(r.data) }
@@ -145,6 +149,29 @@ export default function ProjectsDetailPage() {
     const file = e.target.files?.[0]; if (!file) return; setUploading(true)
     try { const fd = new FormData(); fd.append('file', file); await api.post(`/api/projects/${id}/documents`, fd); fetchData() }
     catch (e) { toast('Upload failed', 'error') } finally { setUploading(false) }
+  }
+
+  const loadReports = async () => {
+    try { const r = await api.get(`/api/projects/${id}/reports`); setReports(r.data.reports) }
+    catch (e) {}
+  }
+
+  useEffect(() => { loadReports() }, [id])
+
+  const uploadReport = async (e, reportType) => {
+    const file = e.target.files?.[0]; if (!file) return; setReportUploading(true)
+    try {
+      const fd = new FormData(); fd.append('file', file)
+      fd.append('report_type', reportType)
+      fd.append('title', file.name)
+      await api.post(`/api/projects/${id}/reports`, fd); loadReports(); toast('Report uploaded')
+    } catch (e) { toast('Upload failed', 'error') } finally { setReportUploading(false); e.target.value = '' }
+  }
+
+  const deleteReport = async (rid) => {
+    if (!confirm('Delete this report?')) return
+    try { await api.delete(`/api/projects/${id}/reports/${rid}`); loadReports(); toast('Deleted') }
+    catch (e) { toast('Failed', 'error') }
   }
 
   const reviewDoc = async (docId, status) => {
@@ -479,6 +506,49 @@ export default function ProjectsDetailPage() {
                     )
                   })
                 )}
+              </div>
+            </div>
+
+            {/* REPORTS */}
+            <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 12 }}>
+              <SectionTitle icon={<FileIcon />} text={`Reports (${reports.length})`} />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 14 }}>
+                <div style={{ padding: 16, background: '#F8F9FC', borderRadius: 8, border: `1px dashed ${C.border}` }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 8 }}>Working Reports</div>
+                  <div style={{ fontSize: 11, color: C.muted, marginBottom: 10 }}>Preliminary, partial, interim, progress reports</div>
+                  <input ref={reportFileRef} type="file" onChange={e => uploadReport(e, reportTypeRef.current)} style={{ display: 'none' }} />
+                  <button onClick={() => { reportTypeRef.current = 'working'; reportFileRef.current?.click() }} disabled={reportUploading}
+                    style={{ padding: '8px 16px', border: 'none', borderRadius: 8, background: C.primary, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: reportUploading ? 0.5 : 1 }}>
+                    {reportUploading ? 'Uploading...' : 'Upload Working Report'}
+                  </button>
+                  {reports.filter(r => r.report_type === 'working').map(r => (
+                    <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', background: '#fff', borderRadius: 6, marginTop: 8, border: `1px solid ${C.border}` }}>
+                      <FileIcon />
+                      <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.file_name}</span>
+                      <span style={{ fontSize: 10, color: C.muted }}>v{r.version}</span>
+                      <a href={r.file_url} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: C.primary, fontWeight: 600, textDecoration: 'none' }}>View</a>
+                      <button onClick={() => deleteReport(r.id)} style={{ fontSize: 11, color: '#DC2626', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Del</button>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ padding: 16, background: '#F0FDF4', borderRadius: 8, border: `1px dashed #86EFAC` }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#065F46', marginBottom: 8 }}>Final Report</div>
+                  <div style={{ fontSize: 11, color: C.muted, marginBottom: 10 }}>Final deliverable — PDF, DOC, Excel</div>
+                  <input ref={reportFileRef} type="file" onChange={e => uploadReport(e, 'final')} style={{ display: 'none' }} />
+                  <button onClick={() => { reportTypeRef.current = 'final'; reportFileRef.current?.click() }} disabled={reportUploading}
+                    style={{ padding: '8px 16px', border: 'none', borderRadius: 8, background: '#059669', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: reportUploading ? 0.5 : 1 }}>
+                    {reportUploading ? 'Uploading...' : 'Upload Final Report'}
+                  </button>
+                  {reports.filter(r => r.report_type === 'final').map(r => (
+                    <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', background: '#fff', borderRadius: 6, marginTop: 8, border: `1px solid #86EFAC` }}>
+                      <FileIcon />
+                      <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: '#065F46', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.file_name}</span>
+                      <span style={{ fontSize: 10, color: C.muted }}>v{r.version}</span>
+                      <a href={r.file_url} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: '#059669', fontWeight: 600, textDecoration: 'none' }}>View</a>
+                      <button onClick={() => deleteReport(r.id)} style={{ fontSize: 11, color: '#DC2626', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Del</button>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 

@@ -69,6 +69,7 @@ def list_users(current_user):
     result = []
     for u in users:
         d = u.to_dict()
+        d['permissions'] = {}
         team_members = ProjectTeam.query.filter_by(user_id=u.id).all()
         d['projects'] = [{
             'id': tm.project.id,
@@ -91,11 +92,18 @@ def create_user(current_user):
         return jsonify({'error': 'Email already exists'}), 409
 
     emp_id = generate_id(User, 'EMP', field='emp_id')
+    import json as _json
+    certs = data.get('certifications')
+    if isinstance(certs, list):
+        certs = _json.dumps(certs)
     user = User(
         emp_id=emp_id, email=data['email'], first_name=data['first_name'],
         last_name=data.get('last_name'), phone=data.get('phone'),
         designation=data.get('designation'), department=data.get('department'),
         role=data.get('role', 'user'),
+        reporting_manager_id=data.get('manager_id') or data.get('reporting_manager_id'),
+        certifications=certs,
+        experience_years=data.get('experience_years'),
     )
     user.set_password(data['password'])
     db.session.add(user)
@@ -108,9 +116,17 @@ def create_user(current_user):
 def update_user(current_user, uid):
     user = User.query.get_or_404(uid)
     data = request.get_json()
-    for f in ['first_name', 'last_name', 'phone', 'designation', 'department', 'role', 'is_active']:
+    for f in ['first_name', 'last_name', 'phone', 'designation', 'department', 'role', 'is_active', 'experience_years']:
         if f in data:
             setattr(user, f, data[f])
+    if 'manager_id' in data:
+        user.reporting_manager_id = data['manager_id']
+    if 'reporting_manager_id' in data:
+        user.reporting_manager_id = data['reporting_manager_id']
+    if 'certifications' in data:
+        certs = data['certifications']
+        import json as _json
+        user.certifications = _json.dumps(certs) if isinstance(certs, list) else certs
     if data.get('password'):
         user.set_password(data['password'])
     db.session.commit()
@@ -121,6 +137,28 @@ def update_user(current_user, uid):
 @login_required
 def list_designations(current_user):
     return jsonify({'designations': DESIGNATIONS})
+
+
+@auth_bp.route('/roles', methods=['GET'])
+@login_required
+def list_roles(current_user):
+    roles = [
+        {'id': 1, 'name': 'Super Admin', 'code': 'super_admin'},
+        {'id': 2, 'name': 'Project Manager', 'code': 'project_manager'},
+        {'id': 3, 'name': 'Team Leader', 'code': 'team_leader'},
+        {'id': 4, 'name': 'Sales Representative', 'code': 'sales'},
+        {'id': 5, 'name': 'Employee', 'code': 'employee'},
+        {'id': 6, 'name': 'Client', 'code': 'client'},
+    ]
+    return jsonify({'roles': roles})
+
+
+@auth_bp.route('/departments', methods=['GET'])
+@login_required
+def list_departments(current_user):
+    depts = User.query.with_entities(User.department).filter(User.department.isnot(None)).distinct().all()
+    departments = [{'id': i+1, 'name': d[0]} for i, d in enumerate(depts) if d[0]]
+    return jsonify({'departments': departments})
 
 
 @auth_bp.route('/forgot-password', methods=['POST'])
