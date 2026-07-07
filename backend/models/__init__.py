@@ -9,7 +9,7 @@ from .account import Account
 from .project import Project, ProjectRemark, ProjectRemarkReaction, ProjectDocument, ProjectTeam
 from .activity import Task, TaskChecklistItem, TaskComment, Meeting, Note
 from .client_portal import MeetingRequest, ClientUpload, FindingQuery
-from .lead import Lead, LeadRemark, LeadRemarkReaction, LeadDocument, LeadActivity, LeadNote, LeadAuditLog
+from .lead import Lead, LeadRemark, LeadRemarkReaction, LeadDocument, LeadActivity, LeadNote, LeadAuditLog, LeadProposal
 from .opportunity import Opportunity, OpportunityRemark, OpportunityDocument, OpportunityActivity, OpportunityNote
 from .notification import Notification
 from .contact import Contact

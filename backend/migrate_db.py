@@ -49,6 +49,16 @@ if 'notifications' not in tables:
     )''')
     print('  notifications table created')
 
+if 'lead_proposals' not in tables:
+    c.execute('''CREATE TABLE lead_proposals (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, proposal_no VARCHAR(20) UNIQUE NOT NULL,
+        lead_id INTEGER NOT NULL REFERENCES leads(id), version INTEGER DEFAULT 1,
+        amount FLOAT, prepared_by INTEGER REFERENCES users(id),
+        status VARCHAR(20) DEFAULT 'Draft', notes TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )''')
+    print('  lead_proposals table created')
+
 conn.commit()
 conn.close()
 print('Migration done')

@@ -71,6 +71,10 @@ export default function LeadsDetailPage() {
   const [editActivity, setEditActivity] = useState(null)
   const [activityDesc, setActivityDesc] = useState('')
   const [viewActivity, setViewActivity] = useState(null)
+  const [proposals, setProposals] = useState([])
+  const [showProposalForm, setShowProposalForm] = useState(false)
+  const [proposalForm, setProposalForm] = useState({ amount: '', version: 1, status: 'Draft', notes: '' })
+  const [editingProposal, setEditingProposal] = useState(null)
   const editorRef = useRef(null)
   const fileRef = useRef(null)
   const remarkInputRef = useRef(null)
@@ -80,9 +84,32 @@ export default function LeadsDetailPage() {
     catch (e) {} finally { setLoading(false) }
   }
 
+  const loadProposals = async () => {
+    try { const r = await api.get(`/api/leads/${id}/proposals`); setProposals(r.data.proposals) }
+    catch (e) {}
+  }
+
   useEffect(() => { loadDetail() }, [id])
   useEffect(() => { api.get('/api/auth/users').then(r => setUsers(r.data.users)).catch(() => {}) }, [])
   useEffect(() => { api.get('/api/accounts').then(r => setAccounts(r.data.accounts)).catch(() => {}) }, [])
+  useEffect(() => { loadProposals() }, [id])
+
+  const saveProposal = async (e) => {
+    e.preventDefault()
+    if (!proposalForm.amount) { toast('Amount is required', 'error'); return }
+    try {
+      if (editingProposal) {
+        await api.put(`/api/leads/${id}/proposals/${editingProposal.id}`, proposalForm)
+        toast('Proposal updated')
+      } else {
+        await api.post(`/api/leads/${id}/proposals`, proposalForm)
+        toast('Proposal created')
+      }
+      setShowProposalForm(false); setEditingProposal(null)
+      setProposalForm({ amount: '', version: 1, status: 'Draft', notes: '' })
+      loadProposals()
+    } catch (e) { toast(e.response?.data?.error || 'Failed', 'error') }
+  }
 
   const addRemark = async (e) => {
     e.preventDefault(); if (!remarkText.trim()) return; setSending(true)
@@ -315,6 +342,35 @@ export default function LeadsDetailPage() {
               </div>
             </div>
 
+            {/* PROPOSALS */}
+            <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <SectionTitle icon={<FileIcon />} text={`Proposals (${(proposals || []).length})`} />
+                <button onClick={() => { setEditingProposal(null); setProposalForm({ amount: '', version: 1, status: 'Draft', notes: '' }); setShowProposalForm(true) }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, background: C.primary, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                  <PlusIcon /> New Proposal
+                </button>
+              </div>
+              {(!proposals || proposals.length === 0) ? (
+                <EmptyState icon={<FileIcon />} title="No proposals yet." />
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {proposals.map(p => (
+                    <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: '#F8F9FC', borderRadius: 8 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: 8, background: '#EDE9FE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: C.primary, flexShrink: 0 }}>{p.proposal_no}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, fontSize: 13, color: '#374151' }}>{p.proposal_no}</div>
+                        <div style={{ fontSize: 11, color: C.muted }}>v{p.version} · ₹{p.amount?.toLocaleString()} · {p.prepared_by_name}</div>
+                      </div>
+                      <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 99, background: p.status === 'Accepted' ? '#D1FAE5' : p.status === 'Sent' ? '#DBEAFE' : p.status === 'Draft' ? '#F3F4F6' : p.status === 'Rejected' ? '#FEE2E2' : '#FFF7ED', color: p.status === 'Accepted' ? '#065F46' : p.status === 'Sent' ? '#1E40AF' : p.status === 'Draft' ? '#6B7280' : p.status === 'Rejected' ? '#991B1B' : '#9A3412' }}>{p.status}</span>
+                      <button onClick={() => { setEditingProposal(p); setProposalForm({ amount: p.amount, version: p.version, status: p.status, notes: p.notes || '' }); setShowProposalForm(true) }}
+                        style={{ padding: '4px 8px', borderRadius: 6, border: 'none', background: '#F0F2F8', color: '#6B7280', cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>Edit</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* REMARKS */}
             <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 12 }}>
               <SectionTitle icon={<ChatIcon />} text={`Remarks (${(remarks || []).length})`} />
@@ -493,6 +549,52 @@ export default function LeadsDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* ═══ PROPOSAL FORM MODAL ═══ */}
+      {showProposalForm && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={() => setShowProposalForm(false)}>
+          <div style={{ background: '#fff', borderRadius: 16, width: 480, maxWidth: '100%', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,.15)' }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '20px 24px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 16, fontWeight: 700, color: '#1A1A2E' }}>{editingProposal ? 'Edit Proposal' : 'New Proposal'}</span>
+              <button onClick={() => setShowProposalForm(false)} style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', background: '#F0F2F8', cursor: 'pointer', fontSize: 14, color: '#6B7280', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+            </div>
+            <form onSubmit={saveProposal} style={{ padding: '20px 24px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 4, display: 'block' }}>Amount (₹)</label>
+                  <input type="number" value={proposalForm.amount} onChange={e => setProposalForm({ ...proposalForm, amount: e.target.value })} required
+                    style={{ width: '100%', padding: '10px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit' }} placeholder="e.g., 500000" />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 4, display: 'block' }}>Version</label>
+                  <input type="number" value={proposalForm.version} onChange={e => setProposalForm({ ...proposalForm, version: parseInt(e.target.value) || 1 })}
+                    style={{ width: '100%', padding: '10px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 4, display: 'block' }}>Status</label>
+                  <select value={proposalForm.status} onChange={e => setProposalForm({ ...proposalForm, status: e.target.value })}
+                    style={{ width: '100%', padding: '10px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', background: C.card }}>
+                    <option>Draft</option><option>Sent</option><option>Accepted</option><option>Rejected</option><option>Revised</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 4, display: 'block' }}>Lead</label>
+                  <div style={{ padding: '10px 12px', background: '#F0F2F8', borderRadius: 8, fontSize: 13, color: '#374151', fontWeight: 600 }}>{l.lead_id}</div>
+                </div>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 4, display: 'block' }}>Notes</label>
+                  <textarea value={proposalForm.notes} onChange={e => setProposalForm({ ...proposalForm, notes: e.target.value })} rows={3}
+                    style={{ width: '100%', padding: '10px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical' }} placeholder="Proposal notes or terms..." />
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20, paddingTop: 16, borderTop: `1px solid ${C.border}` }}>
+                <button type="button" onClick={() => setShowProposalForm(false)} style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: '#F0F2F8', color: '#374151', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+                <button type="submit" style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: C.primary, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>{editingProposal ? 'Update' : 'Create Proposal'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ═══ CREATE PROJECT MODAL ═══ */}
       {showProjectForm && (

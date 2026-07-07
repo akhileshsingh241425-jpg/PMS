@@ -1,7 +1,7 @@
 from datetime import datetime
 from flask import Blueprint, request, jsonify
 import os
-from models import db, Lead, LeadRemark, LeadDocument, LeadActivity, LeadNote, LeadAuditLog, Account, Notification, User, Project
+from models import db, Lead, LeadRemark, LeadDocument, LeadActivity, LeadNote, LeadAuditLog, LeadProposal, Account, Notification, User, Project
 from middleware.auth import login_required
 from utils import validate_file, safe_filename, generate_id, paginate
 
@@ -371,6 +371,63 @@ def get_audit_logs(current_user, lid):
     Lead.query.get_or_404(lid)
     logs = LeadAuditLog.query.filter_by(lead_id=lid).order_by(LeadAuditLog.changed_at.desc()).all()
     return jsonify({'audit_logs': [l.to_dict() for l in logs]})
+
+
+# --- Proposal routes ---
+
+@leads_bp.route('/<int:lid>/proposals', methods=['GET'])
+@login_required
+def list_proposals(current_user, lid):
+    Lead.query.get_or_404(lid)
+    proposals = LeadProposal.query.filter_by(lead_id=lid).order_by(LeadProposal.created_at.desc()).all()
+    return jsonify({'proposals': [p.to_dict() for p in proposals]})
+
+
+@leads_bp.route('/<int:lid>/proposals', methods=['POST'])
+@login_required
+def create_proposal(current_user, lid):
+    Lead.query.get_or_404(lid)
+    data = request.get_json()
+    if not data.get('amount'):
+        return jsonify({'error': 'amount is required'}), 400
+    prop = LeadProposal(
+        proposal_no=generate_id(LeadProposal, 'PROP'),
+        lead_id=lid,
+        version=data.get('version', 1),
+        amount=data.get('amount'),
+        prepared_by=current_user.id,
+        status=data.get('status', 'Draft'),
+        notes=data.get('notes'),
+    )
+    db.session.add(prop)
+    db.session.flush()
+    _audit(lid, 'Proposal Created', None, f'Proposal {prop.proposal_no} worth ₹{prop.amount}', current_user.id)
+    db.session.commit()
+    return jsonify({'proposal': prop.to_dict()}), 201
+
+
+@leads_bp.route('/<int:lid>/proposals/<int:pid>', methods=['PUT'])
+@login_required
+def update_proposal(current_user, lid, pid):
+    prop = LeadProposal.query.filter_by(id=pid, lead_id=lid).first_or_404()
+    data = request.get_json()
+    old_status = prop.status
+    for f in ['amount', 'version', 'status', 'notes']:
+        if f in data:
+            setattr(prop, f, data[f])
+    if prop.status != old_status:
+        _audit(lid, 'Proposal Status Changed', old_status, prop.status, current_user.id)
+    db.session.commit()
+    return jsonify({'proposal': prop.to_dict()})
+
+
+@leads_bp.route('/<int:lid>/proposals/<int:pid>', methods=['DELETE'])
+@login_required
+def delete_proposal(current_user, lid, pid):
+    prop = LeadProposal.query.filter_by(id=pid, lead_id=lid).first_or_404()
+    db.session.delete(prop)
+    db.session.commit()
+    return jsonify({'message': 'Proposal deleted'})
 
 
 # --- Existing sub-resource routes (unchanged) ---

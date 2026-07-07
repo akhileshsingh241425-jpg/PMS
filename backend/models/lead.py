@@ -213,6 +213,38 @@ class LeadNote(db.Model):
         }
 
 
+class LeadProposal(db.Model):
+    __tablename__ = 'lead_proposals'
+    id = db.Column(db.Integer, primary_key=True)
+    proposal_no = db.Column(db.String(20), unique=True, nullable=False)
+    lead_id = db.Column(db.Integer, db.ForeignKey('leads.id', ondelete='CASCADE'), nullable=False, index=True)
+    version = db.Column(db.Integer, default=1)
+    amount = db.Column(db.Float)
+    prepared_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
+    status = db.Column(db.String(20), default='Draft')
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    preparer = db.relationship('User', foreign_keys=[prepared_by])
+    lead = db.relationship('Lead', backref=db.backref('proposals', lazy='dynamic', order_by='LeadProposal.created_at.desc()', cascade='all, delete-orphan'))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'proposal_no': self.proposal_no,
+            'lead_id': self.lead_id,
+            'version': self.version,
+            'amount': self.amount,
+            'prepared_by': self.prepared_by,
+            'prepared_by_name': self.preparer.full_name if self.preparer else None,
+            'status': self.status,
+            'notes': self.notes,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
 class LeadRemarkReaction(db.Model):
     __tablename__ = 'lead_remark_reactions'
     id = db.Column(db.Integer, primary_key=True)
