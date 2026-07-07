@@ -137,6 +137,8 @@ export default function LeadsDetailPage() {
     } catch (e) { toast(e.response?.data?.error || 'Conversion failed', 'error') }
     finally { setConverting(false) }
   }
+
+  const addRemark = async (e) => {
     e.preventDefault(); if (!remarkText.trim()) return; setSending(true)
     try { await api.post(`/api/leads/${id}/remarks`, { text: remarkText }); setRemarkText(''); loadDetail(); toast('Remark added') }
     catch (e) { toast(e.response?.data?.error || 'Failed', 'error') }
