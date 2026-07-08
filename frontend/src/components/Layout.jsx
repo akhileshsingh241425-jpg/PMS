@@ -88,7 +88,7 @@ const pageTitles = {
   '/accounts': 'Accounts',
   '/projects': 'Projects',
   '/teams': 'Teams',
-  '/users': 'Team',
+  '/users': 'Users',
 }
 
 export default function Layout({ children }) {
@@ -148,7 +148,7 @@ export default function Layout({ children }) {
 
         {/* Nav */}
         <nav style={{ flex: 1, padding: '12px 8px', display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto' }}>
-          {[...nav, ...(user?.role === 'admin' ? [{ to: '/users', icon: Users, label: 'Team' }] : [])].map(item => {
+          {[...nav, ...(user?.role === 'admin' ? [{ to: '/users', icon: Users, label: 'Users' }] : [])].map(item => {
             const active = pathname === item.to || (item.to !== '/' && pathname.startsWith(item.to))
             const Icon = item.icon
             return (
