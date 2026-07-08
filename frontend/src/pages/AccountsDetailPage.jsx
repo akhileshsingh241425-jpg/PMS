@@ -614,7 +614,8 @@ export default function AccountsDetailPage() {
               </Table>
             </div>
           ) : (
-            <EmptyState icon={Briefcase} text="No projects found for this account" />
+            <EmptyState icon={Briefcase} text="No projects found for this account"
+              action={{ label: 'Create Project', onClick: () => navigate(`/projects?create=1&account_id=${id}`) }} />
           )}
         </SectionCard>
 
@@ -642,7 +643,8 @@ export default function AccountsDetailPage() {
               </Table>
             </div>
           ) : (
-            <EmptyState icon={TrendingUp} text="No leads found for this account" />
+            <EmptyState icon={TrendingUp} text="No leads found for this account"
+              action={{ label: 'Create Lead', onClick: () => navigate(`/leads?create=1&account_id=${id}`) }} />
           )}
         </SectionCard>
 
@@ -983,11 +985,18 @@ function Td({ children, style: extraStyle }) {
   )
 }
 
-function EmptyState({ icon: Icon, text }) {
+function EmptyState({ icon: Icon, text, action }) {
   return (
     <div style={{ textAlign: 'center', padding: '28px 0', color: '#9CA3AF' }}>
       <Icon className="w-8 h-8 mx-auto mb-2" />
-      <p style={{ fontSize: '13px', fontWeight: 500, margin: 0 }}>{text}</p>
+      <p style={{ fontSize: '13px', fontWeight: 500, margin: 0, marginBottom: action ? 12 : 0 }}>{text}</p>
+      {action && (
+        <button onClick={action.onClick} style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px',
+          background: '#5B21B6', color: '#fff', border: 'none', borderRadius: 8,
+          fontSize: 13, fontWeight: 600, cursor: 'pointer',
+        }}><Plus className="w-3.5 h-3.5" /> {action.label}</button>
+      )}
     </div>
   )
 }

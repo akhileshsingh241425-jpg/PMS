@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
 import { Plus, Search, X, Briefcase } from 'lucide-react'
@@ -27,7 +27,9 @@ export default function Projects() {
   const [search, setSearch] = useState('')
   const [stageFilter, setStageFilter] = useState('')
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [showForm, setShowForm] = useState(false)
+  const [formAccountId, setFormAccountId] = useState('')
   const [page, setPage] = useState(1)
   const [pagination, setPagination] = useState(null)
   const toast = useToast()
@@ -35,6 +37,13 @@ export default function Projects() {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); loadAccounts(); loadUsers() }, [])
+
+  useEffect(() => {
+    if (searchParams.get('create') === '1') {
+      setFormAccountId(searchParams.get('account_id') || '')
+      setShowForm(true)
+    }
+  }, [searchParams])
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { setPage(1); load() }, [stageFilter])
@@ -136,14 +145,14 @@ export default function Projects() {
         {pagination && <div className="px-3 pb-2"><Pagination page={pagination.page} pages={pagination.pages} total={pagination.total} onPageChange={setPage} /></div>}
       </div>
 
-      {showForm && <ProjectForm accounts={accounts} users={users} onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); load() }} />}
+      {showForm && <ProjectForm accounts={accounts} users={users} initialAccountId={formAccountId} onClose={() => { setShowForm(false); setFormAccountId('') }} onSaved={() => { setShowForm(false); setFormAccountId(''); load() }} />}
     </div>
   )
 }
 
 // ═══════════ PROJECT FORM ═══════════
-function ProjectForm({ accounts, users, onClose, onSaved }) {
-  const [form, setForm] = useState({ title:'', description:'', account_id:'', service_type:'', pm_id:'', total_value:'', start_date:'', target_date:'', is_client_review_enabled: false })
+function ProjectForm({ accounts, users, onClose, onSaved, initialAccountId }) {
+  const [form, setForm] = useState({ title:'', description:'', account_id: initialAccountId || '', service_type:'', pm_id:'', total_value:'', start_date:'', target_date:'', is_client_review_enabled: false })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const f = (k, v) => setForm({ ...form, [k]: v })
