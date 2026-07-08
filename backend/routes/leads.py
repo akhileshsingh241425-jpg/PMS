@@ -1,7 +1,7 @@
 from datetime import datetime
 from flask import Blueprint, request, jsonify
 import os
-from models import db, Lead, LeadRemark, LeadDocument, LeadActivity, LeadNote, LeadAuditLog, LeadProposal, Account, Notification, User, Project
+from models import db, Lead, LeadRemark, LeadDocument, LeadActivity, LeadNote, LeadAuditLog, LeadProposal, Account, Notification, User, Project, ProjectRemark, Note
 from middleware.auth import login_required
 from utils import validate_file, safe_filename, generate_id, paginate
 
@@ -237,8 +237,45 @@ def convert_lead_to_account(current_user, lid):
         created_by=current_user.id,
     )
     db.session.add(proj)
+    db.session.flush()
 
-    _audit(lid, 'Converted to Account', lead.stage, f'Account {acc.acc_id} and Project {proj.proj_id} created', current_user.id)
+    copied_count = {'remarks': 0, 'notes': 0, 'activities': 0, 'proposals': 0, 'documents': 0}
+
+    for r in LeadRemark.query.filter_by(lead_id=lid).all():
+        if not r.deleted_at:
+            pr = ProjectRemark(project_id=proj.id, text=f'[From Lead] {r.text}', created_by=r.created_by)
+            db.session.add(pr)
+            copied_count['remarks'] += 1
+
+    for n in LeadNote.query.filter_by(lead_id=lid).all():
+        pn = Note(project_id=proj.id, content=f'[From Lead] {n.content}', created_by=n.created_by)
+        db.session.add(pn)
+        copied_count['notes'] += 1
+
+    for a in LeadActivity.query.filter_by(lead_id=lid).all():
+        desc = a.description or ''
+        pn = Note(project_id=proj.id,
+                  content=f'[From Lead] Activity ({a.activity_type}): {a.title}. {desc}',
+                  created_by=a.created_by)
+        db.session.add(pn)
+        copied_count['activities'] += 1
+
+    for p in LeadProposal.query.filter_by(lead_id=lid).all():
+        pr = ProjectRemark(project_id=proj.id,
+                           text=f'[From Lead] Proposal #{p.proposal_no}: amount={p.amount}, status={p.status}, version={p.version}. {p.notes or ""}',
+                           created_by=p.prepared_by or current_user.id)
+        db.session.add(pr)
+        copied_count['proposals'] += 1
+
+    for d in LeadDocument.query.filter_by(lead_id=lid).all():
+        pr = ProjectRemark(project_id=proj.id,
+                           text=f'[From Lead] Document: {d.file_name} (category: {d.category or "N/A"})',
+                           created_by=d.uploaded_by or current_user.id)
+        db.session.add(pr)
+        copied_count['documents'] += 1
+
+    summary = f'Account {acc.acc_id} and Project {proj.proj_id} created. Copied: {copied_count["remarks"]} remarks, {copied_count["notes"]} notes, {copied_count["activities"]} activities, {copied_count["proposals"]} proposals, {copied_count["documents"]} documents.'
+    _audit(lid, 'Converted to Account', lead.stage, summary, current_user.id)
     _notify(lead.created_by, 'Lead Converted',
             f'Lead {lead.lead_id} ({lead.company_name}) converted to account {acc.acc_id} with project {proj.proj_id}.',
             'lead', lead.id, 'success')
@@ -328,8 +365,45 @@ def approve_lead(current_user, lid):
         created_by=current_user.id,
     )
     db.session.add(proj)
+    db.session.flush()
 
-    _audit(lid, 'Approved', 'Pending Approval', f'Approved & {acc_note}. Project {proj.proj_id} created.', current_user.id)
+    copied_count = {'remarks': 0, 'notes': 0, 'activities': 0, 'proposals': 0, 'documents': 0}
+
+    for r in LeadRemark.query.filter_by(lead_id=lid).all():
+        if not r.deleted_at:
+            pr = ProjectRemark(project_id=proj.id, text=f'[From Lead] {r.text}', created_by=r.created_by)
+            db.session.add(pr)
+            copied_count['remarks'] += 1
+
+    for n in LeadNote.query.filter_by(lead_id=lid).all():
+        pn = Note(project_id=proj.id, content=f'[From Lead] {n.content}', created_by=n.created_by)
+        db.session.add(pn)
+        copied_count['notes'] += 1
+
+    for a in LeadActivity.query.filter_by(lead_id=lid).all():
+        desc = a.description or ''
+        pn = Note(project_id=proj.id,
+                  content=f'[From Lead] Activity ({a.activity_type}): {a.title}. {desc}',
+                  created_by=a.created_by)
+        db.session.add(pn)
+        copied_count['activities'] += 1
+
+    for p in LeadProposal.query.filter_by(lead_id=lid).all():
+        pr = ProjectRemark(project_id=proj.id,
+                           text=f'[From Lead] Proposal #{p.proposal_no}: amount={p.amount}, status={p.status}, version={p.version}. {p.notes or ""}',
+                           created_by=p.prepared_by or current_user.id)
+        db.session.add(pr)
+        copied_count['proposals'] += 1
+
+    for d in LeadDocument.query.filter_by(lead_id=lid).all():
+        pr = ProjectRemark(project_id=proj.id,
+                           text=f'[From Lead] Document: {d.file_name} (category: {d.category or "N/A"})',
+                           created_by=d.uploaded_by or current_user.id)
+        db.session.add(pr)
+        copied_count['documents'] += 1
+
+    summary = f'Approved & {acc_note}. Project {proj.proj_id} created. Copied: {copied_count["remarks"]} remarks, {copied_count["notes"]} notes, {copied_count["activities"]} activities, {copied_count["proposals"]} proposals, {copied_count["documents"]} documents.'
+    _audit(lid, 'Approved', 'Pending Approval', summary, current_user.id)
     _notify(lead.created_by, 'Approval Approved',
             f'Your request for lead {lead.lead_id} ({lead.company_name}) was approved. {acc_note}. Project {proj.proj_id} created.',
             'lead', lead.id, 'success')

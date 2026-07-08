@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import db, Account, Project, ProjectDocument, Task, Meeting, Note, MeetingRequest, FindingQuery, Lead, Opportunity, Contact, ProjectTeam
+from models import db, Account, Project, ProjectDocument, Task, Meeting, Note, MeetingRequest, FindingQuery, Lead, LeadProposal, LeadDocument, LeadActivity, LeadNote, Opportunity, Contact, ProjectTeam
 from middleware.auth import login_required, role_required
 from utils import generate_id, paginate
 
@@ -62,6 +62,7 @@ def get_account(current_user, aid):
     opportunities = Opportunity.query.filter_by(account_id=aid).order_by(Opportunity.updated_at.desc()).all()
     leads = Lead.query.filter_by(account_id=aid).order_by(Lead.updated_at.desc()).all()
     contacts = Contact.query.filter_by(account_id=aid).order_by(Contact.is_primary.desc(), Contact.created_at.desc()).all()
+    lead_ids = [l.id for l in leads]
     return jsonify({
         'account': acc.to_dict(),
         'contacts': [c.to_dict() for c in contacts],
@@ -74,6 +75,10 @@ def get_account(current_user, aid):
         'notes': [n.to_dict() for n in Note.query.filter(Note.project_id.in_(proj_ids)).order_by(Note.created_at.desc()).all()] if proj_ids else [],
         'meeting_requests': [mr.to_dict() for mr in MeetingRequest.query.filter_by(account_id=aid).order_by(MeetingRequest.created_at.desc()).all()],
         'finding_queries': [fq.to_dict() for fq in FindingQuery.query.filter_by(account_id=aid).order_by(FindingQuery.created_at.desc()).all()],
+        'lead_proposals': [p.to_dict() for p in LeadProposal.query.filter(LeadProposal.lead_id.in_(lead_ids)).order_by(LeadProposal.created_at.desc()).all()] if lead_ids else [],
+        'lead_documents': [d.to_dict() for d in LeadDocument.query.filter(LeadDocument.lead_id.in_(lead_ids)).order_by(LeadDocument.uploaded_at.desc()).all()] if lead_ids else [],
+        'lead_activities': [a.to_dict() for a in LeadActivity.query.filter(LeadActivity.lead_id.in_(lead_ids)).order_by(LeadActivity.activity_date.desc()).all()] if lead_ids else [],
+        'lead_notes': [n.to_dict() for n in LeadNote.query.filter(LeadNote.lead_id.in_(lead_ids)).order_by(LeadNote.created_at.desc()).all()] if lead_ids else [],
     })
 
 
