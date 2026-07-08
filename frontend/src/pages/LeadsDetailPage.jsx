@@ -132,7 +132,7 @@ export default function LeadsDetailPage() {
     try {
       const r = await api.post(`/api/leads/${id}/convert-to-account`, convertForm)
       setShowConvertModal(false)
-      toast(`Account ${r.data.account.acc_id} created`)
+      toast(`Account ${r.data.account.acc_id} + Project ${r.data.project.proj_id} created`)
       loadDetail()
     } catch (e) { toast(e.response?.data?.error || 'Conversion failed', 'error') }
     finally { setConverting(false) }
@@ -158,7 +158,7 @@ export default function LeadsDetailPage() {
   }
 
   const approveLead = async () => {
-    try { const r = await api.post(`/api/leads/${id}/approve`); loadDetail(); toast(`Account ${r.data.account.acc_id} created`) }
+    try { const r = await api.post(`/api/leads/${id}/approve`); loadDetail(); toast(`Account ${r.data.account.acc_id} + Project ${r.data.project.proj_id} created`) }
     catch (e) { toast(e.response?.data?.error || 'Error', 'error') }
   }
 

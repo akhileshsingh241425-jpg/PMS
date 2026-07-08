@@ -226,13 +226,25 @@ def convert_lead_to_account(current_user, lid):
     lead.account_created_at = datetime.utcnow()
     lead.is_readonly = True
 
-    _audit(lid, 'Converted to Account', lead.stage, f'Account {acc.acc_id} created', current_user.id)
+    proj = Project(
+        proj_id=generate_id(Project, 'PRJ'),
+        title=f'{lead.company_name} - Implementation',
+        description=f'Project auto-created from lead {lead.lead_id} ({lead.company_name}). {lead.description or ""}',
+        stage='Created',
+        service_type=lead.service_type,
+        account_id=acc.id,
+        pm_id=current_user.id,
+        created_by=current_user.id,
+    )
+    db.session.add(proj)
+
+    _audit(lid, 'Converted to Account', lead.stage, f'Account {acc.acc_id} and Project {proj.proj_id} created', current_user.id)
     _notify(lead.created_by, 'Lead Converted',
-            f'Lead {lead.lead_id} ({lead.company_name}) converted to account {acc.acc_id}.',
+            f'Lead {lead.lead_id} ({lead.company_name}) converted to account {acc.acc_id} with project {proj.proj_id}.',
             'lead', lead.id, 'success')
 
     db.session.commit()
-    return jsonify({'lead': lead.to_dict(), 'account': acc.to_dict()}), 201
+    return jsonify({'lead': lead.to_dict(), 'account': acc.to_dict(), 'project': proj.to_dict()}), 201
 
 
 @leads_bp.route('/<int:lid>/request-approval', methods=['POST'])
@@ -305,15 +317,28 @@ def approve_lead(current_user, lid):
     lead.account_created_at = datetime.utcnow()
     lead.is_readonly = True
 
-    _audit(lid, 'Approved', 'Pending Approval', f'Approved & {acc_note}.', current_user.id)
+    proj = Project(
+        proj_id=generate_id(Project, 'PRJ'),
+        title=f'{lead.company_name} - Implementation',
+        description=f'Project auto-created from lead {lead.lead_id} ({lead.company_name}). {lead.description or ""}',
+        stage='Created',
+        service_type=lead.service_type,
+        account_id=acc.id,
+        pm_id=current_user.id,
+        created_by=current_user.id,
+    )
+    db.session.add(proj)
+
+    _audit(lid, 'Approved', 'Pending Approval', f'Approved & {acc_note}. Project {proj.proj_id} created.', current_user.id)
     _notify(lead.created_by, 'Approval Approved',
-            f'Your request for lead {lead.lead_id} ({lead.company_name}) was approved. {acc_note}.',
+            f'Your request for lead {lead.lead_id} ({lead.company_name}) was approved. {acc_note}. Project {proj.proj_id} created.',
             'lead', lead.id, 'success')
 
     db.session.commit()
     return jsonify({
         'lead': lead.to_dict(),
         'account': acc.to_dict(),
+        'project': proj.to_dict(),
     })
 
 
