@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import db, Lead, Account, Project, Contact
+from models import db, Lead, Account, Project, Contact, Opportunity
 from middleware.auth import login_required
 
 search_bp = Blueprint('search', __name__, url_prefix='/api/search')
@@ -39,6 +39,13 @@ def global_search(current_user):
         Contact.email.ilike(pattern),
     )).limit(5).all()
 
+    opportunities = Opportunity.query.filter(db.or_(
+        Opportunity.company_name.ilike(pattern),
+        Opportunity.contact_name.ilike(pattern),
+        Opportunity.contact_email.ilike(pattern),
+        Opportunity.opp_id.ilike(pattern),
+    )).limit(5).all()
+
     results = []
     for l in leads:
         results.append({'type': 'lead', 'id': l.id, 'label': l.lead_id, 'title': l.company_name, 'subtitle': l.contact_name, 'url': f'/leads/{l.id}'})
@@ -48,5 +55,7 @@ def global_search(current_user):
         results.append({'type': 'project', 'id': p.id, 'label': p.proj_id, 'title': p.title, 'subtitle': p.account.company_name if p.account else '', 'url': f'/projects/{p.id}'})
     for c in contacts:
         results.append({'type': 'contact', 'id': c.id, 'label': '', 'title': c.full_name, 'subtitle': c.email, 'url': f'/accounts/{c.account_id}' if c.account_id else '#'})
+    for o in opportunities:
+        results.append({'type': 'opportunity', 'id': o.id, 'label': o.opp_id, 'title': o.company_name, 'subtitle': o.contact_name, 'url': f'/opportunities/{o.id}'})
 
     return jsonify({'results': results})

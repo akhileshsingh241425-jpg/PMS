@@ -155,7 +155,8 @@ export default function Leads() {
           <table className="w-full">
             <thead>
               <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50">
-                <th className="px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider text-left">Lead ID</th>
+                <th className="px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider text-left">ID</th>
+                <th className="px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider text-left">Type</th>
                 <th className="px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider text-left">Company</th>
                 <th className="px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider text-left">Contact</th>
                 <th className="px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider text-left">Service</th>
@@ -169,9 +170,9 @@ export default function Leads() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading ? (
-                <tr><td colSpan={10}><div className="px-5 py-4"><TableSkeleton rows={5} cols={5} /></div></td></tr>
+                <tr><td colSpan={11}><div className="px-5 py-4"><TableSkeleton rows={5} cols={5} /></div></td></tr>
               ) : leads.length === 0 ? (
-                <tr><td colSpan={10}>
+                <tr><td colSpan={11}>
                   <div className="flex flex-col items-center justify-center py-16">
                     <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
                       <FileText className="w-8 h-8 text-slate-400" />
@@ -187,14 +188,21 @@ export default function Leads() {
               ) : leads.map((l, idx) => (
                 <tr key={l.id}
                   className="hover:bg-blue-50/30 cursor-pointer transition-colors group"
-                  onClick={() => navigate(`/leads/${l.id}`)}>
+                  onClick={() => navigate(l.type === 'opportunity' ? `/opportunities/${l.id}` : `/leads/${l.id}`)}>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
                         <Hash className="w-3.5 h-3.5 text-blue-600" />
                       </div>
-                      <span className="text-sm font-bold text-blue-600">{l.lead_id}</span>
+                      <span className="text-sm font-bold text-blue-600">{l.opp_id || l.lead_id}</span>
                     </div>
+                  </td>
+                  <td className="px-5 py-4">
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold text-white ${
+                      l.type === 'opportunity' ? 'bg-violet-500' : 'bg-blue-500'
+                    }`}>
+                      {l.type === 'opportunity' ? 'Opportunity' : 'Lead'}
+                    </span>
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
@@ -215,7 +223,7 @@ export default function Leads() {
                   </td>
                   <td className="px-5 py-4">
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-medium">
-                      {l.service_type || '—'}
+                      {l.service_type || l.service_interest || '—'}
                     </span>
                   </td>
                   <td className="px-5 py-4 text-sm text-slate-600">{l.source || '—'}</td>

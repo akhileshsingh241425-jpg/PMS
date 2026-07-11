@@ -1,9 +1,9 @@
 from datetime import datetime
 from flask import Blueprint, request, jsonify
 import os
-from models import db, Lead, LeadRemark, LeadDocument, LeadActivity, LeadNote, LeadAuditLog, LeadProposal, Account, Notification, User, Project, ProjectRemark, Note
+from models import db, Lead, LeadRemark, LeadDocument, LeadActivity, LeadNote, LeadAuditLog, LeadProposal, Account, Notification, User, Project, ProjectRemark, Note, Opportunity
 from middleware.auth import login_required
-from utils import validate_file, safe_filename, generate_id, paginate
+from utils import validate_file, safe_filename, generate_id, paginate, safe_float, safe_int
 
 leads_bp = Blueprint('leads', __name__, url_prefix='/api/leads')
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'uploads', 'leads')
@@ -47,30 +47,54 @@ def _get_approvers(lead):
 @leads_bp.route('', methods=['GET'])
 @login_required
 def list_leads(current_user):
-    query = Lead.query
+    lead_query = Lead.query
+    opp_query = Opportunity.query
     if current_user.role != 'admin':
-        query = query.filter(db.or_(
+        lead_query = lead_query.filter(db.or_(
             Lead.assigned_to == current_user.id,
             Lead.created_by == current_user.id,
         ))
+        opp_query = opp_query.filter(db.or_(
+            Opportunity.assigned_to == current_user.id,
+            Opportunity.created_by == current_user.id,
+        ))
     if s := request.args.get('search'):
-        query = query.filter(db.or_(
+        lead_query = lead_query.filter(db.or_(
             Lead.company_name.ilike(f'%{s}%'),
             Lead.contact_name.ilike(f'%{s}%'),
             Lead.contact_email.ilike(f'%{s}%'),
             Lead.lead_id.ilike(f'%{s}%'),
         ))
+        opp_query = opp_query.filter(db.or_(
+            Opportunity.company_name.ilike(f'%{s}%'),
+            Opportunity.contact_name.ilike(f'%{s}%'),
+            Opportunity.contact_email.ilike(f'%{s}%'),
+            Opportunity.opp_id.ilike(f'%{s}%'),
+        ))
     if st := request.args.get('stage'):
-        query = query.filter_by(stage=st)
-    query = query.order_by(Lead.updated_at.desc())
-    result = paginate(query, request)
+        lead_query = lead_query.filter_by(stage=st)
+        opp_query = opp_query.filter_by(stage=st)
+    lead_query = lead_query.order_by(Lead.updated_at.desc()).all()
+    opp_query = opp_query.order_by(Opportunity.updated_at.desc()).all()
+
+    lead_data = [{'type': 'lead', **l.to_dict()} for l in lead_query]
+    opp_data = [{'type': 'opportunity', **o.to_dict()} for o in opp_query]
+    combined = sorted(lead_data + opp_data, key=lambda x: x.get('updated_at') or x.get('created_at') or '', reverse=True)
+
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 25, type=int)
+    total = len(combined)
+    start = (page - 1) * per_page
+    end = start + per_page
+    items = combined[start:end]
+
     return jsonify({
-        'leads': [l.to_dict() for l in result['items']],
+        'leads': items,
         'pagination': {
-            'page': result['page'],
-            'per_page': result['per_page'],
-            'total': result['total'],
-            'pages': result['pages'],
+            'page': page,
+            'per_page': per_page,
+            'total': total,
+            'pages': (total + per_page - 1) // per_page if total else 0,
         },
     })
 
@@ -81,6 +105,32 @@ def create_lead(current_user):
     data = request.get_json()
     if not data.get('company_name'):
         return jsonify({'error': 'company_name is required'}), 400
+
+    existing_account = Account.query.filter_by(company_name=data['company_name']).first()
+    if existing_account:
+        source = data.get('source') or 'Existing Client'
+        opp = Opportunity(
+            opp_id=generate_id(Opportunity, 'OPP'),
+            company_name=data['company_name'],
+            contact_name=data.get('contact_name'),
+            contact_email=data.get('contact_email'),
+            contact_phone=data.get('contact_phone'),
+            source=source,
+            service_interest=data.get('service_type'),
+            description=data.get('description'),
+            stage='Prospecting',
+            estimated_value=safe_float(data.get('estimated_value')),
+            account_id=existing_account.id,
+            assigned_to=safe_int(data.get('assigned_to')),
+            created_by=current_user.id,
+        )
+        db.session.add(opp)
+        db.session.commit()
+        return jsonify({
+            'message': 'Opportunity created from existing account',
+            'opportunity': opp.to_dict(),
+            'type': 'opportunity',
+        }), 201
 
     lead = Lead(
         lead_id=generate_id(Lead, 'LD'),
@@ -106,7 +156,7 @@ def create_lead(current_user):
     db.session.flush()
     _audit(lead.id, 'Lead Created', None, f'Stage: Prospecting', current_user.id)
     db.session.commit()
-    return jsonify({'message': 'Lead created', 'lead': lead.to_dict()}), 201
+    return jsonify({'message': 'Lead created', 'lead': lead.to_dict(), 'type': 'lead'}), 201
 
 
 @leads_bp.route('/<int:lid>', methods=['GET'])
