@@ -142,6 +142,19 @@ export default function LeadsDetailPage() {
     setShowConvertModal(true)
   }
 
+  const openConvertOppModal = () => setShowConvertModal(true)
+
+  const convertOppToLead = async () => {
+    setConvertingOpp(true)
+    try {
+      const r = await api.post(`/api/opportunities/${id}/convert-to-lead`, convertForm)
+      setShowConvertModal(false)
+      toast(`Lead ${r.data.lead.lead_id} created from opportunity`)
+      loadDetail()
+    } catch (e) { toast(e.response?.data?.error || 'Conversion failed', 'error') }
+    finally { setConvertingOpp(false) }
+  }
+
   const convertToAccount = async () => {
     setConverting(true)
     try {
@@ -315,11 +328,16 @@ export default function LeadsDetailPage() {
             </div>
             <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
               {isOpportunity ? (
-                l.account_name && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, background: '#FEF3C7', fontSize: 12, fontWeight: 600, color: '#92400E' }}>
-                    🤝 Referred by: {l.account_name}
-                  </div>
-                )
+                <>
+                  {l.account_name && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, background: '#FEF3C7', fontSize: 12, fontWeight: 600, color: '#92400E' }}>
+                      🤝 Referred by: {l.account_name}
+                    </div>
+                  )}
+                  {l.stage !== 'Closed Won' && l.stage !== 'Closed Lost' && (
+                    <ActionBtn icon={<ArrowRightIcon />} label="Convert to Lead" onClick={openConvertOppModal} primary />
+                  )}
+                </>
               ) : (
                 <>
                   <ActionBtn icon={<EditIcon />} label="Edit" onClick={() => setShowEdit(true)} primary />
@@ -356,6 +374,22 @@ export default function LeadsDetailPage() {
           <KPICard icon={<PaperclipIcon />} bg="#FDF2F8" color="#DB2777" label="Documents" value={totalDocuments} />
           <KPICard icon={<CheckCircleIcon />} bg="#ECFDF5" color="#059669" label="Stage" value={l.stage === 'Converted to Account' ? 'Converted' : l.stage} />
         </div>
+
+        {/* ═══ LEAD SOURCE CARD (for referred leads) ═══ */}
+        {!isOpportunity && (l.referring_account_id || l.referring_account_name) && (
+          <div style={{ background: '#F0FDF4', borderRadius: 12, border: '1.5px solid #86EFAC', padding: '16px 20px', marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <span style={{ fontSize: 18 }}>🟢</span>
+              <span style={{ fontSize: 14, fontWeight: 800, color: '#065F46' }}>Referred by Existing Customer</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+              <InfoField icon={<TagIcon />} label="Source" value="Customer Referral" />
+              <InfoField icon={<BuildingIcon />} label="Referred By" value={l.referring_account_name || '—'} />
+              <InfoField icon={<CalendarIcon />} label="Referral Date" value={l.referral_date ? formatDate(l.referral_date) : '—'} />
+              <InfoField icon={<FileIcon />} label="Referral Opportunity ID" value={`OPP${l.referral_opportunity_id || ''}` || '—'} />
+            </div>
+          </div>
+        )}
 
         {/* ═══ PIPELINE / STAGE TABS ═══ */}
         {!isOpportunity && (
@@ -620,14 +654,14 @@ export default function LeadsDetailPage() {
         </div>
       </div>
 
-      {/* ═══ CONVERT TO ACCOUNT MODAL ═══ */}
+      {/* ═══ CONVERT TO LEAD / ACCOUNT MODAL ═══ */}
       {showConvertModal && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={() => setShowConvertModal(false)}>
           <div style={{ background: '#fff', borderRadius: 16, width: 520, maxWidth: '100%', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,.15)' }} onClick={e => e.stopPropagation()}>
             <div style={{ padding: '20px 24px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
-                <span style={{ fontSize: 16, fontWeight: 700, color: '#1A1A2E' }}>Create Account</span>
-                <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>Convert lead to a client account</div>
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#1A1A2E' }}>{isOpportunity ? 'Convert to Lead' : 'Create Account'}</span>
+                <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>{isOpportunity ? 'Create a new lead from this referral' : 'Convert lead to a client account'}</div>
               </div>
               <button onClick={() => setShowConvertModal(false)} style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', background: '#F0F2F8', cursor: 'pointer', fontSize: 14, color: '#6B7280', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
             </div>
@@ -653,11 +687,11 @@ export default function LeadsDetailPage() {
                   <input value={convertForm.contact_phone} onChange={e => setConvertForm({ ...convertForm, contact_phone: e.target.value })}
                     style={{ width: '100%', padding: '10px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
                 </div>
-                <div>
+                {isOpportunity ? null : <div>
                   <label style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 4, display: 'block' }}>Website</label>
                   <input value={convertForm.website} onChange={e => setConvertForm({ ...convertForm, website: e.target.value })}
                     style={{ width: '100%', padding: '10px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
-                </div>
+                </div>}
                 <div>
                   <label style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 4, display: 'block' }}>Industry</label>
                   <input value={convertForm.industry} onChange={e => setConvertForm({ ...convertForm, industry: e.target.value })}
@@ -673,8 +707,12 @@ export default function LeadsDetailPage() {
             <div style={{ padding: '12px 24px', borderTop: `1px solid ${C.border}`, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
               <button onClick={() => setShowConvertModal(false)} style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: '#F0F2F8', color: '#374151', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
               <button onClick={convertToAccount} disabled={converting || !convertForm.company_name.trim()}
-                style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: '#059669', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: converting || !convertForm.company_name.trim() ? 0.6 : 1 }}>
-                {converting ? 'Creating...' : 'Create Account'}
+                style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: isOpportunity ? '#5B21B6' : '#059669', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: (isOpportunity ? convertingOpp : converting) || !convertForm.company_name.trim() ? 0.6 : 1 }}
+                onClick={isOpportunity ? () => {
+                  setConvertForm({ ...convertForm, company_name: l.company_name, contact_name: l.contact_name, contact_email: l.contact_email, contact_phone: l.contact_phone })
+                  convertOppToLead()
+                } : convertToAccount}>
+                {isOpportunity ? (convertingOpp ? 'Converting...' : 'Convert to Lead') : (converting ? 'Creating...' : 'Create Account')}
               </button>
             </div>
           </div>

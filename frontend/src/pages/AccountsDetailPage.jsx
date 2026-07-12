@@ -12,7 +12,7 @@ import {
   DollarSign, TrendingUp, UserCircle,
   ChevronRight, ExternalLink, BarChart3,
   FolderOpen, ListChecks, PlusCircle,
-  Bell, Pause, Play
+  Bell, Pause, Play, XCircle
 } from 'lucide-react'
 
 const STAGE_COLORS = {
@@ -131,10 +131,14 @@ export default function AccountsDetailPage() {
   const [showOppForm, setShowOppForm] = useState(false)
   const [oppForm, setOppForm] = useState({
     company_name: '', contact_name: '', contact_email: '', contact_phone: '',
-    source: '', service_interest: '', description: '', stage: 'Prospecting',
+    source: 'Referral', service_interest: '', description: '', stage: 'Prospecting',
     estimated_value: '', expected_close_date: '', assigned_to: '',
+    referral_notes: '', location: '', product_interest: '', referral_status: 'New Referral',
   })
   const [savingOpp, setSavingOpp] = useState(false)
+  const [activeTab, setActiveTab] = useState('overview')
+  const [referralData, setReferralData] = useState(null)
+  const [referralTimeline, setReferralTimeline] = useState([])
   const fileRef = useRef(null)
   const tickerRef = useRef(null)
   const [tickerPaused, setTickerPaused] = useState(false)
@@ -168,6 +172,12 @@ export default function AccountsDetailPage() {
   }
 
   useEffect(() => { loadDetail() }, [id])
+  useEffect(() => {
+    if (activeTab === 'referrals' && id) {
+      api.get(`/api/accounts/${id}/referral-dashboard`).then(r => setReferralData(r.data)).catch(() => {})
+      api.get(`/api/accounts/${id}/referral-timeline`).then(r => setReferralTimeline(r.data.timeline || [])).catch(() => {})
+    }
+  }, [activeTab, id])
 
   const openContactForm = (c) => {
     setEditContact(c || null)
@@ -393,6 +403,29 @@ export default function AccountsDetailPage() {
           </div>
         </div>
 
+        {/* ═══ TABS ═══ */}
+        <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderBottom: '2px solid #E5E7EB' }}>
+          {[
+            { key: 'overview', label: 'Overview' },
+            { key: 'referrals', label: 'Referrals', count: opportunities.length },
+            { key: 'projects', label: 'Projects', count: projects.length },
+            { key: 'contacts', label: 'Contacts', count: contacts.length },
+          ].map(tab => (
+            <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+              style={{
+                padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                border: 'none', background: 'none', color: activeTab === tab.key ? '#5B3DF5' : '#6B7280',
+                borderBottom: activeTab === tab.key ? '2.5px solid #5B3DF5' : '2.5px solid transparent',
+                marginBottom: -2, transition: '0.15s', display: 'flex', alignItems: 'center', gap: 6,
+              }}>
+              {tab.label}
+              {tab.count !== undefined && <span style={{ fontSize: 11, background: activeTab === tab.key ? '#EDE9FE' : '#F3F4F6', color: activeTab === tab.key ? '#5B3DF5' : '#9CA3AF', padding: '1px 8px', borderRadius: 99, fontWeight: 700 }}>{tab.count}</span>}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === 'overview' && (
+        <div>
         {/* ═══ KPI CARDS ═══ */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 20 }}>
           <KpiCard icon={Target} bg="#EDE9FE" color="#5B21B6" label="Total Projects" value={projects.length} />
@@ -913,6 +946,96 @@ export default function AccountsDetailPage() {
         </div>
 
       </div>
+      )}
+
+      {activeTab === 'referrals' && (
+      <div>
+        {/* Referral Dashboard KPI */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+          <KpiCard icon={TrendingUp} bg="#EDE9FE" color="#5B21B6" label="Total Referrals" value={referralData?.total_referrals ?? opportunities.length} />
+          <KpiCard icon={Target} bg="#DBEAFE" color="#2563EB" label="Active Referrals" value={referralData?.active_referrals ?? '—'} />
+          <KpiCard icon={CheckCircle} bg="#D1FAE5" color="#059669" label="Converted Leads" value={referralData?.converted_leads ?? '—'} />
+          <KpiCard icon={DollarSign} bg="#FEF3C7" color="#D97706" label="Revenue Generated" value={referralData?.total_revenue_generated ? `₹${(referralData.total_revenue_generated / 100000).toFixed(1)}L` : '—'} />
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+          <KpiCard icon={Users} bg="#D1FAE5" color="#059669" label="Won Customers" value={referralData?.won_customers ?? '—'} />
+          <KpiCard icon={XCircle} bg="#FEE2E2" color="#DC2626" label="Lost Referrals" value={referralData?.lost_referrals ?? '—'} />
+          <KpiCard icon={BarChart3} bg="#FCE7F3" color="#DB2777" label="Conversion Rate" value={referralData?.conversion_rate != null ? `${referralData.conversion_rate}%` : '—'} />
+          <KpiCard icon={DollarSign} bg="#FFF7ED" color="#D97706" label="Total Business" value={referralData?.total_business_generated ? `₹${(referralData.total_business_generated / 100000).toFixed(1)}L` : '—'} />
+        </div>
+
+        {/* Referral Timeline */}
+        <div style={{ background: '#fff', borderRadius: '14px', border: '1px solid #ECECEC', marginBottom: 20 }}>
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid #ECECEC', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Activity className="w-4 h-4" style={{ color: '#5B3DF5' }} />
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: '#1F2937', margin: 0 }}>Referral Timeline</h3>
+          </div>
+          <div style={{ padding: '16px 20px' }}>
+            {referralTimeline.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '30px 0', color: '#9CA3AF' }}>
+                <Activity className="w-8 h-8 mx-auto mb-2" />
+                <p style={{ fontSize: 13, fontWeight: 600, margin: 0, color: '#6B7280' }}>No referral activity yet</p>
+                <p style={{ fontSize: 12, margin: '4px 0 0' }}>Create an opportunity to start</p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {referralTimeline.map((item, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 10, padding: '10px 14px', background: '#F8F9FC', borderRadius: 8, alignItems: 'center' }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%',
+                      background: item.type === 'referral_created' ? '#F59E0B' : item.type === 'converted_to_lead' ? '#3B82F6' : item.type === 'account_created' ? '#059669' : '#8B5CF6', flexShrink: 0 }} />
+                    <span style={{ fontSize: 13, color: '#374151', flex: 1 }}>{item.event}</span>
+                    <span style={{ fontSize: 11, color: '#9CA3AF' }}>{formatDate(item.date)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Opportunities list under Referrals */}
+        <SectionCard title="Opportunities / Referrals" icon={Target} iconColor="#F59E0B" count={opportunities.length}>
+          {opportunities.length > 0 ? (
+            <div>
+              <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'flex-end' }}>
+                <button onClick={() => { setOppForm({ ...oppForm, company_name: acc.company_name }); setShowOppForm(true) }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: '#5B3DF5', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                  <Plus className="w-4 h-4" /> New Referral
+                </button>
+              </div>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader headers={['Opp ID', 'Company', 'Service', 'Stage', 'Referral Status', 'Value', 'Assigned', 'Updated']} />
+                  <tbody>
+                    {opportunities.map((o, i) => (
+                      <tr key={o.id} style={{ background: i % 2 === 0 ? '#fff' : '#F9FAFB', cursor: 'pointer' }}
+                      onClick={() => navigate(`/leads/${o.id}?type=opportunity`)}
+                      onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
+                      onMouseOut={e => e.currentTarget.style.background = i % 2 === 0 ? '#fff' : '#F9FAFB'}>
+                      <Td><span style={{ fontWeight: 600, color: '#5B3DF5' }}>{o.opp_id}</span></Td>
+                      <Td>{o.company_name || '—'}</Td>
+                      <Td>{o.service_interest || '—'}</Td>
+                      <Td><BadgeDot stage={o.stage} /></Td>
+                      <Td><span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 99,
+                        background: o.referral_status === 'New Referral' ? '#FEF3C7' : o.referral_status === 'Converted' ? '#D1FAE5' : o.referral_status === 'Contacted' ? '#DBEAFE' : '#F3F4F6',
+                        color: o.referral_status === 'New Referral' ? '#92400E' : o.referral_status === 'Converted' ? '#065F46' : o.referral_status === 'Contacted' ? '#1E40AF' : '#6B7280' }}>{o.referral_status || 'New Referral'}</span></Td>
+                      <Td><span style={{ fontWeight: 700, color: '#059669' }}>{formatCurrency(o.estimated_value) || '—'}</span></Td>
+                      <Td>{o.assigned_name || '—'}</Td>
+                      <Td><span style={{ color: '#9CA3AF', fontSize: '12px' }}>{timeAgo(o.updated_at)}</span></Td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </div>
+            </div>
+          ) : (
+            <EmptyState icon={Target} text="No referrals yet"
+              action={{ label: 'Create Referral Opportunity', onClick: () => { setOppForm({ ...oppForm, company_name: acc.company_name, source: 'Referral' }); setShowOppForm(true) } }} />
+          )}
+        </SectionCard>
+      </div>
+      )}
+
+      </div>  {/* end max-width */}
 
       {/* Opportunity Form Modal */}
       {showOppForm && (
@@ -962,9 +1085,26 @@ export default function AccountsDetailPage() {
                     style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
                 </div>
               </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Location</label>
+                  <input value={oppForm.location} onChange={e => setOppForm({ ...oppForm, location: e.target.value })}
+                    style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Product Interest</label>
+                  <input value={oppForm.product_interest} onChange={e => setOppForm({ ...oppForm, product_interest: e.target.value })}
+                    style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
+                </div>
+              </div>
               <div style={{ marginBottom: 12 }}>
                 <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Description</label>
-                <textarea value={oppForm.description} onChange={e => setOppForm({ ...oppForm, description: e.target.value })} rows={3}
+                <textarea value={oppForm.description} onChange={e => setOppForm({ ...oppForm, description: e.target.value })} rows={2}
+                  style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical' }} />
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Referral Notes</label>
+                <textarea value={oppForm.referral_notes} onChange={e => setOppForm({ ...oppForm, referral_notes: e.target.value })} rows={2}
                   style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical' }} />
               </div>
             </div>
@@ -976,6 +1116,9 @@ export default function AccountsDetailPage() {
                   const payload = { ...oppForm, account_id: parseInt(id), company_name: acc.company_name }
                   if (payload.estimated_value) payload.estimated_value = parseFloat(payload.estimated_value); else delete payload.estimated_value
                   if (!payload.expected_close_date) delete payload.expected_close_date
+                  if (!payload.referral_notes) delete payload.referral_notes
+                  if (!payload.location) delete payload.location
+                  if (!payload.product_interest) delete payload.product_interest
                   await api.post('/api/opportunities', payload)
                   setShowOppForm(false); loadDetail()
                 } catch (e) { alert(e.response?.data?.error || 'Failed to create') }

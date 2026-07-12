@@ -218,33 +218,7 @@ def delete_note(current_user, oid, nid):
     return jsonify({'message': 'Note deleted'})
 
 
-@opp_bp.route('/<int:oid>/convert-to-lead', methods=['POST'])
-@login_required
-def convert_to_lead(current_user, oid):
-    opp = Opportunity.query.get_or_404(oid)
-    if opp.stage != 'Closed Won':
-        return jsonify({'error': 'Only Closed Won opportunities can be converted to leads'}), 400
-    if Lead.query.filter_by(company_name=opp.company_name, stage='Lead Converted').first():
-        return jsonify({'error': 'Lead already exists for this company'}), 400
-    lead = Lead(
-        lead_id=generate_id(Lead, 'LD'),
-        company_name=opp.company_name,
-        contact_name=opp.contact_name,
-        contact_email=opp.contact_email,
-        contact_phone=opp.contact_phone,
-        source=opp.source,
-        stage='Lead Converted',
-        subject=f'Converted from opportunity {opp.opp_id}',
-        description=opp.description,
-        estimated_value=opp.estimated_value,
-        service_type=opp.service_interest,
-        assigned_to=opp.assigned_to,
-        created_by=current_user.id,
-    )
-    db.session.add(lead)
-    opp.stage = 'Closed Won'
-    db.session.commit()
-    return jsonify({'message': 'Converted to lead', 'lead': lead.to_dict()}), 201
+
 
 
 @opp_bp.route('/<int:oid>/close-won', methods=['POST'])
@@ -337,18 +311,23 @@ def convert_opp_to_lead(current_user, oid):
         contact_name=data.get('contact_name') or opp.contact_name,
         contact_email=data.get('contact_email') or opp.contact_email,
         contact_phone=data.get('contact_phone') or opp.contact_phone,
-        source=data.get('source') or opp.source,
+        source='Customer Referral',
         service_type=data.get('service_type') or opp.service_interest,
         description=data.get('description') or opp.description,
         estimated_value=data.get('estimated_value') or opp.estimated_value,
         assigned_to=safe_int(data.get('assigned_to')) or opp.assigned_to,
         stage='Prospecting',
         created_by=current_user.id,
+        referral_opportunity_id=opp.id,
+        referring_account_id=opp.account_id,
+        referral_date=datetime.utcnow(),
     )
     db.session.add(lead)
     db.session.flush()
     from models import LeadAuditLog
     log = LeadAuditLog(lead_id=lead.id, action='Lead Created', new_value='Stage: Prospecting', changed_by=current_user.id)
     db.session.add(log)
+    opp.referral_status = 'Converted'
+    opp.referral_lead_id = lead.id
     db.session.commit()
     return jsonify({'message': 'Lead created from opportunity', 'lead': lead.to_dict()}), 201

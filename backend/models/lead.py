@@ -43,6 +43,9 @@ class Lead(db.Model):
     closed_on = db.Column(db.DateTime)
     closed_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
     account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), index=True)
+    referral_opportunity_id = db.Column(db.Integer, db.ForeignKey('opportunities.id'))
+    referring_account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'))
+    referral_date = db.Column(db.DateTime)
 
     approval_status = db.Column(db.String(20))
     approved_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
@@ -60,6 +63,8 @@ class Lead(db.Model):
     closer = db.relationship('User', foreign_keys=[closed_by])
     approver = db.relationship('User', foreign_keys=[approved_by])
     account_creator = db.relationship('User', foreign_keys=[account_created_by])
+    referral_opportunity = db.relationship('Opportunity', foreign_keys=[referral_opportunity_id])
+    referring_account = db.relationship('Account', foreign_keys=[referring_account_id])
 
     def to_dict(self):
         return {
@@ -97,6 +102,10 @@ class Lead(db.Model):
             'account_created_by_name': self.account_creator.full_name if self.account_creator else None,
             'account_created_at': self.account_created_at.isoformat() if self.account_created_at else None,
             'is_readonly': self.is_readonly,
+            'referral_opportunity_id': self.referral_opportunity_id,
+            'referring_account_id': self.referring_account_id,
+            'referring_account_name': self.referring_account.company_name if self.referring_account else None,
+            'referral_date': self.referral_date.isoformat() if self.referral_date else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
         }

@@ -21,6 +21,11 @@ class Account(db.Model):
     industry = db.Column(db.String(100))
     account_type = db.Column(db.String(20), default='B2B')
     status = db.Column(db.String(20), default='Active')
+    acquisition_source = db.Column(db.String(50))
+    referred_by_account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'))
+    referral_opportunity_id = db.Column(db.Integer)
+    converted_lead_id = db.Column(db.Integer)
+    conversion_date = db.Column(db.DateTime)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -28,6 +33,7 @@ class Account(db.Model):
     creator = db.relationship('User', foreign_keys=[created_by])
     projects = db.relationship('Project', back_populates='account', lazy='dynamic')
     contacts = db.relationship('Contact', backref='account', lazy='dynamic', cascade='all, delete-orphan')
+    referred_by = db.relationship('Account', foreign_keys=[referred_by_account_id], remote_side='Account.id')
 
     def to_dict(self, counts=None):
         return {
@@ -52,6 +58,12 @@ class Account(db.Model):
             'leads_count': counts['leads'] if counts and 'leads' in counts else 0,
             'opportunities_count': counts['opportunities'] if counts and 'opportunities' in counts else 0,
             'contacts_count': counts['contacts'] if counts and 'contacts' in counts else self.contacts.count() if hasattr(self, 'contacts') else 0,
+            'acquisition_source': self.acquisition_source,
+            'referred_by_account_id': self.referred_by_account_id,
+            'referred_by_name': self.referred_by.company_name if self.referred_by else None,
+            'referral_opportunity_id': self.referral_opportunity_id,
+            'converted_lead_id': self.converted_lead_id,
+            'conversion_date': self.conversion_date.isoformat() if self.conversion_date else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
         }

@@ -255,6 +255,7 @@ def convert_lead_to_account(current_user, lid):
         return jsonify({'error': 'Account already linked to this lead.'}), 400
 
     data = request.get_json() or {}
+    is_referred = lead.referral_opportunity_id is not None or lead.referring_account_id is not None
     acc = Account(
         acc_id=generate_id(Account, 'ACC'),
         company_name=data.get('company_name', lead.company_name),
@@ -266,6 +267,11 @@ def convert_lead_to_account(current_user, lid):
         state=data.get('state', lead.state),
         pincode=data.get('pincode', lead.pincode),
         industry=data.get('industry', lead.service_type),
+        acquisition_source='Customer Referral' if is_referred else data.get('acquisition_source'),
+        referred_by_account_id=lead.referring_account_id if is_referred else None,
+        referral_opportunity_id=lead.referral_opportunity_id if is_referred else None,
+        converted_lead_id=lead.id,
+        conversion_date=datetime.utcnow(),
         created_by=current_user.id,
     )
     db.session.add(acc)
@@ -382,6 +388,7 @@ def approve_lead(current_user, lid):
         acc = existing_acc
         acc_note = f'linked to existing account {acc.acc_id}'
     else:
+        is_referred = lead.referral_opportunity_id is not None or lead.referring_account_id is not None
         acc = Account(
             acc_id=generate_id(Account, 'ACC'),
             company_name=lead.company_name,
@@ -393,6 +400,11 @@ def approve_lead(current_user, lid):
             state=lead.state,
             pincode=lead.pincode,
             industry=lead.service_type,
+            acquisition_source='Customer Referral' if is_referred else None,
+            referred_by_account_id=lead.referring_account_id if is_referred else None,
+            referral_opportunity_id=lead.referral_opportunity_id if is_referred else None,
+            converted_lead_id=lead.id,
+            conversion_date=datetime.utcnow(),
             created_by=current_user.id,
         )
         db.session.add(acc)

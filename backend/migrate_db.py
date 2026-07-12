@@ -22,6 +22,9 @@ MIGRATIONS = {
         ('approved_by', 'INTEGER'), ('approved_at', 'DATETIME'),
         ('rejection_reason', 'TEXT'), ('account_created_by', 'INTEGER'),
         ('account_created_at', 'DATETIME'), ('is_readonly', 'BOOLEAN'),
+        ('referral_opportunity_id', 'INTEGER'),
+        ('referring_account_id', 'INTEGER'),
+        ('referral_date', 'DATETIME'),
     ],
     'lead_remarks': [
         ('updated_at', 'DATETIME'), ('deleted_at', 'DATETIME'),
@@ -35,6 +38,18 @@ MIGRATIONS = {
         ('probability', 'INTEGER'),
         ('expected_close_date', 'DATE'),
         ('loss_reason', 'TEXT'),
+        ('referral_status', 'VARCHAR(30)'),
+        ('referral_notes', 'TEXT'),
+        ('location', 'VARCHAR(255)'),
+        ('product_interest', 'VARCHAR(255)'),
+        ('referral_lead_id', 'INTEGER'),
+    ],
+    'accounts': [
+        ('acquisition_source', 'VARCHAR(50)'),
+        ('referred_by_account_id', 'INTEGER'),
+        ('referral_opportunity_id', 'INTEGER'),
+        ('converted_lead_id', 'INTEGER'),
+        ('conversion_date', 'DATETIME'),
     ],
 }
 
@@ -97,6 +112,16 @@ if 'team_members' not in tables:
         UNIQUE(team_id, user_id)
     )''')
     print('  team_members table created')
+
+if 'referral_status_log' not in tables:
+    c.execute('''CREATE TABLE referral_status_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        opportunity_id INTEGER NOT NULL REFERENCES opportunities(id),
+        from_status VARCHAR(30), to_status VARCHAR(30) NOT NULL,
+        changed_by INTEGER REFERENCES users(id),
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )''')
+    print('  referral_status_log table created')
 
 conn.commit()
 conn.close()

@@ -35,10 +35,16 @@ class Opportunity(db.Model):
     created_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    referral_status = db.Column(db.String(30), default='New Referral')
+    referral_notes = db.Column(db.Text)
+    location = db.Column(db.String(255))
+    product_interest = db.Column(db.String(255))
+    referral_lead_id = db.Column(db.Integer, db.ForeignKey('leads.id'))
 
     assignee = db.relationship('User', foreign_keys=[assigned_to])
     creator = db.relationship('User', foreign_keys=[created_by])
     account = db.relationship('Account', foreign_keys=[account_id])
+    referral_lead = db.relationship('Lead', foreign_keys=[referral_lead_id])
 
     def to_dict(self):
         return {
@@ -62,6 +68,11 @@ class Opportunity(db.Model):
             'assigned_name': self.assignee.full_name if self.assignee else None,
             'created_by': self.created_by,
             'created_by_name': self.creator.full_name if self.creator else None,
+            'referral_status': self.referral_status,
+            'referral_notes': self.referral_notes,
+            'location': self.location,
+            'product_interest': self.product_interest,
+            'referral_lead_id': self.referral_lead_id,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
         }
