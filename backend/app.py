@@ -56,6 +56,9 @@ def create_app():
     def catch_all(path):
         if path.startswith('api/'):
             return jsonify({'error': 'Not found'}), 404
+        file_path = os.path.join(frontend_dir, path)
+        if os.path.isfile(file_path):
+            return send_from_directory(frontend_dir, path)
         return send_from_directory(frontend_dir, 'index.html')
 
     with app.app_context():
