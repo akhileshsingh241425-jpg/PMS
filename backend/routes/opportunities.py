@@ -64,6 +64,10 @@ def create_opportunity(current_user):
         account_id=safe_int(data.get('account_id')),
         assigned_to=safe_int(data.get('assigned_to')),
         created_by=current_user.id,
+        referral_status=data.get('referral_status'),
+        referral_notes=data.get('referral_notes'),
+        location=data.get('location'),
+        product_interest=data.get('product_interest'),
     )
     db.session.add(opp)
     db.session.commit()
@@ -93,7 +97,8 @@ def update_opportunity(current_user, oid):
     opp = Opportunity.query.get_or_404(oid)
     data = request.get_json()
     for field in ['company_name', 'contact_name', 'contact_email', 'contact_phone',
-                  'source', 'service_interest', 'description', 'stage', 'loss_reason']:
+                  'source', 'service_interest', 'description', 'stage', 'loss_reason',
+                  'referral_status', 'referral_notes', 'location', 'product_interest']:
         if field in data:
             setattr(opp, field, data[field])
     if 'estimated_value' in data:
