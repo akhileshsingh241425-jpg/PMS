@@ -32,7 +32,7 @@ export default function Dashboard() {
 
   const cards = [
     { label: 'Active Projects', value: stats.projects, icon: Briefcase, color: 'from-orange-500 to-amber-600', to: '/projects' },
-    { label: 'Opportunities', value: stats.opps, icon: Target, color: 'from-violet-500 to-indigo-600', to: '/opportunities' },
+    { label: 'Opportunities', value: stats.opps, icon: Target, color: 'from-violet-500 to-indigo-600', to: '/leads' },
     { label: 'Leads', value: stats.leads, icon: FileText, color: 'from-blue-500 to-cyan-600', to: '/leads' },
     { label: 'Accounts', value: stats.accounts, icon: Building2, color: 'from-emerald-500 to-teal-600', to: '/accounts' },
     { label: 'Open Queries', value: stats.open_queries, icon: HelpCircle, color: 'from-red-500 to-pink-600', to: '/projects' },
@@ -62,9 +62,9 @@ export default function Dashboard() {
       {/* Quick start */}
       <div className="border border-slate-300 p-5 bg-slate-50">
         <h2 className="text-sm font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">Quick Start</h2>
-        <p className="text-xs text-slate-500 mb-3">Begin your workflow — create an opportunity, track through stages, convert to lead, and manage projects.</p>
+        <p className="text-xs text-slate-500 mb-3">Begin your workflow — create a lead, track through stages, and manage projects.</p>
         <div className="flex gap-2">
-          <Link to="/opportunities" className="px-4 py-1.5 bg-blue-700 text-white text-xs font-medium hover:bg-blue-800">New Opportunity</Link>
+          <Link to="/leads" className="px-4 py-1.5 bg-blue-700 text-white text-xs font-medium hover:bg-blue-800">New Opportunity</Link>
           <Link to="/projects" className="px-4 py-1.5 border border-slate-300 text-xs text-slate-700 hover:bg-slate-100 bg-white">View Projects</Link>
         </div>
       </div>

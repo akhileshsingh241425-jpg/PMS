@@ -12,7 +12,6 @@ import UsersPage from './pages/Users'
 import { ClientLogin, ClientPortalDashboard } from './pages/ClientPortal'
 import InfocusitCRM from './pages/InfocusitCRM'
 import AccountsDetailPage from './pages/AccountsDetailPage'
-import OpportunitiesDetailPage from './pages/OpportunitiesDetailPage'
 import LeadsDetailPage from './pages/LeadsDetailPage'
 import ProjectsDetailPage from './pages/ProjectsDetailPage'
 import TeamsPage from './pages/TeamsPage'
@@ -48,7 +47,6 @@ export default function App() {
               <Route path="/crm" element={<InfocusitCRM />} />
               <Route path="/" element={<Protected><AppLayout /></Protected>}>
                 <Route index element={<Dashboard />} />
-                <Route path="opportunities/:id" element={<OpportunitiesDetailPage />} />
                 <Route path="leads" element={<Leads />} />
                 <Route path="leads/:id" element={<LeadsDetailPage />} />
                 <Route path="accounts" element={<Accounts />} />

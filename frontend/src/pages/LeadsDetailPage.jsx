@@ -53,6 +53,7 @@ export default function LeadsDetailPage() {
   const toast = useToast()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [isOpportunity, setIsOpportunity] = useState(false)
   const [remarkText, setRemarkText] = useState('')
   const [sending, setSending] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -83,11 +84,21 @@ export default function LeadsDetailPage() {
   const remarkInputRef = useRef(null)
 
   const loadDetail = async () => {
-    try { const r = await api.get(`/api/leads/${id}`); setData(r.data) }
-    catch (e) {} finally { setLoading(false) }
+    try {
+      const r = await api.get(`/api/leads/${id}`)
+      setData(r.data)
+      setIsOpportunity(false)
+    } catch (e) {
+      try {
+        const r = await api.get(`/api/opportunities/${id}`)
+        setData(r.data)
+        setIsOpportunity(true)
+      } catch (e2) {}
+    } finally { setLoading(false) }
   }
 
   const loadProposals = async () => {
+    if (isOpportunity) return
     try { const r = await api.get(`/api/leads/${id}/proposals`); setProposals(r.data.proposals) }
     catch (e) {}
   }
@@ -95,7 +106,7 @@ export default function LeadsDetailPage() {
   useEffect(() => { loadDetail() }, [id])
   useEffect(() => { api.get('/api/auth/users').then(r => setUsers(r.data.users)).catch(() => {}) }, [])
   useEffect(() => { api.get('/api/accounts').then(r => setAccounts(r.data.accounts)).catch(() => {}) }, [])
-  useEffect(() => { loadProposals() }, [id])
+  useEffect(() => { if (!isOpportunity) loadProposals() }, [id, isOpportunity])
 
   const saveProposal = async (e) => {
     e.preventDefault()
@@ -252,7 +263,18 @@ export default function LeadsDetailPage() {
   )
   if (!data) return null
 
-  const { lead: l, remarks, activities, documents, notes, audit_logs } = data
+  let { lead: l, opportunity: oppData, remarks, activities, documents, notes, audit_logs } = data
+  if (isOpportunity && oppData) {
+    l = {
+      ...oppData,
+      lead_id: oppData.opp_id,
+      service_type: oppData.service_interest,
+      type: 'opportunity',
+      approval_status: null,
+      website: null, address: null, state: null, subject: null,
+      closed_on: oppData.expected_close_date,
+    }
+  }
   const isClosedOrConverted = TERMINAL_STAGES.includes(l.stage)
   const winProb = l.stage === 'Lead Closed (Won)' || l.stage === 'Converted to Account' ? 100 : l.stage === 'Prospecting' ? 10 : l.stage === 'Lead Qualification' ? 20 : l.stage === 'Demo or Meeting' ? 40 : l.stage === 'Proposal' ? 60 : l.stage === 'Negotiation & Commitment' ? 75 : l.stage === 'Purchase Order' ? 90 : 0
   const totalDocuments = (documents || []).length

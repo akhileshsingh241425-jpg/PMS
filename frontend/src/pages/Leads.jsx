@@ -188,7 +188,7 @@ export default function Leads() {
               ) : leads.map((l, idx) => (
                 <tr key={l.id}
                   className="hover:bg-blue-50/30 cursor-pointer transition-colors group"
-                  onClick={() => navigate(l.type === 'opportunity' ? `/opportunities/${l.id}` : `/leads/${l.id}`)}>
+                  onClick={() => navigate(`/leads/${l.id}`)}>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
