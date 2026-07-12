@@ -128,6 +128,13 @@ export default function AccountsDetailPage() {
   const [showContactForm, setShowContactForm] = useState(false)
   const [editContact, setEditContact] = useState(null)
   const [contactForm, setContactForm] = useState({ salutation: '', first_name: '', last_name: '', email: '', phone: '', mobile: '', designation: '', department: '', is_primary: false, notes: '' })
+  const [showOppForm, setShowOppForm] = useState(false)
+  const [oppForm, setOppForm] = useState({
+    company_name: '', contact_name: '', contact_email: '', contact_phone: '',
+    source: '', service_interest: '', description: '', stage: 'Prospecting',
+    estimated_value: '', expected_close_date: '', assigned_to: '',
+  })
+  const [savingOpp, setSavingOpp] = useState(false)
   const fileRef = useRef(null)
   const tickerRef = useRef(null)
   const [tickerPaused, setTickerPaused] = useState(false)
@@ -649,30 +656,39 @@ export default function AccountsDetailPage() {
         </SectionCard>
 
         {/* ═══ OPPORTUNITIES ═══ */}
-        <SectionCard title="Opportunities" icon={Target} iconColor="#F59E0B" count={opportunities.length} onViewAll={() => navigate('/opportunities')}>
+        <SectionCard title="Opportunities" icon={Target} iconColor="#F59E0B" count={opportunities.length}>
           {opportunities.length > 0 ? (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader headers={['Opp ID', 'Service', 'Stage', 'Value', 'Assigned', 'Updated']} />
-                <tbody>
-                  {opportunities.map((o, i) => (
-                    <tr key={o.id} style={{ background: i % 2 === 0 ? '#fff' : '#F9FAFB', cursor: 'pointer', transition: 'background .15s' }}
-                      onClick={() => navigate(`/opportunities/${o.id}`)}
-                      onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
-                      onMouseOut={e => e.currentTarget.style.background = i % 2 === 0 ? '#fff' : '#F9FAFB'}>
-                      <Td><span style={{ fontWeight: 600, color: '#5B3DF5' }}>{o.opp_id}</span></Td>
-                      <Td>{o.service_interest || '—'}</Td>
-                      <Td><BadgeDot stage={o.stage} /></Td>
-                      <Td><span style={{ fontWeight: 700, color: '#059669' }}>{formatCurrency(o.estimated_value) || '—'}</span></Td>
-                      <Td>{o.assigned_name || '—'}</Td>
-                      <Td><span style={{ color: '#9CA3AF', fontSize: '12px' }}>{timeAgo(o.updated_at)}</span></Td>
-                    </tr>
-                  ))}
-                </tbody>
-              </Table>
+            <div>
+              <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'flex-end' }}>
+                <button onClick={() => { setOppForm({ ...oppForm, company_name: acc.company_name }); setShowOppForm(true) }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: '#5B3DF5', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                  <Plus className="w-4 h-4" /> Create Opportunity
+                </button>
+              </div>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader headers={['Opp ID', 'Service', 'Stage', 'Value', 'Assigned', 'Updated']} />
+                  <tbody>
+                    {opportunities.map((o, i) => (
+                      <tr key={o.id} style={{ background: i % 2 === 0 ? '#fff' : '#F9FAFB', cursor: 'pointer', transition: 'background .15s' }}
+                        onClick={() => navigate(`/opportunities/${o.id}`)}
+                        onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
+                        onMouseOut={e => e.currentTarget.style.background = i % 2 === 0 ? '#fff' : '#F9FAFB'}>
+                        <Td><span style={{ fontWeight: 600, color: '#5B3DF5' }}>{o.opp_id}</span></Td>
+                        <Td>{o.service_interest || '—'}</Td>
+                        <Td><BadgeDot stage={o.stage} /></Td>
+                        <Td><span style={{ fontWeight: 700, color: '#059669' }}>{formatCurrency(o.estimated_value) || '—'}</span></Td>
+                        <Td>{o.assigned_name || '—'}</Td>
+                        <Td><span style={{ color: '#9CA3AF', fontSize: '12px' }}>{timeAgo(o.updated_at)}</span></Td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </div>
             </div>
           ) : (
-            <EmptyState icon={Target} text="No opportunities found for this account" />
+            <EmptyState icon={Target} text="No opportunities found for this account"
+              action={{ label: 'Create Opportunity', onClick: () => { setOppForm({ ...oppForm, company_name: acc.company_name }); setShowOppForm(true) } }} />
           )}
         </SectionCard>
 
@@ -897,6 +913,81 @@ export default function AccountsDetailPage() {
         </div>
 
       </div>
+
+      {/* Opportunity Form Modal */}
+      {showOppForm && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={() => setShowOppForm(false)}>
+          <div style={{ background: '#fff', borderRadius: 16, width: 500, maxWidth: '100%', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,.15)' }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 16, fontWeight: 700, color: '#1A1A2E' }}>Create Opportunity for {acc.company_name}</span>
+              <button onClick={() => setShowOppForm(false)} style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', background: '#F0F2F8', cursor: 'pointer', fontSize: 14, color: '#6B7280' }}>✕</button>
+            </div>
+            <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1 }}>
+              {['contact_name', 'contact_email', 'contact_phone'].map(f => (
+                <div key={f} style={{ marginBottom: 12 }}>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>
+                    {f === 'contact_name' ? 'Contact Name' : f === 'contact_email' ? 'Contact Email' : 'Contact Phone'}
+                  </label>
+                  <input value={oppForm[f]} onChange={e => setOppForm({ ...oppForm, [f]: e.target.value })}
+                    style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
+                </div>
+              ))}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Source</label>
+                  <select value={oppForm.source} onChange={e => setOppForm({ ...oppForm, source: e.target.value })}
+                    style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', background: '#fff' }}>
+                    <option value="">-- Select --</option>
+                    {['Referral', 'Website', 'LinkedIn', 'Cold Call', 'Email Campaign', 'Partner', 'Conference/Event', 'Existing Client', 'Other'].map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Service Interest</label>
+                  <select value={oppForm.service_interest} onChange={e => setOppForm({ ...oppForm, service_interest: e.target.value })}
+                    style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', background: '#fff' }}>
+                    <option value="">-- Select --</option>
+                    {['VAPT', 'IS Audit', 'ISMS Implementation', 'RBI Audit', 'Compliance Audit', 'Cloud Security Audit', 'Network Security Audit', 'Application Security', 'Red Team Assessment', 'SOC Setup', 'Other'].map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Estimated Value (₹)</label>
+                  <input type="number" value={oppForm.estimated_value} onChange={e => setOppForm({ ...oppForm, estimated_value: e.target.value })}
+                    style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Expected Close Date</label>
+                  <input type="date" value={oppForm.expected_close_date} onChange={e => setOppForm({ ...oppForm, expected_close_date: e.target.value })}
+                    style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
+                </div>
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Description</label>
+                <textarea value={oppForm.description} onChange={e => setOppForm({ ...oppForm, description: e.target.value })} rows={3}
+                  style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical' }} />
+              </div>
+            </div>
+            <div style={{ padding: '12px 24px', borderTop: '1px solid #E5E7EB', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <button onClick={() => setShowOppForm(false)} style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: '#F0F2F8', color: '#374151', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+              <button onClick={async () => {
+                setSavingOpp(true)
+                try {
+                  const payload = { ...oppForm, account_id: parseInt(id), company_name: acc.company_name }
+                  if (payload.estimated_value) payload.estimated_value = parseFloat(payload.estimated_value); else delete payload.estimated_value
+                  if (!payload.expected_close_date) delete payload.expected_close_date
+                  await api.post('/api/opportunities', payload)
+                  setShowOppForm(false); loadDetail()
+                } catch (e) { alert(e.response?.data?.error || 'Failed to create') }
+                finally { setSavingOpp(false) }
+              }} disabled={savingOpp}
+                style={{ padding: '8px 24px', borderRadius: 8, border: 'none', background: '#5B21B6', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: savingOpp ? 0.6 : 1 }}>
+                {savingOpp ? 'Creating...' : 'Create Opportunity'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

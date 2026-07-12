@@ -5,7 +5,6 @@ import ErrorBoundary from './components/ErrorBoundary'
 import Layout from './components/Layout'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
-import Opportunities from './pages/Opportunities'
 import Leads from './pages/Leads'
 import Accounts from './pages/Accounts'
 import Projects from './pages/Projects'
@@ -49,7 +48,6 @@ export default function App() {
               <Route path="/crm" element={<InfocusitCRM />} />
               <Route path="/" element={<Protected><AppLayout /></Protected>}>
                 <Route index element={<Dashboard />} />
-                <Route path="opportunities" element={<Opportunities />} />
                 <Route path="opportunities/:id" element={<OpportunitiesDetailPage />} />
                 <Route path="leads" element={<Leads />} />
                 <Route path="leads/:id" element={<LeadsDetailPage />} />

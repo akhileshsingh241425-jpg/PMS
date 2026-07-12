@@ -7,7 +7,6 @@ import api from '../services/api'
 const nav = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/my-workspace', icon: UserCircle, label: 'My Workspace' },
-  { to: '/opportunities', icon: Target, label: 'Opportunities' },
   { to: '/leads', icon: FileText, label: 'Leads' },
   { to: '/accounts', icon: Building2, label: 'Accounts' },
   { to: '/projects', icon: Briefcase, label: 'Projects' },
@@ -83,7 +82,6 @@ function NotifBell() {
 const pageTitles = {
   '/': 'Dashboard',
   '/my-workspace': 'My Workspace',
-  '/opportunities': 'Opportunities',
   '/leads': 'Leads',
   '/accounts': 'Accounts',
   '/projects': 'Projects',
