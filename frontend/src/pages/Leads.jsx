@@ -211,6 +211,7 @@ export default function Leads() {
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-slate-900">{l.company_name}</p>
+                        {l.account_name && <p className="text-xs text-amber-600 flex items-center gap-1 mt-0.5">🤝 Referred by {l.account_name}</p>}
                         {l.state && <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5"><MapPin className="w-3 h-3" />{l.state}</p>}
                       </div>
                     </div>

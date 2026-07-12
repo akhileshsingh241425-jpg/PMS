@@ -312,15 +312,11 @@ export default function LeadsDetailPage() {
             </div>
             <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
               {isOpportunity ? (
-                <ActionBtn icon={<BriefcaseIcon />} label={convertingOpp ? 'Converting...' : 'Convert to Lead'} onClick={async () => {
-                  setConvertingOpp(true)
-                  try {
-                    const r = await api.post(`/api/opportunities/${id}/convert-to-lead`)
-                    toast(`Lead ${r.data.lead.lead_id} created`)
-                    navigate(`/leads/${r.data.lead.id}`)
-                  } catch (e) { toast(e.response?.data?.error || 'Failed to convert') }
-                  finally { setConvertingOpp(false) }
-                }} success />
+                l.account_name && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, background: '#FEF3C7', fontSize: 12, fontWeight: 600, color: '#92400E' }}>
+                    🤝 Referred by: {l.account_name}
+                  </div>
+                )
               ) : (
                 <>
                   <ActionBtn icon={<EditIcon />} label="Edit" onClick={() => setShowEdit(true)} primary />

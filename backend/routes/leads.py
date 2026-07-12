@@ -65,11 +65,12 @@ def list_leads(current_user):
             Lead.contact_email.ilike(f'%{s}%'),
             Lead.lead_id.ilike(f'%{s}%'),
         ))
-        opp_query = opp_query.filter(db.or_(
+        opp_query = opp_query.outerjoin(Account, Opportunity.account_id == Account.id).filter(db.or_(
             Opportunity.company_name.ilike(f'%{s}%'),
             Opportunity.contact_name.ilike(f'%{s}%'),
             Opportunity.contact_email.ilike(f'%{s}%'),
             Opportunity.opp_id.ilike(f'%{s}%'),
+            Account.company_name.ilike(f'%{s}%'),
         ))
     if st := request.args.get('stage'):
         lead_query = lead_query.filter_by(stage=st)

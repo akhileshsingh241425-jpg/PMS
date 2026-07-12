@@ -38,6 +38,7 @@ class Opportunity(db.Model):
 
     assignee = db.relationship('User', foreign_keys=[assigned_to])
     creator = db.relationship('User', foreign_keys=[created_by])
+    account = db.relationship('Account', foreign_keys=[account_id])
 
     def to_dict(self):
         return {
@@ -56,6 +57,7 @@ class Opportunity(db.Model):
             'loss_reason': self.loss_reason,
             'probability': self.probability,
             'account_id': self.account_id,
+            'account_name': self.account.company_name if self.account else None,
             'assigned_to': self.assigned_to,
             'assigned_name': self.assignee.full_name if self.assignee else None,
             'created_by': self.created_by,
