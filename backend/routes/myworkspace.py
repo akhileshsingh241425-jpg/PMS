@@ -23,7 +23,7 @@ def my_projects(current_user):
 @me_bp.route('/tasks', methods=['GET'])
 @login_required
 def my_tasks(current_user):
-    tasks = Task.query.filter_by(assigned_to=current_user.id).order_by(Task.updated_at.desc()).all()
+    tasks = Task.query.filter_by(assigned_to=current_user.id).order_by(Task.created_at.desc()).all()
     return jsonify({'tasks': [t.to_dict() for t in tasks]})
 
 

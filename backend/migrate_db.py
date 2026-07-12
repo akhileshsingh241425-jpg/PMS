@@ -26,6 +26,16 @@ MIGRATIONS = {
     'lead_remarks': [
         ('updated_at', 'DATETIME'), ('deleted_at', 'DATETIME'),
     ],
+    'tasks': [
+        ('estimated_hours', 'FLOAT'),
+        ('actual_hours', 'FLOAT'),
+        ('updated_at', 'DATETIME'),
+    ],
+    'opportunities': [
+        ('probability', 'INTEGER'),
+        ('expected_close_date', 'DATE'),
+        ('loss_reason', 'TEXT'),
+    ],
 }
 
 for table, cols in MIGRATIONS.items():

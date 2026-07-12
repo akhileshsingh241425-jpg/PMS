@@ -61,6 +61,7 @@ def create_opportunity(current_user):
         stage=data.get('stage', 'Prospecting'),
         estimated_value=safe_float(data.get('estimated_value')),
         expected_close_date=datetime.strptime(data['expected_close_date'], '%Y-%m-%d').date() if data.get('expected_close_date') else None,
+        account_id=safe_int(data.get('account_id')),
         assigned_to=safe_int(data.get('assigned_to')),
         created_by=current_user.id,
     )
