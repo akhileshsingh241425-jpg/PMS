@@ -381,7 +381,7 @@ export default function AccountsDetailPage() {
               </div>
               {/* Action buttons */}
               <div className="flex items-center gap-2 shrink-0">
-                <ActionBtn icon={<PlusCircle className="w-4 h-4" />} label="Add Opportunity" />
+                <ActionBtn icon={<PlusCircle className="w-4 h-4" />} label="Add Opportunity" onClick={() => { setOppForm({ ...oppForm, company_name: acc.company_name }); setShowOppForm(true) }} />
                 <ActionBtn icon={<Calendar className="w-4 h-4" />} label="Add Meeting" />
                 <button style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 18px', borderRadius: '10px', border: 'none', background: '#5B3DF5', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'all .2s' }}
                   onMouseOver={e => e.currentTarget.style.background = '#4727F5'}
@@ -1004,10 +1004,10 @@ function BadgeDot({ stage }) {
   )
 }
 
-function ActionBtn({ icon, label }) {
+function ActionBtn({ icon, label, onClick }) {
   const Icon = icon?.type || (() => null)
   return (
-    <button style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', borderRadius: '10px', border: '1px solid #ECECEC', background: '#fff', color: '#6B7280', fontSize: '13px', fontWeight: 500, cursor: 'pointer', transition: 'all .2s' }}
+    <button onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', borderRadius: '10px', border: '1px solid #ECECEC', background: '#fff', color: '#6B7280', fontSize: '13px', fontWeight: 500, cursor: 'pointer', transition: 'all .2s' }}
       onMouseOver={e => { e.currentTarget.style.background = '#F6F8FC'; e.currentTarget.style.borderColor = '#D1D5DB' }}
       onMouseOut={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#ECECEC' }}>
       {icon}
