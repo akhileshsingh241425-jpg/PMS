@@ -311,7 +311,7 @@ export default function LeadsDetailPage() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-              {isOpportunity && (
+              {isOpportunity ? (
                 <ActionBtn icon={<BriefcaseIcon />} label={convertingOpp ? 'Converting...' : 'Convert to Lead'} onClick={async () => {
                   setConvertingOpp(true)
                   try {
@@ -321,24 +321,27 @@ export default function LeadsDetailPage() {
                   } catch (e) { toast(e.response?.data?.error || 'Failed to convert') }
                   finally { setConvertingOpp(false) }
                 }} success />
-              )}
-              <ActionBtn icon={<EditIcon />} label="Edit" onClick={() => setShowEdit(true)} primary />
-              {(l.stage === 'Lead Closed (Won)' || l.stage === 'Purchase Order') && !l.account_id && (
-                <ActionBtn icon={<BriefcaseIcon />} label="Convert to Account" onClick={openConvertModal} success />
-              )}
-              {l.stage === 'Lead Closed (Won)' && l.approval_status !== 'pending_approval' && l.approval_status !== 'approved' && !l.account_id && (
-                <ActionBtn label="Request Approval" onClick={requestApproval} />
-              )}
-              {l.stage === 'Converted to Account' && (
-                <ActionBtn icon={<BriefcaseIcon />} label="Create Project" onClick={() => { setProjectForm({ title: l.subject || '', description: l.description || '', service_type: l.service_type || '', pm_id: l.assigned_to || '', total_value: l.estimated_value || '', start_date: new Date().toISOString().slice(0, 10), target_date: '' }); setShowProjectForm(true) }} primary />
-              )}
-              {isClosedOrConverted && user?.role === 'admin' && (
-                <ActionBtn label="Reopen" onClick={reopenLead} danger />
-              )}
-              {!isClosedOrConverted && (
+              ) : (
                 <>
-                  <ActionBtn label="Close Won" onClick={() => setCloseOutcome('won')} success />
-                  <ActionBtn label="Close Lost" onClick={() => setCloseOutcome('lost')} danger />
+                  <ActionBtn icon={<EditIcon />} label="Edit" onClick={() => setShowEdit(true)} primary />
+                  {(l.stage === 'Lead Closed (Won)' || l.stage === 'Purchase Order') && !l.account_id && (
+                    <ActionBtn icon={<BriefcaseIcon />} label="Convert to Account" onClick={openConvertModal} success />
+                  )}
+                  {l.stage === 'Lead Closed (Won)' && l.approval_status !== 'pending_approval' && l.approval_status !== 'approved' && !l.account_id && (
+                    <ActionBtn label="Request Approval" onClick={requestApproval} />
+                  )}
+                  {l.stage === 'Converted to Account' && (
+                    <ActionBtn icon={<BriefcaseIcon />} label="Create Project" onClick={() => { setProjectForm({ title: l.subject || '', description: l.description || '', service_type: l.service_type || '', pm_id: l.assigned_to || '', total_value: l.estimated_value || '', start_date: new Date().toISOString().slice(0, 10), target_date: '' }); setShowProjectForm(true) }} primary />
+                  )}
+                  {isClosedOrConverted && user?.role === 'admin' && (
+                    <ActionBtn label="Reopen" onClick={reopenLead} danger />
+                  )}
+                  {!isClosedOrConverted && (
+                    <>
+                      <ActionBtn label="Close Won" onClick={() => setCloseOutcome('won')} success />
+                      <ActionBtn label="Close Lost" onClick={() => setCloseOutcome('lost')} danger />
+                    </>
+                  )}
                 </>
               )}
             </div>
@@ -356,15 +359,17 @@ export default function LeadsDetailPage() {
         </div>
 
         {/* ═══ PIPELINE / STAGE TABS ═══ */}
-        <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '8px 12px', marginBottom: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', overflowX: 'auto', gap: 0 }}>
-            {STAGE_TABS.map((tab, i) => (
-              <StageTab key={tab.key} tab={tab} isActive={tab.key === l.stage}
-                isTerminal={TERMINAL_STAGES.includes(l.stage) && tab.key !== l.stage}
-                onClick={() => !TERMINAL_STAGES.includes(l.stage) && setConfirmStage(tab.key)} />
-            ))}
+        {!isOpportunity && (
+          <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '8px 12px', marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', overflowX: 'auto', gap: 0 }}>
+              {STAGE_TABS.map((tab, i) => (
+                <StageTab key={tab.key} tab={tab} isActive={tab.key === l.stage}
+                  isTerminal={TERMINAL_STAGES.includes(l.stage) && tab.key !== l.stage}
+                  onClick={() => !TERMINAL_STAGES.includes(l.stage) && setConfirmStage(tab.key)} />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* ═══ MAIN ═══ */}
         <div>
@@ -407,6 +412,7 @@ export default function LeadsDetailPage() {
             </div>
 
             {/* PROPOSALS */}
+            {!isOpportunity && (
             <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                 <SectionTitle icon={<FileIcon />} text={`Proposals (${(proposals || []).length})`} />
@@ -434,6 +440,7 @@ export default function LeadsDetailPage() {
                 </div>
               )}
             </div>
+            )}
 
             {/* REMARKS */}
             <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 12 }}>
