@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams, useSearchParams } from 'react-router-dom'
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import { LeadForm } from './Leads'
 import { useAuth } from '../contexts/AuthContext'
@@ -50,6 +50,7 @@ function StageTab({ tab, isActive, onClick, isTerminal }) {
 export default function LeadsDetailPage() {
   const { id } = useParams()
   const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
   const { user } = useAuth()
   const toast = useToast()
   const [data, setData] = useState(null)
@@ -80,6 +81,7 @@ export default function LeadsDetailPage() {
   const [showConvertModal, setShowConvertModal] = useState(false)
   const [converting, setConverting] = useState(false)
   const [convertingOpp, setConvertingOpp] = useState(false)
+  const [convertedLeadId, setConvertedLeadId] = useState(null)
   const [convertForm, setConvertForm] = useState({})
   const editorRef = useRef(null)
   const fileRef = useRef(null)
@@ -149,6 +151,7 @@ export default function LeadsDetailPage() {
     try {
       const r = await api.post(`/api/opportunities/${id}/convert-to-lead`, convertForm)
       setShowConvertModal(false)
+      setConvertedLeadId(r.data.lead.id)
       toast(`Lead ${r.data.lead.lead_id} created from opportunity`)
       loadDetail()
     } catch (e) { toast(e.response?.data?.error || 'Conversion failed', 'error') }
@@ -334,10 +337,16 @@ export default function LeadsDetailPage() {
                       🤝 Referred by: {l.account_name}
                     </div>
                   )}
-                  {l.referral_status === 'Converted' ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, background: '#ECFDF5', fontSize: 12, fontWeight: 600, color: '#065F46' }}>
-                      ✅ Converted to Lead
-                    </div>
+                  {l.referral_status === 'Converted' || convertedLeadId ? (
+                    <>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, background: '#ECFDF5', fontSize: 12, fontWeight: 600, color: '#065F46' }}>
+                        ✅ Converted to Lead
+                      </div>
+                      <button onClick={() => navigate(`/leads/${convertedLeadId || l.referral_lead_id}`)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: 'none', background: C.primary, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                        View Lead →
+                      </button>
+                    </>
                   ) : l.stage !== 'Closed Won' && l.stage !== 'Closed Lost' ? (
                     <ActionBtn icon={<ArrowRightIcon />} label="Convert to Lead" onClick={openConvertOppModal} primary />
                   ) : null}
