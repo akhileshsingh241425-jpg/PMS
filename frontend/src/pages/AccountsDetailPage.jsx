@@ -240,7 +240,7 @@ export default function AccountsDetailPage() {
   )
   if (!data) return null
 
-  const { account: acc, contacts = [], opportunities = [], leads = [], projects = [], documents = [], tasks = [], meetings = [], notes = [], meeting_requests = [], finding_queries = [] } = data
+  const { account: acc, contacts = [], opportunities = [], leads = [], referral_leads = [], projects = [], documents = [], tasks = [], meetings = [], notes = [], meeting_requests = [], finding_queries = [] } = data
 
   const allTimelineItems = [
     ...notes.map(n => ({ ...n, _type: 'note', _date: n.created_at })),
@@ -430,7 +430,7 @@ export default function AccountsDetailPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 20 }}>
           <KpiCard icon={Target} bg="#EDE9FE" color="#5B21B6" label="Total Projects" value={projects.length} />
           <KpiCard icon={DollarSign} bg="#D1FAE5" color="#059669" label="Revenue" value={projects.reduce((s,p) => s + (p.total_value || 0), 0) ? `₹${(projects.reduce((s,p) => s + (p.total_value || 0), 0) / 100000).toFixed(1)}L` : '—'} />
-          <KpiCard icon={TrendingUp} bg="#FEF3C7" color="#D97706" label="Opportunities" value={opportunities.length} />
+          <KpiCard icon={TrendingUp} bg="#FEF3C7" color="#D97706" label="Opportunities" value={opportunities.length + referral_leads.length} />
           <KpiCard icon={Users} bg="#DBEAFE" color="#2563EB" label="Contacts" value={contacts.length} />
           <KpiCard icon={FileText} bg="#FCE7F3" color="#DB2777" label="Documents" value={documents.length} />
         </div>
@@ -689,41 +689,55 @@ export default function AccountsDetailPage() {
         </SectionCard>
 
         {/* ═══ OPPORTUNITIES ═══ */}
-        <SectionCard title="Opportunities" icon={Target} iconColor="#F59E0B" count={opportunities.length}>
-          {opportunities.length > 0 ? (
-            <div>
-              <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'flex-end' }}>
-                <button onClick={() => { setOppForm({ ...oppForm, company_name: '' }); setShowOppForm(true) }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: '#5B3DF5', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
-                  <Plus className="w-4 h-4" /> Refer Client
-                </button>
-              </div>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader headers={['Opp ID', 'Service', 'Stage', 'Value', 'Assigned', 'Updated']} />
-                  <tbody>
-                    {opportunities.map((o, i) => (
-                      <tr key={o.id} style={{ background: i % 2 === 0 ? '#fff' : '#F9FAFB', cursor: 'pointer', transition: 'background .15s' }}
-                      onClick={() => navigate(`/leads/${o.id}?type=opportunity`)}
-                      onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
-                      onMouseOut={e => e.currentTarget.style.background = i % 2 === 0 ? '#fff' : '#F9FAFB'}>
-                      <Td><span style={{ fontWeight: 600, color: '#5B3DF5' }}>{o.opp_id}</span></Td>
-                      <Td>{o.service_interest || '—'}</Td>
-                      <Td><BadgeDot stage={o.stage} /></Td>
-                      <Td><span style={{ fontWeight: 700, color: '#059669' }}>{formatCurrency(o.estimated_value) || '—'}</span></Td>
-                      <Td>{o.assigned_name || '—'}</Td>
-                      <Td><span style={{ color: '#9CA3AF', fontSize: '12px' }}>{timeAgo(o.updated_at)}</span></Td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </div>
-            </div>
-          ) : (
-            <EmptyState icon={Target} text="No opportunities found for this account"
-              action={{ label: 'Create Opportunity', onClick: () => { setOppForm({ ...oppForm, company_name: acc.company_name }); setShowOppForm(true) } }} />
-          )}
-        </SectionCard>
+        {(() => {
+          const allItems = [
+            ...opportunities.map(o => ({ ...o, _type: 'opportunity', _id: o.opp_id })),
+            ...referral_leads.map(l => ({ ...l, _type: 'referral_lead', _id: l.lead_id, service_interest: l.service_type, opp_id: l.lead_id, assigned_name: l.assigned_name })),
+          ].sort((a, b) => new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at))
+          const count = allItems.length
+          return (
+            <SectionCard title="Opportunities" icon={Target} iconColor="#F59E0B" count={count}>
+              {allItems.length > 0 ? (
+                <div>
+                  <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'flex-end' }}>
+                    <button onClick={() => { setOppForm({ ...oppForm, company_name: '' }); setShowOppForm(true) }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: '#5B3DF5', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                      <Plus className="w-4 h-4" /> Refer Client
+                    </button>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader headers={['ID', 'Service', 'Stage', 'Value', 'Assigned', 'Updated']} />
+                      <tbody>
+                        {allItems.map((o, i) => (
+                          <tr key={`${o._type}_${o.id}`} style={{ background: i % 2 === 0 ? '#fff' : '#F9FAFB', cursor: 'pointer', transition: 'background .15s' }}
+                          onClick={() => navigate(o._type === 'opportunity' ? `/leads/${o.id}?type=opportunity` : `/leads/${o.id}`)}
+                          onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
+                          onMouseOut={e => e.currentTarget.style.background = i % 2 === 0 ? '#fff' : '#F9FAFB'}>
+                          <Td>
+                            <span style={{ fontWeight: 600, color: '#5B3DF5' }}>{o._id}</span>
+                            {o._type === 'referral_lead' && (
+                              <span style={{ fontSize: 9, fontWeight: 700, marginLeft: 6, padding: '1px 6px', borderRadius: 4, background: '#FEF3C7', color: '#92400E' }}>REFERRAL</span>
+                            )}
+                          </Td>
+                          <Td>{o.service_interest || '—'}</Td>
+                          <Td><BadgeDot stage={o.stage} /></Td>
+                          <Td><span style={{ fontWeight: 700, color: '#059669' }}>{formatCurrency(o.estimated_value) || '—'}</span></Td>
+                          <Td>{o.assigned_name || '—'}</Td>
+                          <Td><span style={{ color: '#9CA3AF', fontSize: '12px' }}>{timeAgo(o.updated_at)}</span></Td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Table>
+                  </div>
+                </div>
+              ) : (
+                <EmptyState icon={Target} text="No opportunities found for this account"
+                  action={{ label: 'Create Opportunity', onClick: () => { setOppForm({ ...oppForm, company_name: acc.company_name }); setShowOppForm(true) } }} />
+              )}
+            </SectionCard>
+          )
+        })()}
 
         {/* ═══ MEETINGS ═══ */}
         <SectionCard title="Meetings" icon={Calendar} iconColor="#3B82F6" count={meetings.length + meeting_requests.length} onViewAll={() => navigate('/meetings')}>
@@ -993,45 +1007,58 @@ export default function AccountsDetailPage() {
         </div>
 
         {/* Opportunities list under Referrals */}
-        <SectionCard title="Opportunities / Referrals" icon={Target} iconColor="#F59E0B" count={opportunities.length}>
-          {opportunities.length > 0 ? (
-            <div>
-              <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'flex-end' }}>
-                <button onClick={() => { setOppForm({ ...oppForm, company_name: acc.company_name }); setShowOppForm(true) }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: '#5B3DF5', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
-                  <Plus className="w-4 h-4" /> New Referral
-                </button>
-              </div>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader headers={['Opp ID', 'Company', 'Service', 'Stage', 'Referral Status', 'Value', 'Assigned', 'Updated']} />
-                  <tbody>
-                    {opportunities.map((o, i) => (
-                      <tr key={o.id} style={{ background: i % 2 === 0 ? '#fff' : '#F9FAFB', cursor: 'pointer' }}
-                      onClick={() => navigate(`/leads/${o.id}?type=opportunity`)}
-                      onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
-                      onMouseOut={e => e.currentTarget.style.background = i % 2 === 0 ? '#fff' : '#F9FAFB'}>
-                      <Td><span style={{ fontWeight: 600, color: '#5B3DF5' }}>{o.opp_id}</span></Td>
-                      <Td>{o.company_name || '—'}</Td>
-                      <Td>{o.service_interest || '—'}</Td>
-                      <Td><BadgeDot stage={o.stage} /></Td>
-                      <Td><span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 99,
-                        background: o.referral_status === 'New Referral' ? '#FEF3C7' : o.referral_status === 'Converted' ? '#D1FAE5' : o.referral_status === 'Contacted' ? '#DBEAFE' : '#F3F4F6',
-                        color: o.referral_status === 'New Referral' ? '#92400E' : o.referral_status === 'Converted' ? '#065F46' : o.referral_status === 'Contacted' ? '#1E40AF' : '#6B7280' }}>{o.referral_status || 'New Referral'}</span></Td>
-                      <Td><span style={{ fontWeight: 700, color: '#059669' }}>{formatCurrency(o.estimated_value) || '—'}</span></Td>
-                      <Td>{o.assigned_name || '—'}</Td>
-                      <Td><span style={{ color: '#9CA3AF', fontSize: '12px' }}>{timeAgo(o.updated_at)}</span></Td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </div>
-            </div>
-          ) : (
-            <EmptyState icon={Target} text="No referrals yet"
-              action={{ label: 'Create Referral Opportunity', onClick: () => { setOppForm({ ...oppForm, company_name: acc.company_name, source: 'Referral' }); setShowOppForm(true) } }} />
-          )}
-        </SectionCard>
+        {(() => {
+          const allRefItems = [
+            ...opportunities.map(o => ({ ...o, _type: 'opportunity', _id: o.opp_id, company: o.company_name })),
+            ...referral_leads.map(l => ({ ...l, _type: 'referral_lead', _id: l.lead_id, company: l.company_name, service_interest: l.service_type, opp_id: l.lead_id, assigned_name: l.assigned_name, referral_status: l.stage === 'Converted to Account' ? 'Converted' : 'New Referral' })),
+          ].sort((a, b) => new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at))
+          return (
+            <SectionCard title="Opportunities / Referrals" icon={Target} iconColor="#F59E0B" count={allRefItems.length}>
+              {allRefItems.length > 0 ? (
+                <div>
+                  <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'flex-end' }}>
+                    <button onClick={() => { setOppForm({ ...oppForm, company_name: acc.company_name }); setShowOppForm(true) }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: '#5B3DF5', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                      <Plus className="w-4 h-4" /> New Referral
+                    </button>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader headers={['ID', 'Company', 'Service', 'Stage', 'Status', 'Value', 'Assigned', 'Updated']} />
+                      <tbody>
+                        {allRefItems.map((o, i) => (
+                          <tr key={`${o._type}_${o.id}`} style={{ background: i % 2 === 0 ? '#fff' : '#F9FAFB', cursor: 'pointer' }}
+                          onClick={() => navigate(o._type === 'opportunity' ? `/leads/${o.id}?type=opportunity` : `/leads/${o.id}`)}
+                          onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
+                          onMouseOut={e => e.currentTarget.style.background = i % 2 === 0 ? '#fff' : '#F9FAFB'}>
+                          <Td>
+                            <span style={{ fontWeight: 600, color: '#5B3DF5' }}>{o._id}</span>
+                            {o._type === 'referral_lead' && (
+                              <span style={{ fontSize: 9, fontWeight: 700, marginLeft: 6, padding: '1px 6px', borderRadius: 4, background: '#FEF3C7', color: '#92400E' }}>LEAD</span>
+                            )}
+                          </Td>
+                          <Td>{o.company || '—'}</Td>
+                          <Td>{o.service_interest || '—'}</Td>
+                          <Td><BadgeDot stage={o.stage} /></Td>
+                          <Td><span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 99,
+                            background: o.referral_status === 'New Referral' ? '#FEF3C7' : o.referral_status === 'Converted' ? '#D1FAE5' : o.referral_status === 'Contacted' ? '#DBEAFE' : '#F3F4F6',
+                            color: o.referral_status === 'New Referral' ? '#92400E' : o.referral_status === 'Converted' ? '#065F46' : o.referral_status === 'Contacted' ? '#1E40AF' : '#6B7280' }}>{o.referral_status || 'New Referral'}</span></Td>
+                          <Td><span style={{ fontWeight: 700, color: '#059669' }}>{formatCurrency(o.estimated_value) || '—'}</span></Td>
+                          <Td>{o.assigned_name || '—'}</Td>
+                          <Td><span style={{ color: '#9CA3AF', fontSize: '12px' }}>{timeAgo(o.updated_at)}</span></Td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Table>
+                  </div>
+                </div>
+              ) : (
+                <EmptyState icon={Target} text="No referrals yet"
+                  action={{ label: 'Create Referral Opportunity', onClick: () => { setOppForm({ ...oppForm, company_name: acc.company_name, source: 'Referral' }); setShowOppForm(true) } }} />
+              )}
+            </SectionCard>
+          )
+        })()}
       </div>
       )}
 

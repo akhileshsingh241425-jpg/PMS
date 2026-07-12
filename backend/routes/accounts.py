@@ -62,6 +62,7 @@ def get_account(current_user, aid):
     proj_ids = [p.id for p in projects]
     opportunities = Opportunity.query.filter_by(account_id=aid).order_by(Opportunity.updated_at.desc()).all()
     leads = Lead.query.filter_by(account_id=aid).order_by(Lead.updated_at.desc()).all()
+    referral_leads = Lead.query.filter_by(referring_account_id=aid).order_by(Lead.updated_at.desc()).all()
     contacts = Contact.query.filter_by(account_id=aid).order_by(Contact.is_primary.desc(), Contact.created_at.desc()).all()
     lead_ids = [l.id for l in leads]
     return jsonify({
@@ -70,6 +71,7 @@ def get_account(current_user, aid):
         'projects': [p.to_dict() for p in projects],
         'opportunities': [o.to_dict() for o in opportunities],
         'leads': [l.to_dict() for l in leads],
+        'referral_leads': [l.to_dict() for l in referral_leads],
         'documents': [d.to_dict() for d in ProjectDocument.query.filter(ProjectDocument.project_id.in_(proj_ids)).order_by(ProjectDocument.uploaded_at.desc()).all()] if proj_ids else [],
         'tasks': [t.to_dict() for t in Task.query.filter(Task.project_id.in_(proj_ids)).order_by(Task.created_at.desc()).all()] if proj_ids else [],
         'meetings': [m.to_dict() for m in Meeting.query.filter(Meeting.project_id.in_(proj_ids)).order_by(Meeting.meeting_date.desc()).all()] if proj_ids else [],
