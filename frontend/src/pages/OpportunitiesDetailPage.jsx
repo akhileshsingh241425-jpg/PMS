@@ -106,15 +106,15 @@ export default function OpportunitiesDetailPage() {
     <div className="max-w-7xl mx-auto p-6">
       {/* Breadcrumbs */}
       <nav className="text-sm text-slate-500 mb-4">
-        <span onClick={() => navigate('/opportunities')} className="hover:text-violet-600 cursor-pointer">Opportunities</span>
+        <span onClick={() => navigate('/leads')} className="hover:text-violet-600 cursor-pointer">Leads</span>
         <span className="mx-2">/</span>
         <span className="text-slate-900 font-medium">{o.company_name}</span>
       </nav>
 
       {/* Back button */}
       <div className="mb-4">
-        <button onClick={() => navigate('/opportunities')} className="text-sm text-violet-600 hover:text-violet-800 flex items-center gap-1 font-medium transition-colors">
-          <ChevronLeft className="w-4 h-4" /> Back to Opportunities
+        <button onClick={() => navigate('/leads')} className="text-sm text-violet-600 hover:text-violet-800 flex items-center gap-1 font-medium transition-colors">
+          <ChevronLeft className="w-4 h-4" /> Back to Leads
         </button>
       </div>
 
