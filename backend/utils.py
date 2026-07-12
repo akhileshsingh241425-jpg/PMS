@@ -40,13 +40,13 @@ def validate_gst(gst):
 
 
 def safe_int(value, default=None):
-    if value is None: return default
+    if value is None or value == '': return default
     try: return int(value)
     except (ValueError, TypeError): raise ValueError(f'Invalid integer: {value}')
 
 
 def safe_float(value, default=None):
-    if value is None: return default
+    if value is None or value == '': return default
     try: return float(value)
     except (ValueError, TypeError): raise ValueError(f'Invalid number: {value}')
 
