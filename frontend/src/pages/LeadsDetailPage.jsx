@@ -374,8 +374,18 @@ export default function LeadsDetailPage() {
                 </>
               )}
               <ActionBtn icon={<EditIcon />} label="Edit" onClick={() => setShowEdit(true)} primary />
-              {(l.stage === 'Lead Closed (Won)' || l.stage === 'Purchase Order' || l.stage === 'Closed Won') && !l.account_id && (
+              {!isOpp() && (l.stage === 'Lead Closed (Won)' || l.stage === 'Purchase Order') && !l.account_id && (
                 <ActionBtn icon={<BriefcaseIcon />} label="Convert to Account" onClick={openConvertModal} success />
+              )}
+              {isOpp() && (l.stage === 'Lead Closed (Won)' || l.stage === 'Closed Won') && (
+                isRefConverted() || l.referral_lead_id ? (
+                  <button onClick={() => navigate(`/leads/${convertedLeadId || l.referral_lead_id}`)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: 'none', background: '#059669', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                    View Lead to Create Account →
+                  </button>
+                ) : (
+                  <ActionBtn icon={<BriefcaseIcon />} label="Convert to Account" onClick={openConvertModal} success />
+                )
               )}
               {l.stage === 'Lead Closed (Won)' && l.approval_status !== 'pending_approval' && l.approval_status !== 'approved' && !l.account_id && (
                 <ActionBtn label="Request Approval" onClick={requestApproval} />
