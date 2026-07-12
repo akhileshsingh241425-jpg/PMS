@@ -65,3 +65,12 @@ def create_app():
         db.create_all()
 
     return app
+
+
+if __name__ == '__main__':
+    import os
+    debug = os.environ.get('FLASK_DEBUG', '0') == '1'
+    port = int(os.environ.get('PORT', 5002))
+    host = os.environ.get('HOST', '0.0.0.0')
+    app = create_app()
+    app.run(debug=debug, host=host, port=port)
