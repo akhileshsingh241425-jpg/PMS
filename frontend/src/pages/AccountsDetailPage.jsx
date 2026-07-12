@@ -671,7 +671,7 @@ export default function AccountsDetailPage() {
                   <tbody>
                     {opportunities.map((o, i) => (
                       <tr key={o.id} style={{ background: i % 2 === 0 ? '#fff' : '#F9FAFB', cursor: 'pointer', transition: 'background .15s' }}
-                      onClick={() => navigate(`/leads/${o.id}`)}
+                      onClick={() => navigate(`/leads/${o.id}?type=opportunity`)}
                       onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
                       onMouseOut={e => e.currentTarget.style.background = i % 2 === 0 ? '#fff' : '#F9FAFB'}>
                       <Td><span style={{ fontWeight: 600, color: '#5B3DF5' }}>{o.opp_id}</span></Td>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import api from '../services/api'
 import { LeadForm } from './Leads'
 import { useAuth } from '../contexts/AuthContext'
@@ -49,6 +49,7 @@ function StageTab({ tab, isActive, onClick, isTerminal }) {
 
 export default function LeadsDetailPage() {
   const { id } = useParams()
+  const [searchParams] = useSearchParams()
   const { user } = useAuth()
   const toast = useToast()
   const [data, setData] = useState(null)
@@ -85,7 +86,9 @@ export default function LeadsDetailPage() {
   const remarkInputRef = useRef(null)
 
   const loadDetail = async () => {
+    const isOppQuery = searchParams.get('type') === 'opportunity'
     try {
+      if (isOppQuery) throw new Error('try opportunity first')
       const r = await api.get(`/api/leads/${id}`)
       setData(r.data)
       setIsOpportunity(false)
