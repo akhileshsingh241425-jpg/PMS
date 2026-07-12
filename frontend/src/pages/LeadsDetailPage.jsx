@@ -334,9 +334,13 @@ export default function LeadsDetailPage() {
                       🤝 Referred by: {l.account_name}
                     </div>
                   )}
-                  {l.stage !== 'Closed Won' && l.stage !== 'Closed Lost' && (
+                  {l.referral_status === 'Converted' ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, background: '#ECFDF5', fontSize: 12, fontWeight: 600, color: '#065F46' }}>
+                      ✅ Converted to Lead
+                    </div>
+                  ) : l.stage !== 'Closed Won' && l.stage !== 'Closed Lost' ? (
                     <ActionBtn icon={<ArrowRightIcon />} label="Convert to Lead" onClick={openConvertOppModal} primary />
-                  )}
+                  ) : null}
                 </>
               ) : (
                 <>
