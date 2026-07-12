@@ -359,7 +359,7 @@ export default function LeadsDetailPage() {
                   🤝 Referred by: {l.account_name}
                 </div>
               )}
-              {isOpp() && !isRefConverted() && !isClosedOrConverted && (
+              {isOpp() && !isRefConverted() && (
                 <ActionBtn icon={<ArrowRightIcon />} label="Convert to Lead" onClick={openConvertOppModal} primary />
               )}
               {isRefConverted() && (
@@ -373,22 +373,20 @@ export default function LeadsDetailPage() {
                   </button>
                 </>
               )}
-              {!isRefConverted() && (
-                <ActionBtn icon={<EditIcon />} label="Edit" onClick={() => setShowEdit(true)} primary />
-              )}
-              {!isRefConverted() && (l.stage === 'Lead Closed (Won)' || l.stage === 'Purchase Order' || l.stage === 'Closed Won') && !l.account_id && (
+              <ActionBtn icon={<EditIcon />} label="Edit" onClick={() => setShowEdit(true)} primary />
+              {(l.stage === 'Lead Closed (Won)' || l.stage === 'Purchase Order' || l.stage === 'Closed Won') && !l.account_id && (
                 <ActionBtn icon={<BriefcaseIcon />} label="Convert to Account" onClick={openConvertModal} success />
               )}
-              {!isRefConverted() && l.stage === 'Lead Closed (Won)' && l.approval_status !== 'pending_approval' && l.approval_status !== 'approved' && !l.account_id && (
+              {l.stage === 'Lead Closed (Won)' && l.approval_status !== 'pending_approval' && l.approval_status !== 'approved' && !l.account_id && (
                 <ActionBtn label="Request Approval" onClick={requestApproval} />
               )}
-              {!isRefConverted() && l.stage === 'Converted to Account' && (
+              {l.stage === 'Converted to Account' && (
                 <ActionBtn icon={<BriefcaseIcon />} label="Create Project" onClick={() => { setProjectForm({ title: l.subject || '', description: l.description || '', service_type: l.service_type || '', pm_id: l.assigned_to || '', total_value: l.estimated_value || '', start_date: new Date().toISOString().slice(0, 10), target_date: '' }); setShowProjectForm(true) }} primary />
               )}
-              {!isRefConverted() && isClosedOrConverted && user?.role === 'admin' && !isOpp() && (
+              {isClosedOrConverted && user?.role === 'admin' && !isOpp() && (
                 <ActionBtn label="Reopen" onClick={reopenLead} danger />
               )}
-              {!isRefConverted() && !isClosedOrConverted && (
+              {!isClosedOrConverted && (
                 <>
                   <ActionBtn label="Close Won" onClick={() => setCloseOutcome('won')} success />
                   <ActionBtn label="Close Lost" onClick={() => setCloseOutcome('lost')} danger />
