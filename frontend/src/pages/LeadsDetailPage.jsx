@@ -706,12 +706,9 @@ export default function LeadsDetailPage() {
             </div>
             <div style={{ padding: '12px 24px', borderTop: `1px solid ${C.border}`, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
               <button onClick={() => setShowConvertModal(false)} style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: '#F0F2F8', color: '#374151', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
-              <button onClick={convertToAccount} disabled={converting || !convertForm.company_name.trim()}
-                style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: isOpportunity ? '#5B21B6' : '#059669', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: (isOpportunity ? convertingOpp : converting) || !convertForm.company_name.trim() ? 0.6 : 1 }}
-                onClick={isOpportunity ? () => {
-                  setConvertForm({ ...convertForm, company_name: l.company_name, contact_name: l.contact_name, contact_email: l.contact_email, contact_phone: l.contact_phone })
-                  convertOppToLead()
-                } : convertToAccount}>
+              <button disabled={(isOpportunity ? convertingOpp : converting) || !(convertForm.company_name || '').trim()}
+                style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: isOpportunity ? '#5B21B6' : '#059669', color: '#fff', fontSize: 13, fontWeight: 700, cursor: (isOpportunity ? convertingOpp : converting) || !(convertForm.company_name || '').trim() ? '' : 'pointer', opacity: (isOpportunity ? convertingOpp : converting) || !(convertForm.company_name || '').trim() ? 0.6 : 1 }}
+                onClick={isOpportunity ? convertOppToLead : convertToAccount}>
                 {isOpportunity ? (convertingOpp ? 'Converting...' : 'Convert to Lead') : (converting ? 'Creating...' : 'Create Account')}
               </button>
             </div>
