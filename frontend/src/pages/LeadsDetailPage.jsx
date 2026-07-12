@@ -78,6 +78,7 @@ export default function LeadsDetailPage() {
   const [editingProposal, setEditingProposal] = useState(null)
   const [showConvertModal, setShowConvertModal] = useState(false)
   const [converting, setConverting] = useState(false)
+  const [convertingOpp, setConvertingOpp] = useState(false)
   const [convertForm, setConvertForm] = useState({})
   const editorRef = useRef(null)
   const fileRef = useRef(null)
@@ -310,6 +311,17 @@ export default function LeadsDetailPage() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+              {isOpportunity && (
+                <ActionBtn icon={<BriefcaseIcon />} label={convertingOpp ? 'Converting...' : 'Convert to Lead'} onClick={async () => {
+                  setConvertingOpp(true)
+                  try {
+                    const r = await api.post(`/api/opportunities/${id}/convert-to-lead`)
+                    toast(`Lead ${r.data.lead.lead_id} created`)
+                    navigate(`/leads/${r.data.lead.id}`)
+                  } catch (e) { toast(e.response?.data?.error || 'Failed to convert') }
+                  finally { setConvertingOpp(false) }
+                }} success />
+              )}
               <ActionBtn icon={<EditIcon />} label="Edit" onClick={() => setShowEdit(true)} primary />
               {(l.stage === 'Lead Closed (Won)' || l.stage === 'Purchase Order') && !l.account_id && (
                 <ActionBtn icon={<BriefcaseIcon />} label="Convert to Account" onClick={openConvertModal} success />

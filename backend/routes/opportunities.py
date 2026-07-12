@@ -324,3 +324,31 @@ def opp_create_project(current_user, oid):
     db.session.add(proj)
     db.session.commit()
     return jsonify({'project': proj.to_dict()}), 201
+
+
+@opp_bp.route('/<int:oid>/convert-to-lead', methods=['POST'])
+@login_required
+def convert_opp_to_lead(current_user, oid):
+    opp = Opportunity.query.get_or_404(oid)
+    data = request.get_json() or {}
+    lead = Lead(
+        lead_id=generate_id(Lead, 'LD'),
+        company_name=data.get('company_name') or opp.company_name,
+        contact_name=data.get('contact_name') or opp.contact_name,
+        contact_email=data.get('contact_email') or opp.contact_email,
+        contact_phone=data.get('contact_phone') or opp.contact_phone,
+        source=data.get('source') or opp.source,
+        service_type=data.get('service_type') or opp.service_interest,
+        description=data.get('description') or opp.description,
+        estimated_value=data.get('estimated_value') or opp.estimated_value,
+        assigned_to=safe_int(data.get('assigned_to')) or opp.assigned_to,
+        stage='Prospecting',
+        created_by=current_user.id,
+    )
+    db.session.add(lead)
+    db.session.flush()
+    from models import LeadAuditLog
+    log = LeadAuditLog(lead_id=lead.id, action='Lead Created', new_value='Stage: Prospecting', changed_by=current_user.id)
+    db.session.add(log)
+    db.session.commit()
+    return jsonify({'message': 'Lead created from opportunity', 'lead': lead.to_dict()}), 201
