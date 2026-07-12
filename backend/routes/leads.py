@@ -107,31 +107,32 @@ def create_lead(current_user):
     if not data.get('company_name'):
         return jsonify({'error': 'company_name is required'}), 400
 
-    existing_account = Account.query.filter_by(company_name=data['company_name']).first()
-    if existing_account:
-        source = data.get('source') or 'Existing Client'
-        opp = Opportunity(
-            opp_id=generate_id(Opportunity, 'OPP'),
-            company_name=data['company_name'],
-            contact_name=data.get('contact_name'),
-            contact_email=data.get('contact_email'),
-            contact_phone=data.get('contact_phone'),
-            source=source,
-            service_interest=data.get('service_type'),
-            description=data.get('description'),
-            stage='Prospecting',
-            estimated_value=safe_float(data.get('estimated_value')),
-            account_id=existing_account.id,
-            assigned_to=safe_int(data.get('assigned_to')),
-            created_by=current_user.id,
-        )
-        db.session.add(opp)
-        db.session.commit()
-        return jsonify({
-            'message': 'Opportunity created from existing account',
-            'opportunity': opp.to_dict(),
-            'type': 'opportunity',
-        }), 201
+    if not data.get('referring_account_id'):
+        existing_account = Account.query.filter_by(company_name=data['company_name']).first()
+        if existing_account:
+            source = data.get('source') or 'Existing Client'
+            opp = Opportunity(
+                opp_id=generate_id(Opportunity, 'OPP'),
+                company_name=data['company_name'],
+                contact_name=data.get('contact_name'),
+                contact_email=data.get('contact_email'),
+                contact_phone=data.get('contact_phone'),
+                source=source,
+                service_interest=data.get('service_type'),
+                description=data.get('description'),
+                stage='Prospecting',
+                estimated_value=safe_float(data.get('estimated_value')),
+                account_id=existing_account.id,
+                assigned_to=safe_int(data.get('assigned_to')),
+                created_by=current_user.id,
+            )
+            db.session.add(opp)
+            db.session.commit()
+            return jsonify({
+                'message': 'Opportunity created from existing account',
+                'opportunity': opp.to_dict(),
+                'type': 'opportunity',
+            }), 201
 
     lead = Lead(
         lead_id=generate_id(Lead, 'LD'),
@@ -148,10 +149,12 @@ def create_lead(current_user):
         stage=data.get('stage', 'Prospecting'),
         subject=data.get('subject'),
         description=data.get('description'),
-        estimated_value=data.get('estimated_value'),
+        estimated_value=safe_float(data.get('estimated_value')),
         service_type=data.get('service_type'),
-        assigned_to=data.get('assigned_to') if data.get('assigned_to') else None,
+        assigned_to=safe_int(data.get('assigned_to')),
         created_by=current_user.id,
+        referring_account_id=safe_int(data.get('referring_account_id')),
+        referral_date=datetime.utcnow() if data.get('referring_account_id') else None,
     )
     db.session.add(lead)
     db.session.flush()
