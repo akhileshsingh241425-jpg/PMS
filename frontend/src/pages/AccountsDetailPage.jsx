@@ -129,6 +129,11 @@ export default function AccountsDetailPage() {
   const [editContact, setEditContact] = useState(null)
   const [contactForm, setContactForm] = useState({ salutation: '', first_name: '', last_name: '', email: '', phone: '', mobile: '', designation: '', department: '', is_primary: false, notes: '' })
   const [showOppForm, setShowOppForm] = useState(false)
+  const [showMeetingModal, setShowMeetingModal] = useState(false)
+  const [meetingModalItem, setMeetingModalItem] = useState(null)
+  const [meetingModalType, setMeetingModalType] = useState('meeting') // 'meeting' | 'request'
+  const [meetingResponseForm, setMeetingResponseForm] = useState({ status: 'Confirmed', confirmed_date: '', team_remarks: '' })
+  const [responding, setResponding] = useState(false)
   const [oppForm, setOppForm] = useState({
     company_name: '', contact_name: '', contact_email: '', contact_phone: '',
     source: 'Referral', service_interest: '', description: '', stage: 'Prospecting',
@@ -770,7 +775,7 @@ export default function AccountsDetailPage() {
                 <tbody>
                   {meetings.map((m, i) => (
                     <tr key={m.id} style={{ background: i % 2 === 0 ? '#fff' : '#F9FAFB', cursor: 'pointer', transition: 'background .15s' }}
-                      onClick={() => navigate(`/meetings/${m.id}`)}
+                      onClick={() => { setMeetingModalItem(m); setMeetingModalType('meeting'); setShowMeetingModal(true) }}
                       onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
                       onMouseOut={e => e.currentTarget.style.background = i % 2 === 0 ? '#fff' : '#F9FAFB'}>
                       <Td style={{ fontWeight: 500 }}>{m.title}</Td>
@@ -782,6 +787,7 @@ export default function AccountsDetailPage() {
                   ))}
                   {meeting_requests.map((mr, i) => (
                     <tr key={`mr_${mr.id}`} style={{ background: '#F9FAFB', cursor: 'pointer', transition: 'background .15s' }}
+                      onClick={() => { setMeetingModalItem(mr); setMeetingModalType('request'); setMeetingResponseForm({ status: 'Confirmed', confirmed_date: '', team_remarks: '' }); setShowMeetingModal(true) }}
                       onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
                       onMouseOut={e => e.currentTarget.style.background = '#F9FAFB'}>
                       <Td style={{ color: '#6B7280' }}>{mr.agenda}</Td>
@@ -798,6 +804,122 @@ export default function AccountsDetailPage() {
             <EmptyState icon={Calendar} text="No meetings scheduled for this account" />
           )}
         </SectionCard>
+
+        {/* ═══ MEETING MODAL ═══ */}
+        {showMeetingModal && meetingModalItem && (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+            onClick={e => { if (e.target === e.currentTarget) setShowMeetingModal(false) }}>
+            <div style={{ background: '#fff', borderRadius: '16px', maxWidth: '600px', width: '100%', maxHeight: '90vh', overflow: 'auto', boxShadow: '0 25px 80px rgba(0,0,0,0.2)' }}>
+              <div style={{ padding: '20px 24px', borderBottom: '1px solid #ECECEC', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#1F2937', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Calendar className="w-4 h-4" style={{ color: '#3B82F6' }} />
+                  {meetingModalType === 'meeting' ? meetingModalItem.title : meetingModalItem.agenda?.slice(0, 60)}
+                </h3>
+                <button onClick={() => setShowMeetingModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', padding: '4px' }}>
+                  <XCircle className="w-5 h-5" />
+                </button>
+              </div>
+              <div style={{ padding: '24px' }}>
+                {meetingModalType === 'meeting' ? (
+                  /* Regular Meeting */
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                      <DetailField label="Title" value={meetingModalItem.title} />
+                      <DetailField label="Status" value={meetingModalItem.status} />
+                      <DetailField label="Date" value={formatDateTime(meetingModalItem.meeting_date)} />
+                      <DetailField label="Location" value={meetingModalItem.location || '—'} />
+                      {meetingModalItem.created_by_name && <DetailField label="Created By" value={meetingModalItem.created_by_name} />}
+                    </div>
+                    {meetingModalItem.description && (
+                      <div style={{ padding: '14px', background: '#F8FAFC', borderRadius: '10px' }}>
+                        <p style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>Description</p>
+                        <p style={{ fontSize: '13px', color: '#1F2937', margin: 0, whiteSpace: 'pre-wrap' }}>{meetingModalItem.description}</p>
+                      </div>
+                    )}
+                    {meetingModalItem.mom && (
+                      <div style={{ padding: '14px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '10px' }}>
+                        <p style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>Minutes of Meeting</p>
+                        <p style={{ fontSize: '13px', color: '#92400E', margin: 0, whiteSpace: 'pre-wrap' }}>{meetingModalItem.mom}</p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* Meeting Request */
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                      <DetailField label="Agenda" value={meetingModalItem.agenda} />
+                      <DetailField label="Status" value={meetingModalItem.status} />
+                      <DetailField label="Preferred Date" value={formatDateTime(meetingModalItem.preferred_date)} />
+                      <DetailField label="Requested By" value={meetingModalItem.requested_by_name || '—'} />
+                      {meetingModalItem.confirmed_date && <DetailField label="Confirmed Date" value={formatDateTime(meetingModalItem.confirmed_date)} />}
+                    </div>
+                    {meetingModalItem.meeting_link && (
+                      <div style={{ padding: '12px 14px', background: '#EEF2FF', border: '1px solid #C7D2FE', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <ExternalLink className="w-4 h-4" style={{ color: '#4F46E5' }} />
+                        <a href={meetingModalItem.meeting_link} target="_blank" rel="noopener noreferrer" style={{ color: '#4338CA', fontWeight: 500, textDecoration: 'none', fontSize: '13px' }}>{meetingModalItem.meeting_link}</a>
+                      </div>
+                    )}
+                    {meetingModalItem.team_remarks && (
+                      <div style={{ padding: '14px', background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: '10px' }}>
+                        <p style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>Team Remarks</p>
+                        <p style={{ fontSize: '13px', color: '#9A3412', margin: 0 }}>{meetingModalItem.team_remarks}</p>
+                      </div>
+                    )}
+
+                    {/* Respond Form - only for pending requests */}
+                    {['Requested', 'Rescheduled'].includes(meetingModalItem.status) && (
+                      <div style={{ borderTop: '1px solid #ECECEC', paddingTop: '18px', marginTop: '8px' }}>
+                        <h4 style={{ fontSize: '14px', fontWeight: 600, color: '#1F2937', margin: '0 0 14px' }}>Respond to Request</h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          <div>
+                            <label style={{ fontSize: '12px', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '4px' }}>Action *</label>
+                            <select value={meetingResponseForm.status} onChange={e => setMeetingResponseForm({ ...meetingResponseForm, status: e.target.value })}
+                              style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #D1D5DB', borderRadius: '8px', fontSize: '13px', outline: 'none' }}>
+                              <option value="Confirmed">Confirm</option>
+                              <option value="Rescheduled">Reschedule</option>
+                              <option value="Cancelled">Cancel</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label style={{ fontSize: '12px', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '4px' }}>
+                              {meetingResponseForm.status === 'Confirmed' ? 'Confirmed Date *' : 'New Date'}
+                            </label>
+                            <input type="datetime-local" value={meetingResponseForm.confirmed_date} onChange={e => setMeetingResponseForm({ ...meetingResponseForm, confirmed_date: e.target.value })}
+                              style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #D1D5DB', borderRadius: '8px', fontSize: '13px', outline: 'none', fontFamily: 'inherit' }} />
+                          </div>
+                          <div>
+                            <label style={{ fontSize: '12px', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '4px' }}>Team Remarks</label>
+                            <textarea value={meetingResponseForm.team_remarks} onChange={e => setMeetingResponseForm({ ...meetingResponseForm, team_remarks: e.target.value })} rows={2}
+                              style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #D1D5DB', borderRadius: '8px', fontSize: '13px', outline: 'none', fontFamily: 'inherit', resize: 'vertical' }}
+                              placeholder="Optional notes for the client..." />
+                          </div>
+                          <button onClick={async () => {
+                            if (!meetingResponseForm.confirmed_date && meetingResponseForm.status === 'Confirmed') { return alert('Confirmed date is required') }
+                            setResponding(true)
+                            try {
+                              const r = await api.put(`/api/meeting-requests/${meetingModalItem.id}/respond`, {
+                                status: meetingResponseForm.status,
+                                confirmed_date: meetingResponseForm.confirmed_date || null,
+                                team_remarks: meetingResponseForm.team_remarks || null,
+                              })
+                              setMeetingModalItem(r.data.meeting_request)
+                              setMeetingResponseForm({ status: 'Confirmed', confirmed_date: '', team_remarks: '' })
+                              loadDetail()
+                            } catch (e) { alert(e.response?.data?.error || 'Failed to respond') }
+                            finally { setResponding(false) }
+                          }} disabled={responding}
+                            style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg, #5B21B6, #7C3AED)', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', opacity: responding ? 0.6 : 1, alignSelf: 'flex-start' }}>
+                            {responding ? 'Submitting...' : 'Submit Response'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ═══ TASKS ═══ */}
         <SectionCard title="Tasks" icon={CheckCircle} iconColor="#EC4899" count={tasks.length}>
@@ -1299,6 +1421,15 @@ function InfoRow2({ label, value }) {
     <div style={{ padding: '8px 0' }}>
       <div style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500, marginBottom: '2px' }}>{label}</div>
       <div style={{ fontSize: '14px', color: '#1F2937', fontWeight: 600 }}>{value}</div>
+    </div>
+  )
+}
+
+function DetailField({ label, value }) {
+  return (
+    <div style={{ padding: '10px 14px', background: '#F8FAFC', borderRadius: '10px' }}>
+      <p style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 4px' }}>{label}</p>
+      <p style={{ fontSize: '14px', color: '#1F2937', margin: 0, fontWeight: 500 }}>{value || '—'}</p>
     </div>
   )
 }
