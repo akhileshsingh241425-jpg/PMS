@@ -247,30 +247,30 @@ export default function MeetingDetailView({ meetingId, meetingType = 'meeting', 
   const desc = isMR ? null : item.description
 
   const renderOverview = () => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-        <div style={{ padding: '14px', background: '#F8FAFC', borderRadius: '10px' }}>
-          <p style={{ fontSize: 11, color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 4px' }}>{isMR ? 'Preferred Date' : 'Date & Time'}</p>
-          <p style={{ fontSize: 14, fontWeight: 500, color: '#1F2937', margin: 0 }}>{formatDT(dateField)}</p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '18px' }}>
+        <div style={{ padding: '18px', background: '#F8FAFC', borderRadius: '12px' }}>
+          <p style={{ fontSize: 12, color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>{isMR ? 'Preferred Date' : 'Date & Time'}</p>
+          <p style={{ fontSize: 16, fontWeight: 600, color: '#1F2937', margin: 0 }}>{formatDT(dateField)}</p>
         </div>
-        <div style={{ padding: '14px', background: '#F8FAFC', borderRadius: '10px' }}>
-          <p style={{ fontSize: 11, color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 4px' }}>Status</p>
-          <span style={{ display: 'inline-block', padding: '4px 12px', borderRadius: '6px', fontSize: 12, fontWeight: 600, background: sStyle.bg, color: sStyle.text }}>{item.status}</span>
+        <div style={{ padding: '18px', background: '#F8FAFC', borderRadius: '12px' }}>
+          <p style={{ fontSize: 12, color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>Status</p>
+          <span style={{ display: 'inline-block', padding: '6px 14px', borderRadius: '8px', fontSize: 13, fontWeight: 700, background: sStyle.bg, color: sStyle.text }}>{item.status}</span>
         </div>
-        <div style={{ padding: '14px', background: '#F8FAFC', borderRadius: '10px' }}>
-          <p style={{ fontSize: 11, color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 4px' }}>{isMR ? 'Requested By' : 'Created By'}</p>
-          <p style={{ fontSize: 14, fontWeight: 500, color: '#1F2937', margin: 0 }}>{createdByName || '—'}</p>
+        <div style={{ padding: '18px', background: '#F8FAFC', borderRadius: '12px' }}>
+          <p style={{ fontSize: 12, color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>{isMR ? 'Requested By' : 'Created By'}</p>
+          <p style={{ fontSize: 16, fontWeight: 600, color: '#1F2937', margin: 0 }}>{createdByName || '—'}</p>
         </div>
         {isMR && item.confirmed_date && (
-          <div style={{ padding: '14px', background: '#F8FAFC', borderRadius: '10px' }}>
-            <p style={{ fontSize: 11, color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 4px' }}>Confirmed Date</p>
-            <p style={{ fontSize: 14, fontWeight: 500, color: '#1F2937', margin: 0 }}>{formatDT(item.confirmed_date)}</p>
+          <div style={{ padding: '18px', background: '#F8FAFC', borderRadius: '12px' }}>
+            <p style={{ fontSize: 12, color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>Confirmed Date</p>
+            <p style={{ fontSize: 16, fontWeight: 600, color: '#1F2937', margin: 0 }}>{formatDT(item.confirmed_date)}</p>
           </div>
         )}
         {!isMR && (
-          <div style={{ padding: '14px', background: '#F8FAFC', borderRadius: '10px' }}>
-            <p style={{ fontSize: 11, color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 4px' }}>Location</p>
-            <p style={{ fontSize: 14, fontWeight: 500, color: '#1F2937', margin: 0 }}>{item.location || '—'}</p>
+          <div style={{ padding: '18px', background: '#F8FAFC', borderRadius: '12px' }}>
+            <p style={{ fontSize: 12, color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>Location</p>
+            <p style={{ fontSize: 16, fontWeight: 600, color: '#1F2937', margin: 0 }}>{item.location || '—'}</p>
           </div>
         )}
       </div>
@@ -583,9 +583,9 @@ export default function MeetingDetailView({ meetingId, meetingType = 'meeting', 
   )
 
   return (
-    <div style={{ background: '#fff', borderRadius: '16px', border: '1px solid #E2E8F0', overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
-      <div style={{ padding: '20px 24px', borderBottom: '1px solid #E2E8F0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+    <div style={{ background: '#fff', borderRadius: '20px', border: '1px solid #E2E8F0', overflow: 'hidden', boxShadow: '0 12px 48px rgba(0,0,0,0.12)', minHeight: '95vh' }}>
+      <div style={{ padding: '32px 40px', borderBottom: '1px solid #E2E8F0', background: '#F8FAFC' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
           <button onClick={onBack} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: '#64748B', fontSize: 13, fontWeight: 500, padding: 0 }}>
             <ChevronLeft className="w-4 h-4" /> Back
           </button>
@@ -595,15 +595,15 @@ export default function MeetingDetailView({ meetingId, meetingType = 'meeting', 
             </button>
           )}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ width: 44, height: 44, borderRadius: '12px', background: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <Calendar className="w-5 h-5" style={{ color: '#4F46E5' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{ width: 50, height: 50, borderRadius: '14px', background: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Calendar className="w-6 h-6" style={{ color: '#4F46E5' }} />
           </div>
           <div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: '#0F172A', margin: 0 }}>{title}</h2>
-            <p style={{ fontSize: 13, color: '#64748B', margin: '2px 0 0' }}>{formatDT(dateField)}</p>
+            <h2 style={{ fontSize: 22, fontWeight: 800, color: '#0F172A', margin: 0, lineHeight: 1.3 }}>{title}</h2>
+            <p style={{ fontSize: 14, color: '#64748B', margin: '4px 0 0' }}>{formatDT(dateField)}</p>
           </div>
-          <span style={{ marginLeft: 'auto', padding: '4px 12px', borderRadius: '6px', fontSize: 11, fontWeight: 600, background: sStyle.bg, color: sStyle.text, whiteSpace: 'nowrap' }}>{item.status}</span>
+          <span style={{ marginLeft: 'auto', padding: '6px 14px', borderRadius: '8px', fontSize: 12, fontWeight: 700, background: sStyle.bg, color: sStyle.text, whiteSpace: 'nowrap' }}>{item.status}</span>
         </div>
       </div>
 
@@ -612,10 +612,10 @@ export default function MeetingDetailView({ meetingId, meetingType = 'meeting', 
           const active = activeTab === tab.key
           return (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
-              display: 'flex', alignItems: 'center', gap: '6px', padding: '12px 18px',
+              display: 'flex', alignItems: 'center', gap: '6px', padding: '14px 22px',
               border: 'none', borderBottom: active ? '2px solid #5B3DF5' : '2px solid transparent',
               background: active ? '#fff' : 'transparent', cursor: 'pointer',
-              fontSize: 13, fontWeight: active ? 600 : 500, color: active ? '#5B3DF5' : '#64748B',
+              fontSize: 14, fontWeight: active ? 600 : 500, color: active ? '#5B3DF5' : '#64748B',
               whiteSpace: 'nowrap', transition: 'all 0.15s',
             }}>
               <tab.icon className="w-4 h-4" />
@@ -625,7 +625,7 @@ export default function MeetingDetailView({ meetingId, meetingType = 'meeting', 
         })}
       </div>
 
-      <div style={{ padding: '24px', maxHeight: '520px', overflowY: 'auto' }}>
+      <div style={{ padding: '28px 32px', maxHeight: '75vh', overflowY: 'auto' }}>
         {activeTab === 'overview' && renderOverview()}
         {activeTab === 'notes' && renderNotes()}
         {activeTab === 'documents' && renderDocuments()}
