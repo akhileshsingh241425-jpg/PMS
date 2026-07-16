@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, date
 from flask import Blueprint, request, jsonify
-from models import db, User, Project, ProjectTeam, ProjectDocument, Task, TaskChecklistItem, TaskComment, Meeting, MeetingDocument, MeetingShare, Notification
+from models import db, User, Project, ProjectTeam, ProjectDocument, Task, TaskChecklistItem, TaskComment, Meeting, MeetingDocument, MeetingShare, MeetingRequestShare, MeetingRequest, Notification
 from middleware.auth import login_required
 from utils import validate_file, safe_filename
 
@@ -14,11 +14,16 @@ def _my_project_ids(user):
         ids.update(p.id for p in Project.query.all())
     else:
         ids.update(p.id for p in Project.query.filter(db.or_(Project.pm_id == user.id, Project.created_by == user.id)).all())
-    # Also include projects from meeting shares
+    # Include projects from meeting shares
     shared_mids = [s.meeting_id for s in MeetingShare.query.filter_by(user_id=user.id).all()]
     if shared_mids:
         shared_meetings = Meeting.query.filter(Meeting.id.in_(shared_mids)).all()
         ids.update(m.project_id for m in shared_meetings if m.project_id)
+    # Include projects from meeting request shares
+    shared_mr_ids = [s.meeting_request_id for s in MeetingRequestShare.query.filter_by(user_id=user.id).all()]
+    if shared_mr_ids:
+        shared_mrs = MeetingRequest.query.filter(MeetingRequest.id.in_(shared_mr_ids)).all()
+        ids.update(m.project_id for m in shared_mrs if m.project_id)
     return ids
 
 
@@ -186,7 +191,15 @@ def add_comment(current_user, tid):
 def my_meetings(current_user):
     pids = _my_project_ids(current_user)
     meetings = Meeting.query.filter(Meeting.project_id.in_(pids)).order_by(Meeting.meeting_date.desc()).all() if pids else []
-    return jsonify({'meetings': [m.to_dict() for m in meetings]})
+    # Also include meeting requests shared with user
+    shared_mr_ids = [s.meeting_request_id for s in MeetingRequestShare.query.filter_by(user_id=current_user.id).all()]
+    meeting_requests = []
+    if shared_mr_ids:
+        meeting_requests = MeetingRequest.query.filter(MeetingRequest.id.in_(shared_mr_ids)).order_by(MeetingRequest.preferred_date.desc()).all()
+    return jsonify({
+        'meetings': [m.to_dict() for m in meetings],
+        'meeting_requests': [mr.to_dict() for mr in meeting_requests],
+    })
 
 
 @employee_bp.route('/meetings/<int:mid>', methods=['GET'])

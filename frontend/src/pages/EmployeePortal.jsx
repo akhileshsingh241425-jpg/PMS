@@ -470,22 +470,27 @@ function TaskDetail({ taskId, onBack }) {
 }
 
 // ===== MEETINGS =====
-function MeetingsView({ meetings }) {
+function MeetingsView({ meetings, meetingRequests }) {
+  const all = [
+    ...(meetings || []).map(m => ({ ...m, _type: 'meeting', _date: m.meeting_date, _title: m.title, _status: m.status })),
+    ...(meetingRequests || []).map(mr => ({ ...mr, _type: 'request', _date: mr.preferred_date, _title: mr.agenda, _status: mr.status, meeting_link: mr.meeting_link })),
+  ].sort((a, b) => new Date(b._date) - new Date(a._date))
+
   return (
     <div>
       <h2 style={{ fontSize: 22, fontWeight: 700, color: '#0F172A', margin: '0 0 20px' }}>Meetings</h2>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {meetings.length > 0 ? meetings.map(m => (
-          <div key={m.id} style={{ padding: '16px 20px', background: '#fff', borderRadius: 12, border: '1px solid #E2E8F0' }}>
+        {all.length > 0 ? all.map(m => (
+          <div key={`${m._type}_${m.id}`} style={{ padding: '16px 20px', background: '#fff', borderRadius: 12, border: '1px solid #E2E8F0' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <Calendar className="w-5 h-5" style={{ color: '#5B3DF5' }} />
                 <div>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: '#1F2937', margin: 0 }}>{m.title}</p>
-                  <p style={{ fontSize: 12, color: '#6B7280', margin: '2px 0 0' }}>{formatDT(m.meeting_date)}</p>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: '#1F2937', margin: 0 }}>{m._title}</p>
+                  <p style={{ fontSize: 12, color: '#6B7280', margin: '2px 0 0' }}>{formatDT(m._date)} {m._type === 'request' ? '(Request)' : ''}</p>
                 </div>
               </div>
-              <span style={{ padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600, background: STATUS_STYLES[m.status]?.bg, color: STATUS_STYLES[m.status]?.text }}>{m.status}</span>
+              <span style={{ padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600, background: STATUS_STYLES[m._status]?.bg, color: STATUS_STYLES[m._status]?.text }}>{m._status}</span>
             </div>
             {m.description && <p style={{ fontSize: 12, color: '#6B7280', margin: '0 0 10px' }}>{m.description}</p>}
             <div style={{ display: 'flex', gap: 8 }}>
@@ -810,6 +815,7 @@ export default function EmployeePortal({ activeTab }) {
   const [projects, setProjects] = useState([])
   const [tasks, setTasks] = useState([])
   const [meetings, setMeetings] = useState([])
+  const [meetingRequests, setMeetingRequests] = useState([])
   const [docs, setDocs] = useState([])
   const [events, setEvents] = useState([])
   const [teamData, setTeamData] = useState(null)
@@ -826,7 +832,7 @@ export default function EmployeePortal({ activeTab }) {
       api.get('/api/employee/dashboard').then(r => setDashboardData(r.data)).catch(() => {}),
       api.get('/api/employee/projects').then(r => setProjects(r.data.projects || [])).catch(() => {}),
       api.get('/api/employee/tasks').then(r => setTasks(r.data.tasks || [])).catch(() => {}),
-      api.get('/api/employee/meetings').then(r => setMeetings(r.data.meetings || [])).catch(() => {}),
+      api.get('/api/employee/meetings').then(r => { setMeetings(r.data.meetings || []); setMeetingRequests(r.data.meeting_requests || []) }).catch(() => {}),
       api.get('/api/employee/documents').then(r => setDocs(r.data.documents || [])).catch(() => {}),
       api.get('/api/employee/calendar').then(r => setEvents(r.data.events || [])).catch(() => {}),
       api.get('/api/employee/team').then(r => setTeamData(r.data)).catch(() => {}),
@@ -855,7 +861,7 @@ export default function EmployeePortal({ activeTab }) {
       case 'dashboard': return <Dashboard data={dashboardData} />
       case 'projects': return <MyProjects projects={projects} onSelect={openProject} />
       case 'tasks': return <MyTasks data={{ tasks }} />
-      case 'meetings': return <MeetingsView meetings={meetings} />
+      case 'meetings': return <MeetingsView meetings={meetings} meetingRequests={meetingRequests} />
       case 'documents': return <DocumentsView docs={docs} />
       case 'calendar': return <CalendarView events={events} />
       case 'team': return <TeamView teamData={teamData} />
