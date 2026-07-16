@@ -787,7 +787,7 @@ export default function AccountsDetailPage() {
                   ))}
                   {meeting_requests.map((mr, i) => (
                     <tr key={`mr_${mr.id}`} style={{ background: '#F9FAFB', cursor: 'pointer', transition: 'background .15s' }}
-                      onClick={() => { setMeetingModalItem(mr); setMeetingModalType('request'); setMeetingResponseForm({ status: 'Confirmed', confirmed_date: '', meeting_link: mr.meeting_link || '', team_remarks: mr.team_remarks || '' }); setShowMeetingModal(true) }}
+                      onClick={() => { setMeetingModalItem(mr); setMeetingModalType('request'); setMeetingResponseForm({ status: mr.status === 'Confirmed' ? 'Confirmed' : 'Confirmed', confirmed_date: mr.confirmed_date ? mr.confirmed_date.slice(0, 16) : '', meeting_link: mr.meeting_link || '', team_remarks: mr.team_remarks || '' }); setShowMeetingModal(true) }}
                       onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
                       onMouseOut={e => e.currentTarget.style.background = '#F9FAFB'}>
                       <Td style={{ color: '#6B7280' }}>{mr.agenda}</Td>
@@ -853,17 +853,19 @@ export default function AccountsDetailPage() {
                       <DetailField label="Requested By" value={meetingModalItem.requested_by_name || '—'} />
                       {meetingModalItem.confirmed_date && <DetailField label="Confirmed Date" value={formatDateTime(meetingModalItem.confirmed_date)} />}
                     </div>
-                    {meetingModalItem.meeting_link ? (
-                      <div style={{ padding: '12px 14px', background: '#EEF2FF', border: '1px solid #C7D2FE', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <ExternalLink className="w-4 h-4" style={{ color: '#4F46E5' }} />
-                        <a href={meetingModalItem.meeting_link} target="_blank" rel="noopener noreferrer" style={{ color: '#4338CA', fontWeight: 500, textDecoration: 'none', fontSize: '13px' }}>{meetingModalItem.meeting_link}</a>
-                      </div>
-                    ) : meetingModalItem.status === 'Confirmed' && (
-                      <div style={{ padding: '12px 14px', background: '#F8FAFC', border: '1px dashed #D1D5DB', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <ExternalLink className="w-4 h-4" style={{ color: '#9CA3AF' }} />
-                        <span style={{ color: '#9CA3AF', fontSize: '13px' }}>No meeting link added</span>
-                      </div>
-                    )}
+                    <div style={{ marginBottom: '12px' }}>
+                      <p style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>Meeting Link</p>
+                      {meetingModalItem.meeting_link ? (
+                        <div style={{ padding: '10px 14px', background: '#EEF2FF', border: '1px solid #C7D2FE', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <ExternalLink className="w-4 h-4" style={{ color: '#4F46E5' }} />
+                          <a href={meetingModalItem.meeting_link} target="_blank" rel="noopener noreferrer" style={{ color: '#4338CA', fontWeight: 500, textDecoration: 'none', fontSize: '13px' }}>{meetingModalItem.meeting_link}</a>
+                        </div>
+                      ) : (
+                        <div style={{ padding: '10px 14px', background: '#F8FAFC', border: '1px dashed #D1D5DB', borderRadius: '10px', color: '#9CA3AF', fontSize: '13px' }}>
+                          {meetingModalItem.status === 'Requested' ? 'Client did not provide a meeting link' : 'No meeting link added'}
+                        </div>
+                      )}
+                    </div>
                     {meetingModalItem.team_remarks && (
                       <div style={{ padding: '14px', background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: '10px' }}>
                         <p style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>Team Remarks</p>
@@ -871,10 +873,12 @@ export default function AccountsDetailPage() {
                       </div>
                     )}
 
-                    {/* Respond Form - only for pending requests */}
-                    {['Requested', 'Rescheduled'].includes(meetingModalItem.status) && (
+                    {/* Respond Form */}
+                    {['Requested', 'Rescheduled', 'Confirmed'].includes(meetingModalItem.status) && (
                       <div style={{ borderTop: '1px solid #ECECEC', paddingTop: '18px', marginTop: '8px' }}>
-                        <h4 style={{ fontSize: '14px', fontWeight: 600, color: '#1F2937', margin: '0 0 14px' }}>Respond to Request</h4>
+                        <h4 style={{ fontSize: '14px', fontWeight: 600, color: '#1F2937', margin: '0 0 14px' }}>
+                          {meetingModalItem.status === 'Confirmed' ? 'Update Meeting' : 'Respond to Request'}
+                        </h4>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                           <div>
                             <label style={{ fontSize: '12px', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '4px' }}>Action *</label>
@@ -921,7 +925,7 @@ export default function AccountsDetailPage() {
                             finally { setResponding(false) }
                           }} disabled={responding}
                             style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg, #5B21B6, #7C3AED)', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', opacity: responding ? 0.6 : 1, alignSelf: 'flex-start' }}>
-                            {responding ? 'Submitting...' : 'Submit Response'}
+                            {responding ? 'Saving...' : meetingModalItem.status === 'Confirmed' ? 'Update Meeting' : 'Submit Response'}
                           </button>
                         </div>
                       </div>
