@@ -20,6 +20,8 @@ class MeetingRequest(db.Model):
     requester = db.relationship('User', foreign_keys=[requested_by])
     account = db.relationship('Account', foreign_keys=[account_id])
     project = db.relationship('Project', foreign_keys=[project_id])
+    shares = db.relationship('MeetingRequestShare', backref='meeting_request', lazy='dynamic', cascade='all, delete-orphan')
+    activities = db.relationship('MeetingRequestActivity', backref='meeting_request', lazy='dynamic', cascade='all, delete-orphan', order_by='MeetingRequestActivity.created_at.asc()')
 
     def to_dict(self):
         return {
@@ -30,6 +32,50 @@ class MeetingRequest(db.Model):
             'team_remarks': self.team_remarks,
             'meeting_notes': self.meeting_notes,
             'requested_by_name': self.requester.full_name if self.requester else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'share_count': self.shares.count(),
+            'activity_count': self.activities.count(),
+        }
+
+
+class MeetingRequestShare(db.Model):
+    __tablename__ = 'meeting_request_shares'
+    id = db.Column(db.Integer, primary_key=True)
+    meeting_request_id = db.Column(db.Integer, db.ForeignKey('meeting_requests.id', ondelete='CASCADE'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    can_edit = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', foreign_keys=[user_id])
+    __table_args__ = (db.UniqueConstraint('meeting_request_id', 'user_id'),)
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'meeting_request_id': self.meeting_request_id,
+            'user_id': self.user_id,
+            'user_name': self.user.full_name if self.user else None,
+            'user_designation': self.user.designation if self.user else None,
+            'can_edit': self.can_edit,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class MeetingRequestActivity(db.Model):
+    __tablename__ = 'meeting_request_activities'
+    id = db.Column(db.Integer, primary_key=True)
+    meeting_request_id = db.Column(db.Integer, db.ForeignKey('meeting_requests.id', ondelete='CASCADE'), nullable=False, index=True)
+    action = db.Column(db.String(50), nullable=False)
+    description = db.Column(db.Text)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', foreign_keys=[user_id])
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'meeting_request_id': self.meeting_request_id,
+            'action': self.action, 'description': self.description,
+            'user_name': self.user.full_name if self.user else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
 
