@@ -7,7 +7,7 @@ bcrypt = Bcrypt()
 from .user import User
 from .account import Account
 from .project import Project, ProjectRemark, ProjectRemarkReaction, ProjectDocument, ProjectTeam, ProjectReport
-from .activity import Task, TaskChecklistItem, TaskComment, Meeting, MeetingDocument, MeetingRequestDocument, Note
+from .activity import Task, TaskChecklistItem, TaskComment, Meeting, MeetingShare, MeetingActivity, MeetingDocument, MeetingRequestDocument, Note
 from .client_portal import MeetingRequest, ClientUpload, FindingQuery
 from .lead import Lead, LeadRemark, LeadRemarkReaction, LeadDocument, LeadActivity, LeadNote, LeadAuditLog, LeadProposal
 from .opportunity import Opportunity, OpportunityRemark, OpportunityDocument, OpportunityActivity, OpportunityNote

@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 from flask import Blueprint, request, jsonify
-from models import db, Task, TaskChecklistItem, TaskComment, Meeting, MeetingDocument, Note
+from models import db, Task, TaskChecklistItem, TaskComment, Meeting, MeetingDocument, MeetingShare, MeetingActivity, Note, User
 from middleware.auth import login_required, role_required
 from utils import validate_file, safe_filename
 
@@ -161,6 +161,13 @@ def list_meetings(current_user):
     return jsonify({'meetings': [m.to_dict() for m in query.order_by(Meeting.meeting_date.desc()).all()]})
 
 
+@activity_bp.route('/meetings/<int:mid>', methods=['GET'])
+@login_required
+def get_meeting(current_user, mid):
+    m = Meeting.query.get_or_404(mid)
+    return jsonify({'meeting': m.to_dict()})
+
+
 @activity_bp.route('/meetings', methods=['POST'])
 @login_required
 def create_meeting(current_user):
@@ -179,6 +186,9 @@ def create_meeting(current_user):
     )
     db.session.add(m)
     db.session.commit()
+    act = MeetingActivity(meeting_id=m.id, action='created', description=f'Meeting "{m.title}" created', user_id=current_user.id)
+    db.session.add(act)
+    db.session.commit()
     return jsonify({'meeting': m.to_dict()}), 201
 
 
@@ -194,8 +204,71 @@ def update_meeting(current_user, mid):
             setattr(m, f, data[f])
     if 'meeting_date' in data:
         m.meeting_date = datetime.fromisoformat(data['meeting_date']) if data['meeting_date'] else None
+    notes_changed = 'meeting_notes' in data and data['meeting_notes'] != m.meeting_notes
+    status_changed = 'status' in data and data['status'] != m.status
+    if status_changed:
+        act = MeetingActivity(meeting_id=mid, action='status_changed', description=f'Status changed to {data["status"]}', user_id=current_user.id)
+        db.session.add(act)
+    if notes_changed:
+        act = MeetingActivity(meeting_id=mid, action='notes_updated', description='Meeting notes updated', user_id=current_user.id)
+        db.session.add(act)
     db.session.commit()
     return jsonify({'meeting': m.to_dict()})
+
+
+# MEETING SHARE
+@activity_bp.route('/meetings/<int:mid>/share', methods=['GET'])
+@login_required
+def get_meeting_shares(current_user, mid):
+    Meeting.query.get_or_404(mid)
+    shares = MeetingShare.query.filter_by(meeting_id=mid).order_by(MeetingShare.created_at.desc()).all()
+    return jsonify({'shares': [s.to_dict() for s in shares]})
+
+
+@activity_bp.route('/meetings/<int:mid>/share', methods=['POST'])
+@login_required
+def add_meeting_share(current_user, mid):
+    m = Meeting.query.get_or_404(mid)
+    data = request.get_json()
+    if not data.get('user_ids'):
+        return jsonify({'error': 'user_ids required'}), 400
+    user_ids = data['user_ids'] if isinstance(data['user_ids'], list) else [data['user_ids']]
+    added = []
+    for uid in user_ids:
+        existing = MeetingShare.query.filter_by(meeting_id=mid, user_id=int(uid)).first()
+        if not existing:
+            share = MeetingShare(meeting_id=mid, user_id=int(uid), can_edit=data.get('can_edit', False))
+            db.session.add(share)
+            added.append(uid)
+    # Log activity
+    if added:
+        names = db.session.query(User.full_name).filter(User.id.in_([int(u) for u in added])).all()
+        name_str = ', '.join([n[0] for n in names])
+        act = MeetingActivity(meeting_id=mid, action='shared', description=f'Shared with {name_str}', user_id=current_user.id)
+        db.session.add(act)
+    db.session.commit()
+    shares = MeetingShare.query.filter_by(meeting_id=mid).all()
+    return jsonify({'shares': [s.to_dict() for s in shares]})
+
+
+@activity_bp.route('/meetings/<int:mid>/share/<int:uid>', methods=['DELETE'])
+@login_required
+def remove_meeting_share(current_user, mid, uid):
+    share = MeetingShare.query.filter_by(meeting_id=mid, user_id=uid).first_or_404()
+    db.session.delete(share)
+    act = MeetingActivity(meeting_id=mid, action='unshared', description=f'Removed from sharing', user_id=current_user.id)
+    db.session.add(act)
+    db.session.commit()
+    return jsonify({'message': 'Removed'})
+
+
+# MEETING ACTIVITIES
+@activity_bp.route('/meetings/<int:mid>/activities', methods=['GET'])
+@login_required
+def list_meeting_activities(current_user, mid):
+    Meeting.query.get_or_404(mid)
+    acts = MeetingActivity.query.filter_by(meeting_id=mid).order_by(MeetingActivity.created_at.desc()).all()
+    return jsonify({'activities': [a.to_dict() for a in acts]})
 
 
 # MEETING DOCUMENTS
@@ -233,6 +306,9 @@ def upload_meeting_doc(current_user, mid):
     )
     db.session.add(doc)
     db.session.commit()
+    act = MeetingActivity(meeting_id=mid, action='document_uploaded', description=f'Uploaded: {file.filename}', user_id=current_user.id)
+    db.session.add(act)
+    db.session.commit()
     return jsonify({'document': doc.to_dict()}), 201
 
 
@@ -241,7 +317,42 @@ def upload_meeting_doc(current_user, mid):
 def download_meeting_doc(current_user, mid, did):
     from flask import send_file
     doc = MeetingDocument.query.get_or_404(did)
+    if doc.meeting_id != mid:
+        return jsonify({'error': 'Document not found for this meeting'}), 404
+    import os
+    if not os.path.isfile(doc.file_path):
+        return jsonify({'error': 'File not found on server'}), 404
     return send_file(doc.file_path, as_attachment=False, download_name=doc.file_name)
+
+
+@activity_bp.route('/meetings/<int:mid>/documents/<int:did>', methods=['DELETE'])
+@login_required
+def delete_meeting_doc(current_user, mid, did):
+    doc = MeetingDocument.query.get_or_404(did)
+    if doc.meeting_id != mid:
+        return jsonify({'error': 'Document not found'}), 404
+    if doc.uploaded_by != current_user.id and current_user.role != 'admin':
+        return jsonify({'error': 'Not authorized'}), 403
+    import os
+    if os.path.isfile(doc.file_path):
+        os.remove(doc.file_path)
+    db.session.delete(doc)
+    act = MeetingActivity(meeting_id=mid, action='document_deleted', description=f'Deleted document: {doc.file_name}', user_id=current_user.id)
+    db.session.add(act)
+    db.session.commit()
+    return jsonify({'message': 'Deleted'})
+
+
+# USERS (for sharing)
+@activity_bp.route('/users', methods=['GET'])
+@login_required
+def list_team_users(current_user):
+    role_filter = request.args.get('role', '').split(',')
+    query = User.query.filter(User.is_active == True)
+    if role_filter and role_filter[0]:
+        query = query.filter(User.role.in_(role_filter))
+    users = query.order_by(User.first_name.asc()).all()
+    return jsonify({'users': [{'id': u.id, 'full_name': u.full_name, 'designation': u.designation, 'role': u.role} for u in users]})
 
 
 # NOTES

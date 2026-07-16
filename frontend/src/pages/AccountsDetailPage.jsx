@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
+import MeetingDetailView from '../components/MeetingDetailView'
 import {
   ChevronLeft, Calendar, FileText, Briefcase,
   Clock, MessageSquare, Send, Users, Building2,
@@ -809,117 +810,35 @@ export default function AccountsDetailPage() {
         </SectionCard>
 
         {/* ═══ MEETING MODAL ═══ */}
-        {showMeetingModal && meetingModalItem && (
+        {showMeetingModal && meetingModalItem && meetingModalType === 'meeting' && (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+            onClick={e => { if (e.target === e.currentTarget) setShowMeetingModal(false) }}>
+            <div style={{ background: '#fff', borderRadius: '16px', maxWidth: '680px', width: '100%', maxHeight: '90vh', overflow: 'auto', boxShadow: '0 25px 80px rgba(0,0,0,0.2)' }}>
+              <div style={{ padding: '16px 24px', display: 'flex', justifyContent: 'flex-end' }}>
+                <button onClick={() => { setShowMeetingModal(false); loadDetail() }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', padding: '4px' }}>
+                  <XCircle className="w-5 h-5" />
+                </button>
+              </div>
+              <MeetingDetailView meetingId={meetingModalItem.id} onBack={() => setShowMeetingModal(false)} onRefresh={loadDetail} />
+            </div>
+          </div>
+        )}
+
+        {/* ═══ MEETING REQUEST MODAL ═══ */}
+        {showMeetingModal && meetingModalItem && meetingModalType === 'request' && (
           <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
             onClick={e => { if (e.target === e.currentTarget) setShowMeetingModal(false) }}>
             <div style={{ background: '#fff', borderRadius: '16px', maxWidth: '600px', width: '100%', maxHeight: '90vh', overflow: 'auto', boxShadow: '0 25px 80px rgba(0,0,0,0.2)' }}>
               <div style={{ padding: '20px 24px', borderBottom: '1px solid #ECECEC', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#1F2937', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Calendar className="w-4 h-4" style={{ color: '#3B82F6' }} />
-                  {meetingModalType === 'meeting' ? meetingModalItem.title : meetingModalItem.agenda?.slice(0, 60)}
+                  {meetingModalItem.agenda?.slice(0, 60)}
                 </h3>
-                <button onClick={() => setShowMeetingModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', padding: '4px' }}>
+                <button onClick={() => { setShowMeetingModal(false); loadDetail() }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', padding: '4px' }}>
                   <XCircle className="w-5 h-5" />
                 </button>
               </div>
               <div style={{ padding: '24px' }}>
-                {meetingModalType === 'meeting' ? (
-                  /* Regular Meeting */
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                      <DetailField label="Title" value={meetingModalItem.title} />
-                      <DetailField label="Status" value={meetingModalItem.status} />
-                      <DetailField label="Date" value={formatDateTime(meetingModalItem.meeting_date)} />
-                      <DetailField label="Location" value={meetingModalItem.location || '—'} />
-                      {meetingModalItem.created_by_name && <DetailField label="Created By" value={meetingModalItem.created_by_name} />}
-                    </div>
-                    {meetingModalItem.description && (
-                      <div style={{ padding: '14px', background: '#F8FAFC', borderRadius: '10px' }}>
-                        <p style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>Description</p>
-                        <p style={{ fontSize: '13px', color: '#1F2937', margin: 0, whiteSpace: 'pre-wrap' }}>{meetingModalItem.description}</p>
-                      </div>
-                    )}
-                    {meetingModalItem.meeting_link && (
-                      <div style={{ padding: '12px 14px', background: '#EEF2FF', border: '1px solid #C7D2FE', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <ExternalLink className="w-4 h-4" style={{ color: '#4F46E5', flexShrink: 0 }} />
-                        <a href={meetingModalItem.meeting_link} target="_blank" rel="noopener noreferrer" style={{ color: '#4338CA', fontWeight: 500, textDecoration: 'none', fontSize: '13px', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{meetingModalItem.meeting_link}</a>
-                      </div>
-                    )}
-                    {meetingModalItem.mom && (
-                      <div style={{ padding: '14px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '10px' }}>
-                        <p style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>Minutes of Meeting</p>
-                        <p style={{ fontSize: '13px', color: '#92400E', margin: 0, whiteSpace: 'pre-wrap' }}>{meetingModalItem.mom}</p>
-                      </div>
-                    )}
-                    {meetingModalItem.meeting_link && (
-                      <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                        <a href={meetingModalItem.meeting_link} target="_blank" rel="noopener noreferrer" style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', background: '#059669', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                          Join Meeting
-                        </a>
-                        {meetingModalItem.status !== 'Completed' && (
-                          <button onClick={async () => {
-                            try {
-                              await api.put(`/api/meetings/${meetingModalItem.id}`, { status: 'Completed' })
-                              setMeetingModalItem({ ...meetingModalItem, status: 'Completed' })
-                              loadDetail()
-                            } catch(e) { alert('Failed to complete meeting') }
-                          }} style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', background: '#1E40AF', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
-                            Mark Completed
-                          </button>
-                        )}
-                      </div>
-                    )}
-
-                    {/* ═══ MEETING NOTES ═══ */}
-                    <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '16px', marginTop: '8px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                        <h4 style={{ fontSize: '13px', fontWeight: 600, color: '#1F2937', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <FileText className="w-3.5 h-3.5" /> Meeting Notes
-                        </h4>
-                        {meetingModalItem.meeting_notes && !editingMeetingNotes && (
-                          <button onClick={() => setEditingMeetingNotes(true)} style={{ background: 'none', border: 'none', color: '#5B3DF5', cursor: 'pointer', fontSize: '12px', fontWeight: 600, padding: '4px 8px', borderRadius: '6px' }}
-                            onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
-                            onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
-                            <Edit3 className="w-3.5 h-3.5" style={{ marginRight: '4px' }} /> Edit
-                          </button>
-                        )}
-                      </div>
-                      {editingMeetingNotes || !meetingModalItem.meeting_notes ? (
-                        <>
-                          <textarea value={meetingNotes} onChange={e => setMeetingNotes(e.target.value)} rows={3}
-                            style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #D1D5DB', borderRadius: '8px', fontSize: '13px', outline: 'none', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }}
-                            placeholder="Add meeting notes / minutes..." />
-                          <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                            <button onClick={async () => {
-                              setSavingMeetingNotes(true)
-                              try {
-                                const r = await api.put(`/api/meetings/${meetingModalItem.id}`, { meeting_notes: meetingNotes })
-                                setMeetingModalItem(r.data.meeting)
-                                setEditingMeetingNotes(false)
-                                loadDetail()
-                              } catch(e) { alert('Failed to save notes') }
-                              finally { setSavingMeetingNotes(false) }
-                            }} disabled={savingMeetingNotes}
-                              style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg, #5B21B6, #7C3AED)', color: '#fff', fontSize: '12px', fontWeight: 600, cursor: 'pointer', opacity: savingMeetingNotes ? 0.6 : 1 }}>
-                              {savingMeetingNotes ? 'Saving...' : 'Save Notes'}
-                            </button>
-                            {meetingModalItem.meeting_notes && (
-                              <button onClick={() => { setEditingMeetingNotes(false); setMeetingNotes(meetingModalItem.meeting_notes) }}
-                                style={{ padding: '8px 18px', borderRadius: '8px', border: '1px solid #D1D5DB', background: '#fff', color: '#6B7280', fontSize: '12px', fontWeight: 500, cursor: 'pointer' }}>
-                                Cancel
-                              </button>
-                            )}
-                          </div>
-                        </>
-                      ) : (
-                        <div style={{ padding: '14px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '10px' }}>
-                          <p style={{ fontSize: '13px', color: '#1F2937', margin: 0, whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{meetingModalItem.meeting_notes}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  /* Meeting Request */
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                       <DetailField label="Agenda" value={meetingModalItem.agenda} />
@@ -1123,7 +1042,6 @@ export default function AccountsDetailPage() {
                       )}
                     </div>
                   </div>
-                    )}
 
                     {/* ═══ MEETING DOCUMENTS ═══ */}
                     <div style={{ borderTop: '1px solid #ECECEC', paddingTop: '18px', marginTop: '16px' }}>

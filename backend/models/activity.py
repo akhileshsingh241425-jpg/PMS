@@ -93,6 +93,8 @@ class Meeting(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     creator = db.relationship('User', foreign_keys=[created_by])
+    shares = db.relationship('MeetingShare', backref='meeting', lazy='dynamic', cascade='all, delete-orphan')
+    activities = db.relationship('MeetingActivity', backref='meeting', lazy='dynamic', cascade='all, delete-orphan', order_by='MeetingActivity.created_at.asc()')
 
     def to_dict(self):
         return {
@@ -102,6 +104,50 @@ class Meeting(db.Model):
             'location': self.location, 'meeting_link': self.meeting_link,
             'status': self.status, 'mom': self.mom, 'meeting_notes': self.meeting_notes,
             'created_by_name': self.creator.full_name if self.creator else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'share_count': self.shares.count(),
+            'activity_count': self.activities.count(),
+        }
+
+
+class MeetingShare(db.Model):
+    __tablename__ = 'meeting_shares'
+    id = db.Column(db.Integer, primary_key=True)
+    meeting_id = db.Column(db.Integer, db.ForeignKey('meetings.id', ondelete='CASCADE'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    can_edit = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', foreign_keys=[user_id])
+    __table_args__ = (db.UniqueConstraint('meeting_id', 'user_id'),)
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'meeting_id': self.meeting_id,
+            'user_id': self.user_id,
+            'user_name': self.user.full_name if self.user else None,
+            'user_designation': self.user.designation if self.user else None,
+            'can_edit': self.can_edit,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class MeetingActivity(db.Model):
+    __tablename__ = 'meeting_activities'
+    id = db.Column(db.Integer, primary_key=True)
+    meeting_id = db.Column(db.Integer, db.ForeignKey('meetings.id', ondelete='CASCADE'), nullable=False, index=True)
+    action = db.Column(db.String(50), nullable=False)
+    description = db.Column(db.Text)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', foreign_keys=[user_id])
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'meeting_id': self.meeting_id,
+            'action': self.action, 'description': self.description,
+            'user_name': self.user.full_name if self.user else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
 
