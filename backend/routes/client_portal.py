@@ -29,6 +29,14 @@ def client_auth(f):
             user = User.query.get(data['user_id'])
             if not user or not user.is_active:
                 return jsonify({'error': 'Inactive'}), 401
+            # Auto-fix missing account_id on any request
+            if not user.account_id:
+                acc = Account.query.filter_by(company_name=user.client_company_name).first()
+                if not acc:
+                    acc = Account.query.order_by(Account.id.desc()).first()
+                if acc:
+                    user.account_id = acc.id
+                    db.session.commit()
             return f(user, *args, **kwargs)
         except jwt.ExpiredSignatureError:
             return jsonify({'error': 'Token expired'}), 401
@@ -47,6 +55,16 @@ def client_login():
         return jsonify({'error': 'Invalid credentials'}), 401
     if not user.is_active:
         return jsonify({'error': 'Account inactive'}), 403
+
+    # Auto-fix missing account_id
+    if not user.account_id:
+        acc = Account.query.filter_by(company_name=user.client_company_name).first()
+        if not acc:
+            acc = Account.query.order_by(Account.id.desc()).first()
+        if acc:
+            user.account_id = acc.id
+            db.session.commit()
+
     return jsonify({'token': generate_client_token(user), 'user': user.to_dict()})
 
 
