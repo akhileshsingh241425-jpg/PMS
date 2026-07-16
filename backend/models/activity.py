@@ -103,6 +103,7 @@ class Meeting(db.Model):
             'meeting_date': self.meeting_date.isoformat() if self.meeting_date else None,
             'location': self.location, 'meeting_link': self.meeting_link,
             'status': self.status, 'mom': self.mom, 'meeting_notes': self.meeting_notes,
+            'created_by': self.created_by,
             'created_by_name': self.creator.full_name if self.creator else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'share_count': self.shares.count(),

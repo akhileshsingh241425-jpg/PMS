@@ -31,6 +31,7 @@ class MeetingRequest(db.Model):
             'confirmed_date': self.confirmed_date.isoformat() if self.confirmed_date else None,
             'team_remarks': self.team_remarks,
             'meeting_notes': self.meeting_notes,
+            'requested_by': self.requested_by,
             'requested_by_name': self.requester.full_name if self.requester else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'share_count': self.shares.count(),

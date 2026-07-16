@@ -76,7 +76,7 @@ export default function MeetingDetailView({ meetingId, meetingType = 'meeting', 
 
   const isMR = meetingType === 'request'
   const baseAPI = isMR ? '/api/meeting-requests' : '/api/meetings'
-  const baseDocs = isMR ? `/api/portal/meetings/${meetingId}/documents` : `/api/meetings/${meetingId}/documents`
+  const baseDocs = `${baseAPI}/${meetingId}/documents`
 
   const load = async () => {
     setLoading(true)
@@ -99,11 +99,8 @@ export default function MeetingDetailView({ meetingId, meetingType = 'meeting', 
   }
 
   const loadDocs = async () => {
-    try {
-      const headers = isMR ? { Authorization: `Bearer ${localStorage.getItem('pms_token')}` } : {}
-      const r = await api.get(baseDocs, { headers })
-      setDocs(r.data.documents)
-    } catch(e) {}
+    try { const r = await api.get(baseDocs); setDocs(r.data.documents) }
+    catch(e) {}
   }
 
   const loadActivities = async () => {
@@ -142,8 +139,7 @@ export default function MeetingDetailView({ meetingId, meetingType = 'meeting', 
     setUploading(true)
     try {
       const fd = new FormData(); fd.append('file', file)
-      const headers = isMR ? { Authorization: `Bearer ${localStorage.getItem('pms_token')}` } : {}
-      await api.post(baseDocs, fd, { headers })
+      await api.post(baseDocs, fd)
       loadDocs(); loadActivities()
     } catch(e) { alert(e.response?.data?.error || 'Upload failed') }
     finally { setUploading(false); if (fileRef.current) fileRef.current.value = '' }

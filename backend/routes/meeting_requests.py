@@ -34,12 +34,11 @@ def get_meeting_request(current_user, mid):
 def respond_meeting_request(current_user, mid):
     m = MeetingRequest.query.get_or_404(mid)
     data = request.get_json()
-    if not data.get('status'):
-        return jsonify({'error': 'status is required (Confirmed/Rescheduled/Cancelled)'}), 400
-    if data['status'] not in ('Confirmed', 'Rescheduled', 'Cancelled'):
+    status = data.get('status', m.status)
+    if status not in ('Confirmed', 'Rescheduled', 'Cancelled', 'Requested'):
         return jsonify({'error': 'Invalid status'}), 400
     old_status = m.status
-    m.status = data['status']
+    m.status = status
     if data.get('confirmed_date'):
         m.confirmed_date = datetime.fromisoformat(data['confirmed_date'])
     if data.get('team_remarks'):
@@ -48,8 +47,8 @@ def respond_meeting_request(current_user, mid):
         m.meeting_notes = data['meeting_notes']
     if 'meeting_link' in data:
         m.meeting_link = data['meeting_link'] or None
-    if old_status != data['status']:
-        act = MeetingRequestActivity(meeting_request_id=mid, action='status_changed', description=f'Status changed from {old_status} to {data["status"]}', user_id=current_user.id)
+    if old_status != status:
+        act = MeetingRequestActivity(meeting_request_id=mid, action='status_changed', description=f'Status changed from {old_status} to {status}', user_id=current_user.id)
         db.session.add(act)
     if 'meeting_notes' in data:
         act = MeetingRequestActivity(meeting_request_id=mid, action='notes_updated', description='Meeting notes updated', user_id=current_user.id)
@@ -112,7 +111,57 @@ def list_mr_activities(current_user, mid):
     return jsonify({'activities': [a.to_dict() for a in acts]})
 
 
-# DOCUMENT DELETE
+# DOCUMENTS
+UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'uploads', 'meeting_requests')
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+
+@meeting_req_bp.route('/<int:mid>/documents', methods=['GET'])
+@login_required
+def list_mr_docs(current_user, mid):
+    MeetingRequest.query.get_or_404(mid)
+    docs = MeetingRequestDocument.query.filter_by(meeting_request_id=mid).order_by(MeetingRequestDocument.uploaded_at.desc()).all()
+    return jsonify({'documents': [d.to_dict() for d in docs]})
+
+
+@meeting_req_bp.route('/<int:mid>/documents', methods=['POST'])
+@login_required
+def upload_mr_doc(current_user, mid):
+    m = MeetingRequest.query.get_or_404(mid)
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+    file = request.files['file']
+    from utils import validate_file, safe_filename
+    valid, err = validate_file(file)
+    if not valid:
+        return jsonify({'error': err}), 400
+    ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+    fname = safe_filename(f'mreq_{mid}', file.filename)
+    path = os.path.join(UPLOAD_DIR, fname)
+    file.save(path)
+    doc = MeetingRequestDocument(
+        meeting_request_id=mid,
+        file_name=file.filename, file_path=path, file_type=ext,
+        description=request.form.get('description', ''),
+        uploaded_by=current_user.id,
+    )
+    db.session.add(doc)
+    act = MeetingRequestActivity(meeting_request_id=mid, action='document_uploaded', description=f'Uploaded document: {file.filename}', user_id=current_user.id)
+    db.session.add(act)
+    db.session.commit()
+    return jsonify({'document': doc.to_dict()}), 201
+
+
+@meeting_req_bp.route('/<int:mid>/documents/<int:did>', methods=['GET'])
+@login_required
+def download_mr_doc(current_user, mid, did):
+    from flask import send_file
+    doc = MeetingRequestDocument.query.get_or_404(did)
+    if doc.meeting_request_id != mid:
+        return jsonify({'error': 'Document not found'}), 404
+    return send_file(doc.file_path, as_attachment=False, download_name=doc.file_name)
+
+
 @meeting_req_bp.route('/<int:mid>/documents/<int:did>', methods=['DELETE'])
 @login_required
 def delete_mr_doc(current_user, mid, did):
@@ -121,7 +170,6 @@ def delete_mr_doc(current_user, mid, did):
         return jsonify({'error': 'Document not found'}), 404
     if doc.uploaded_by != current_user.id and current_user.role != 'admin':
         return jsonify({'error': 'Not authorized'}), 403
-    import os
     if os.path.isfile(doc.file_path):
         os.remove(doc.file_path)
     db.session.delete(doc)
