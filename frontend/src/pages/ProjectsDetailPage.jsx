@@ -237,7 +237,11 @@ export default function ProjectsDetailPage() {
   const isBlocked = BLOCKED_STAGES.includes(p.stage)
   const openTasks = tasks.filter(t => t.status !== 'Completed').length
   const totalDocs = (documents || []).length
-  const totalMeetings = (meetings || []).length
+  const allMeetings = [
+    ...(meetings || []).map(m => ({ ...m, _type: 'meeting' })),
+    ...(meeting_requests || []).map(mr => ({ ...mr, _type: 'request', title: mr.agenda || 'Meeting Request', meeting_date: mr.preferred_date || mr.confirmed_date })),
+  ].sort((a, b) => new Date(b.meeting_date || b.created_at) - new Date(a.meeting_date || a.created_at))
+  const totalMeetings = allMeetings.length
 
   const timelineEvents = [
     { date: p.created_at, label: 'Project Created', user: p.creator_name || 'System' },
@@ -575,28 +579,40 @@ export default function ProjectsDetailPage() {
                     </button>
                   </form>
                 )}
-                {meetings.length === 0 ? (
-                  <EmptyState icon={<CalendarIcon />} title="No meetings" />
+                {allMeetings.length === 0 ? (
+                  <EmptyState icon={<CalendarIcon />} title="No meetings or requests" />
                 ) : (
-                  meetings.map(m => (
-                    <div key={m.id} style={{ background: '#F8F9FC', borderRadius: 8, marginBottom: 6, overflow: 'hidden' }}>
-                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '8px 12px 4px' }}>
-                        <div style={{ width: 28, height: 28, borderRadius: 8, background: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <CalendarIcon />
+                  allMeetings.map(m => {
+                    const isReq = m._type === 'request'
+                    return (
+                      <div key={`${m._type}-${m.id}`} style={{ background: '#F8F9FC', borderRadius: 8, marginBottom: 6, overflow: 'hidden', borderLeft: `3px solid ${isReq ? '#D97706' : '#4F46E5'}` }}>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '8px 12px 4px' }}>
+                          <div style={{ width: 28, height: 28, borderRadius: 8, background: isReq ? '#FEF3C7' : '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <CalendarIcon />
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>{m.title}</div>
+                              <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 4, background: isReq ? '#FEF3C7' : '#DBEAFE', color: isReq ? '#92400E' : '#1E40AF', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{isReq ? 'Request' : 'Meeting'}</span>
+                            </div>
+                            <div style={{ fontSize: 10, color: C.muted }}>{m.meeting_date ? formatDateTime(m.meeting_date) : '—'} · {m.status}</div>
+                            {isReq && m.requested_by_name && <div style={{ fontSize: 10, color: '#9CA3AF' }}>By {m.requested_by_name}</div>}
+                          </div>
                         </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>{m.title}</div>
-                          <div style={{ fontSize: 10, color: C.muted }}>{m.meeting_date ? formatDateTime(m.meeting_date) : '—'} · {m.status}</div>
+                        <div style={{ display: 'flex', gap: 4, padding: '4px 12px 8px 48px', flexWrap: 'wrap' }}>
+                          {m.meeting_link && (
+                            <a href={m.meeting_link} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#fff', background: '#059669', padding: '3px 10px', borderRadius: 5, textDecoration: 'none', fontWeight: 600 }}>Join</a>
+                          )}
+                          {!isReq && (
+                            <button style={{ fontSize: 11, color: '#5B21B6', background: '#EEF2FF', border: 'none', borderRadius: 5, padding: '3px 10px', cursor: 'pointer', fontWeight: 600 }}>Reschedule</button>
+                          )}
+                          {isReq && m.meeting_notes && (
+                            <span style={{ fontSize: 10, color: '#059669', fontWeight: 600 }}>Has Notes</span>
+                          )}
                         </div>
                       </div>
-                      <div style={{ display: 'flex', gap: 4, padding: '4px 12px 8px 48px' }}>
-                        {m.meeting_link && (
-                          <a href={m.meeting_link} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#fff', background: '#059669', padding: '3px 10px', borderRadius: 5, textDecoration: 'none', fontWeight: 600 }}>Join</a>
-                        )}
-                        <button style={{ fontSize: 11, color: '#5B21B6', background: '#EEF2FF', border: 'none', borderRadius: 5, padding: '3px 10px', cursor: 'pointer', fontWeight: 600 }}>Reschedule</button>
-                      </div>
-                    </div>
-                  ))
+                    )
+                  })
                 )}
               </div>
               {/* NOTES */}
@@ -636,24 +652,6 @@ export default function ProjectsDetailPage() {
                           <div style={{ fontSize: 13, color: '#374151' }}>{q.response}</div>
                         </div>
                       )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* MEETING REQUESTS */}
-            {meeting_requests.length > 0 && (
-              <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 12 }}>
-                <SectionTitle icon={<CalendarIcon />} text={`Meeting Requests (${meeting_requests.length})`} />
-                <div style={{ marginTop: 14 }}>
-                  {meeting_requests.map(mr => (
-                    <div key={mr.id} style={{ padding: '12px 16px', background: '#F8F9FC', borderRadius: 8, marginBottom: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: '#374151' }}>{mr.agenda}</div>
-                        <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>Preferred: {mr.preferred_date ? formatDateTime(mr.preferred_date) : '—'}</div>
-                      </div>
-                      <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 99, background: mr.status === 'Approved' ? '#D1FAE5' : mr.status === 'Rejected' ? '#FEE2E2' : '#FEF3C7', color: mr.status === 'Approved' ? '#059669' : mr.status === 'Rejected' ? '#DC2626' : '#D97706' }}>{mr.status}</span>
                     </div>
                   ))}
                 </div>
