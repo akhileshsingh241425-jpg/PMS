@@ -910,11 +910,9 @@ export default function AccountsDetailPage() {
                     )}
 
                     {/* Respond Form */}
-                    {['Requested', 'Rescheduled', 'Confirmed'].includes(meetingModalItem.status) && (
+                    {['Requested', 'Rescheduled'].includes(meetingModalItem.status) && (
                       <div style={{ borderTop: '1px solid #ECECEC', paddingTop: '18px', marginTop: '8px' }}>
-                        <h4 style={{ fontSize: '14px', fontWeight: 600, color: '#1F2937', margin: '0 0 14px' }}>
-                          {meetingModalItem.status === 'Confirmed' ? 'Update Meeting' : 'Respond to Request'}
-                        </h4>
+                        <h4 style={{ fontSize: '14px', fontWeight: 600, color: '#1F2937', margin: '0 0 14px' }}>Respond to Request</h4>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                           <div>
                             <label style={{ fontSize: '12px', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '4px' }}>Action *</label>
@@ -961,7 +959,51 @@ export default function AccountsDetailPage() {
                             finally { setResponding(false) }
                           }} disabled={responding}
                             style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg, #5B21B6, #7C3AED)', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', opacity: responding ? 0.6 : 1, alignSelf: 'flex-start' }}>
-                            {responding ? 'Saving...' : meetingModalItem.status === 'Confirmed' ? 'Update Meeting' : 'Submit Response'}
+                            {responding ? 'Saving...' : 'Submit Response'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {meetingModalItem.status === 'Confirmed' && (
+                      <div style={{ borderTop: '1px solid #ECECEC', paddingTop: '18px', marginTop: '8px' }}>
+                        <h4 style={{ fontSize: '14px', fontWeight: 600, color: '#1F2937', margin: '0 0 14px' }}>Reschedule Meeting</h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          <div>
+                            <label style={{ fontSize: '12px', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '4px' }}>New Date *</label>
+                            <input type="datetime-local" value={meetingResponseForm.confirmed_date} onChange={e => setMeetingResponseForm({ ...meetingResponseForm, confirmed_date: e.target.value })}
+                              style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #D1D5DB', borderRadius: '8px', fontSize: '13px', outline: 'none', fontFamily: 'inherit' }} />
+                          </div>
+                          <div>
+                            <label style={{ fontSize: '12px', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '4px' }}>Meeting Link</label>
+                            <input type="url" value={meetingResponseForm.meeting_link} onChange={e => setMeetingResponseForm({ ...meetingResponseForm, meeting_link: e.target.value })}
+                              style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #D1D5DB', borderRadius: '8px', fontSize: '13px', outline: 'none', fontFamily: 'inherit' }}
+                              placeholder="Google Meet / Zoom link" />
+                          </div>
+                          <div>
+                            <label style={{ fontSize: '12px', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '4px' }}>Team Remarks</label>
+                            <textarea value={meetingResponseForm.team_remarks} onChange={e => setMeetingResponseForm({ ...meetingResponseForm, team_remarks: e.target.value })} rows={2}
+                              style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #D1D5DB', borderRadius: '8px', fontSize: '13px', outline: 'none', fontFamily: 'inherit', resize: 'vertical' }}
+                              placeholder="Optional notes for the client..." />
+                          </div>
+                          <button onClick={async () => {
+                            if (!meetingResponseForm.confirmed_date) { return alert('New date is required') }
+                            setResponding(true)
+                            try {
+                              const r = await api.put(`/api/meeting-requests/${meetingModalItem.id}/respond`, {
+                                status: 'Rescheduled',
+                                confirmed_date: meetingResponseForm.confirmed_date,
+                                meeting_link: meetingResponseForm.meeting_link || null,
+                                team_remarks: meetingResponseForm.team_remarks || null,
+                              })
+                              setMeetingModalItem(r.data.meeting_request)
+                              setMeetingResponseForm({ status: 'Confirmed', confirmed_date: '', meeting_link: '', team_remarks: '' })
+                              loadDetail()
+                            } catch (e) { alert(e.response?.data?.error || 'Failed to reschedule') }
+                            finally { setResponding(false) }
+                          }} disabled={responding}
+                            style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#D97706', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', opacity: responding ? 0.6 : 1, alignSelf: 'flex-start' }}>
+                            {responding ? 'Saving...' : 'Reschedule'}
                           </button>
                         </div>
                       </div>
