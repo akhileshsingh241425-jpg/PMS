@@ -12,7 +12,7 @@ import {
   DollarSign, TrendingUp, UserCircle,
   ChevronRight, ExternalLink, BarChart3,
   FolderOpen, ListChecks, PlusCircle,
-  Bell, Pause, Play, XCircle
+  Bell, Pause, Play, XCircle, UserPlus
 } from 'lucide-react'
 
 const STAGE_COLORS = {
@@ -144,6 +144,9 @@ export default function AccountsDetailPage() {
   const [tickerPaused, setTickerPaused] = useState(false)
   const [mobileIdx, setMobileIdx] = useState(0)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const [showPortalForm, setShowPortalForm] = useState(false)
+  const [portalForm, setPortalForm] = useState({ email: '', password: '', first_name: '', last_name: '', phone: '', designation: '' })
+  const [savingPortal, setSavingPortal] = useState(false)
 
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth < 768)
@@ -391,6 +394,8 @@ export default function AccountsDetailPage() {
               </div>
               {/* Action buttons */}
               <div className="flex items-center gap-2 shrink-0">
+                <ActionBtn icon={<Briefcase className="w-4 h-4" />} label="Create Project" onClick={() => navigate(`/projects?create=1&account_id=${id}`)} />
+                <ActionBtn icon={<UserPlus className="w-4 h-4" />} label="Portal Access" onClick={() => { setPortalForm({ email: '', password: '', first_name: '', last_name: '', phone: '', designation: '' }); setShowPortalForm(true) }} />
                 <ActionBtn icon={<PlusCircle className="w-4 h-4" />} label="Refer Client" onClick={() => { setOppForm({ ...oppForm, company_name: '' }); setShowOppForm(true) }} />
                 <ActionBtn icon={<Calendar className="w-4 h-4" />} label="Add Meeting" />
                 <button style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 18px', borderRadius: '10px', border: 'none', background: '#5B3DF5', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'all .2s' }}
@@ -633,7 +638,14 @@ export default function AccountsDetailPage() {
         {/* ═══ PROJECTS ═══ */}
         <SectionCard title="Projects" icon={Briefcase} iconColor="#3B82F6" count={projects.length} onViewAll={() => navigate('/projects')}>
           {projects.length > 0 ? (
-            <div className="overflow-x-auto">
+            <div>
+              <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'flex-end' }}>
+                <button onClick={() => navigate(`/projects?create=1&account_id=${id}`)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: '#5B3DF5', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                  <Plus className="w-4 h-4" /> Create Project
+                </button>
+              </div>
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader headers={['Project No', 'Name', 'Stage', 'Team', 'PM', 'Created']} />
                 <tbody>
@@ -652,6 +664,7 @@ export default function AccountsDetailPage() {
                   ))}
                 </tbody>
               </Table>
+            </div>
             </div>
           ) : (
             <EmptyState icon={Briefcase} text="No projects found for this account"
@@ -1134,6 +1147,86 @@ export default function AccountsDetailPage() {
               }} disabled={savingOpp || !oppForm.company_name.trim()}
                 style={{ padding: '8px 24px', borderRadius: 8, border: 'none', background: '#5B21B6', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: savingOpp || !oppForm.company_name.trim() ? 0.6 : 1 }}>
                 {savingOpp ? 'Creating...' : 'Create Referral Lead'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ PORTAL ACCESS MODAL ═══ */}
+      {showPortalForm && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
+          onClick={e => { if (e.target === e.currentTarget) setShowPortalForm(false) }}>
+          <div style={{ background: '#fff', borderRadius: '16px', width: '440px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,.15)' }}>
+            <div style={{ padding: '18px 24px', borderBottom: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div className="flex items-center gap-2">
+                <UserPlus className="w-5 h-5" style={{ color: '#5B21B6' }} />
+                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#1F2937' }}>Create Portal Access</h3>
+              </div>
+              <button onClick={() => setShowPortalForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280', padding: 4 }}>
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+            <div style={{ padding: '20px 24px' }}>
+              <p style={{ fontSize: 12, color: '#6B7280', margin: '0 0 16px' }}>
+                Create a client login for <strong>{acc?.company_name || 'this account'}</strong>. The client will use these credentials to access the portal.
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>First Name *</label>
+                  <input value={portalForm.first_name} onChange={e => setPortalForm({ ...portalForm, first_name: e.target.value })} style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', marginTop: 4 }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Last Name</label>
+                  <input value={portalForm.last_name} onChange={e => setPortalForm({ ...portalForm, last_name: e.target.value })} style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', marginTop: 4 }} />
+                </div>
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Email *</label>
+                <input type="email" value={portalForm.email} onChange={e => setPortalForm({ ...portalForm, email: e.target.value })} style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', marginTop: 4 }} />
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Password *</label>
+                <input type="password" value={portalForm.password} onChange={e => setPortalForm({ ...portalForm, password: e.target.value })} style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', marginTop: 4 }} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Phone</label>
+                  <input value={portalForm.phone} onChange={e => setPortalForm({ ...portalForm, phone: e.target.value })} style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', marginTop: 4 }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Designation</label>
+                  <input value={portalForm.designation} onChange={e => setPortalForm({ ...portalForm, designation: e.target.value })} style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', marginTop: 4 }} />
+                </div>
+              </div>
+            </div>
+            <div style={{ padding: '12px 24px', borderTop: '1px solid #E5E7EB', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <button onClick={() => setShowPortalForm(false)} style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: '#F0F2F8', color: '#374151', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+              <button onClick={async () => {
+                if (!portalForm.first_name.trim() || !portalForm.email.trim() || !portalForm.password.trim()) {
+                  alert('First Name, Email, and Password are required'); return
+                }
+                setSavingPortal(true)
+                try {
+                  await api.post('/api/auth/users', {
+                    first_name: portalForm.first_name,
+                    last_name: portalForm.last_name,
+                    email: portalForm.email,
+                    password: portalForm.password,
+                    phone: portalForm.phone || undefined,
+                    designation: portalForm.designation || 'Client Contact',
+                    role: 'client',
+                    account_id: parseInt(id),
+                    client_company_name: acc?.company_name || '',
+                  })
+                  setShowPortalForm(false)
+                  alert('Portal access created! Client can login at /client-login')
+                } catch (e) {
+                  alert(e.response?.data?.error || 'Failed to create portal access')
+                } finally { setSavingPortal(false) }
+              }} disabled={savingPortal}
+                style={{ padding: '8px 24px', borderRadius: 8, border: 'none', background: '#5B21B6', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: savingPortal ? 0.6 : 1 }}>
+                {savingPortal ? 'Creating...' : 'Create Portal Access'}
               </button>
             </div>
           </div>

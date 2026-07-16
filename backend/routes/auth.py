@@ -91,7 +91,9 @@ def create_user(current_user):
     if User.query.filter_by(email=data['email']).first():
         return jsonify({'error': 'Email already exists'}), 409
 
-    emp_id = generate_id(User, 'EMP', field='emp_id')
+    role_val = data.get('role', 'user')
+    prefix = 'CLT' if role_val == 'client' else 'EMP'
+    emp_id = generate_id(User, prefix, field='emp_id')
     import json as _json
     certs = data.get('certifications')
     if isinstance(certs, list):
@@ -100,7 +102,9 @@ def create_user(current_user):
         emp_id=emp_id, email=data['email'], first_name=data['first_name'],
         last_name=data.get('last_name'), phone=data.get('phone'),
         designation=data.get('designation'), department=data.get('department'),
-        role=data.get('role', 'user'),
+        role=role_val,
+        account_id=data.get('account_id'),
+        client_company_name=data.get('client_company_name'),
         reporting_manager_id=data.get('manager_id') or data.get('reporting_manager_id'),
         certifications=certs,
         experience_years=data.get('experience_years'),
