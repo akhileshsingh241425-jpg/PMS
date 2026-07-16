@@ -88,6 +88,13 @@ export default function LeadsDetailPage() {
   const fileRef = useRef(null)
   const remarkInputRef = useRef(null)
 
+  // Inline edit for company name & description
+  const [editingCompany, setEditingCompany] = useState(false)
+  const [companyVal, setCompanyVal] = useState('')
+  const [editingDesc, setEditingDesc] = useState(false)
+  const [descVal, setDescVal] = useState('')
+  const [savingField, setSavingField] = useState(false)
+
   const isOpp = () => recordType === 'opportunity'
   const isRefConverted = () => isOpp() && (l?.referral_status === 'Converted' || convertedLeadId)
 
@@ -110,6 +117,21 @@ export default function LeadsDetailPage() {
   const loadProposals = async () => {
     try { const r = await api.get(`/api/leads/${id}/proposals`); setProposals(r.data.proposals) }
     catch (e) {}
+  }
+
+  const saveCompany = async () => {
+    if (!companyVal.trim()) return toast('Company name required', 'error')
+    setSavingField(true)
+    try { await api.put(`/api/leads/${id}`, { company_name: companyVal }); setEditingCompany(false); loadDetail(); toast('Company updated') }
+    catch (e) { toast('Failed', 'error') }
+    finally { setSavingField(false) }
+  }
+
+  const saveDesc = async () => {
+    setSavingField(true)
+    try { await api.put(`/api/leads/${id}`, { description: descVal }); setEditingDesc(false); loadDetail(); toast('Description updated') }
+    catch (e) { toast('Failed', 'error') }
+    finally { setSavingField(false) }
   }
 
   useEffect(() => { loadDetail() }, [id])
@@ -446,20 +468,106 @@ export default function LeadsDetailPage() {
         {/* ═══ MAIN ═══ */}
         <div>
           <div>
-            {/* SUBJECT */}
-            {l.subject && (
-              <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 12 }}>
-                <SectionTitle icon={<FileIcon color={C.primary} />} text="Subject" />
-                <div style={{ fontSize: 18, fontWeight: 700, color: '#111827', lineHeight: 1.5, marginTop: 4 }}>{l.subject}</div>
+            {/* ═══ TITLE (COMPANY NAME) + DESCRIPTION ═══ */}
+            <div style={{ background: C.card, borderRadius: 14, border: `1px solid ${C.border}`, overflow: 'hidden', marginBottom: 16 }}>
+              {/* Title / Company Name */}
+              <div style={{ padding: '20px 24px', borderBottom: `1px solid ${C.border}` }}>
+                {editingCompany ? (
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6, display: 'block' }}>Lead Title / Company Name</label>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <input value={companyVal} onChange={e => setCompanyVal(e.target.value)} autoFocus
+                        onKeyDown={e => { if (e.key === 'Enter') saveCompany(); if (e.key === 'Escape') setEditingCompany(false) }}
+                        style={{ flex: 1, padding: '10px 14px', border: `2px solid ${C.primary}`, borderRadius: 8, fontSize: 16, fontWeight: 700, outline: 'none', fontFamily: 'inherit', color: '#111827' }}
+                        placeholder="Company or Lead title..." />
+                      <button onClick={saveCompany} disabled={savingField}
+                        style={{ padding: '10px 20px', borderRadius: 8, border: 'none', background: '#059669', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: savingField ? 0.5 : 1, whiteSpace: 'nowrap' }}>
+                        {savingField ? 'Saving...' : 'Save'}
+                      </button>
+                      <button onClick={() => setEditingCompany(false)}
+                        style={{ padding: '10px 16px', borderRadius: 8, border: `1px solid ${C.border}`, background: '#fff', color: '#6B7280', fontSize: 13, fontWeight: 500, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div>
+                      <p style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 4px' }}>Lead Title</p>
+                      <h2 style={{ fontSize: 20, fontWeight: 800, color: '#111827', margin: 0, lineHeight: 1.3 }}>{l.company_name || l.subject || 'Untitled Lead'}</h2>
+                    </div>
+                    <button onClick={() => { setCompanyVal(l.company_name || ''); setEditingCompany(true) }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', borderRadius: 8, border: `1.5px solid ${C.border}`, background: '#fff', color: '#6B7280', fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
+                      <EditIcon size={13} /> Edit
+                    </button>
+                  </div>
+                )}
               </div>
-            )}
-            {/* DESCRIPTION */}
-            {l.description && (
-              <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 12 }}>
-                <SectionTitle icon={<FileIcon color={C.primary} />} text="Description" />
-                <div style={{ fontSize: 15, color: '#374151', lineHeight: 1.8, marginTop: 4 }}>{l.description}</div>
+
+              {/* Description - Notepad Style */}
+              <div style={{ padding: '20px 24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 8, background: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <FileIcon size={16} color="#D97706" />
+                    </div>
+                    <div>
+                      <p style={{ fontSize: 13, fontWeight: 700, color: '#111827', margin: 0 }}>Description</p>
+                      <p style={{ fontSize: 11, color: '#9CA3AF', margin: '1px 0 0' }}>Detailed notes about this lead</p>
+                    </div>
+                  </div>
+                  {!editingDesc && (
+                    <button onClick={() => { setDescVal(l.description || ''); setEditingDesc(true) }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', borderRadius: 8, border: `1.5px solid ${C.border}`, background: '#fff', color: '#6B7280', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                      <EditIcon size={13} /> {l.description ? 'Edit' : 'Add Description'}
+                    </button>
+                  )}
+                </div>
+
+                {editingDesc ? (
+                  <div>
+                    <textarea rows={8} value={descVal} onChange={e => setDescVal(e.target.value)} autoFocus
+                      style={{
+                        width: '100%', padding: '14px 16px', border: `1.5px solid ${C.border}`, borderRadius: 10,
+                        fontSize: 14, outline: 'none', fontFamily: "'Courier New', monospace", resize: 'vertical',
+                        lineHeight: 1.8, background: '#FFFEF5', color: '#374151', boxSizing: 'border-box',
+                        backgroundImage: 'repeating-linear-gradient(transparent, transparent 27px, #E5E7EB 27px, #E5E7EB 28px)',
+                        backgroundPosition: '0 14px',
+                      }}
+                      placeholder="Write detailed description about this lead...&#10;&#10;Example:&#10;- Client requirements&#10;- Budget details&#10;- Timeline expectations&#10;- Key contacts&#10;- Previous interactions" />
+                    <div style={{ display: 'flex', gap: 8, marginTop: 12, alignItems: 'center' }}>
+                      <button onClick={saveDesc} disabled={savingField}
+                        style={{ padding: '9px 24px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg, #5B21B6, #7C3AED)', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: savingField ? 0.5 : 1 }}>
+                        {savingField ? 'Saving...' : 'Save Description'}
+                      </button>
+                      <button onClick={() => setEditingDesc(false)}
+                        style={{ padding: '9px 20px', borderRadius: 8, border: `1px solid ${C.border}`, background: '#fff', color: '#6B7280', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+                        Cancel
+                      </button>
+                      <span style={{ fontSize: 11, color: '#9CA3AF', marginLeft: 8 }}>{descVal.length} characters</span>
+                    </div>
+                  </div>
+                ) : l.description ? (
+                  <div style={{
+                    padding: '16px 18px', background: '#FFFEF5', borderRadius: 10, border: `1px solid #FDE68A`,
+                    fontSize: 14, color: '#374151', lineHeight: 1.8, whiteSpace: 'pre-wrap',
+                    backgroundImage: 'repeating-linear-gradient(transparent, transparent 27px, #FDE68A33 27px, #FDE68A33 28px)',
+                    backgroundPosition: '0 16px',
+                  }}>
+                    {l.description}
+                  </div>
+                ) : (
+                  <div style={{
+                    padding: '30px', background: '#F9FAFB', borderRadius: 10, border: `2px dashed ${C.border}`,
+                    textAlign: 'center', cursor: 'pointer',
+                  }} onClick={() => { setDescVal(''); setEditingDesc(true) }}>
+                    <FileIcon size={28} color="#D1D5DB" style={{ margin: '0 auto 8px', display: 'block' }} />
+                    <p style={{ fontSize: 14, color: '#9CA3AF', margin: '0 0 4px', fontWeight: 600 }}>No description yet</p>
+                    <p style={{ fontSize: 12, color: '#D1D5DB', margin: 0 }}>Click "Add Description" to write details about this lead</p>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
             {/* LEAD INFO */}
             <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 12 }}>
               <SectionTitle icon={<UserIcon />} text="Lead Information" />

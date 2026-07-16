@@ -112,6 +112,13 @@ export default function ProjectsDetailPage() {
   const [mstoneForm, setMstoneForm] = useState(null)
   const [reports, setReports] = useState([])
   const [reportUploading, setReportUploading] = useState(false)
+
+  // Inline edit for title & description
+  const [editingTitle, setEditingTitle] = useState(false)
+  const [titleVal, setTitleVal] = useState('')
+  const [editingDesc, setEditingDesc] = useState(false)
+  const [descVal, setDescVal] = useState('')
+  const [savingField, setSavingField] = useState(false)
   const reportFileRef = useRef(null)
   const reportTypeRef = useRef('working')
 
@@ -126,6 +133,21 @@ export default function ProjectsDetailPage() {
   const changeStage = async (stage) => {
     try { await api.put(`/api/projects/${id}`, { stage }); fetchData(); toast(`Moved to ${stage}`) }
     catch (e) { toast(e.response?.data?.error || 'Failed', 'error') }
+  }
+
+  const saveTitle = async () => {
+    if (!titleVal.trim()) return toast('Title required', 'error')
+    setSavingField(true)
+    try { await api.put(`/api/projects/${id}`, { title: titleVal }); setEditingTitle(false); fetchData(); toast('Title updated') }
+    catch (e) { toast('Failed', 'error') }
+    finally { setSavingField(false) }
+  }
+
+  const saveDesc = async () => {
+    setSavingField(true)
+    try { await api.put(`/api/projects/${id}`, { description: descVal }); setEditingDesc(false); fetchData(); toast('Description updated') }
+    catch (e) { toast('Failed', 'error') }
+    finally { setSavingField(false) }
   }
 
   const addRemark = async (e) => {
@@ -267,7 +289,24 @@ export default function ProjectsDetailPage() {
               </div>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontSize: 24, fontWeight: 900, color: '#111827', letterSpacing: '-0.3px' }}>{p.title}</span>
+                  {editingTitle ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <input value={titleVal} onChange={e => setTitleVal(e.target.value)} autoFocus
+                        onKeyDown={e => { if (e.key === 'Enter') saveTitle(); if (e.key === 'Escape') setEditingTitle(false) }}
+                        style={{ fontSize: 24, fontWeight: 900, color: '#111827', border: `2px solid ${C.primary}`, borderRadius: 6, padding: '2px 8px', outline: 'none', fontFamily: 'inherit', letterSpacing: '-0.3px' }} />
+                      <button onClick={saveTitle} disabled={savingField} style={{ padding: '4px 10px', borderRadius: 6, border: 'none', background: '#059669', color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>{savingField ? '...' : 'Save'}</button>
+                      <button onClick={() => setEditingTitle(false)} style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #D1D5DB', background: '#fff', color: '#6B7280', fontSize: 11, fontWeight: 500, cursor: 'pointer' }}>Cancel</button>
+                    </div>
+                  ) : (
+                    <>
+                      <span style={{ fontSize: 24, fontWeight: 900, color: '#111827', letterSpacing: '-0.3px' }}>{p.title}</span>
+                      {hasRole('super_admin', 'admin', 'project_lead') && (
+                        <button onClick={() => { setTitleVal(p.title); setEditingTitle(true) }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: '#9CA3AF', display: 'flex' }} title="Edit title">
+                          <EditIcon size={14} />
+                        </button>
+                      )}
+                    </>
+                  )}
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 10px', borderRadius: 6, fontSize: 13, fontWeight: 700, border: `1.5px solid ${C.primary}`, color: C.primary, background: '#F5F3FF' }}>
                     <span style={{ width: 7, height: 7, borderRadius: '50%', background: isBlocked ? '#DC2626' : isTerminal ? '#059669' : C.primary }} />
                     {p.stage}
@@ -353,10 +392,28 @@ export default function ProjectsDetailPage() {
         {/* ═══ FULL WIDTH SECTIONS ═══ */}
         <div>
           {/* DESCRIPTION */}
-          {p.description && (
+          {(p.description || editingDesc || hasRole('super_admin', 'admin', 'project_lead')) && (
             <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 12 }}>
-              <SectionTitle icon={<FileIcon />} text="Description" />
-              <div style={{ fontSize: 15, color: '#374151', lineHeight: 1.8, marginTop: 4 }}>{p.description}</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                <SectionTitle icon={<FileIcon />} text="Description" />
+                {!editingDesc && p.description && hasRole('super_admin', 'admin', 'project_lead') && (
+                  <button onClick={() => { setDescVal(p.description); setEditingDesc(true) }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: '#9CA3AF', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12 }}>
+                    <EditIcon size={13} /> Edit
+                  </button>
+                )}
+              </div>
+              {editingDesc ? (
+                <div>
+                  <textarea rows={4} value={descVal} onChange={e => setDescVal(e.target.value)} autoFocus
+                    style={{ width: '100%', padding: '10px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 14, outline: 'none', fontFamily: 'inherit', resize: 'vertical', lineHeight: 1.8, boxSizing: 'border-box' }} />
+                  <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                    <button onClick={saveDesc} disabled={savingField} style={{ padding: '7px 18px', borderRadius: 8, border: 'none', background: C.primary, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: savingField ? 0.5 : 1 }}>{savingField ? 'Saving...' : 'Save'}</button>
+                    <button onClick={() => setEditingDesc(false)} style={{ padding: '7px 18px', borderRadius: 8, border: `1px solid ${C.border}`, background: '#fff', color: '#6B7280', fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ fontSize: 15, color: '#374151', lineHeight: 1.8, marginTop: 4 }}>{p.description || <span style={{ color: '#9CA3AF', fontStyle: 'italic' }}>No description added yet.</span>}</div>
+              )}
             </div>
           )}
 
