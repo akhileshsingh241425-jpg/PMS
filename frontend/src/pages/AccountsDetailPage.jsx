@@ -136,6 +136,7 @@ export default function AccountsDetailPage() {
   const [responding, setResponding] = useState(false)
   const [meetingNotes, setMeetingNotes] = useState('')
   const [savingMeetingNotes, setSavingMeetingNotes] = useState(false)
+  const [editingMeetingNotes, setEditingMeetingNotes] = useState(false)
   const [oppForm, setOppForm] = useState({
     company_name: '', contact_name: '', contact_email: '', contact_phone: '',
     source: 'Referral', service_interest: '', description: '', stage: 'Prospecting',
@@ -777,7 +778,7 @@ export default function AccountsDetailPage() {
                 <tbody>
                   {meetings.map((m, i) => (
                     <tr key={m.id} style={{ background: i % 2 === 0 ? '#fff' : '#F9FAFB', cursor: 'pointer', transition: 'background .15s' }}
-                      onClick={() => { setMeetingModalItem(m); setMeetingModalType('meeting'); setMeetingNotes(m.meeting_notes || m.mom || ''); setShowMeetingModal(true) }}
+                      onClick={() => { setMeetingModalItem(m); setMeetingModalType('meeting'); setMeetingNotes(m.meeting_notes || m.mom || ''); setEditingMeetingNotes(false); setShowMeetingModal(true) }}
                       onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
                       onMouseOut={e => e.currentTarget.style.background = i % 2 === 0 ? '#fff' : '#F9FAFB'}>
                       <Td style={{ fontWeight: 500 }}>{m.title}</Td>
@@ -789,7 +790,7 @@ export default function AccountsDetailPage() {
                   ))}
                   {meeting_requests.map((mr, i) => (
                     <tr key={`mr_${mr.id}`} style={{ background: '#F9FAFB', cursor: 'pointer', transition: 'background .15s' }}
-                      onClick={() => { setMeetingModalItem(mr); setMeetingModalType('request'); setMeetingResponseForm({ status: mr.status === 'Confirmed' ? 'Confirmed' : 'Confirmed', confirmed_date: mr.confirmed_date ? mr.confirmed_date.slice(0, 16) : '', meeting_link: mr.meeting_link || '', team_remarks: mr.team_remarks || '' }); setMeetingNotes(mr.meeting_notes || ''); setShowMeetingModal(true) }}
+                      onClick={() => { setMeetingModalItem(mr); setMeetingModalType('request'); setMeetingResponseForm({ status: mr.status === 'Confirmed' ? 'Confirmed' : 'Confirmed', confirmed_date: mr.confirmed_date ? mr.confirmed_date.slice(0, 16) : '', meeting_link: mr.meeting_link || '', team_remarks: mr.team_remarks || '' }); setMeetingNotes(mr.meeting_notes || ''); setEditingMeetingNotes(false); setShowMeetingModal(true) }}
                       onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
                       onMouseOut={e => e.currentTarget.style.background = '#F9FAFB'}>
                       <Td style={{ color: '#6B7280' }}>{mr.agenda}</Td>
@@ -871,24 +872,50 @@ export default function AccountsDetailPage() {
 
                     {/* ═══ MEETING NOTES ═══ */}
                     <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '16px', marginTop: '8px' }}>
-                      <h4 style={{ fontSize: '13px', fontWeight: 600, color: '#1F2937', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <FileText className="w-3.5 h-3.5" /> Meeting Notes
-                      </h4>
-                      <textarea value={meetingNotes} onChange={e => setMeetingNotes(e.target.value)} rows={3}
-                        style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #D1D5DB', borderRadius: '8px', fontSize: '13px', outline: 'none', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }}
-                        placeholder="Add meeting notes / minutes..." />
-                      <button onClick={async () => {
-                        setSavingMeetingNotes(true)
-                        try {
-                          const r = await api.put(`/api/meetings/${meetingModalItem.id}`, { meeting_notes: meetingNotes })
-                          setMeetingModalItem(r.data.meeting)
-                          loadDetail()
-                        } catch(e) { alert('Failed to save notes') }
-                        finally { setSavingMeetingNotes(false) }
-                      }} disabled={savingMeetingNotes}
-                        style={{ marginTop: '8px', padding: '8px 18px', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg, #5B21B6, #7C3AED)', color: '#fff', fontSize: '12px', fontWeight: 600, cursor: 'pointer', opacity: savingMeetingNotes ? 0.6 : 1 }}>
-                        {savingMeetingNotes ? 'Saving...' : 'Save Notes'}
-                      </button>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <h4 style={{ fontSize: '13px', fontWeight: 600, color: '#1F2937', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <FileText className="w-3.5 h-3.5" /> Meeting Notes
+                        </h4>
+                        {meetingModalItem.meeting_notes && !editingMeetingNotes && (
+                          <button onClick={() => setEditingMeetingNotes(true)} style={{ background: 'none', border: 'none', color: '#5B3DF5', cursor: 'pointer', fontSize: '12px', fontWeight: 600, padding: '4px 8px', borderRadius: '6px' }}
+                            onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
+                            onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
+                            <Edit3 className="w-3.5 h-3.5" style={{ marginRight: '4px' }} /> Edit
+                          </button>
+                        )}
+                      </div>
+                      {editingMeetingNotes || !meetingModalItem.meeting_notes ? (
+                        <>
+                          <textarea value={meetingNotes} onChange={e => setMeetingNotes(e.target.value)} rows={3}
+                            style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #D1D5DB', borderRadius: '8px', fontSize: '13px', outline: 'none', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }}
+                            placeholder="Add meeting notes / minutes..." />
+                          <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                            <button onClick={async () => {
+                              setSavingMeetingNotes(true)
+                              try {
+                                const r = await api.put(`/api/meetings/${meetingModalItem.id}`, { meeting_notes: meetingNotes })
+                                setMeetingModalItem(r.data.meeting)
+                                setEditingMeetingNotes(false)
+                                loadDetail()
+                              } catch(e) { alert('Failed to save notes') }
+                              finally { setSavingMeetingNotes(false) }
+                            }} disabled={savingMeetingNotes}
+                              style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg, #5B21B6, #7C3AED)', color: '#fff', fontSize: '12px', fontWeight: 600, cursor: 'pointer', opacity: savingMeetingNotes ? 0.6 : 1 }}>
+                              {savingMeetingNotes ? 'Saving...' : 'Save Notes'}
+                            </button>
+                            {meetingModalItem.meeting_notes && (
+                              <button onClick={() => { setEditingMeetingNotes(false); setMeetingNotes(meetingModalItem.meeting_notes) }}
+                                style={{ padding: '8px 18px', borderRadius: '8px', border: '1px solid #D1D5DB', background: '#fff', color: '#6B7280', fontSize: '12px', fontWeight: 500, cursor: 'pointer' }}>
+                                Cancel
+                              </button>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        <div style={{ padding: '14px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '10px' }}>
+                          <p style={{ fontSize: '13px', color: '#1F2937', margin: 0, whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{meetingModalItem.meeting_notes}</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ) : (
@@ -1043,34 +1070,60 @@ export default function AccountsDetailPage() {
                         </div>
                       </div>
                     )}
+
+                    {/* ═══ MEETING NOTES (MR) ═══ */}
+                    <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '16px', marginTop: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <h4 style={{ fontSize: '13px', fontWeight: 600, color: '#1F2937', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <FileText className="w-3.5 h-3.5" /> Meeting Notes
+                        </h4>
+                        {meetingModalItem.meeting_notes && !editingMeetingNotes && (
+                          <button onClick={() => setEditingMeetingNotes(true)} style={{ background: 'none', border: 'none', color: '#5B3DF5', cursor: 'pointer', fontSize: '12px', fontWeight: 600, padding: '4px 8px', borderRadius: '6px' }}
+                            onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
+                            onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
+                            <Edit3 className="w-3.5 h-3.5" style={{ marginRight: '4px' }} /> Edit
+                          </button>
+                        )}
+                      </div>
+                      {editingMeetingNotes || !meetingModalItem.meeting_notes ? (
+                        <>
+                          <textarea value={meetingNotes} onChange={e => setMeetingNotes(e.target.value)} rows={3}
+                            style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #D1D5DB', borderRadius: '8px', fontSize: '13px', outline: 'none', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }}
+                            placeholder="Add meeting notes / minutes..." />
+                          <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                            <button onClick={async () => {
+                              setSavingMeetingNotes(true)
+                              try {
+                                const r = await api.put(`/api/meeting-requests/${meetingModalItem.id}/respond`, {
+                                  status: meetingModalItem.status,
+                                  meeting_notes: meetingNotes,
+                                  team_remarks: meetingResponseForm.team_remarks || null,
+                                })
+                                setMeetingModalItem(r.data.meeting_request)
+                                setEditingMeetingNotes(false)
+                                loadDetail()
+                              } catch(e) { alert('Failed to save notes') }
+                              finally { setSavingMeetingNotes(false) }
+                            }} disabled={savingMeetingNotes}
+                              style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg, #5B21B6, #7C3AED)', color: '#fff', fontSize: '12px', fontWeight: 600, cursor: 'pointer', opacity: savingMeetingNotes ? 0.6 : 1 }}>
+                              {savingMeetingNotes ? 'Saving...' : 'Save Notes'}
+                            </button>
+                            {meetingModalItem.meeting_notes && (
+                              <button onClick={() => { setEditingMeetingNotes(false); setMeetingNotes(meetingModalItem.meeting_notes) }}
+                                style={{ padding: '8px 18px', borderRadius: '8px', border: '1px solid #D1D5DB', background: '#fff', color: '#6B7280', fontSize: '12px', fontWeight: 500, cursor: 'pointer' }}>
+                                Cancel
+                              </button>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        <div style={{ padding: '14px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '10px' }}>
+                          <p style={{ fontSize: '13px', color: '#1F2937', margin: 0, whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{meetingModalItem.meeting_notes}</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                     )}
-
-                    {/* ═══ MEETING NOTES ═══ */}
-                    <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '16px', marginTop: '8px' }}>
-                      <h4 style={{ fontSize: '13px', fontWeight: 600, color: '#1F2937', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <FileText className="w-3.5 h-3.5" /> Meeting Notes
-                      </h4>
-                      <textarea value={meetingNotes} onChange={e => setMeetingNotes(e.target.value)} rows={3}
-                        style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #D1D5DB', borderRadius: '8px', fontSize: '13px', outline: 'none', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }}
-                        placeholder="Add meeting notes / minutes..." />
-                      <button onClick={async () => {
-                        setSavingMeetingNotes(true)
-                        try {
-                          const r = await api.put(`/api/meeting-requests/${meetingModalItem.id}/respond`, {
-                            status: meetingModalItem.status,
-                            meeting_notes: meetingNotes,
-                            team_remarks: meetingResponseForm.team_remarks || null,
-                          })
-                          setMeetingModalItem(r.data.meeting_request)
-                          loadDetail()
-                        } catch(e) { alert('Failed to save notes') }
-                        finally { setSavingMeetingNotes(false) }
-                      }} disabled={savingMeetingNotes}
-                        style={{ marginTop: '8px', padding: '8px 18px', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg, #5B21B6, #7C3AED)', color: '#fff', fontSize: '12px', fontWeight: 600, cursor: 'pointer', opacity: savingMeetingNotes ? 0.6 : 1 }}>
-                        {savingMeetingNotes ? 'Saving...' : 'Save Notes'}
-                      </button>
-                    </div>
 
                     {/* ═══ MEETING DOCUMENTS ═══ */}
                     <div style={{ borderTop: '1px solid #ECECEC', paddingTop: '18px', marginTop: '16px' }}>
@@ -1703,9 +1756,13 @@ function MeetingDocsUpload({ meetingType, meetingId, projectId }) {
     setUploading(true)
     try {
       const fd = new FormData(); fd.append('file', file)
-      await api2.post(baseUrl, fd, { headers: { ...(meetingType === 'meeting' ? {} : { Authorization: `Bearer ${localStorage.getItem('client_token')}` }), 'Content-Type': 'multipart/form-data' } })
+      const headers = meetingType === 'meeting' ? {} : { Authorization: `Bearer ${localStorage.getItem('client_token')}` }
+      await api2.post(baseUrl, fd, { headers })
       loadDocs()
-    } catch(e) { alert('Upload failed') }
+    } catch(e) {
+      const msg = e.response?.data?.error || e.message || 'Upload failed'
+      toast(msg, 'error')
+    }
     finally { setUploading(false); if (fileRef2.current) fileRef2.current.value = '' }
   }
 

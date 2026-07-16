@@ -6,7 +6,7 @@ import {
   Building2, FileText, MessageSquare, Send, Calendar, LogOut,
   ChevronLeft, Upload, HelpCircle, User, Briefcase, Shield,
   Clock, CheckCircle, Bell, AlertCircle, Mail, Phone, ArrowRight,
-  Plus, X, Download, Eye, Paperclip, ExternalLink
+  Plus, X, Download, Eye, Paperclip, ExternalLink, Edit3
 } from 'lucide-react'
 
 const getToken = () => localStorage.getItem('client_token')
@@ -668,6 +668,7 @@ function MeetingDetailView({ meetingId, user, onBack, onRefresh }) {
   const [rescheduleForm, setRescheduleForm] = useState({ preferred_date: '', meeting_link: '', agenda: '' })
   const [meetingNotes, setMeetingNotes] = useState('')
   const [savingMeetingNotes, setSavingMeetingNotes] = useState(false)
+  const [editingMeetingNotes, setEditingMeetingNotes] = useState(false)
   const toast = useToast()
 
   useEffect(() => {
@@ -815,23 +816,48 @@ function MeetingDetailView({ meetingId, user, onBack, onRefresh }) {
 
           {/* ═══ MEETING NOTES ═══ */}
           <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '16px', marginTop: '8px' }}>
-            <h4 style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <FileText className="w-3.5 h-3.5" /> Meeting Notes
-            </h4>
-            <textarea value={meetingNotes} onChange={e => setMeetingNotes(e.target.value)} rows={3}
-              style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #D1D5DB', borderRadius: '10px', fontSize: '13px', outline: 'none', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }}
-              placeholder="Add meeting notes / minutes..." />
-            <button onClick={async () => {
-              setSavingMeetingNotes(true)
-              try {
-                const r = await api.patch(`/api/portal/meetings/${meetingId}`, { action: 'notes', meeting_notes: meetingNotes }, authHeader())
-                setMeeting(r.data.meeting); toast('Notes saved', 'success')
-              } catch(e) { toast('Failed to save notes', 'error') }
-              finally { setSavingMeetingNotes(false) }
-            }} disabled={savingMeetingNotes}
-              style={{ marginTop: '8px', padding: '8px 18px', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg, #5B21B6, #7C3AED)', color: '#fff', fontSize: '12px', fontWeight: 600, cursor: 'pointer', opacity: savingMeetingNotes ? 0.6 : 1 }}>
-              {savingMeetingNotes ? 'Saving...' : 'Save Notes'}
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+              <h4 style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <FileText className="w-3.5 h-3.5" /> Meeting Notes
+              </h4>
+              {meeting?.meeting_notes && !editingMeetingNotes && (
+                <button onClick={() => setEditingMeetingNotes(true)} style={{ background: 'none', border: 'none', color: '#1E40AF', cursor: 'pointer', fontSize: '12px', fontWeight: 600, padding: '4px 8px', borderRadius: '6px' }}
+                  onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
+                  onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
+                  <Edit3 className="w-3.5 h-3.5" style={{ marginRight: '4px' }} /> Edit
+                </button>
+              )}
+            </div>
+            {editingMeetingNotes || !meeting?.meeting_notes ? (
+              <>
+                <textarea value={meetingNotes} onChange={e => setMeetingNotes(e.target.value)} rows={3}
+                  style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #D1D5DB', borderRadius: '10px', fontSize: '13px', outline: 'none', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }}
+                  placeholder="Add meeting notes / minutes..." />
+                <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                  <button onClick={async () => {
+                    setSavingMeetingNotes(true)
+                    try {
+                      const r = await api.patch(`/api/portal/meetings/${meetingId}`, { action: 'notes', meeting_notes: meetingNotes }, authHeader())
+                      setMeeting(r.data.meeting); setMeetingNotes(r.data.meeting.meeting_notes || ''); setEditingMeetingNotes(false); toast('Notes saved', 'success')
+                    } catch(e) { toast('Failed to save notes', 'error') }
+                    finally { setSavingMeetingNotes(false) }
+                  }} disabled={savingMeetingNotes}
+                    style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg, #5B21B6, #7C3AED)', color: '#fff', fontSize: '12px', fontWeight: 600, cursor: 'pointer', opacity: savingMeetingNotes ? 0.6 : 1 }}>
+                    {savingMeetingNotes ? 'Saving...' : 'Save Notes'}
+                  </button>
+                  {meeting?.meeting_notes && (
+                    <button onClick={() => { setEditingMeetingNotes(false); setMeetingNotes(meeting.meeting_notes) }}
+                      style={{ padding: '8px 18px', borderRadius: '8px', border: '1px solid #D1D5DB', background: '#fff', color: '#6B7280', fontSize: '12px', fontWeight: 500, cursor: 'pointer' }}>
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div style={{ padding: '14px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '10px' }}>
+                <p style={{ fontSize: '13px', color: '#1F2937', margin: 0, whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{meeting.meeting_notes}</p>
+              </div>
+            )}
           </div>
 
           {/* ═══ MEETING DOCUMENTS ═══ */}
@@ -863,9 +889,9 @@ function ClientMeetingDocs({ meetingId }) {
     setUploading(true)
     try {
       const fd = new FormData(); fd.append('file', file)
-      await api.post(`/api/portal/meetings/${meetingId}/documents`, fd, { headers: { ...authHeader().headers, 'Content-Type': 'multipart/form-data' } })
+      await api.post(`/api/portal/meetings/${meetingId}/documents`, fd, authHeader())
       loadDocs()
-    } catch(e) { toast('Upload failed', 'error') }
+    } catch(e) { toast(e.response?.data?.error || 'Upload failed', 'error') }
     finally { setUploading(false); if (fileRef.current) fileRef.current.value = '' }
   }
 
