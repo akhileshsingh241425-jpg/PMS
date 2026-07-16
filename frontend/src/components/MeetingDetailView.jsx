@@ -145,6 +145,16 @@ export default function MeetingDetailView({ meetingId, meetingType = 'meeting', 
     finally { setUploading(false); if (fileRef.current) fileRef.current.value = '' }
   }
 
+  const downloadDoc = async (doc) => {
+    try {
+      const r = await api.get(`${baseDocs}/${doc.id}`, { responseType: 'blob' })
+      const url = URL.createObjectURL(r.data)
+      const a = document.createElement('a'); a.href = url; a.download = doc.file_name
+      document.body.appendChild(a); a.click()
+      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url) }, 200)
+    } catch(e) { alert('Download failed') }
+  }
+
   const deleteDoc = async (doc) => {
     if (!confirm(`Delete "${doc.file_name}"?`)) return
     try {
@@ -469,9 +479,9 @@ export default function MeetingDetailView({ meetingId, meetingType = 'meeting', 
                   <p style={{ fontSize: 11, color: '#6B7280', margin: '2px 0 0' }}>{d.uploaded_by_name || '—'} · {d.uploaded_at ? timeAgo(d.uploaded_at) : ''}</p>
                 </div>
                 <div style={{ display: 'flex', gap: '4px' }}>
-                  <a href={`${baseDocs}/${d.id}`} target="_blank" rel="noopener noreferrer" style={{ padding: '6px', borderRadius: '6px', color: '#6B7280', textDecoration: 'none' }}>
+                  <button onClick={() => downloadDoc(d)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: '6px', color: '#6B7280' }}>
                     <Download className="w-4 h-4" />
-                  </a>
+                  </button>
                   <button onClick={() => deleteDoc(d)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: '6px', color: '#DC2626' }}>
                     <Trash2 className="w-4 h-4" />
                   </button>
