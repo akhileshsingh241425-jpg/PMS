@@ -857,8 +857,25 @@ export default function AccountsDetailPage() {
                       <p style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>Meeting Link</p>
                       {meetingModalItem.meeting_link ? (
                         <div style={{ padding: '10px 14px', background: '#EEF2FF', border: '1px solid #C7D2FE', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <ExternalLink className="w-4 h-4" style={{ color: '#4F46E5' }} />
-                          <a href={meetingModalItem.meeting_link} target="_blank" rel="noopener noreferrer" style={{ color: '#4338CA', fontWeight: 500, textDecoration: 'none', fontSize: '13px' }}>{meetingModalItem.meeting_link}</a>
+                          <ExternalLink className="w-4 h-4" style={{ color: '#4F46E5', flexShrink: 0 }} />
+                          <a href={meetingModalItem.meeting_link} target="_blank" rel="noopener noreferrer" style={{ color: '#4338CA', fontWeight: 500, textDecoration: 'none', fontSize: '13px', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{meetingModalItem.meeting_link}</a>
+                          {['Requested', 'Rescheduled', 'Confirmed'].includes(meetingModalItem.status) && (
+                            <button onClick={async () => {
+                              if (!confirm('Remove meeting link?')) return
+                              try {
+                                const r = await api.put(`/api/meeting-requests/${meetingModalItem.id}/respond`, {
+                                  status: meetingModalItem.status,
+                                  meeting_link: null,
+                                })
+                                setMeetingModalItem(r.data.meeting_request)
+                                setMeetingResponseForm({ ...meetingResponseForm, meeting_link: '' })
+                                loadDetail()
+                              } catch (e) { alert(e.response?.data?.error || 'Failed') }
+                            }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#DC2626', padding: '2px', flexShrink: 0 }}
+                              title="Remove meeting link">
+                              <XCircle className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       ) : (
                         <div style={{ padding: '10px 14px', background: '#F8FAFC', border: '1px dashed #D1D5DB', borderRadius: '10px', color: '#9CA3AF', fontSize: '13px' }}>

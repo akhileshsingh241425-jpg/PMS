@@ -36,7 +36,7 @@ def respond_meeting_request(current_user, mid):
         m.confirmed_date = datetime.fromisoformat(data['confirmed_date'])
     if data.get('team_remarks'):
         m.team_remarks = data['team_remarks']
-    if data.get('meeting_link'):
-        m.meeting_link = data['meeting_link']
+    if 'meeting_link' in data:
+        m.meeting_link = data['meeting_link'] or None
     db.session.commit()
     return jsonify({'meeting_request': m.to_dict()})
