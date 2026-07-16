@@ -133,22 +133,30 @@ function Dashboard({ data }) {
             </h3>
             {upcoming_meetings.length > 0 && <span style={{ fontSize: 11, color: '#94A3B8' }}>{upcoming_meetings.length} scheduled</span>}
           </div>
-          {upcoming_meetings.length > 0 ? upcoming_meetings.slice(0, 5).map(m => (
-            <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: '1px solid #F1F5F9' }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: '#F5F3FF', ...flexCenter, flexShrink: 0 }}>
-                <Calendar className="w-4 h-4" style={{ color: '#7C3AED' }} />
+          {upcoming_meetings.length > 0 ? upcoming_meetings.slice(0, 5).map(m => {
+            const isReq = m._type === 'request'
+            const title = isReq ? (m.agenda || 'Meeting Request') : m.title
+            const date = isReq ? m.preferred_date : m.meeting_date
+            return (
+              <div key={`${m._type || 'meeting'}-${m.id}`} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: '1px solid #F1F5F9' }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: isReq ? '#FFF7ED' : '#F5F3FF', ...flexCenter, flexShrink: 0 }}>
+                  <Calendar className="w-4 h-4" style={{ color: isReq ? '#D97706' : '#7C3AED' }} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: '#0F172A', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</p>
+                    {isReq && <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 3, background: '#FEF3C7', color: '#92400E' }}>REQUEST</span>}
+                  </div>
+                  <p style={{ fontSize: 11, color: '#64748B', margin: '2px 0 0' }}>{formatDT(date)}</p>
+                </div>
+                {m.meeting_link && (
+                  <a href={m.meeting_link} target="_blank" rel="noopener noreferrer" style={{ padding: '6px 14px', borderRadius: 8, background: 'linear-gradient(135deg, #059669, #10B981)', color: '#fff', fontSize: 11, fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                    Join
+                  </a>
+                )}
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: 13, fontWeight: 600, color: '#0F172A', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.title}</p>
-                <p style={{ fontSize: 11, color: '#64748B', margin: '2px 0 0' }}>{formatDT(m.meeting_date)}</p>
-              </div>
-              {m.meeting_link && (
-                <a href={m.meeting_link} target="_blank" rel="noopener noreferrer" style={{ padding: '6px 14px', borderRadius: 8, background: 'linear-gradient(135deg, #059669, #10B981)', color: '#fff', fontSize: 11, fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>
-                  Join
-                </a>
-              )}
-            </div>
-          )) : (
+            )
+          }) : (
             <div style={{ textAlign: 'center', padding: '30px 0', color: '#94A3B8', fontSize: 13 }}>
               <Calendar className="w-10 h-10" style={{ margin: '0 auto 8px', color: '#E2E8F0' }} />
               <p style={{ margin: 0 }}>No upcoming meetings</p>
@@ -259,15 +267,20 @@ function MyProjects({ projects, onSelect }) {
 function ProjectDetail({ data, onBack }) {
   const [tab, setTab] = useState('overview')
   if (!data) return null
-  const { project, tasks, team, documents, meetings } = data
+  const { project, tasks, team, documents, meetings, meeting_requests } = data
   const st = STATUS_STYLES[project.stage] || STATUS_STYLES['Created']
+
+  const allMeetings = [
+    ...(meetings || []).map(m => ({ ...m, _type: 'meeting' })),
+    ...(meeting_requests || []).map(mr => ({ ...mr, _type: 'request', title: mr.agenda || 'Meeting Request', meeting_date: mr.preferred_date || mr.confirmed_date })),
+  ].sort((a, b) => new Date(b.meeting_date || b.created_at) - new Date(a.meeting_date || a.created_at))
 
   const tabs = [
     { key: 'overview', label: 'Overview', icon: FileText },
     { key: 'tasks', label: 'Tasks', icon: ListChecks, count: tasks.length },
     { key: 'team', label: 'Team', icon: Users, count: team.length },
     { key: 'documents', label: 'Documents', icon: FileText, count: documents.length },
-    { key: 'meetings', label: 'Meetings', icon: Calendar, count: meetings.length },
+    { key: 'meetings', label: 'Meetings', icon: Calendar, count: allMeetings.length },
   ]
 
   return (
@@ -385,23 +398,27 @@ function ProjectDetail({ data, onBack }) {
           )}
           {tab === 'meetings' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {meetings.map(m => (
-                <div key={m.id} style={{ padding: '16px 18px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 12 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <Calendar className="w-4 h-4" style={{ color: '#7C3AED' }} />
-                      <p style={{ fontSize: 14, fontWeight: 600, color: '#0F172A', margin: 0 }}>{m.title}</p>
+              {allMeetings.map(m => {
+                const isReq = m._type === 'request'
+                return (
+                  <div key={`${m._type}-${m.id}`} style={{ padding: '16px 18px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 12, borderLeft: `3px solid ${isReq ? '#D97706' : '#7C3AED'}` }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <Calendar className="w-4 h-4" style={{ color: isReq ? '#D97706' : '#7C3AED' }} />
+                        <p style={{ fontSize: 14, fontWeight: 600, color: '#0F172A', margin: 0 }}>{m.title}</p>
+                        {isReq && <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 3, background: '#FEF3C7', color: '#92400E' }}>REQUEST</span>}
+                      </div>
+                      <span style={badge(STATUS_STYLES[m.status])}>{m.status}</span>
                     </div>
-                    <span style={badge(STATUS_STYLES[m.status])}>{m.status}</span>
+                    <p style={{ fontSize: 12, color: '#64748B', margin: '0 0 0 26px' }}>{formatDT(m.meeting_date)}</p>
+                    {m.meeting_link && (
+                      <a href={m.meeting_link} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, margin: '8px 0 0 26px', fontSize: 12, fontWeight: 600, color: '#059669', textDecoration: 'none', padding: '6px 14px', borderRadius: 8, background: '#F0FDF4' }}>
+                        <ExternalLink className="w-3.5 h-3.5" /> Join Meeting
+                      </a>
+                    )}
                   </div>
-                  <p style={{ fontSize: 12, color: '#64748B', margin: '0 0 0 26px' }}>{formatDT(m.meeting_date)}</p>
-                  {m.meeting_link && (
-                    <a href={m.meeting_link} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, margin: '8px 0 0 26px', fontSize: 12, fontWeight: 600, color: '#059669', textDecoration: 'none', padding: '6px 14px', borderRadius: 8, background: '#F0FDF4' }}>
-                      <ExternalLink className="w-3.5 h-3.5" /> Join Meeting
-                    </a>
-                  )}
-                </div>
-              ))}
+                )
+              })}
               {meetings.length === 0 && <p style={{ color: '#94A3B8', textAlign: 'center', padding: 40 }}>No meetings</p>}
             </div>
           )}

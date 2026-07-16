@@ -7,6 +7,7 @@ export default function MyWorkspacePage() {
   const [projects, setProjects] = useState([])
   const [tasks, setTasks] = useState([])
   const [meetings, setMeetings] = useState([])
+  const [meetingRequests, setMeetingRequests] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -21,8 +22,13 @@ export default function MyWorkspacePage() {
     try { const r = await api.get('/api/me/tasks'); setTasks(r.data.tasks) } catch (e) {}
   }
   const loadMeetings = async () => {
-    try { const r = await api.get('/api/me/meetings'); setMeetings(r.data.meetings) } catch (e) {}
+    try { const r = await api.get('/api/me/meetings'); setMeetings(r.data.meetings || []); setMeetingRequests(r.data.meeting_requests || []) } catch (e) {}
   }
+
+  const allMeetings = [
+    ...meetings.map(m => ({ ...m, _type: 'meeting' })),
+    ...meetingRequests.map(mr => ({ ...mr, _type: 'request', title: mr.agenda || 'Meeting Request', meeting_date: mr.preferred_date || mr.confirmed_date })),
+  ].sort((a, b) => new Date(b.meeting_date || b.created_at) - new Date(a.meeting_date || a.created_at))
 
   if (loading) return <div style={{ textAlign: 'center', padding: 60, color: '#9CA3AF' }}>Loading...</div>
 
@@ -100,31 +106,38 @@ export default function MyWorkspacePage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
             <Calendar className="w-4 h-4" style={{ color: '#DB2777' }} />
             <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1A1A2E' }}>Upcoming Meetings</h2>
-            <span style={{ marginLeft: 'auto', fontSize: 12, color: '#9CA3AF' }}>{meetings.length}</span>
+            <span style={{ marginLeft: 'auto', fontSize: 12, color: '#9CA3AF' }}>{allMeetings.length}</span>
           </div>
-          {meetings.length === 0 ? (
+          {allMeetings.length === 0 ? (
             <p style={{ fontSize: 13, color: '#9CA3AF', textAlign: 'center', padding: 20 }}>No meetings scheduled</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {meetings.slice(0, 10).map(m => (
-                <div key={m.id} style={{
-                  padding: '10px 12px', background: '#F9FAFB', borderRadius: 8,
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                }}>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#1F2937' }}>{m.title}</div>
-                    <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
-                      {m.meeting_date ? new Date(m.meeting_date).toLocaleString() : ''}
-                      {m.project_name ? ` - ${m.project_name}` : ''}
+              {allMeetings.slice(0, 10).map(m => {
+                const isReq = m._type === 'request'
+                return (
+                  <div key={`${m._type}-${m.id}`} style={{
+                    padding: '10px 12px', background: '#F9FAFB', borderRadius: 8,
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    borderLeft: `3px solid ${isReq ? '#D97706' : '#5B21B6'}`,
+                  }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: '#1F2937' }}>{m.title}</span>
+                        {isReq && <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 3, background: '#FEF3C7', color: '#92400E' }}>REQUEST</span>}
+                      </div>
+                      <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
+                        {m.meeting_date ? new Date(m.meeting_date).toLocaleString() : ''}
+                        {m.project_name ? ` - ${m.project_name}` : ''}
+                      </div>
                     </div>
+                    <span style={{
+                      fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 4,
+                      background: m.status === 'Completed' ? '#D1FAE5' : '#DBEAFE',
+                      color: m.status === 'Completed' ? '#065F46' : '#1E40AF',
+                    }}>{m.status}</span>
                   </div>
-                  <span style={{
-                    fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 4,
-                    background: m.status === 'Completed' ? '#D1FAE5' : '#DBEAFE',
-                    color: m.status === 'Completed' ? '#065F46' : '#1E40AF',
-                  }}>{m.status}</span>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>

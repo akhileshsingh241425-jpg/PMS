@@ -38,6 +38,8 @@ def dashboard(current_user):
     today_start = datetime(today.year, today.month, today.day)
     tomorrow = datetime(today.year, today.month, today.day, 23, 59, 59)
     upcoming_meetings = Meeting.query.filter(Meeting.project_id.in_(pids), Meeting.meeting_date >= today_start).order_by(Meeting.meeting_date.asc()).limit(5).all() if pids else []
+    upcoming_mr = MeetingRequest.query.filter(MeetingRequest.project_id.in_(pids), MeetingRequest.preferred_date >= today_start).order_by(MeetingRequest.preferred_date.asc()).limit(5).all() if pids else []
+    all_upcoming = sorted(upcoming_meetings + upcoming_mr, key=lambda x: x.meeting_date or x.preferred_date or x.created_at, reverse=False)[:5]
     today_tasks = [t for t in tasks if t.due_date and t.due_date >= today and (not t.completed_at or t.completed_at.date() != today)]
     overdue_tasks = [t for t in tasks if t.due_date and t.due_date < today and t.status != 'Completed']
     recent_notifs = Notification.query.filter_by(user_id=current_user.id).order_by(Notification.created_at.desc()).limit(5).all()
@@ -54,7 +56,7 @@ def dashboard(current_user):
             'completed': sum(1 for t in tasks if t.status == 'Completed'),
             'overdue': len(overdue_tasks),
         },
-        'upcoming_meetings': [m.to_dict() for m in upcoming_meetings],
+        'upcoming_meetings': [{**m.to_dict(), '_type': 'meeting'} for m in upcoming_meetings] + [{**m.to_dict(), '_type': 'request'} for m in upcoming_mr],
         'today_tasks': [t.to_dict() for t in today_tasks],
         'overdue_tasks': [t.to_dict() for t in overdue_tasks],
         'notifications': [n.to_dict() for n in recent_notifs],
@@ -81,12 +83,14 @@ def project_detail(current_user, pid):
     team = ProjectTeam.query.filter_by(project_id=pid).all()
     docs = ProjectDocument.query.filter_by(project_id=pid).order_by(ProjectDocument.uploaded_at.desc()).all()
     meetings = Meeting.query.filter_by(project_id=pid).order_by(Meeting.meeting_date.desc()).all()
+    meeting_requests = MeetingRequest.query.filter_by(project_id=pid).order_by(MeetingRequest.created_at.desc()).all()
     return jsonify({
         'project': project.to_dict(),
         'tasks': [t.to_dict() for t in tasks],
         'team': [t.to_dict() for t in team],
         'documents': [d.to_dict() for d in docs],
         'meetings': [m.to_dict() for m in meetings],
+        'meeting_requests': [m.to_dict() for m in meeting_requests],
     })
 
 
