@@ -55,6 +55,8 @@ export function ClientPortalDashboard() {
   const [projects, setProjects] = useState([])
   const [dashboard, setDashboard] = useState(null)
   const [selectedProject, setSelectedProject] = useState(null)
+  const [meetings, setMeetings] = useState([])
+  const [queries, setQueries] = useState([])
   const toast = useToast()
   const navigate = useNavigate()
 
@@ -62,18 +64,22 @@ export function ClientPortalDashboard() {
   useEffect(() => {
     if (!getToken()) { window.location.href = '/client-login'; return }
     api.get('/api/portal/me', authHeader()).then(r => { setUser(r.data.user); localStorage.setItem('client_user', JSON.stringify(r.data.user)) }).catch(() => logout())
-    loadDashboard(); loadProjects()
+    loadDashboard(); loadProjects(); loadMeetings(); loadQueries()
   }, [])
 
   const handleErr = (e) => { if (e.response?.status === 401) logout() }
   const loadDashboard = async () => { try { const r = await api.get('/api/portal/dashboard', authHeader()); setDashboard(r.data) } catch(e) { handleErr(e) } }
   const loadProjects = async () => { try { const r = await api.get('/api/portal/projects', authHeader()); setProjects(r.data.projects) } catch(e) { handleErr(e) } }
+  const loadMeetings = async () => { try { const r = await api.get('/api/portal/meetings', authHeader()); setMeetings(r.data.meetings) } catch(e) { handleErr(e) } }
+  const loadQueries = async () => { try { const r = await api.get('/api/portal/queries', authHeader()); setQueries(r.data.queries) } catch(e) { handleErr(e) } }
 
   const logout = () => { localStorage.removeItem('client_token'); localStorage.removeItem('client_user'); navigate('/client-login') }
 
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: Building2 },
     { id: 'projects', label: 'Projects', icon: Briefcase },
+    { id: 'meetings', label: 'Meetings', icon: Calendar },
+    { id: 'queries', label: 'Queries', icon: HelpCircle },
     { id: 'profile', label: 'Profile', icon: User },
   ]
 
@@ -166,28 +172,6 @@ export function ClientPortalDashboard() {
 
         {/* QUERIES */}
         {tab === 'queries' && <QueriesView queries={queries} projects={projects} user={user} onRefresh={loadQueries} />}
-
-        {/* REVISIONS */}
-        {tab === 'revisions' && (
-          <div>
-            <h2 className="text-xl font-serif font-bold text-slate-900 mb-4">Document Revision Requests</h2>
-            {revisions.length === 0 ? <EmptyState icon={FileText} msg="No revision requests" sub="You can request changes on documents from project detail page" /> : (
-              <div className="space-y-3">
-                {revisions.map(r => (
-                  <div key={r.id} className="bg-white  border border-slate-200 p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-sm font-medium">{r.document_name}</p>
-                      <StatusBadge status={r.status} />
-                    </div>
-                    <p className="text-sm text-slate-600 bg-slate-50 p-3 ">{r.comments}</p>
-                    {r.team_response && <div className="mt-2 p-3 bg-blue-50  border border-blue-200"><p className="text-xs font-semibold text-blue-700 mb-1">Team Response:</p><p className="text-sm text-blue-800">{r.team_response}</p></div>}
-                    <p className="text-xs text-slate-400 mt-2">{r.created_at?.slice(0, 10)}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
 
         {/* PROFILE */}
         {tab === 'profile' && <ProfileView user={user} onUpdate={u => { setUser(u); localStorage.setItem('client_user', JSON.stringify(u)) }} />}
