@@ -36,6 +36,8 @@ def respond_meeting_request(current_user, mid):
         m.confirmed_date = datetime.fromisoformat(data['confirmed_date'])
     if data.get('team_remarks'):
         m.team_remarks = data['team_remarks']
+    if 'meeting_notes' in data:
+        m.meeting_notes = data['meeting_notes']
     if 'meeting_link' in data:
         m.meeting_link = data['meeting_link'] or None
     db.session.commit()

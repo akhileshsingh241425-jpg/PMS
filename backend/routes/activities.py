@@ -189,7 +189,7 @@ def update_meeting(current_user, mid):
     if m.created_by != current_user.id and current_user.role != 'admin':
         return jsonify({'error': 'Not authorized to update this meeting'}), 403
     data = request.get_json()
-    for f in ['title', 'description', 'location', 'meeting_link', 'status', 'mom']:
+    for f in ['title', 'description', 'location', 'meeting_link', 'status', 'mom', 'meeting_notes']:
         if f in data:
             setattr(m, f, data[f])
     if 'meeting_date' in data:

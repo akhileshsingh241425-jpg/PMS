@@ -14,6 +14,7 @@ class MeetingRequest(db.Model):
     status = db.Column(db.String(30), default='Requested')
     confirmed_date = db.Column(db.DateTime)
     team_remarks = db.Column(db.Text)
+    meeting_notes = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     requester = db.relationship('User', foreign_keys=[requested_by])
@@ -27,6 +28,7 @@ class MeetingRequest(db.Model):
             'agenda': self.agenda, 'meeting_link': self.meeting_link, 'status': self.status,
             'confirmed_date': self.confirmed_date.isoformat() if self.confirmed_date else None,
             'team_remarks': self.team_remarks,
+            'meeting_notes': self.meeting_notes,
             'requested_by_name': self.requester.full_name if self.requester else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }

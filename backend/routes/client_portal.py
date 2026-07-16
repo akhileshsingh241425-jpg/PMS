@@ -211,6 +211,9 @@ def update_meeting(user, mid):
         except (ValueError, TypeError):
             return jsonify({'error': 'Invalid date format'}), 400
         meeting.status = 'Requested'
+    elif action == 'notes':
+        if 'meeting_notes' in data:
+            meeting.meeting_notes = data['meeting_notes']
     else:
         return jsonify({'error': 'Invalid action'}), 400
     db.session.commit()

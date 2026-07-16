@@ -666,11 +666,13 @@ function MeetingDetailView({ meetingId, user, onBack, onRefresh }) {
   const [cancelling, setCancelling] = useState(false)
   const [rescheduling, setRescheduling] = useState(false)
   const [rescheduleForm, setRescheduleForm] = useState({ preferred_date: '', meeting_link: '', agenda: '' })
+  const [meetingNotes, setMeetingNotes] = useState('')
+  const [savingMeetingNotes, setSavingMeetingNotes] = useState(false)
   const toast = useToast()
 
   useEffect(() => {
     api.get(`/api/portal/meetings/${meetingId}`, authHeader())
-      .then(r => { setMeeting(r.data.meeting); setLoading(false) })
+      .then(r => { setMeeting(r.data.meeting); setMeetingNotes(r.data.meeting.meeting_notes || ''); setLoading(false) })
       .catch(() => { toast('Failed to load meeting', 'error'); setLoading(false) })
   }, [meetingId])
 
@@ -810,6 +812,27 @@ function MeetingDetailView({ meetingId, user, onBack, onRefresh }) {
               </div>
             </form>
           )}
+
+          {/* ═══ MEETING NOTES ═══ */}
+          <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '16px', marginTop: '8px' }}>
+            <h4 style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <FileText className="w-3.5 h-3.5" /> Meeting Notes
+            </h4>
+            <textarea value={meetingNotes} onChange={e => setMeetingNotes(e.target.value)} rows={3}
+              style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #D1D5DB', borderRadius: '10px', fontSize: '13px', outline: 'none', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }}
+              placeholder="Add meeting notes / minutes..." />
+            <button onClick={async () => {
+              setSavingMeetingNotes(true)
+              try {
+                const r = await api.patch(`/api/portal/meetings/${meetingId}`, { action: 'notes', meeting_notes: meetingNotes }, authHeader())
+                setMeeting(r.data.meeting); toast('Notes saved', 'success')
+              } catch(e) { toast('Failed to save notes', 'error') }
+              finally { setSavingMeetingNotes(false) }
+            }} disabled={savingMeetingNotes}
+              style={{ marginTop: '8px', padding: '8px 18px', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg, #5B21B6, #7C3AED)', color: '#fff', fontSize: '12px', fontWeight: 600, cursor: 'pointer', opacity: savingMeetingNotes ? 0.6 : 1 }}>
+              {savingMeetingNotes ? 'Saving...' : 'Save Notes'}
+            </button>
+          </div>
 
           {/* ═══ MEETING DOCUMENTS ═══ */}
           <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '18px', marginTop: '16px' }}>

@@ -88,6 +88,7 @@ class Meeting(db.Model):
     meeting_link = db.Column(db.String(500))
     status = db.Column(db.String(30), default='Scheduled')
     mom = db.Column(db.Text)
+    meeting_notes = db.Column(db.Text)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -99,7 +100,7 @@ class Meeting(db.Model):
             'project_id': self.project_id,
             'meeting_date': self.meeting_date.isoformat() if self.meeting_date else None,
             'location': self.location, 'meeting_link': self.meeting_link,
-            'status': self.status, 'mom': self.mom,
+            'status': self.status, 'mom': self.mom, 'meeting_notes': self.meeting_notes,
             'created_by_name': self.creator.full_name if self.creator else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
