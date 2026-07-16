@@ -810,8 +810,78 @@ function MeetingDetailView({ meetingId, user, onBack, onRefresh }) {
               </div>
             </form>
           )}
+
+          {/* ═══ MEETING DOCUMENTS ═══ */}
+          <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '18px', marginTop: '16px' }}>
+            <ClientMeetingDocs meetingId={meetingId} />
+          </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+function ClientMeetingDocs({ meetingId }) {
+  const [docs, setDocs] = useState([])
+  const [uploading, setUploading] = useState(false)
+  const fileRef = useRef(null)
+  const toast = useToast()
+
+  useEffect(() => { loadDocs() }, [meetingId])
+
+  const loadDocs = async () => {
+    try { const r = await api.get(`/api/portal/meetings/${meetingId}/documents`, authHeader()); setDocs(r.data.documents) }
+    catch(e) {}
+  }
+
+  const handleUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const fd = new FormData(); fd.append('file', file)
+      await api.post(`/api/portal/meetings/${meetingId}/documents`, fd, { headers: { ...authHeader().headers, 'Content-Type': 'multipart/form-data' } })
+      loadDocs()
+    } catch(e) { toast('Upload failed', 'error') }
+    finally { setUploading(false); if (fileRef.current) fileRef.current.value = '' }
+  }
+
+  return (
+    <div>
+      <h4 style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <Paperclip className="w-3.5 h-3.5" /> Documents ({docs.length})
+      </h4>
+      <div onClick={() => fileRef.current?.click()} style={{ border: '2px dashed #D1D5DB', borderRadius: '10px', padding: '16px', textAlign: 'center', background: '#FAFAFA', cursor: 'pointer', marginBottom: '12px' }}
+        onMouseOver={e => e.currentTarget.style.borderColor = '#1E40AF'}
+        onMouseOut={e => e.currentTarget.style.borderColor = '#D1D5DB'}>
+        {uploading ? (
+          <p style={{ fontSize: '12px', color: '#6B7280', margin: 0 }}>Uploading...</p>
+        ) : (
+          <>
+            <Upload className="w-5 h-5" style={{ color: '#94A3B8', margin: '0 auto 4px' }} />
+            <p style={{ fontSize: '12px', fontWeight: 500, color: '#64748B', margin: 0 }}>Upload a file</p>
+          </>
+        )}
+        <input ref={fileRef} type="file" onChange={handleUpload} hidden />
+      </div>
+      {docs.length > 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          {docs.map(d => (
+            <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', background: '#F8FAFC', borderRadius: '8px' }}>
+              <FileText className="w-3.5 h-3.5" style={{ color: '#1E40AF', flexShrink: 0 }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: '12px', fontWeight: 500, color: '#0F172A', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.file_name}</p>
+                <p style={{ fontSize: '10px', color: '#64748B', margin: '2px 0 0' }}>{d.uploaded_by_name || '—'}</p>
+              </div>
+              <a href={`/api/portal/meetings/${meetingId}/documents/${d.id}`} target="_blank" rel="noopener noreferrer" style={{ padding: '4px', borderRadius: '4px', color: '#64748B', textDecoration: 'none' }}>
+                <Download className="w-3.5 h-3.5" />
+              </a>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p style={{ fontSize: '12px', color: '#94A3B8', textAlign: 'center', margin: 0 }}>No documents</p>
+      )}
     </div>
   )
 }

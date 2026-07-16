@@ -105,6 +105,53 @@ class Meeting(db.Model):
         }
 
 
+class MeetingDocument(db.Model):
+    __tablename__ = 'meeting_documents'
+    id = db.Column(db.Integer, primary_key=True)
+    meeting_id = db.Column(db.Integer, db.ForeignKey('meetings.id', ondelete='CASCADE'), nullable=False, index=True)
+    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), index=True)
+    file_name = db.Column(db.String(255), nullable=False)
+    file_path = db.Column(db.String(500), nullable=False)
+    file_type = db.Column(db.String(50))
+    description = db.Column(db.Text)
+    uploaded_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), index=True)
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    uploader = db.relationship('User', foreign_keys=[uploaded_by])
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'meeting_id': self.meeting_id,
+            'file_name': self.file_name, 'file_type': self.file_type,
+            'description': self.description,
+            'uploaded_by_name': self.uploader.full_name if self.uploader else None,
+            'uploaded_at': self.uploaded_at.isoformat() if self.uploaded_at else None,
+        }
+
+
+class MeetingRequestDocument(db.Model):
+    __tablename__ = 'meeting_request_documents'
+    id = db.Column(db.Integer, primary_key=True)
+    meeting_request_id = db.Column(db.Integer, db.ForeignKey('meeting_requests.id', ondelete='CASCADE'), nullable=False, index=True)
+    file_name = db.Column(db.String(255), nullable=False)
+    file_path = db.Column(db.String(500), nullable=False)
+    file_type = db.Column(db.String(50))
+    description = db.Column(db.Text)
+    uploaded_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), index=True)
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    uploader = db.relationship('User', foreign_keys=[uploaded_by])
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'meeting_request_id': self.meeting_request_id,
+            'file_name': self.file_name, 'file_type': self.file_type,
+            'description': self.description,
+            'uploaded_by_name': self.uploader.full_name if self.uploader else None,
+            'uploaded_at': self.uploaded_at.isoformat() if self.uploaded_at else None,
+        }
+
+
 class Note(db.Model):
     __tablename__ = 'notes'
     id = db.Column(db.Integer, primary_key=True)

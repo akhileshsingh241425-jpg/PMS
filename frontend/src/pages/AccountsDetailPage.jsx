@@ -853,6 +853,17 @@ export default function AccountsDetailPage() {
                         <a href={meetingModalItem.meeting_link} target="_blank" rel="noopener noreferrer" style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', background: '#059669', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                           Join Meeting
                         </a>
+                        {meetingModalItem.status !== 'Completed' && (
+                          <button onClick={async () => {
+                            try {
+                              await api.put(`/api/meetings/${meetingModalItem.id}`, { status: 'Completed' })
+                              setMeetingModalItem({ ...meetingModalItem, status: 'Completed' })
+                              loadDetail()
+                            } catch(e) { alert('Failed to complete meeting') }
+                          }} style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', background: '#1E40AF', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+                            Mark Completed
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1010,6 +1021,15 @@ export default function AccountsDetailPage() {
                     )}
                   </div>
                 )}
+
+                {/* ═══ MEETING DOCUMENTS ═══ */}
+                <div style={{ borderTop: '1px solid #ECECEC', paddingTop: '18px', marginTop: '16px' }}>
+                  <MeetingDocsUpload
+                    meetingType={meetingModalType}
+                    meetingId={meetingModalItem.id}
+                    projectId={meetingModalItem.project_id}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -1605,6 +1625,70 @@ function KpiCard({ icon: Icon, bg, color, label, value }) {
         <div style={{ fontSize: 20, fontWeight: 900, color, letterSpacing: '-0.3px', lineHeight: 1.2 }}>{value}</div>
         <div style={{ fontSize: 11, fontWeight: 600, color: '#6B7280' }}>{label}</div>
       </div>
+    </div>
+  )
+}
+
+function MeetingDocsUpload({ meetingType, meetingId, projectId }) {
+  const api2 = api
+  const [docs, setDocs] = useState([])
+  const [uploading, setUploading] = useState(false)
+  const fileRef2 = useRef(null)
+  const toast = window.parent?.__toast || function(){}
+
+  const baseUrl = meetingType === 'meeting'
+    ? `/api/meetings/${meetingId}/documents`
+    : `/api/portal/meetings/${meetingId}/documents`
+
+  useEffect(() => { loadDocs() }, [meetingId])
+
+  const loadDocs = async () => {
+    try { const r = await api2.get(baseUrl, { headers: meetingType === 'meeting' ? {} : { Authorization: `Bearer ${localStorage.getItem('client_token')}` } }); setDocs(r.data.documents) }
+    catch(e) {}
+  }
+
+  const handleUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const fd = new FormData(); fd.append('file', file)
+      await api2.post(baseUrl, fd, { headers: { ...(meetingType === 'meeting' ? {} : { Authorization: `Bearer ${localStorage.getItem('client_token')}` }), 'Content-Type': 'multipart/form-data' } })
+      loadDocs()
+    } catch(e) { alert('Upload failed') }
+    finally { setUploading(false); if (fileRef2.current) fileRef2.current.value = '' }
+  }
+
+  return (
+    <div>
+      <h4 style={{ fontSize: '14px', fontWeight: 600, color: '#1F2937', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <Paperclip className="w-3.5 h-3.5" /> Meeting Documents ({docs.length})
+      </h4>
+      <div onClick={() => fileRef2.current?.click()} style={{ border: '2px dashed #D1D5DB', borderRadius: '10px', padding: '18px 16px', textAlign: 'center', background: '#FAFAFA', cursor: 'pointer', marginBottom: '12px' }}
+        onMouseOver={e => e.currentTarget.style.borderColor = '#5B3DF5'}
+        onMouseOut={e => e.currentTarget.style.borderColor = '#D1D5DB'}>
+        <Upload className="w-5 h-5" style={{ color: '#9CA3AF', margin: '0 auto 4px' }} />
+        <p style={{ fontSize: '12px', fontWeight: 500, color: '#6B7280', margin: 0 }}>{uploading ? 'Uploading...' : 'Click to upload a file'}</p>
+        <input ref={fileRef2} type="file" onChange={handleUpload} hidden />
+      </div>
+      {docs.length > 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          {docs.map(d => (
+            <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', background: '#F6F8FC', borderRadius: '8px' }}>
+              <FileText className="w-3.5 h-3.5" style={{ color: '#5B3DF5', flexShrink: 0 }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: '12px', fontWeight: 500, color: '#1F2937', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.file_name}</p>
+                <p style={{ fontSize: '10px', color: '#6B7280', margin: '2px 0 0' }}>{d.uploaded_by_name || '—'} · {timeAgo(d.uploaded_at)}</p>
+              </div>
+              <a href={`${baseUrl}/${d.id}`} target="_blank" rel="noopener noreferrer" style={{ padding: '4px', borderRadius: '4px', color: '#6B7280', textDecoration: 'none' }}>
+                <Download className="w-3.5 h-3.5" />
+              </a>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p style={{ fontSize: '12px', color: '#9CA3AF', textAlign: 'center', margin: 0 }}>No documents uploaded</p>
+      )}
     </div>
   )
 }

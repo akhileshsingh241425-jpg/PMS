@@ -1,7 +1,9 @@
+import os
 from datetime import datetime
 from flask import Blueprint, request, jsonify
-from models import db, Task, TaskChecklistItem, TaskComment, Meeting, Note
+from models import db, Task, TaskChecklistItem, TaskComment, Meeting, MeetingDocument, Note
 from middleware.auth import login_required, role_required
+from utils import validate_file, safe_filename
 
 activity_bp = Blueprint('activities', __name__, url_prefix='/api')
 
@@ -194,6 +196,52 @@ def update_meeting(current_user, mid):
         m.meeting_date = datetime.fromisoformat(data['meeting_date']) if data['meeting_date'] else None
     db.session.commit()
     return jsonify({'meeting': m.to_dict()})
+
+
+# MEETING DOCUMENTS
+MEETING_UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'uploads', 'meetings')
+os.makedirs(MEETING_UPLOAD_DIR, exist_ok=True)
+
+
+@activity_bp.route('/meetings/<int:mid>/documents', methods=['GET'])
+@login_required
+def list_meeting_docs(current_user, mid):
+    docs = MeetingDocument.query.filter_by(meeting_id=mid).order_by(MeetingDocument.uploaded_at.desc()).all()
+    return jsonify({'documents': [d.to_dict() for d in docs]})
+
+
+@activity_bp.route('/meetings/<int:mid>/documents', methods=['POST'])
+@login_required
+def upload_meeting_doc(current_user, mid):
+    m = Meeting.query.get_or_404(mid)
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+    file = request.files['file']
+    valid, err = validate_file(file)
+    if not valid:
+        return jsonify({'error': err}), 400
+    ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+    fname = safe_filename(f'meeting_{mid}', file.filename)
+    path = os.path.join(MEETING_UPLOAD_DIR, fname)
+    file.save(path)
+    doc = MeetingDocument(
+        meeting_id=mid,
+        account_id=m.project.account_id if m.project else None,
+        file_name=file.filename, file_path=path, file_type=ext,
+        description=request.form.get('description', ''),
+        uploaded_by=current_user.id,
+    )
+    db.session.add(doc)
+    db.session.commit()
+    return jsonify({'document': doc.to_dict()}), 201
+
+
+@activity_bp.route('/meetings/<int:mid>/documents/<int:did>', methods=['GET'])
+@login_required
+def download_meeting_doc(current_user, mid, did):
+    from flask import send_file
+    doc = MeetingDocument.query.get_or_404(did)
+    return send_file(doc.file_path, as_attachment=False, download_name=doc.file_name)
 
 
 # NOTES

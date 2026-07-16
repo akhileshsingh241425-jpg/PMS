@@ -3,7 +3,7 @@ import jwt, os
 from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify, current_app
 from functools import wraps
-from models import db, User, Account, Project, ProjectDocument, Note
+from models import db, User, Account, Project, ProjectDocument, MeetingRequestDocument, Note
 from models.client_portal import MeetingRequest, ClientUpload, FindingQuery
 from utils import validate_file, safe_filename, rate_limit
 
@@ -250,6 +250,56 @@ def upload_file(user, pid):
     db.session.add(upload)
     db.session.commit()
     return jsonify({'upload': upload.to_dict()}), 201
+
+
+# MEETING REQUEST DOCUMENTS
+MEETING_REQ_UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'uploads', 'meeting_requests')
+os.makedirs(MEETING_REQ_UPLOAD_DIR, exist_ok=True)
+
+
+@portal_bp.route('/meetings/<int:mid>/documents', methods=['GET'])
+@client_auth
+def list_meeting_req_docs(user, mid):
+    mr = MeetingRequest.query.get_or_404(mid)
+    if mr.account_id != user.account_id:
+        return jsonify({'error': 'Access denied'}), 403
+    docs = MeetingRequestDocument.query.filter_by(meeting_request_id=mid).order_by(MeetingRequestDocument.uploaded_at.desc()).all()
+    return jsonify({'documents': [d.to_dict() for d in docs]})
+
+
+@portal_bp.route('/meetings/<int:mid>/documents', methods=['POST'])
+@client_auth
+def upload_meeting_req_doc(user, mid):
+    mr = MeetingRequest.query.get_or_404(mid)
+    if mr.account_id != user.account_id:
+        return jsonify({'error': 'Access denied'}), 403
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+    file = request.files['file']
+    valid, err = validate_file(file)
+    if not valid:
+        return jsonify({'error': err}), 400
+    ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+    fname = safe_filename(f'mreq_{mid}', file.filename)
+    path = os.path.join(MEETING_REQ_UPLOAD_DIR, fname)
+    file.save(path)
+    doc = MeetingRequestDocument(
+        meeting_request_id=mid,
+        file_name=file.filename, file_path=path, file_type=ext,
+        description=request.form.get('description', ''),
+        uploaded_by=user.id,
+    )
+    db.session.add(doc)
+    db.session.commit()
+    return jsonify({'document': doc.to_dict()}), 201
+
+
+@portal_bp.route('/meetings/<int:mid>/documents/<int:did>', methods=['GET'])
+@client_auth
+def download_meeting_req_doc(user, mid, did):
+    from flask import send_file
+    doc = MeetingRequestDocument.query.get_or_404(did)
+    return send_file(doc.file_path, as_attachment=False, download_name=doc.file_name)
 
 
 # FINDING QUERIES
