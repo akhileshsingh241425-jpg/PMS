@@ -1,7 +1,9 @@
+import os
 from datetime import datetime
 from flask import Blueprint, request, jsonify
 from models import db, User
-from models.client_portal import MeetingRequest, MeetingRequestShare, MeetingRequestActivity, MeetingRequestDocument
+from models.client_portal import MeetingRequest, MeetingRequestShare, MeetingRequestActivity
+from models.activity import MeetingRequestDocument
 from middleware.auth import login_required, role_required
 
 meeting_req_bp = Blueprint('meeting_requests', __name__, url_prefix='/api/meeting-requests')
