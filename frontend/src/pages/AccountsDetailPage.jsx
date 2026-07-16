@@ -925,13 +925,13 @@ export default function AccountsDetailPage() {
                               <option value="Cancelled">Cancel</option>
                             </select>
                           </div>
-                          <div>
-                            <label style={{ fontSize: '12px', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '4px' }}>
-                              {meetingResponseForm.status === 'Confirmed' ? 'Confirmed Date *' : 'New Date'}
-                            </label>
-                            <input type="datetime-local" value={meetingResponseForm.confirmed_date} onChange={e => setMeetingResponseForm({ ...meetingResponseForm, confirmed_date: e.target.value })}
-                              style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #D1D5DB', borderRadius: '8px', fontSize: '13px', outline: 'none', fontFamily: 'inherit' }} />
-                          </div>
+                          {meetingResponseForm.status === 'Rescheduled' && (
+                            <div>
+                              <label style={{ fontSize: '12px', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '4px' }}>New Date *</label>
+                              <input type="datetime-local" value={meetingResponseForm.confirmed_date} onChange={e => setMeetingResponseForm({ ...meetingResponseForm, confirmed_date: e.target.value })}
+                                style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #D1D5DB', borderRadius: '8px', fontSize: '13px', outline: 'none', fontFamily: 'inherit' }} />
+                            </div>
+                          )}
                           <div>
                             <label style={{ fontSize: '12px', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '4px' }}>Meeting Link</label>
                             <input type="url" value={meetingResponseForm.meeting_link} onChange={e => setMeetingResponseForm({ ...meetingResponseForm, meeting_link: e.target.value })}
@@ -945,12 +945,12 @@ export default function AccountsDetailPage() {
                               placeholder="Optional notes for the client..." />
                           </div>
                           <button onClick={async () => {
-                            if (!meetingResponseForm.confirmed_date && meetingResponseForm.status === 'Confirmed') { return alert('Confirmed date is required') }
+                            if (meetingResponseForm.status === 'Rescheduled' && !meetingResponseForm.confirmed_date) { return alert('New date is required for reschedule') }
                             setResponding(true)
                             try {
                               const r = await api.put(`/api/meeting-requests/${meetingModalItem.id}/respond`, {
                                 status: meetingResponseForm.status,
-                                confirmed_date: meetingResponseForm.confirmed_date || null,
+                                confirmed_date: meetingResponseForm.status === 'Confirmed' ? (meetingResponseForm.confirmed_date || meetingModalItem.preferred_date) : (meetingResponseForm.confirmed_date || null),
                                 meeting_link: meetingResponseForm.meeting_link || null,
                                 team_remarks: meetingResponseForm.team_remarks || null,
                               })
