@@ -40,6 +40,8 @@ function EmployeeRoute({ children }) {
 }
 
 function AppLayout() {
+  const { user } = useAuth()
+  if (user && user.role !== 'admin') return <Navigate to="/employee" replace />
   return <Layout><Outlet /></Layout>
 }
 

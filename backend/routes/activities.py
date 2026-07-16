@@ -242,8 +242,8 @@ def add_meeting_share(current_user, mid):
             added.append(uid)
     # Log activity
     if added:
-        names = db.session.query(User.full_name).filter(User.id.in_([int(u) for u in added])).all()
-        name_str = ', '.join([n[0] for n in names])
+        name_users = User.query.filter(User.id.in_([int(u) for u in added])).all()
+        name_str = ', '.join([u.full_name for u in name_users])
         act = MeetingActivity(meeting_id=mid, action='shared', description=f'Shared with {name_str}', user_id=current_user.id)
         db.session.add(act)
     db.session.commit()
