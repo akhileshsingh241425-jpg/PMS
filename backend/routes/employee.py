@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, date
 from flask import Blueprint, request, jsonify
-from models import db, User, Project, ProjectTeam, ProjectDocument, Task, TaskChecklistItem, TaskComment, Meeting, MeetingDocument, Notification
+from models import db, User, Project, ProjectTeam, ProjectDocument, Task, TaskChecklistItem, TaskComment, Meeting, MeetingDocument, MeetingShare, Notification
 from middleware.auth import login_required
 from utils import validate_file, safe_filename
 
@@ -14,6 +14,11 @@ def _my_project_ids(user):
         ids.update(p.id for p in Project.query.all())
     else:
         ids.update(p.id for p in Project.query.filter(db.or_(Project.pm_id == user.id, Project.created_by == user.id)).all())
+    # Also include projects from meeting shares
+    shared_mids = [s.meeting_id for s in MeetingShare.query.filter_by(user_id=user.id).all()]
+    if shared_mids:
+        shared_meetings = Meeting.query.filter(Meeting.id.in_(shared_mids)).all()
+        ids.update(m.project_id for m in shared_meetings if m.project_id)
     return ids
 
 
