@@ -6,7 +6,7 @@ import {
   Building2, FileText, MessageSquare, Send, Calendar, LogOut,
   ChevronLeft, Upload, HelpCircle, User, Briefcase, Shield,
   Clock, CheckCircle, Bell, AlertCircle, Mail, Phone, ArrowRight,
-  Plus, X, Download, Eye, Paperclip
+  Plus, X, Download, Eye, Paperclip, ExternalLink
 } from 'lucide-react'
 
 const getToken = () => localStorage.getItem('client_token')
@@ -547,13 +547,13 @@ function ProjectDetailView({ projectId, user, onBack, onRefresh }) {
 // ═══ MEETINGS ═══
 function MeetingsView({ meetings, projects, user, onRefresh }) {
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ project_id: '', preferred_date: '', agenda: '' })
+  const [form, setForm] = useState({ project_id: '', preferred_date: '', agenda: '', meeting_link: '' })
   const [saving, setSaving] = useState(false)
   const toast = useToast()
 
   const submit = async (e) => {
     e.preventDefault(); setSaving(true)
-    try { await api.post('/api/portal/meetings', form, authHeader()); setShowForm(false); setForm({project_id:'',preferred_date:'',agenda:''}); onRefresh() }
+    try { await api.post('/api/portal/meetings', form, authHeader()); setShowForm(false); setForm({project_id:'',preferred_date:'',agenda:'',meeting_link:''}); onRefresh() }
     catch(e){ toast(e.response?.data?.error||'Failed', 'error') } finally{setSaving(false)}
   }
 
@@ -584,6 +584,9 @@ function MeetingsView({ meetings, projects, user, onRefresh }) {
             <textarea value={form.agenda} onChange={e => setForm({...form, agenda: e.target.value})} required rows={3}
               style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #D1D5DB', borderRadius: '10px', fontSize: '13px', outline: 'none', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }}
               placeholder="Meeting agenda — what do you want to discuss?" />
+            <input value={form.meeting_link} onChange={e => setForm({...form, meeting_link: e.target.value})}
+              style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #D1D5DB', borderRadius: '10px', fontSize: '13px', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
+              placeholder="Meeting link (Google Meet, Zoom, etc.) — optional" />
             <div style={{ display: 'flex', gap: '10px' }}>
               <button type="submit" disabled={saving}
                 style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#1E40AF', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
@@ -615,6 +618,16 @@ function MeetingsView({ meetings, projects, user, onRefresh }) {
                 </div>
                 <StatusBadge status={m.status} />
               </div>
+              {m.meeting_link && (
+                <div style={{ marginTop: '8px', padding: '8px 12px', background: '#EEF2FF', border: '1px solid #C7D2FE', borderRadius: '8px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <ExternalLink className="w-3.5 h-3.5" style={{ color: '#4F46E5' }} />
+                  <a href={m.meeting_link} target="_blank" rel="noopener noreferrer" style={{ color: '#4338CA', fontWeight: 500, textDecoration: 'none' }}
+                    onMouseOver={e => e.currentTarget.style.textDecoration = 'underline'}
+                    onMouseOut={e => e.currentTarget.style.textDecoration = 'none'}>
+                    {m.meeting_link}
+                  </a>
+                </div>
+              )}
               {m.confirmed_date && (
                 <div style={{ padding: '8px 12px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '8px', fontSize: '12px', color: '#059669', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                   <CheckCircle className="w-3.5 h-3.5" /> Confirmed: {m.confirmed_date.slice(0, 16).replace('T', ' ')}
