@@ -243,7 +243,7 @@ export default function AccountsDetailPage() {
   )
   if (!data) return null
 
-  const { account: acc, contacts = [], opportunities = [], leads = [], referral_leads = [], projects = [], documents = [], tasks = [], meetings = [], notes = [], meeting_requests = [], finding_queries = [] } = data
+  const { account: acc, contacts = [], opportunities = [], leads = [], referral_leads = [], projects = [], documents = [], tasks = [], meetings = [], notes = [], meeting_requests = [], finding_queries = [], client_users = [] } = data
 
   const allTimelineItems = [
     ...notes.map(n => ({ ...n, _type: 'note', _date: n.created_at })),
@@ -395,7 +395,16 @@ export default function AccountsDetailPage() {
               {/* Action buttons */}
               <div className="flex items-center gap-2 shrink-0">
                 <ActionBtn icon={<Briefcase className="w-4 h-4" />} label="Create Project" onClick={() => navigate(`/projects?create=1&account_id=${id}`)} />
-                <ActionBtn icon={<UserPlus className="w-4 h-4" />} label="Portal Access" onClick={() => { setPortalForm({ email: '', password: '', first_name: '', last_name: '', phone: '', designation: '' }); setShowPortalForm(true) }} />
+                {client_users.length > 0 ? (
+                  <button onClick={() => { setPortalForm({ email: client_users[0].email, password: '', first_name: '', last_name: '', phone: '', designation: '' }); setShowPortalForm(true) }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', borderRadius: '10px', border: '1px solid #BBF7D0', background: '#F0FDF4', color: '#059669', fontSize: '13px', fontWeight: 500, cursor: 'pointer', transition: 'all .2s' }}
+                    onMouseOver={e => { e.currentTarget.style.background = '#DCFCE7'; e.currentTarget.style.borderColor = '#86EFAC' }}
+                    onMouseOut={e => { e.currentTarget.style.background = '#F0FDF4'; e.currentTarget.style.borderColor = '#BBF7D0' }}>
+                    <UserPlus className="w-4 h-4" /> Portal Active ({client_users[0].email})
+                  </button>
+                ) : (
+                  <ActionBtn icon={<UserPlus className="w-4 h-4" />} label="Portal Access" onClick={() => { setPortalForm({ email: '', password: '', first_name: '', last_name: '', phone: '', designation: '' }); setShowPortalForm(true) }} />
+                )}
                 <ActionBtn icon={<PlusCircle className="w-4 h-4" />} label="Refer Client" onClick={() => { setOppForm({ ...oppForm, company_name: '' }); setShowOppForm(true) }} />
                 <ActionBtn icon={<Calendar className="w-4 h-4" />} label="Add Meeting" />
                 <button style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 18px', borderRadius: '10px', border: 'none', background: '#5B3DF5', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'all .2s' }}
@@ -1160,73 +1169,98 @@ export default function AccountsDetailPage() {
           <div style={{ background: '#fff', borderRadius: '16px', width: '440px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,.15)' }}>
             <div style={{ padding: '18px 24px', borderBottom: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div className="flex items-center gap-2">
-                <UserPlus className="w-5 h-5" style={{ color: '#5B21B6' }} />
-                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#1F2937' }}>Create Portal Access</h3>
+                <UserPlus className="w-5 h-5" style={{ color: client_users.length > 0 ? '#059669' : '#5B21B6' }} />
+                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#1F2937' }}>{client_users.length > 0 ? 'Portal Access - Active' : 'Create Portal Access'}</h3>
               </div>
               <button onClick={() => setShowPortalForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280', padding: 4 }}>
                 <XCircle className="w-5 h-5" />
               </button>
             </div>
             <div style={{ padding: '20px 24px' }}>
-              <p style={{ fontSize: 12, color: '#6B7280', margin: '0 0 16px' }}>
-                Create a client login for <strong>{acc?.company_name || 'this account'}</strong>. The client will use these credentials to access the portal.
-              </p>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-                <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>First Name *</label>
-                  <input value={portalForm.first_name} onChange={e => setPortalForm({ ...portalForm, first_name: e.target.value })} style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', marginTop: 4 }} />
+              {client_users.length > 0 ? (
+                <p style={{ fontSize: 12, color: '#6B7280', margin: '0 0 16px' }}>
+                  Portal access is already active for <strong>{client_users[0].email}</strong>. You can reset their password below.
+                </p>
+              ) : (
+                <p style={{ fontSize: 12, color: '#6B7280', margin: '0 0 16px' }}>
+                  Create a client login for <strong>{acc?.company_name || 'this account'}</strong>. The client will use these credentials to access the portal.
+                </p>
+              )}
+              {client_users.length > 0 ? (
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Email</label>
+                  <input value={client_users[0].email} disabled style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, background: '#F9FAFB', color: '#6B7280', marginTop: 4, fontFamily: 'inherit' }} />
+                  <div style={{ marginTop: 12 }}>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>New Password *</label>
+                    <input type="password" value={portalForm.password} onChange={e => setPortalForm({ ...portalForm, password: e.target.value })} style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', marginTop: 4 }} />
+                  </div>
                 </div>
-                <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Last Name</label>
-                  <input value={portalForm.last_name} onChange={e => setPortalForm({ ...portalForm, last_name: e.target.value })} style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', marginTop: 4 }} />
-                </div>
-              </div>
-              <div style={{ marginBottom: 12 }}>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Email *</label>
-                <input type="email" value={portalForm.email} onChange={e => setPortalForm({ ...portalForm, email: e.target.value })} style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', marginTop: 4 }} />
-              </div>
-              <div style={{ marginBottom: 12 }}>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Password *</label>
-                <input type="password" value={portalForm.password} onChange={e => setPortalForm({ ...portalForm, password: e.target.value })} style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', marginTop: 4 }} />
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-                <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Phone</label>
-                  <input value={portalForm.phone} onChange={e => setPortalForm({ ...portalForm, phone: e.target.value })} style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', marginTop: 4 }} />
-                </div>
-                <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Designation</label>
-                  <input value={portalForm.designation} onChange={e => setPortalForm({ ...portalForm, designation: e.target.value })} style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', marginTop: 4 }} />
-                </div>
-              </div>
+              ) : (
+                <>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>First Name *</label>
+                      <input value={portalForm.first_name} onChange={e => setPortalForm({ ...portalForm, first_name: e.target.value })} style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', marginTop: 4 }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Last Name</label>
+                      <input value={portalForm.last_name} onChange={e => setPortalForm({ ...portalForm, last_name: e.target.value })} style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', marginTop: 4 }} />
+                    </div>
+                  </div>
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Email *</label>
+                    <input type="email" value={portalForm.email} onChange={e => setPortalForm({ ...portalForm, email: e.target.value })} style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', marginTop: 4 }} />
+                  </div>
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Password *</label>
+                    <input type="password" value={portalForm.password} onChange={e => setPortalForm({ ...portalForm, password: e.target.value })} style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', marginTop: 4 }} />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Phone</label>
+                      <input value={portalForm.phone} onChange={e => setPortalForm({ ...portalForm, phone: e.target.value })} style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', marginTop: 4 }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Designation</label>
+                      <input value={portalForm.designation} onChange={e => setPortalForm({ ...portalForm, designation: e.target.value })} style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', marginTop: 4 }} />
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
             <div style={{ padding: '12px 24px', borderTop: '1px solid #E5E7EB', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
               <button onClick={() => setShowPortalForm(false)} style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: '#F0F2F8', color: '#374151', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
               <button onClick={async () => {
-                if (!portalForm.first_name.trim() || !portalForm.email.trim() || !portalForm.password.trim()) {
-                  alert('First Name, Email, and Password are required'); return
+                if (client_users.length > 0) {
+                  if (!portalForm.password.trim()) { alert('New password is required'); return }
+                  setSavingPortal(true)
+                  try {
+                    await api.post(`/api/accounts/${id}/reset-client-password`, { password: portalForm.password })
+                    setShowPortalForm(false)
+                    alert(`Password reset successful for ${client_users[0].email}`)
+                  } catch (e) { alert(e.response?.data?.error || 'Failed to reset password') }
+                  finally { setSavingPortal(false) }
+                } else {
+                  if (!portalForm.first_name.trim() || !portalForm.email.trim() || !portalForm.password.trim()) {
+                    alert('First Name, Email, and Password are required'); return
+                  }
+                  setSavingPortal(true)
+                  try {
+                    await api.post('/api/auth/users', {
+                      first_name: portalForm.first_name, last_name: portalForm.last_name,
+                      email: portalForm.email, password: portalForm.password,
+                      phone: portalForm.phone || undefined, designation: portalForm.designation || 'Client Contact',
+                      role: 'client', account_id: parseInt(id), client_company_name: acc?.company_name || '',
+                    })
+                    setShowPortalForm(false)
+                    alert('Portal access created! Client can login at /client-login')
+                    loadDetail()
+                  } catch (e) { alert(e.response?.data?.error || 'Failed to create portal access') }
+                  finally { setSavingPortal(false) }
                 }
-                setSavingPortal(true)
-                try {
-                  await api.post('/api/auth/users', {
-                    first_name: portalForm.first_name,
-                    last_name: portalForm.last_name,
-                    email: portalForm.email,
-                    password: portalForm.password,
-                    phone: portalForm.phone || undefined,
-                    designation: portalForm.designation || 'Client Contact',
-                    role: 'client',
-                    account_id: parseInt(id),
-                    client_company_name: acc?.company_name || '',
-                  })
-                  setShowPortalForm(false)
-                  alert('Portal access created! Client can login at /client-login')
-                } catch (e) {
-                  alert(e.response?.data?.error || 'Failed to create portal access')
-                } finally { setSavingPortal(false) }
               }} disabled={savingPortal}
-                style={{ padding: '8px 24px', borderRadius: 8, border: 'none', background: '#5B21B6', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: savingPortal ? 0.6 : 1 }}>
-                {savingPortal ? 'Creating...' : 'Create Portal Access'}
+                style={{ padding: '8px 24px', borderRadius: 8, border: 'none', background: client_users.length > 0 ? '#059669' : '#5B21B6', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: savingPortal ? 0.6 : 1 }}>
+                {savingPortal ? 'Saving...' : client_users.length > 0 ? 'Reset Password' : 'Create Portal Access'}
               </button>
             </div>
           </div>

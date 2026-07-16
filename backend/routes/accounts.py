@@ -65,6 +65,7 @@ def get_account(current_user, aid):
     referral_leads = Lead.query.filter_by(referring_account_id=aid).order_by(Lead.updated_at.desc()).all()
     contacts = Contact.query.filter_by(account_id=aid).order_by(Contact.is_primary.desc(), Contact.created_at.desc()).all()
     lead_ids = [l.id for l in leads]
+    client_users = User.query.filter_by(account_id=aid, role='client').order_by(User.created_at.desc()).all()
     return jsonify({
         'account': acc.to_dict(),
         'contacts': [c.to_dict() for c in contacts],
@@ -82,6 +83,7 @@ def get_account(current_user, aid):
         'lead_documents': [d.to_dict() for d in LeadDocument.query.filter(LeadDocument.lead_id.in_(lead_ids)).order_by(LeadDocument.uploaded_at.desc()).all()] if lead_ids else [],
         'lead_activities': [a.to_dict() for a in LeadActivity.query.filter(LeadActivity.lead_id.in_(lead_ids)).order_by(LeadActivity.activity_date.desc()).all()] if lead_ids else [],
         'lead_notes': [n.to_dict() for n in LeadNote.query.filter(LeadNote.lead_id.in_(lead_ids)).order_by(LeadNote.created_at.desc()).all()] if lead_ids else [],
+        'client_users': [{'id': u.id, 'email': u.email, 'name': u.full_name, 'is_active': u.is_active, 'created_at': u.created_at.isoformat() if u.created_at else None} for u in client_users],
     })
 
 
@@ -95,6 +97,22 @@ def update_account(current_user, aid):
             setattr(acc, f, data[f] or None)
     db.session.commit()
     return jsonify({'account': acc.to_dict()})
+
+
+@account_bp.route('/<int:aid>/reset-client-password', methods=['POST'])
+@login_required
+def reset_client_password(current_user, aid):
+    data = request.get_json()
+    if not data.get('password'):
+        return jsonify({'error': 'password required'}), 400
+    client_user = User.query.filter_by(account_id=aid, role='client').first()
+    if not client_user:
+        return jsonify({'error': 'No client user found for this account'}), 404
+    if not client_user.account_id:
+        client_user.account_id = aid
+    client_user.set_password(data['password'])
+    db.session.commit()
+    return jsonify({'message': 'Password updated', 'email': client_user.email})
 
 
 @account_bp.route('/<int:aid>/referral-dashboard', methods=['GET'])
