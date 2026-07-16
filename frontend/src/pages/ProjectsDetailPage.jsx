@@ -418,16 +418,30 @@ export default function ProjectsDetailPage() {
           )}
 
             {/* REMARKS */}
-            <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 12 }}>
+            <div style={{ background: C.card, borderRadius: 14, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 12 }}>
               <SectionTitle icon={<ChatIcon />} text={`Remarks (${(remarks || []).length})`} />
-              <div style={{ display: 'flex', gap: 8, marginTop: 14, marginBottom: 20 }}>
-                <input ref={remarkInputRef} value={remarkText} onChange={e => { if (e.target.value.length <= 1000) setRemarkText(e.target.value) }}
-                  onKeyDown={e => { if ((e.key === 'Enter' && !e.shiftKey) || (e.key === 'Enter' && e.ctrlKey)) { e.preventDefault(); addRemark(e) } }}
-                  style={{ flex: 1, padding: '10px 14px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', background: '#FAFAFA' }}
-                  placeholder="Add a remark..." />
-                <button onClick={addRemark} disabled={sending || !remarkText.trim()} style={{ display: 'flex', alignItems: 'center', gap: 6, background: C.primary, color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: sending || !remarkText.trim() ? 0.5 : 1 }}>
-                  <SendIcon /> Add
-                </button>
+              <div style={{ marginTop: 14, marginBottom: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 8, background: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <ChatIcon />
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#374151' }}>Add a remark</span>
+                </div>
+                <textarea ref={remarkInputRef} rows={4} value={remarkText} onChange={e => { if (e.target.value.length <= 1000) setRemarkText(e.target.value) }}
+                  style={{
+                    width: '100%', padding: '12px 14px', border: `1.5px solid ${C.border}`, borderRadius: 10,
+                    fontSize: 14, outline: 'none', fontFamily: "'Courier New', monospace", resize: 'vertical',
+                    lineHeight: 1.8, background: '#FFFEF5', color: '#374151', boxSizing: 'border-box',
+                    backgroundImage: 'repeating-linear-gradient(transparent, transparent 27px, #E5E7EB 27px, #E5E7EB 28px)',
+                    backgroundPosition: '0 12px',
+                  }}
+                  placeholder="Write your remark here..." />
+                <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center' }}>
+                  <button onClick={addRemark} disabled={sending || !remarkText.trim()} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'linear-gradient(135deg, #5B21B6, #7C3AED)', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: sending || !remarkText.trim() ? 0.5 : 1 }}>
+                    <SendIcon /> Add Remark
+                  </button>
+                  {remarkText.trim() && <span style={{ fontSize: 11, color: '#9CA3AF' }}>{remarkText.length} characters</span>}
+                </div>
               </div>
               {(!remarks || remarks.length === 0) ? (
                 <EmptyState icon={<ChatIcon />} title="No remarks yet." />
