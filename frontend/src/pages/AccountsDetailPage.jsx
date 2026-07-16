@@ -132,7 +132,7 @@ export default function AccountsDetailPage() {
   const [showMeetingModal, setShowMeetingModal] = useState(false)
   const [meetingModalItem, setMeetingModalItem] = useState(null)
   const [meetingModalType, setMeetingModalType] = useState('meeting') // 'meeting' | 'request'
-  const [meetingResponseForm, setMeetingResponseForm] = useState({ status: 'Confirmed', confirmed_date: '', team_remarks: '' })
+  const [meetingResponseForm, setMeetingResponseForm] = useState({ status: 'Confirmed', confirmed_date: '', meeting_link: '', team_remarks: '' })
   const [responding, setResponding] = useState(false)
   const [oppForm, setOppForm] = useState({
     company_name: '', contact_name: '', contact_email: '', contact_phone: '',
@@ -787,7 +787,7 @@ export default function AccountsDetailPage() {
                   ))}
                   {meeting_requests.map((mr, i) => (
                     <tr key={`mr_${mr.id}`} style={{ background: '#F9FAFB', cursor: 'pointer', transition: 'background .15s' }}
-                      onClick={() => { setMeetingModalItem(mr); setMeetingModalType('request'); setMeetingResponseForm({ status: 'Confirmed', confirmed_date: '', team_remarks: '' }); setShowMeetingModal(true) }}
+                      onClick={() => { setMeetingModalItem(mr); setMeetingModalType('request'); setMeetingResponseForm({ status: 'Confirmed', confirmed_date: '', meeting_link: mr.meeting_link || '', team_remarks: mr.team_remarks || '' }); setShowMeetingModal(true) }}
                       onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
                       onMouseOut={e => e.currentTarget.style.background = '#F9FAFB'}>
                       <Td style={{ color: '#6B7280' }}>{mr.agenda}</Td>
@@ -853,10 +853,15 @@ export default function AccountsDetailPage() {
                       <DetailField label="Requested By" value={meetingModalItem.requested_by_name || '—'} />
                       {meetingModalItem.confirmed_date && <DetailField label="Confirmed Date" value={formatDateTime(meetingModalItem.confirmed_date)} />}
                     </div>
-                    {meetingModalItem.meeting_link && (
+                    {meetingModalItem.meeting_link ? (
                       <div style={{ padding: '12px 14px', background: '#EEF2FF', border: '1px solid #C7D2FE', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <ExternalLink className="w-4 h-4" style={{ color: '#4F46E5' }} />
                         <a href={meetingModalItem.meeting_link} target="_blank" rel="noopener noreferrer" style={{ color: '#4338CA', fontWeight: 500, textDecoration: 'none', fontSize: '13px' }}>{meetingModalItem.meeting_link}</a>
+                      </div>
+                    ) : meetingModalItem.status === 'Confirmed' && (
+                      <div style={{ padding: '12px 14px', background: '#F8FAFC', border: '1px dashed #D1D5DB', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <ExternalLink className="w-4 h-4" style={{ color: '#9CA3AF' }} />
+                        <span style={{ color: '#9CA3AF', fontSize: '13px' }}>No meeting link added</span>
                       </div>
                     )}
                     {meetingModalItem.team_remarks && (
@@ -888,6 +893,12 @@ export default function AccountsDetailPage() {
                               style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #D1D5DB', borderRadius: '8px', fontSize: '13px', outline: 'none', fontFamily: 'inherit' }} />
                           </div>
                           <div>
+                            <label style={{ fontSize: '12px', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '4px' }}>Meeting Link</label>
+                            <input type="url" value={meetingResponseForm.meeting_link} onChange={e => setMeetingResponseForm({ ...meetingResponseForm, meeting_link: e.target.value })}
+                              style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #D1D5DB', borderRadius: '8px', fontSize: '13px', outline: 'none', fontFamily: 'inherit' }}
+                              placeholder="Google Meet / Zoom link — optional" />
+                          </div>
+                          <div>
                             <label style={{ fontSize: '12px', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '4px' }}>Team Remarks</label>
                             <textarea value={meetingResponseForm.team_remarks} onChange={e => setMeetingResponseForm({ ...meetingResponseForm, team_remarks: e.target.value })} rows={2}
                               style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #D1D5DB', borderRadius: '8px', fontSize: '13px', outline: 'none', fontFamily: 'inherit', resize: 'vertical' }}
@@ -900,10 +911,11 @@ export default function AccountsDetailPage() {
                               const r = await api.put(`/api/meeting-requests/${meetingModalItem.id}/respond`, {
                                 status: meetingResponseForm.status,
                                 confirmed_date: meetingResponseForm.confirmed_date || null,
+                                meeting_link: meetingResponseForm.meeting_link || null,
                                 team_remarks: meetingResponseForm.team_remarks || null,
                               })
                               setMeetingModalItem(r.data.meeting_request)
-                              setMeetingResponseForm({ status: 'Confirmed', confirmed_date: '', team_remarks: '' })
+                              setMeetingResponseForm({ status: 'Confirmed', confirmed_date: '', meeting_link: '', team_remarks: '' })
                               loadDetail()
                             } catch (e) { alert(e.response?.data?.error || 'Failed to respond') }
                             finally { setResponding(false) }
