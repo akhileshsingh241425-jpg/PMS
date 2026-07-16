@@ -836,10 +836,23 @@ export default function AccountsDetailPage() {
                         <p style={{ fontSize: '13px', color: '#1F2937', margin: 0, whiteSpace: 'pre-wrap' }}>{meetingModalItem.description}</p>
                       </div>
                     )}
+                    {meetingModalItem.meeting_link && (
+                      <div style={{ padding: '12px 14px', background: '#EEF2FF', border: '1px solid #C7D2FE', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <ExternalLink className="w-4 h-4" style={{ color: '#4F46E5', flexShrink: 0 }} />
+                        <a href={meetingModalItem.meeting_link} target="_blank" rel="noopener noreferrer" style={{ color: '#4338CA', fontWeight: 500, textDecoration: 'none', fontSize: '13px', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{meetingModalItem.meeting_link}</a>
+                      </div>
+                    )}
                     {meetingModalItem.mom && (
                       <div style={{ padding: '14px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '10px' }}>
                         <p style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>Minutes of Meeting</p>
                         <p style={{ fontSize: '13px', color: '#92400E', margin: 0, whiteSpace: 'pre-wrap' }}>{meetingModalItem.mom}</p>
+                      </div>
+                    )}
+                    {meetingModalItem.meeting_link && (
+                      <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                        <a href={meetingModalItem.meeting_link} target="_blank" rel="noopener noreferrer" style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', background: '#059669', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                          Join Meeting
+                        </a>
                       </div>
                     )}
                   </div>
@@ -888,6 +901,12 @@ export default function AccountsDetailPage() {
                         <p style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 6px' }}>Team Remarks</p>
                         <p style={{ fontSize: '13px', color: '#9A3412', margin: 0 }}>{meetingModalItem.team_remarks}</p>
                       </div>
+                    )}
+
+                    {meetingModalItem.meeting_link && (
+                      <a href={meetingModalItem.meeting_link} target="_blank" rel="noopener noreferrer" style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', background: '#059669', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', alignSelf: 'flex-start' }}>
+                        Join Meeting
+                      </a>
                     )}
 
                     {/* Respond Form */}

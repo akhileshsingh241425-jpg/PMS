@@ -165,11 +165,14 @@ def create_meeting(current_user):
     data = request.get_json()
     if not data.get('title') or not data.get('project_id'):
         return jsonify({'error': 'title and project_id required'}), 400
+    if not data.get('title') or not data.get('project_id') or not data.get('meeting_date') or not data.get('meeting_link'):
+        return jsonify({'error': 'title, project_id, meeting_date, and meeting_link are required'}), 400
     m = Meeting(
         title=data['title'], description=data.get('description'),
         project_id=int(data['project_id']),
-        meeting_date=datetime.fromisoformat(data['meeting_date']) if data.get('meeting_date') else None,
-        location=data.get('location'), status=data.get('status', 'Scheduled'),
+        meeting_date=datetime.fromisoformat(data['meeting_date']),
+        location=data.get('location'), meeting_link=data['meeting_link'],
+        status=data.get('status', 'Scheduled'),
         mom=data.get('mom'), created_by=current_user.id,
     )
     db.session.add(m)
@@ -184,11 +187,11 @@ def update_meeting(current_user, mid):
     if m.created_by != current_user.id and current_user.role != 'admin':
         return jsonify({'error': 'Not authorized to update this meeting'}), 403
     data = request.get_json()
-    for f in ['title', 'description', 'location', 'status', 'mom']:
+    for f in ['title', 'description', 'location', 'meeting_link', 'status', 'mom']:
         if f in data:
             setattr(m, f, data[f])
-    if 'meeting_date' in data and data['meeting_date']:
-        m.meeting_date = datetime.fromisoformat(data['meeting_date'])
+    if 'meeting_date' in data:
+        m.meeting_date = datetime.fromisoformat(data['meeting_date']) if data['meeting_date'] else None
     db.session.commit()
     return jsonify({'meeting': m.to_dict()})
 

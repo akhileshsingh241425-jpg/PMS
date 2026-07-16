@@ -102,7 +102,7 @@ export default function ProjectsDetailPage() {
   const [showEmojiPicker, setShowEmojiPicker] = useState(null)
   const [users, setUsers] = useState([])
   const [showMeetingForm, setShowMeetingForm] = useState(false)
-  const [meetingForm, setMeetingForm] = useState({ title: '', meeting_date: '', status: 'Scheduled' })
+  const [meetingForm, setMeetingForm] = useState({ title: '', meeting_date: '', meeting_link: '', status: 'Scheduled' })
   const [showTeamForm, setShowTeamForm] = useState(false)
   const [teamForm, setTeamForm] = useState({ userId: '', role: 'Member' })
   const [selectedMember, setSelectedMember] = useState(null)
@@ -201,8 +201,8 @@ export default function ProjectsDetailPage() {
   const execCmd = (cmd, val = null) => { document.execCommand(cmd, false, val); taskEditorRef.current?.focus() }
 
   const addMeeting = async (e) => {
-    e.preventDefault(); if (!meetingForm.title.trim()) return
-    try { await api.post(`/api/projects/${id}/meetings`, meetingForm); setMeetingForm({ title: '', meeting_date: '', status: 'Scheduled' }); setShowMeetingForm(false); fetchData(); toast('Meeting added') }
+    e.preventDefault(); if (!meetingForm.title.trim() || !meetingForm.meeting_date || !meetingForm.meeting_link.trim()) return toast('Title, date, and meeting link are required', 'error')
+    try { await api.post(`/api/projects/${id}/meetings`, meetingForm); setMeetingForm({ title: '', meeting_date: '', meeting_link: '', status: 'Scheduled' }); setShowMeetingForm(false); fetchData(); toast('Meeting added') }
     catch (e) { toast('Failed', 'error') }
   }
 
@@ -564,11 +564,13 @@ export default function ProjectsDetailPage() {
                 </div>
                 {showMeetingForm && (
                   <form onSubmit={addMeeting} style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14, padding: '12px', background: '#F8F9FC', borderRadius: 8 }}>
-                    <input value={meetingForm.title} onChange={e => setMeetingForm({ ...meetingForm, title: e.target.value })} placeholder="Meeting title..."
+                    <input value={meetingForm.title} onChange={e => setMeetingForm({ ...meetingForm, title: e.target.value })} placeholder="Meeting title *"
                       style={{ padding: '8px 10px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 12, outline: 'none', fontFamily: 'inherit' }} />
                     <input type="datetime-local" value={meetingForm.meeting_date} onChange={e => setMeetingForm({ ...meetingForm, meeting_date: e.target.value })}
                       style={{ padding: '8px 10px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 12, outline: 'none', fontFamily: 'inherit' }} />
-                    <button type="submit" disabled={!meetingForm.title.trim()} style={{ background: C.primary, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: meetingForm.title.trim() ? 1 : 0.5 }}>
+                    <input value={meetingForm.meeting_link} onChange={e => setMeetingForm({ ...meetingForm, meeting_link: e.target.value })} placeholder="Meeting link (Google Meet / Zoom) *"
+                      style={{ padding: '8px 10px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 12, outline: 'none', fontFamily: 'inherit' }} />
+                    <button type="submit" disabled={!meetingForm.title.trim() || !meetingForm.meeting_date || !meetingForm.meeting_link.trim()} style={{ background: C.primary, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: meetingForm.title.trim() && meetingForm.meeting_date && meetingForm.meeting_link.trim() ? 1 : 0.5 }}>
                       <PlusIcon /> Add
                     </button>
                   </form>
@@ -577,13 +579,21 @@ export default function ProjectsDetailPage() {
                   <EmptyState icon={<CalendarIcon />} title="No meetings" />
                 ) : (
                   meetings.map(m => (
-                    <div key={m.id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '8px 12px', background: '#F8F9FC', borderRadius: 8, marginBottom: 6 }}>
-                      <div style={{ width: 28, height: 28, borderRadius: 8, background: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <CalendarIcon />
+                    <div key={m.id} style={{ background: '#F8F9FC', borderRadius: 8, marginBottom: 6, overflow: 'hidden' }}>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '8px 12px 4px' }}>
+                        <div style={{ width: 28, height: 28, borderRadius: 8, background: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <CalendarIcon />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>{m.title}</div>
+                          <div style={{ fontSize: 10, color: C.muted }}>{m.meeting_date ? formatDateTime(m.meeting_date) : '—'} · {m.status}</div>
+                        </div>
                       </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>{m.title}</div>
-                        <div style={{ fontSize: 10, color: C.muted }}>{m.meeting_date ? formatDateTime(m.meeting_date) : '—'} · {m.status}</div>
+                      <div style={{ display: 'flex', gap: 4, padding: '4px 12px 8px 48px' }}>
+                        {m.meeting_link && (
+                          <a href={m.meeting_link} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#fff', background: '#059669', padding: '3px 10px', borderRadius: 5, textDecoration: 'none', fontWeight: 600 }}>Join</a>
+                        )}
+                        <button style={{ fontSize: 11, color: '#5B21B6', background: '#EEF2FF', border: 'none', borderRadius: 5, padding: '3px 10px', cursor: 'pointer', fontWeight: 600 }}>Reschedule</button>
                       </div>
                     </div>
                   ))

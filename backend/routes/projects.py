@@ -265,16 +265,14 @@ def remove_team_member(current_user, tid):
 def add_meeting(current_user, pid):
     Project.query.get_or_404(pid)
     data = request.get_json()
-    if not data.get('title'):
-        return jsonify({'error': 'title required'}), 400
-    meeting_date = None
-    if data.get('meeting_date'):
-        meeting_date = datetime.fromisoformat(data['meeting_date'].replace('Z', '+00:00'))
+    if not data.get('title') or not data.get('meeting_date') or not data.get('meeting_link'):
+        return jsonify({'error': 'title, meeting_date, and meeting_link are required'}), 400
     m = Meeting(
         title=data['title'],
         description=data.get('description'),
         project_id=pid,
-        meeting_date=meeting_date,
+        meeting_date=datetime.fromisoformat(data['meeting_date'].replace('Z', '+00:00')),
+        meeting_link=data['meeting_link'],
         status=data.get('status', 'Scheduled'),
         created_by=current_user.id,
     )

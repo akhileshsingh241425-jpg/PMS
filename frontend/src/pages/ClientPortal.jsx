@@ -586,9 +586,9 @@ function MeetingsView({ meetings, projects, user, onRefresh, onSelect }) {
             <textarea value={form.agenda} onChange={e => setForm({...form, agenda: e.target.value})} required rows={3}
               style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #D1D5DB', borderRadius: '10px', fontSize: '13px', outline: 'none', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }}
               placeholder="Meeting agenda — what do you want to discuss?" />
-            <input value={form.meeting_link} onChange={e => setForm({...form, meeting_link: e.target.value})}
+            <input value={form.meeting_link} onChange={e => setForm({...form, meeting_link: e.target.value})} required
               style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #D1D5DB', borderRadius: '10px', fontSize: '13px', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
-              placeholder="Meeting link (Google Meet, Zoom, etc.) — optional" />
+              placeholder="Meeting link (Google Meet, Zoom, etc.) *" />
             <div style={{ display: 'flex', gap: '10px' }}>
               <button type="submit" disabled={saving}
                 style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#1E40AF', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
@@ -634,13 +634,21 @@ function MeetingsView({ meetings, projects, user, onRefresh, onSelect }) {
                 </div>
               )}
               {m.confirmed_date && (
-                <div style={{ padding: '8px 12px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '8px', fontSize: '12px', color: '#059669', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ padding: '8px 12px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '8px', fontSize: '12px', color: '#059669', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
                   <CheckCircle className="w-3.5 h-3.5" /> Confirmed: {m.confirmed_date.slice(0, 16).replace('T', ' ')}
                 </div>
               )}
               {m.team_remarks && (
                 <div style={{ marginTop: '10px', padding: '10px 14px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', fontSize: '13px', color: '#475569' }}>
                   <span style={{ fontWeight: 600, color: '#64748B' }}>Team: </span>{m.team_remarks}
+                </div>
+              )}
+              {m.meeting_link && (
+                <div style={{ marginTop: '10px', display: 'flex', gap: '6px' }}>
+                  <a href={m.meeting_link} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+                    style={{ padding: '6px 14px', borderRadius: '6px', background: '#059669', color: '#fff', fontSize: '12px', fontWeight: 600, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    Join
+                  </a>
                 </div>
               )}
             </div>
@@ -656,6 +664,8 @@ function MeetingDetailView({ meetingId, user, onBack, onRefresh }) {
   const [meeting, setMeeting] = useState(null)
   const [loading, setLoading] = useState(true)
   const [cancelling, setCancelling] = useState(false)
+  const [rescheduling, setRescheduling] = useState(false)
+  const [rescheduleForm, setRescheduleForm] = useState({ preferred_date: '', meeting_link: '', agenda: '' })
   const toast = useToast()
 
   useEffect(() => {
@@ -672,6 +682,16 @@ function MeetingDetailView({ meetingId, user, onBack, onRefresh }) {
       setMeeting(r.data.meeting); toast('Meeting cancelled', 'success'); onRefresh()
     } catch (e) { toast(e.response?.data?.error || 'Failed to cancel', 'error') }
     finally { setCancelling(false) }
+  }
+
+  const submitReschedule = async (e) => {
+    e.preventDefault()
+    if (!rescheduleForm.preferred_date || !rescheduleForm.meeting_link || !rescheduleForm.agenda.trim())
+      return toast('Date, link, and agenda are required', 'error')
+    try {
+      const r = await api.patch(`/api/portal/meetings/${meetingId}`, { action: 'reschedule', ...rescheduleForm }, authHeader())
+      setMeeting(r.data.meeting); setRescheduling(false); toast('Meeting rescheduled', 'success'); onRefresh()
+    } catch (e) { toast(e.response?.data?.error || 'Failed to reschedule', 'error') }
   }
 
   if (loading) return (
@@ -752,13 +772,43 @@ function MeetingDetailView({ meetingId, user, onBack, onRefresh }) {
             </div>
           )}
 
-          {canCancel && (
-            <div style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: rescheduling ? '14px' : 0 }}>
+            {meeting.meeting_link && (
+              <a href={meeting.meeting_link} target="_blank" rel="noopener noreferrer" style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#059669', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                Join Meeting
+              </a>
+            )}
+            {['Requested', 'Confirmed'].includes(meeting.status) && (
+              <button onClick={() => { setRescheduling(!rescheduling); if (!rescheduling) setRescheduleForm({ preferred_date: meeting.preferred_date?.slice(0, 16) || '', meeting_link: meeting.meeting_link || '', agenda: meeting.agenda || '' }) }}
+                style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #D1D5DB', background: '#fff', color: '#1E40AF', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+                {rescheduling ? 'Cancel' : 'Reschedule'}
+              </button>
+            )}
+            {canCancel && (
               <button onClick={cancelMeeting} disabled={cancelling}
                 style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#DC2626', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', opacity: cancelling ? 0.6 : 1, display: 'flex', alignItems: 'center', gap: '6px' }}>
                 {cancelling ? 'Cancelling...' : 'Cancel Meeting'}
               </button>
-            </div>
+            )}
+          </div>
+
+          {rescheduling && (
+            <form onSubmit={submitReschedule} style={{ background: '#F8FAFC', borderRadius: '12px', padding: '18px', border: '1px solid #E2E8F0' }}>
+              <h4 style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', margin: '0 0 14px' }}>Reschedule Meeting</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <input type="datetime-local" value={rescheduleForm.preferred_date} onChange={e => setRescheduleForm({...rescheduleForm, preferred_date: e.target.value})} required
+                  style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #D1D5DB', borderRadius: '10px', fontSize: '13px', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                <input value={rescheduleForm.meeting_link} onChange={e => setRescheduleForm({...rescheduleForm, meeting_link: e.target.value})} required
+                  style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #D1D5DB', borderRadius: '10px', fontSize: '13px', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                  placeholder="New meeting link *" />
+                <textarea value={rescheduleForm.agenda} onChange={e => setRescheduleForm({...rescheduleForm, agenda: e.target.value})} required rows={2}
+                  style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #D1D5DB', borderRadius: '10px', fontSize: '13px', outline: 'none', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }}
+                  placeholder="Updated agenda *" />
+                <button type="submit" style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#1E40AF', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', alignSelf: 'flex-start' }}>
+                  Save Changes
+                </button>
+              </div>
+            </form>
           )}
         </div>
       </div>

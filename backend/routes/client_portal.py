@@ -162,8 +162,8 @@ def list_meetings(user):
 @client_auth
 def request_meeting(user):
     data = request.get_json()
-    if not data.get('preferred_date') or not data.get('agenda'):
-        return jsonify({'error': 'preferred_date and agenda required'}), 400
+    if not data.get('preferred_date') or not data.get('agenda') or not data.get('meeting_link'):
+        return jsonify({'error': 'preferred_date, agenda, and meeting_link are required'}), 400
     try:
         project_id = int(data['project_id']) if data.get('project_id') else None
         preferred_date = datetime.fromisoformat(data['preferred_date'])
@@ -175,7 +175,7 @@ def request_meeting(user):
         requested_by=user.id,
         preferred_date=preferred_date,
         agenda=data['agenda'],
-        meeting_link=data.get('meeting_link'),
+        meeting_link=data['meeting_link'],
     )
     db.session.add(m)
     db.session.commit()

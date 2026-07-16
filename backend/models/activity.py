@@ -85,6 +85,7 @@ class Meeting(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete='CASCADE'), nullable=False, index=True)
     meeting_date = db.Column(db.DateTime)
     location = db.Column(db.String(255))
+    meeting_link = db.Column(db.String(500))
     status = db.Column(db.String(30), default='Scheduled')
     mom = db.Column(db.Text)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), index=True)
@@ -97,7 +98,8 @@ class Meeting(db.Model):
             'id': self.id, 'title': self.title, 'description': self.description,
             'project_id': self.project_id,
             'meeting_date': self.meeting_date.isoformat() if self.meeting_date else None,
-            'location': self.location, 'status': self.status, 'mom': self.mom,
+            'location': self.location, 'meeting_link': self.meeting_link,
+            'status': self.status, 'mom': self.mom,
             'created_by_name': self.creator.full_name if self.creator else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
