@@ -41,6 +41,8 @@ def login():
         return jsonify({'error': 'Invalid credentials'}), 401
     if not user.is_active:
         return jsonify({'error': 'Account inactive'}), 403
+    if user.role == 'client':
+        return jsonify({'error': 'Client users must login via Client Portal at /client-login'}), 403
     return jsonify({'token': generate_token(user), 'user': user.to_dict()})
 
 
@@ -59,6 +61,8 @@ def client_login():
 @auth_bp.route('/me', methods=['GET'])
 @login_required
 def me(current_user):
+    if current_user.role == 'client':
+        return jsonify({'error': 'Access denied'}), 403
     return jsonify({'user': current_user.to_dict()})
 
 

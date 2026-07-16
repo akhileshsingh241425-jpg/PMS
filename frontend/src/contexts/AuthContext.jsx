@@ -25,6 +25,11 @@ export function AuthProvider({ children }) {
         .then(res => {
           if (cancelled) return
           console.log('[AuthProvider] /api/auth/me success:', res.data)
+          if (res.data.user?.role === 'client') {
+            localStorage.removeItem('pms_token')
+            window.location.href = '/client-login'
+            return
+          }
           setUser(res.data.user)
         })
         .catch(err => {
@@ -48,6 +53,11 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     const res = await api.post('/api/auth/login', { email, password })
+    if (res.data.user?.role === 'client') {
+      localStorage.removeItem('pms_token')
+      window.location.href = '/client-login'
+      return
+    }
     localStorage.setItem('pms_token', res.data.token)
     setUser(res.data.user)
     navigate('/')
