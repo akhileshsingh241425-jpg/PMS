@@ -15,3 +15,4 @@ from .admin import admin_bp
 from .search import search_bp
 from .teams import team_bp
 from .myworkspace import me_bp
+from .employee import employee_bp

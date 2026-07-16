@@ -60,7 +60,11 @@ export function AuthProvider({ children }) {
     }
     localStorage.setItem('pms_token', res.data.token)
     setUser(res.data.user)
-    navigate('/')
+    if (res.data.user.role !== 'admin') {
+      navigate('/employee')
+    } else {
+      navigate('/')
+    }
   }
 
   const logout = () => {

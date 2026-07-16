@@ -16,6 +16,8 @@ import LeadsDetailPage from './pages/LeadsDetailPage'
 import ProjectsDetailPage from './pages/ProjectsDetailPage'
 import TeamsPage from './pages/TeamsPage'
 import MyWorkspacePage from './pages/MyWorkspacePage'
+import EmployeeLayout from './components/EmployeeLayout'
+import EmployeePortal from './pages/EmployeePortal'
 
 function Protected({ children }) {
   const { user } = useAuth()
@@ -26,12 +28,23 @@ function Protected({ children }) {
 function AdminRoute({ children }) {
   const { user } = useAuth()
   if (!user) return <Navigate to="/login" replace />
-  if (user.role !== 'admin') return <Navigate to="/" replace />
+  if (user.role !== 'admin') return <Navigate to="/employee" replace />
+  return children
+}
+
+function EmployeeRoute({ children }) {
+  const { user } = useAuth()
+  if (!user) return <Navigate to="/login" replace />
+  if (user.role === 'admin') return <Navigate to="/" replace />
   return children
 }
 
 function AppLayout() {
   return <Layout><Outlet /></Layout>
+}
+
+function EmployeeAppLayout() {
+  return <EmployeeLayout><Outlet /></EmployeeLayout>
 }
 
 export default function App() {
@@ -56,6 +69,18 @@ export default function App() {
                 <Route path="teams" element={<TeamsPage />} />
                 <Route path="my-workspace" element={<MyWorkspacePage />} />
                 <Route path="users" element={<AdminRoute><UsersPage /></AdminRoute>} />
+              </Route>
+              <Route path="/employee" element={<Protected><EmployeeRoute><EmployeeAppLayout /></EmployeeRoute></Protected>}>
+                <Route index element={<EmployeePortal activeTab="dashboard" />} />
+                <Route path="projects" element={<EmployeePortal activeTab="projects" />} />
+                <Route path="tasks" element={<EmployeePortal activeTab="tasks" />} />
+                <Route path="meetings" element={<EmployeePortal activeTab="meetings" />} />
+                <Route path="documents" element={<EmployeePortal activeTab="documents" />} />
+                <Route path="calendar" element={<EmployeePortal activeTab="calendar" />} />
+                <Route path="team" element={<EmployeePortal activeTab="team" />} />
+                <Route path="performance" element={<EmployeePortal activeTab="performance" />} />
+                <Route path="notifications" element={<EmployeePortal activeTab="notifications" />} />
+                <Route path="profile" element={<EmployeePortal activeTab="profile" />} />
               </Route>
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
