@@ -175,10 +175,46 @@ def request_meeting(user):
         requested_by=user.id,
         preferred_date=preferred_date,
         agenda=data['agenda'],
+        meeting_link=data.get('meeting_link'),
     )
     db.session.add(m)
     db.session.commit()
     return jsonify({'meeting': m.to_dict()}), 201
+
+
+@portal_bp.route('/meetings/<int:mid>', methods=['GET'])
+@client_auth
+def get_meeting(user, mid):
+    meeting = MeetingRequest.query.get_or_404(mid)
+    if meeting.account_id != user.account_id:
+        return jsonify({'error': 'Access denied'}), 403
+    return jsonify({'meeting': meeting.to_dict()})
+
+
+@portal_bp.route('/meetings/<int:mid>', methods=['PATCH'])
+@client_auth
+def update_meeting(user, mid):
+    meeting = MeetingRequest.query.get_or_404(mid)
+    if meeting.account_id != user.account_id:
+        return jsonify({'error': 'Access denied'}), 403
+    data = request.get_json()
+    action = data.get('action')
+    if action == 'cancel':
+        if meeting.status not in ('Requested', 'Confirmed', 'Rescheduled'):
+            return jsonify({'error': 'Cannot cancel this meeting'}), 400
+        meeting.status = 'Cancelled'
+    elif action == 'reschedule':
+        if meeting.status != 'Requested':
+            return jsonify({'error': 'Can only reschedule requested meetings'}), 400
+        try:
+            meeting.preferred_date = datetime.fromisoformat(data['preferred_date'])
+        except (ValueError, TypeError):
+            return jsonify({'error': 'Invalid date format'}), 400
+        meeting.status = 'Requested'
+    else:
+        return jsonify({'error': 'Invalid action'}), 400
+    db.session.commit()
+    return jsonify({'meeting': meeting.to_dict()})
 
 
 # CLIENT UPLOADS

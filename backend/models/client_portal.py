@@ -10,6 +10,7 @@ class MeetingRequest(db.Model):
     requested_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
     preferred_date = db.Column(db.DateTime, nullable=False)
     agenda = db.Column(db.Text, nullable=False)
+    meeting_link = db.Column(db.String(500))
     status = db.Column(db.String(30), default='Requested')
     confirmed_date = db.Column(db.DateTime)
     team_remarks = db.Column(db.Text)
@@ -23,7 +24,7 @@ class MeetingRequest(db.Model):
         return {
             'id': self.id, 'account_id': self.account_id, 'project_id': self.project_id,
             'preferred_date': self.preferred_date.isoformat() if self.preferred_date else None,
-            'agenda': self.agenda, 'status': self.status,
+            'agenda': self.agenda, 'meeting_link': self.meeting_link, 'status': self.status,
             'confirmed_date': self.confirmed_date.isoformat() if self.confirmed_date else None,
             'team_remarks': self.team_remarks,
             'requested_by_name': self.requester.full_name if self.requester else None,

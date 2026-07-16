@@ -127,6 +127,7 @@ export function ClientPortalDashboard() {
   const [projects, setProjects] = useState([])
   const [dashboard, setDashboard] = useState(null)
   const [selectedProject, setSelectedProject] = useState(null)
+  const [selectedMeeting, setSelectedMeeting] = useState(null)
   const [meetings, setMeetings] = useState([])
   const [queries, setQueries] = useState([])
   const toast = useToast()
@@ -187,7 +188,7 @@ export function ClientPortalDashboard() {
           {tabs.map(t => {
             const active = tab === t.id
             return (
-              <button key={t.id} onClick={() => { setTab(t.id); setSelectedProject(null) }}
+              <button key={t.id} onClick={() => { setTab(t.id); setSelectedProject(null); setSelectedMeeting(null) }}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '7px', padding: '12px 18px', fontSize: '13px', fontWeight: active ? 600 : 500,
                   border: 'none', background: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
@@ -320,7 +321,8 @@ export function ClientPortalDashboard() {
         {tab === 'projects' && selectedProject && <ProjectDetailView projectId={selectedProject.id} user={user} onBack={() => setSelectedProject(null)} onRefresh={loadQueries} />}
 
         {/* MEETINGS */}
-        {tab === 'meetings' && <MeetingsView meetings={meetings} projects={projects} user={user} onRefresh={loadMeetings} />}
+        {tab === 'meetings' && !selectedMeeting && <MeetingsView meetings={meetings} projects={projects} user={user} onRefresh={loadMeetings} onSelect={setSelectedMeeting} />}
+        {tab === 'meetings' && selectedMeeting && <MeetingDetailView meetingId={selectedMeeting.id} user={user} onBack={() => setSelectedMeeting(null)} onRefresh={loadMeetings} />}
 
         {/* QUERIES */}
         {tab === 'queries' && <QueriesView queries={queries} projects={projects} user={user} onRefresh={loadQueries} />}
@@ -545,7 +547,7 @@ function ProjectDetailView({ projectId, user, onBack, onRefresh }) {
 }
 
 // ═══ MEETINGS ═══
-function MeetingsView({ meetings, projects, user, onRefresh }) {
+function MeetingsView({ meetings, projects, user, onRefresh, onSelect }) {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ project_id: '', preferred_date: '', agenda: '', meeting_link: '' })
   const [saving, setSaving] = useState(false)
@@ -608,7 +610,10 @@ function MeetingsView({ meetings, projects, user, onRefresh }) {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {meetings.map(m => (
-            <div key={m.id} style={{ background: '#fff', borderRadius: '12px', border: '1px solid #E2E8F0', padding: '18px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+            <div key={m.id} onClick={() => onSelect && onSelect(m)}
+              style={{ background: '#fff', borderRadius: '12px', border: '1px solid #E2E8F0', padding: '18px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', cursor: 'pointer', transition: 'all .15s' }}
+              onMouseOver={e => { e.currentTarget.style.borderColor = '#93C5FD'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(30,64,175,0.08)' }}
+              onMouseOut={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '10px' }}>
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', margin: '0 0 4px' }}>{m.agenda?.slice(0, 100)}{m.agenda?.length > 100 ? '...' : ''}</p>
@@ -642,6 +647,121 @@ function MeetingsView({ meetings, projects, user, onRefresh }) {
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+// ═══ MEETING DETAIL ═══
+function MeetingDetailView({ meetingId, user, onBack, onRefresh }) {
+  const [meeting, setMeeting] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [cancelling, setCancelling] = useState(false)
+  const toast = useToast()
+
+  useEffect(() => {
+    api.get(`/api/portal/meetings/${meetingId}`, authHeader())
+      .then(r => { setMeeting(r.data.meeting); setLoading(false) })
+      .catch(() => { toast('Failed to load meeting', 'error'); setLoading(false) })
+  }, [meetingId])
+
+  const cancelMeeting = async () => {
+    if (!confirm('Are you sure you want to cancel this meeting?')) return
+    setCancelling(true)
+    try {
+      const r = await api.patch(`/api/portal/meetings/${meetingId}`, { action: 'cancel' }, authHeader())
+      setMeeting(r.data.meeting); toast('Meeting cancelled', 'success'); onRefresh()
+    } catch (e) { toast(e.response?.data?.error || 'Failed to cancel', 'error') }
+    finally { setCancelling(false) }
+  }
+
+  if (loading) return (
+    <div style={{ textAlign: 'center', padding: '60px 0' }}>
+      <div style={{ width: '36px', height: '36px', border: '3px solid #E2E8F0', borderTopColor: '#1E40AF', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
+      <p style={{ fontSize: '14px', color: '#94A3B8' }}>Loading meeting details...</p>
+    </div>
+  )
+
+  if (!meeting) return <p style={{ textAlign: 'center', padding: '60px 0', color: '#94A3B8' }}>Meeting not found</p>
+
+  const canCancel = ['Requested', 'Confirmed', 'Rescheduled'].includes(meeting.status)
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <button onClick={onBack} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748B', background: '#fff', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '8px 14px', cursor: 'pointer', fontWeight: 500, alignSelf: 'flex-start' }}
+        onMouseOver={e => { e.currentTarget.style.background = '#F8FAFC'; e.currentTarget.style.color = '#0F172A' }}
+        onMouseOut={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.color = '#64748B' }}>
+        <ChevronLeft className="w-4 h-4" /> Back to Meetings
+      </button>
+
+      <div style={{ background: '#fff', borderRadius: '14px', border: '1px solid #E2E8F0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+        <div style={{ padding: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Calendar className="w-5 h-5" style={{ color: '#1E40AF' }} />
+              </div>
+              <div>
+                <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: '0 0 4px' }}>Meeting Request</h2>
+                <StatusBadge status={meeting.status} />
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+            <div style={{ padding: '14px', background: '#F8FAFC', borderRadius: '10px' }}>
+              <p style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 4px' }}>Agenda</p>
+              <p style={{ fontSize: '14px', color: '#0F172A', margin: 0, whiteSpace: 'pre-wrap' }}>{meeting.agenda}</p>
+            </div>
+            <div style={{ padding: '14px', background: '#F8FAFC', borderRadius: '10px' }}>
+              <p style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 4px' }}>Preferred Date</p>
+              <p style={{ fontSize: '14px', color: '#0F172A', margin: 0 }}>{meeting.preferred_date?.slice(0, 16).replace('T', ' ')}</p>
+            </div>
+            {meeting.confirmed_date && (
+              <div style={{ padding: '14px', background: '#F0FDF4', borderRadius: '10px' }}>
+                <p style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 4px' }}>Confirmed Date</p>
+                <p style={{ fontSize: '14px', color: '#059669', margin: 0 }}>{meeting.confirmed_date.slice(0, 16).replace('T', ' ')}</p>
+              </div>
+            )}
+            <div style={{ padding: '14px', background: '#F8FAFC', borderRadius: '10px' }}>
+              <p style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 4px' }}>Requested By</p>
+              <p style={{ fontSize: '14px', color: '#0F172A', margin: 0 }}>{meeting.requested_by_name || '—'}</p>
+            </div>
+            {meeting.created_at && (
+              <div style={{ padding: '14px', background: '#F8FAFC', borderRadius: '10px' }}>
+                <p style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 4px' }}>Requested On</p>
+                <p style={{ fontSize: '14px', color: '#0F172A', margin: 0 }}>{meeting.created_at.slice(0, 16).replace('T', ' ')}</p>
+              </div>
+            )}
+          </div>
+
+          {meeting.meeting_link && (
+            <div style={{ padding: '14px', background: '#EEF2FF', border: '1px solid #C7D2FE', borderRadius: '10px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <ExternalLink className="w-4 h-4" style={{ color: '#4F46E5' }} />
+              <a href={meeting.meeting_link} target="_blank" rel="noopener noreferrer" style={{ color: '#4338CA', fontWeight: 500, textDecoration: 'none', fontSize: '14px' }}
+                onMouseOver={e => e.currentTarget.style.textDecoration = 'underline'}
+                onMouseOut={e => e.currentTarget.style.textDecoration = 'none'}>
+                {meeting.meeting_link}
+              </a>
+            </div>
+          )}
+
+          {meeting.team_remarks && (
+            <div style={{ padding: '14px', background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: '10px', marginBottom: '20px' }}>
+              <p style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 4px' }}>Team Remarks</p>
+              <p style={{ fontSize: '14px', color: '#9A3412', margin: 0 }}>{meeting.team_remarks}</p>
+            </div>
+          )}
+
+          {canCancel && (
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={cancelMeeting} disabled={cancelling}
+                style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#DC2626', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', opacity: cancelling ? 0.6 : 1, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {cancelling ? 'Cancelling...' : 'Cancel Meeting'}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
