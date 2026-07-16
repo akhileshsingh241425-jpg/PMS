@@ -10,12 +10,14 @@ LEAD_STAGES = [
 ]
 
 LEAD_SOURCES = [
-    'Opportunity', 'Referral', 'Website', 'LinkedIn', 'Cold Call',
-    'Email Campaign', 'Partner', 'Conference', 'Existing Client', 'Other',
+    'Website', 'Phone', 'Email', 'Referral', 'Existing Client',
+    'Repeat Client', 'LinkedIn', 'Cold Call', 'Cold Email', 'Partner',
+    'Marketplace', 'Government Tender', 'Vendor Reference',
+    'Employee Reference', 'Other',
 ]
 
 LEAD_TYPES = [
-    'New Business', 'Existing Client', 'Upsell', 'Cross-sell', 'Other',
+    'B2B', 'B2C', 'Vendor',
 ]
 
 

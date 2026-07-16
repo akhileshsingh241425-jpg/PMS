@@ -23,7 +23,8 @@ const STAGES = [
 ]
 const STAGE_NAMES = STAGES.map(s => s.name)
 const SERVICES = ['VAPT', 'IS Audit', 'ISMS Implementation', 'RBI Audit', 'Compliance Audit', 'Cloud Security Audit', 'Network Security Audit', 'Application Security', 'Red Team Assessment', 'Other']
-const SOURCES = ['Opportunity', 'Referral', 'Website', 'LinkedIn', 'Cold Call', 'Email Campaign', 'Partner', 'Conference', 'Existing Client', 'Other']
+const SOURCES = ['Website', 'Phone', 'Email', 'Referral', 'Existing Client', 'Repeat Client', 'LinkedIn', 'Cold Call', 'Cold Email', 'Partner', 'Marketplace', 'Government Tender', 'Vendor Reference', 'Employee Reference', 'Other']
+const LEAD_TYPES = ['B2B', 'B2C', 'Vendor']
 const DOC_CATEGORIES = ['Proposal', 'Purchase Order', 'Agreement', 'NDA', 'RFP', 'Scope Document', 'Other']
 
 export default function Leads() {
@@ -382,7 +383,7 @@ export function LeadForm({ editData, users, onClose, onSaved }) {
                 <label className="block text-xs font-semibold text-slate-600 mb-1.5">Lead Type</label>
                 <select value={form.type} onChange={e => f('type', e.target.value)} className={inputClass}>
                   <option value="">-- Select Type --</option>
-                  <option>New Business</option><option>Existing Client</option><option>Upsell</option><option>Cross-sell</option>
+                  {LEAD_TYPES.map(t => <option key={t}>{t}</option>)}
                 </select>
               </div>
               <div>
