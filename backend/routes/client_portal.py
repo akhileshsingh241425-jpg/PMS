@@ -247,12 +247,26 @@ def upload_file(user, pid):
     upload = ClientUpload(
         account_id=user.account_id, project_id=pid, uploaded_by=user.id,
         file_name=file.filename, file_path=path, file_type=ext,
+        file_size=os.path.getsize(path),
         category=request.form.get('category', 'Other'),
         description=request.form.get('description', ''),
     )
     db.session.add(upload)
     db.session.commit()
     return jsonify({'upload': upload.to_dict()}), 201
+
+
+@portal_bp.route('/uploads/<int:uid>', methods=['DELETE'])
+@client_auth
+def delete_upload(user, uid):
+    upload = ClientUpload.query.get_or_404(uid)
+    if upload.account_id != user.account_id:
+        return jsonify({'error': 'Access denied'}), 403
+    if os.path.exists(upload.file_path):
+        os.remove(upload.file_path)
+    db.session.delete(upload)
+    db.session.commit()
+    return jsonify({'message': 'Upload deleted'})
 
 
 # MEETING REQUEST DOCUMENTS

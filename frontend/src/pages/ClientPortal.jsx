@@ -6,7 +6,8 @@ import {
   Building2, FileText, MessageSquare, Send, Calendar, LogOut,
   ChevronLeft, Upload, HelpCircle, User, Briefcase, Shield,
   Clock, CheckCircle, Bell, AlertCircle, Mail, Phone, ArrowRight,
-  Plus, X, Download, Eye, Paperclip, ExternalLink, Edit3, AlertTriangle
+  Plus, X, Download, Eye, Paperclip, ExternalLink, Edit3, AlertTriangle,
+  Image, Trash2
 } from 'lucide-react'
 
 const getToken = () => localStorage.getItem('client_token')
@@ -203,12 +204,12 @@ export function ClientPortalDashboard() {
             const active = tab === t.id
             return (
               <button key={t.id} onClick={() => { setTab(t.id); setSelectedProject(null); setSelectedMeeting(null) }}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '7px', padding: '12px 18px', fontSize: '13px', fontWeight: active ? 600 : 500,
-                  border: 'none', background: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
-                  color: active ? '#1E40AF' : '#64748B', borderBottom: active ? '2.5px solid #1E40AF' : '2.5px solid transparent',
-                  transition: 'all .15s',
-                }}>
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '7px', padding: '12px 18px', fontSize: '13px', fontWeight: active ? 700 : 500,
+                    border: 'none', background: active ? '#EEF2FF' : 'none', cursor: 'pointer', whiteSpace: 'nowrap',
+                    color: active ? '#1E40AF' : '#64748B', borderBottom: active ? '3px solid #1E40AF' : '3px solid transparent',
+                    transition: 'all .15s', borderRadius: '8px 8px 0 0',
+                  }}>
                 <t.icon className="w-4 h-4" />
                 {t.label}
               </button>
@@ -332,7 +333,7 @@ export function ClientPortalDashboard() {
         )}
 
         {/* PROJECT DETAIL */}
-        {tab === 'projects' && selectedProject && <ProjectDetailView projectId={selectedProject.id} user={user} onBack={() => setSelectedProject(null)} onRefresh={loadQueries} />}
+        {tab === 'projects' && selectedProject && <ProjectDetailView projectId={selectedProject.id} user={user} meetings={meetings} onBack={() => setSelectedProject(null)} onRefresh={loadQueries} onNavigate={setTab} />}
 
         {/* MEETINGS */}
         {tab === 'meetings' && !selectedMeeting && <MeetingsView meetings={meetings} projects={projects} user={user} onRefresh={loadMeetings} onSelect={setSelectedMeeting} />}
@@ -351,8 +352,30 @@ export function ClientPortalDashboard() {
   )
 }
 
+// ═══ HELPERS ═══
+function getFileIcon(name) {
+  const ext = name?.split('.').pop()?.toLowerCase()
+  const base = { className: 'w-5 h-5', style: { flexShrink: 0 } }
+  switch (ext) {
+    case 'pdf': return <FileText {...base} style={{ ...base.style, color: '#DC2626' }} />
+    case 'doc': case 'docx': return <FileText {...base} style={{ ...base.style, color: '#2563EB' }} />
+    case 'xls': case 'xlsx': case 'csv': return <FileText {...base} style={{ ...base.style, color: '#059669' }} />
+    case 'txt': return <FileText {...base} style={{ ...base.style, color: '#64748B' }} />
+    case 'png': case 'jpg': case 'jpeg': case 'gif': case 'svg': return <Image {...base} style={{ ...base.style, color: '#7C3AED' }} />
+    case 'zip': case 'rar': case '7z': return <FileText {...base} style={{ ...base.style, color: '#D97706' }} />
+    default: return <Paperclip {...base} style={{ ...base.style, color: '#94A3B8' }} />
+  }
+}
+
+function fmtSize(bytes) {
+  if (!bytes) return ''
+  if (bytes < 1024) return bytes + ' B'
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB'
+  return (bytes / 1048576).toFixed(1) + ' MB'
+}
+
 // ═══ PROJECT DETAIL ═══
-function ProjectDetailView({ projectId, user, onBack, onRefresh }) {
+function ProjectDetailView({ projectId, user, meetings, onBack, onRefresh, onNavigate }) {
   const [data, setData] = useState(null)
   const [noteText, setNoteText] = useState('')
   const [sending, setSending] = useState(false)
@@ -361,6 +384,8 @@ function ProjectDetailView({ projectId, user, onBack, onRefresh }) {
   const [revDocId, setRevDocId] = useState(null)
   const [revComment, setRevComment] = useState('')
   const [vulns, setVulns] = useState([])
+  const [delUploadId, setDelUploadId] = useState(null)
+  const [deleting, setDeleting] = useState(false)
   const fileRef = useRef(null)
   const toast = useToast()
 
@@ -382,6 +407,16 @@ function ProjectDetailView({ projectId, user, onBack, onRefresh }) {
     catch(e){ toast(e.response?.data?.error||'Failed', 'error') }
   }
 
+  const confirmDeleteUpload = async () => {
+    if(!delUploadId) return
+    setDeleting(true)
+    try { await api.delete(`/api/portal/uploads/${delUploadId}`, authHeader()); setDelUploadId(null); load() }
+    catch(e){ toast(e.response?.data?.error||'Delete failed', 'error') } finally{setDeleting(false)}
+  }
+
+  const stageOrder = ['Created', 'Planning', 'In Progress', 'Execution', 'Completed']
+  const stageIdx = stageOrder.indexOf(data?.project?.stage)
+
   if(!data) return (
     <div style={{ textAlign: 'center', padding: '60px 0' }}>
       <div style={{ width: '36px', height: '36px', border: '3px solid #E2E8F0', borderTopColor: '#1E40AF', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
@@ -391,219 +426,446 @@ function ProjectDetailView({ projectId, user, onBack, onRefresh }) {
   const { project, documents, notes, client_uploads } = data
   const sc = STAGE_COLORS[project.stage] || { bg: '#F3F4F6', text: '#6B7280', dot: '#9CA3AF' }
 
+  const projectMeetings = (meetings||[]).filter(m =>
+    m.project_id === project.id &&
+    (m.status === 'Confirmed' || m.status === 'Requested') &&
+    new Date(m.preferred_date || m.confirmed_date) > new Date()
+  ).slice(0, 2)
+
+  const openVulns = vulns.filter(v => v.status === 'Open' || v.status === 'In Progress').length
+  const patchedVulns = vulns.filter(v => v.status === 'Patched').length
+  const overdueVulns = vulns.filter(v => v.status !== 'Patched' && v.fix_deadline && new Date(v.fix_deadline) < new Date()).length
+
+  const emptyStyle = { color: '#94A3B8', fontStyle: 'italic', fontSize: '13px', fontWeight: 500, margin: 0 }
+  const valStyle = { fontSize: '13px', fontWeight: 500, color: '#0F172A', margin: 0 }
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      <button onClick={onBack} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748B', background: '#fff', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '8px 14px', cursor: 'pointer', fontWeight: 500, alignSelf: 'flex-start' }}
-        onMouseOver={e => { e.currentTarget.style.background = '#F8FAFC'; e.currentTarget.style.color = '#0F172A' }}
-        onMouseOut={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.color = '#64748B' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <button onClick={onBack}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#64748B', background: '#fff', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '8px 14px', cursor: 'pointer', fontWeight: 500, alignSelf: 'flex-start', transition: 'all .15s' }}
+        onMouseOver={e => { e.currentTarget.style.background = '#F8FAFC'; e.currentTarget.style.color = '#0F172A'; e.currentTarget.style.borderColor = '#CBD5E1' }}
+        onMouseOut={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.color = '#64748B'; e.currentTarget.style.borderColor = '#E2E8F0' }}>
         <ChevronLeft className="w-4 h-4" /> Back to Projects
       </button>
 
-      {/* Project Info Card */}
-      <div style={{ background: '#fff', borderRadius: '14px', border: '1px solid #E2E8F0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-        <div style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: sc.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Briefcase className="w-5 h-5" style={{ color: sc.text }} />
+      <div className="project-detail-grid">
+        {/* ═══ LEFT COLUMN ═══ */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+          {/* ── Project Info Card ── */}
+          <div style={{ background: '#fff', borderRadius: '14px', border: '1px solid #E2E8F0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+            <div style={{ padding: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: sc.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Briefcase className="w-5 h-5" style={{ color: sc.text }} />
+                  </div>
+                  <div>
+                    <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: '0 0 4px' }}>{project.title}</h2>
+                    <p style={{ fontSize: '13px', color: '#64748B', margin: 0 }}>{project.proj_id} · {project.service_type} · PM: {project.pm_name || '—'}</p>
+                  </div>
+                </div>
+                <span style={{ padding: '4px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, background: sc.bg, color: sc.text, whiteSpace: 'nowrap' }}>{project.stage}</span>
               </div>
-              <div>
-                <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: '0 0 4px' }}>{project.title}</h2>
-                <p style={{ fontSize: '13px', color: '#64748B', margin: 0 }}>{project.proj_id} · {project.service_type} · PM: {project.pm_name || '—'}</p>
+
+              {/* Stage Tracker */}
+              <div style={{ padding: '16px 0', borderTop: '1px solid #F1F5F9' }}>
+                <div style={{ display: 'flex', alignItems: 'center', maxWidth: '520px' }}>
+                  {stageOrder.map((s, i) => {
+                    const isPast = stageIdx >= 0 && i < stageIdx
+                    const isCurrent = i === stageIdx
+                    const dotColor = isPast ? sc.dot : (isCurrent ? sc.dot : '#CBD5E1')
+                    const dotBorder = isPast || isCurrent ? dotColor : '#CBD5E1'
+                    const labelColor = isPast || isCurrent ? '#0F172A' : '#94A3B8'
+                    return (
+                      <div key={s} style={{ display: 'flex', alignItems: 'center', flex: i < stageOrder.length - 1 ? 1 : '0 0 auto' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                          <div style={{
+                            width: isCurrent ? '14px' : '10px', height: isCurrent ? '14px' : '10px',
+                            borderRadius: '50%', background: isPast ? dotColor : 'transparent',
+                            border: `2px solid ${dotBorder}`, transition: 'all .2s', boxSizing: 'border-box'
+                          }} />
+                          <span style={{ fontSize: '10px', fontWeight: isCurrent ? 600 : 400, color: labelColor, whiteSpace: 'nowrap' }}>{s}</span>
+                        </div>
+                        {i < stageOrder.length - 1 && (
+                          <div style={{ flex: 1, height: '2px', background: isPast ? dotColor : '#E2E8F0', margin: '0 4px 16px' }} />
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '16px', padding: '16px 0', borderTop: '1px solid #F1F5F9' }}>
+                {[
+                  { label: 'Start Date', value: project.start_date?.slice(0, 10) || null },
+                  { label: 'Target Date', value: project.target_date?.slice(0, 10) || null },
+                  { label: 'Service Type', value: project.service_type || null },
+                  { label: 'Project Manager', value: project.pm_name || null },
+                ].map((item, i) => (
+                  <div key={i}>
+                    <p style={{ fontSize: '11px', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 4px' }}>{item.label}</p>
+                    {item.value ? <p style={valStyle}>{item.value}</p> : <p style={emptyStyle}>—</p>}
+                  </div>
+                ))}
+              </div>
+              {project.description && (
+                <p style={{ fontSize: '13px', color: '#475569', margin: '16px 0 0', padding: '16px 0 0', borderTop: '1px solid #F1F5F9', lineHeight: 1.6 }}>{project.description}</p>
+              )}
+            </div>
+          </div>
+
+          {/* ── Reports & Documents ── */}
+          <div style={{ background: '#fff', borderRadius: '14px', border: '1px solid #E2E8F0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+            <div style={{ padding: '18px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <FileText className="w-4 h-4" style={{ color: '#1E40AF' }} />
+              <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', margin: 0 }}>Reports & Documents</h3>
+            </div>
+            <div style={{ padding: '16px 24px' }}>
+              {documents.length === 0 ? (
+                <p style={{ textAlign: 'center', fontSize: '13px', color: '#94A3B8', padding: '20px 0', margin: 0 }}>No documents shared yet</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {documents.map(d => (
+                    <div key={d.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: '#F8FAFC', borderRadius: '10px', border: '1px solid #F1F5F9' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden' }}>
+                        {getFileIcon(d.file_name)}
+                        <div style={{ overflow: 'hidden' }}>
+                          <p style={{ fontSize: '13px', fontWeight: 500, color: '#0F172A', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{d.file_name}</p>
+                          <p style={{ fontSize: '11px', color: '#94A3B8', margin: '2px 0 0' }}>{d.category} · {d.uploaded_at?.slice(0, 10)}</p>
+                        </div>
+                      </div>
+                      <button onClick={() => { setRevDocId(d.id); setShowRevForm(true) }}
+                        style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #FDE68A', background: '#FFFBEB', color: '#92400E', fontSize: '11px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, transition: 'background .15s' }}
+                        onMouseOver={e => e.currentTarget.style.background = '#FEF3C7'}
+                        onMouseOut={e => e.currentTarget.style.background = '#FFFBEB'}>
+                        Request Changes
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ── Revision Request Modal ── */}
+          {showRevForm && (
+            <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)', padding: '16px' }}
+              onClick={() => { setShowRevForm(false); setRevComment('') }}>
+              <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '16px', padding: '28px', maxWidth: '480px', width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', margin: '0 0 12px' }}>Request Document Revision</h3>
+                <p style={{ fontSize: '13px', color: '#64748B', margin: '0 0 16px' }}>Describe what changes you need — include page numbers, section references, and specific details.</p>
+                <textarea value={revComment} onChange={e => setRevComment(e.target.value)} rows={4} autoFocus
+                  style={{ width: '100%', padding: '12px 14px', border: '1.5px solid #D1D5DB', borderRadius: '10px', fontSize: '13px', outline: 'none', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }}
+                  placeholder="E.g., Section 3.2 — please update the risk rating from High to Medium..." />
+                <div style={{ display: 'flex', gap: '10px', marginTop: '18px', justifyContent: 'flex-end' }}>
+                  <button onClick={() => { setShowRevForm(false); setRevComment('') }}
+                    style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #E2E8F0', background: '#fff', color: '#64748B', fontSize: '13px', fontWeight: 500, cursor: 'pointer' }}>Cancel</button>
+                  <button onClick={submitRevision} disabled={!revComment.trim()}
+                    style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg, #1E40AF, #1E3A5F)', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', opacity: revComment.trim() ? 1 : 0.5 }}>Submit Request</button>
+                </div>
               </div>
             </div>
-            <span style={{ padding: '4px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, background: sc.bg, color: sc.text, whiteSpace: 'nowrap' }}>{project.stage}</span>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '16px', padding: '16px 0', borderTop: '1px solid #F1F5F9' }}>
-            {[
-              { label: 'Start Date', value: project.start_date?.slice(0, 10) || '—' },
-              { label: 'Target Date', value: project.target_date?.slice(0, 10) || '—' },
-              { label: 'Service Type', value: project.service_type || '—' },
-              { label: 'Project Manager', value: project.pm_name || '—' },
-            ].map((item, i) => (
-              <div key={i}>
-                <p style={{ fontSize: '11px', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 4px' }}>{item.label}</p>
-                <p style={{ fontSize: '13px', fontWeight: 500, color: '#0F172A', margin: 0 }}>{item.value}</p>
-              </div>
-            ))}
-          </div>
-          {project.description && (
-            <p style={{ fontSize: '13px', color: '#475569', margin: '16px 0 0', padding: '16px 0 0', borderTop: '1px solid #F1F5F9', lineHeight: 1.6 }}>{project.description}</p>
           )}
-        </div>
-      </div>
 
-      {/* Documents */}
-      <div style={{ background: '#fff', borderRadius: '14px', border: '1px solid #E2E8F0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-        <div style={{ padding: '18px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <FileText className="w-4 h-4" style={{ color: '#1E40AF' }} />
-          <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', margin: 0 }}>Reports & Documents</h3>
-        </div>
-        <div style={{ padding: '16px 24px' }}>
-          {documents.length === 0 ? (
-            <p style={{ textAlign: 'center', fontSize: '13px', color: '#94A3B8', padding: '20px 0', margin: 0 }}>No documents shared yet</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {documents.map(d => (
-                <div key={d.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: '#F8FAFC', borderRadius: '10px', border: '1px solid #F1F5F9' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden' }}>
-                    <FileText className="w-5 h-5" style={{ color: '#94A3B8', flexShrink: 0 }} />
-                    <div style={{ overflow: 'hidden' }}>
-                      <p style={{ fontSize: '13px', fontWeight: 500, color: '#0F172A', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{d.file_name}</p>
-                      <p style={{ fontSize: '11px', color: '#94A3B8', margin: '2px 0 0' }}>{d.category} · {d.uploaded_at?.slice(0, 10)}</p>
+          {/* ── Your Uploads ── */}
+          <div style={{ background: '#fff', borderRadius: '14px', border: '1px solid #E2E8F0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+            <div style={{ padding: '18px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Upload className="w-4 h-4" style={{ color: '#059669' }} />
+                <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', margin: 0 }}>Your Uploads</h3>
+              </div>
+              <button onClick={() => fileRef.current?.click()}
+                style={{ padding: '7px 14px', borderRadius: '8px', border: '1px solid #D1FAE5', background: '#F0FDF4', color: '#059669', fontSize: '12px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', transition: 'background .15s' }}
+                onMouseOver={e => e.currentTarget.style.background = '#D1FAE5'}
+                onMouseOut={e => e.currentTarget.style.background = '#F0FDF4'}>
+                <Upload className="w-3.5 h-3.5" />{uploading ? 'Uploading...' : 'Upload Document'}
+              </button>
+              <input type="file" ref={fileRef} style={{ display: 'none' }} accept=".pdf,.docx,.xlsx,.png,.jpg,.jpeg,.zip" onChange={e => { if(e.target.files[0]) uploadDoc(e.target.files[0]); e.target.value='' }} />
+            </div>
+            <div style={{ padding: '16px 24px' }}>
+              {client_uploads?.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {client_uploads.map(u => (
+                    <div key={u.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: '#F8FAFC', borderRadius: '10px', border: '1px solid #F1F5F9' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden', flex: 1, minWidth: 0 }}>
+                        {getFileIcon(u.file_name)}
+                        <div style={{ overflow: 'hidden', flex: 1, minWidth: 0 }}>
+                          <p style={{ fontSize: '13px', fontWeight: 500, color: '#0F172A', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u.file_name}</p>
+                          <p style={{ fontSize: '11px', color: '#94A3B8', margin: '2px 0 0' }}>
+                            {u.category}
+                            {fmtSize(u.file_size) ? ` · ${fmtSize(u.file_size)}` : ''}
+                            {u.uploaded_by_name ? ` · by ${u.uploaded_by_name}` : ''}
+                            {u.uploaded_at ? ` · ${u.uploaded_at.slice(0, 10)}` : ''}
+                          </p>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                        <StatusBadge status={u.status} />
+                        <button onClick={() => setDelUploadId(u.id)}
+                          style={{ padding: '6px', borderRadius: '6px', border: '1px solid #FECACA', background: '#FEF2F2', color: '#DC2626', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background .15s' }}
+                          onMouseOver={e => e.currentTarget.style.background = '#FEE2E2'}
+                          onMouseOut={e => e.currentTarget.style.background = '#FEF2F2'}
+                          title="Remove this upload">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                  <button onClick={() => { setRevDocId(d.id); setShowRevForm(true) }}
-                    style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #FDE68A', background: '#FFFBEB', color: '#92400E', fontSize: '11px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                    Request Changes
+                  ))}
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '24px 0' }}>
+                  <Paperclip className="w-8 h-8" style={{ color: '#CBD5E1', margin: '0 auto 8px' }} />
+                  <p style={{ fontSize: '13px', color: '#94A3B8', margin: 0 }}>Upload policies, network diagrams, evidence documents here</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ── Delete Upload Confirmation Modal ── */}
+          {delUploadId && (
+            <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)', padding: '16px' }}
+              onClick={() => setDelUploadId(null)}>
+              <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '16px', padding: '28px', maxWidth: '400px', width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', textAlign: 'center' }}>
+                <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#FEF2F2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
+                  <AlertCircle className="w-5 h-5" style={{ color: '#DC2626' }} />
+                </div>
+                <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', margin: '0 0 8px' }}>Remove Upload?</h3>
+                <p style={{ fontSize: '13px', color: '#64748B', margin: '0 0 20px' }}>This action cannot be undone. The file will be permanently deleted.</p>
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                  <button onClick={() => setDelUploadId(null)}
+                    style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #E2E8F0', background: '#fff', color: '#64748B', fontSize: '13px', fontWeight: 500, cursor: 'pointer' }}>Cancel</button>
+                  <button onClick={confirmDeleteUpload} disabled={deleting}
+                    style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#DC2626', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', opacity: deleting ? 0.6 : 1, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {deleting ? 'Removing...' : 'Yes, Remove'}
                   </button>
                 </div>
-              ))}
-            </div>
-          )}
-          {showRevForm && (
-            <div style={{ marginTop: '16px', padding: '16px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '10px' }}>
-              <p style={{ fontSize: '13px', fontWeight: 600, color: '#92400E', margin: '0 0 10px' }}>Request Document Revision</p>
-              <textarea value={revComment} onChange={e => setRevComment(e.target.value)} rows={3}
-                style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #FDE68A', borderRadius: '8px', fontSize: '13px', outline: 'none', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }}
-                placeholder="Describe what changes you need (page, section, details)..." />
-              <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
-                <button onClick={submitRevision} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: '#D97706', color: '#fff', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Submit Request</button>
-                <button onClick={() => setShowRevForm(false)} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #E2E8F0', background: '#fff', color: '#64748B', fontSize: '12px', fontWeight: 500, cursor: 'pointer' }}>Cancel</button>
               </div>
             </div>
           )}
-        </div>
-      </div>
 
-      {/* Client Uploads */}
-      <div style={{ background: '#fff', borderRadius: '14px', border: '1px solid #E2E8F0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-        <div style={{ padding: '18px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Upload className="w-4 h-4" style={{ color: '#059669' }} />
-            <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', margin: 0 }}>Your Uploads</h3>
-          </div>
-          <button onClick={() => fileRef.current?.click()}
-            style={{ padding: '7px 14px', borderRadius: '8px', border: '1px solid #D1FAE5', background: '#F0FDF4', color: '#059669', fontSize: '12px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Upload className="w-3.5 h-3.5" />{uploading ? 'Uploading...' : 'Upload Document'}
-          </button>
-          <input type="file" ref={fileRef} style={{ display: 'none' }} accept=".pdf,.docx,.xlsx,.png,.jpg,.jpeg,.zip" onChange={e => { if(e.target.files[0]) uploadDoc(e.target.files[0]); e.target.value='' }} />
-        </div>
-        <div style={{ padding: '16px 24px' }}>
-          {client_uploads?.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {client_uploads.map(u => (
-                <div key={u.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: '#F8FAFC', borderRadius: '10px', border: '1px solid #F1F5F9' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <FileText className="w-5 h-5" style={{ color: '#94A3B8' }} />
-                    <div>
-                      <p style={{ fontSize: '13px', fontWeight: 500, color: '#0F172A', margin: 0 }}>{u.file_name}</p>
-                      <p style={{ fontSize: '11px', color: '#94A3B8', margin: '2px 0 0' }}>{u.category} · {u.uploaded_at?.slice(0, 10)}</p>
+          {/* ── Communication ── */}
+          <div style={{ background: '#fff', borderRadius: '14px', border: '1px solid #E2E8F0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+            <div style={{ padding: '18px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <MessageSquare className="w-4 h-4" style={{ color: '#7C3AED' }} />
+              <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', margin: 0 }}>Communication</h3>
+            </div>
+            <div style={{ padding: '20px 24px' }}>
+              {project.is_client_review_enabled ? (
+                <form onSubmit={addNote} style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                  <input value={noteText} onChange={e => setNoteText(e.target.value)}
+                    style={{ flex: 1, padding: '10px 14px', border: '1.5px solid #D1D5DB', borderRadius: '10px', fontSize: '13px', outline: 'none', fontFamily: 'inherit' }}
+                    onFocus={e => e.target.style.borderColor = '#7C3AED'}
+                    onBlur={e => e.target.style.borderColor = '#D1D5DB'}
+                    placeholder="Write feedback, instructions, or queries..." />
+                  <button type="submit" disabled={sending || !noteText.trim()}
+                    style={{ padding: '10px 16px', borderRadius: '10px', border: 'none', background: '#7C3AED', color: '#fff', cursor: 'pointer', opacity: (sending || !noteText.trim()) ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Send className="w-4 h-4" />
+                  </button>
+                </form>
+              ) : (
+                <div style={{ padding: '12px 16px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '10px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#92400E' }}>
+                  <AlertCircle className="w-4 h-4" style={{ flexShrink: 0 }} />
+                  Client review not yet enabled for this project
+                </div>
+              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '300px', overflowY: 'auto' }}>
+                {notes.map(n => (
+                  <div key={n.id} style={{
+                    padding: '12px 16px', borderRadius: '10px', border: '1px solid',
+                    background: n.is_client_note ? '#EEF2FF' : '#fff',
+                    borderColor: n.is_client_note ? '#C7D2FE' : '#E2E8F0',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: n.is_client_note ? '#4338CA' : '#64748B' }}>
+                        {n.is_client_note ? 'You' : 'INFOCUS-IT Team'}
+                      </span>
+                      <span style={{ fontSize: '11px', color: '#94A3B8' }}>{n.created_at?.slice(0, 16).replace('T', ' ')}</span>
                     </div>
+                    <p style={{ fontSize: '13px', color: '#1E293B', margin: 0, lineHeight: 1.5 }}>{n.content}</p>
                   </div>
-                  <StatusBadge status={u.status} />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center', padding: '24px 0' }}>
-              <Paperclip className="w-8 h-8" style={{ color: '#CBD5E1', margin: '0 auto 8px' }} />
-              <p style={{ fontSize: '13px', color: '#94A3B8', margin: 0 }}>Upload policies, network diagrams, evidence documents here</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Communication */}
-      <div style={{ background: '#fff', borderRadius: '14px', border: '1px solid #E2E8F0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-        <div style={{ padding: '18px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <MessageSquare className="w-4 h-4" style={{ color: '#7C3AED' }} />
-          <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', margin: 0 }}>Communication</h3>
-        </div>
-        <div style={{ padding: '20px 24px' }}>
-          {project.is_client_review_enabled ? (
-            <form onSubmit={addNote} style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-              <input value={noteText} onChange={e => setNoteText(e.target.value)}
-                style={{ flex: 1, padding: '10px 14px', border: '1.5px solid #D1D5DB', borderRadius: '10px', fontSize: '13px', outline: 'none', fontFamily: 'inherit' }}
-                onFocus={e => e.target.style.borderColor = '#7C3AED'}
-                onBlur={e => e.target.style.borderColor = '#D1D5DB'}
-                placeholder="Write feedback, instructions, or queries..." />
-              <button type="submit" disabled={sending || !noteText.trim()}
-                style={{ padding: '10px 16px', borderRadius: '10px', border: 'none', background: '#7C3AED', color: '#fff', cursor: 'pointer', opacity: (sending || !noteText.trim()) ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Send className="w-4 h-4" />
-              </button>
-            </form>
-          ) : (
-            <div style={{ padding: '12px 16px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '10px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#92400E' }}>
-              <AlertCircle className="w-4 h-4" style={{ flexShrink: 0 }} />
-              Client review not yet enabled for this project
-            </div>
-          )}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '300px', overflowY: 'auto' }}>
-            {notes.map(n => (
-              <div key={n.id} style={{
-                padding: '12px 16px', borderRadius: '10px', border: '1px solid',
-                background: n.is_client_note ? '#EEF2FF' : '#fff',
-                borderColor: n.is_client_note ? '#C7D2FE' : '#E2E8F0',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: n.is_client_note ? '#4338CA' : '#64748B' }}>
-                    {n.is_client_note ? 'You' : 'INFOCUS-IT Team'}
-                  </span>
-                  <span style={{ fontSize: '11px', color: '#94A3B8' }}>{n.created_at?.slice(0, 16).replace('T', ' ')}</span>
-                </div>
-                <p style={{ fontSize: '13px', color: '#1E293B', margin: 0, lineHeight: 1.5 }}>{n.content}</p>
+                ))}
+                {notes.length === 0 && (
+                  <p style={{ textAlign: 'center', fontSize: '13px', color: '#94A3B8', padding: '20px 0', margin: 0 }}>No messages yet</p>
+                )}
               </div>
-            ))}
-            {notes.length === 0 && (
-              <p style={{ textAlign: 'center', fontSize: '13px', color: '#94A3B8', padding: '20px 0', margin: 0 }}>No messages yet</p>
-            )}
+            </div>
+          </div>
+
+          {/* ── Vulnerabilities ── */}
+          <div style={{ background: '#fff', borderRadius: '14px', border: '1px solid #E2E8F0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+            <div style={{ padding: '18px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Shield className="w-4 h-4" style={{ color: '#DC2626' }} />
+                <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', margin: 0 }}>Vulnerabilities ({vulns.length})</h3>
+              </div>
+              <button onClick={() => onNavigate('vulnerabilities')}
+                style={{ fontSize: '12px', fontWeight: 600, color: '#1E40AF', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', borderRadius: '6px', transition: 'background .15s' }}
+                onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
+                onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
+                View All <ArrowRight className="w-3 h-3" />
+              </button>
+            </div>
+            <div style={{ padding: '16px 24px', overflowX: 'auto' }}>
+              {vulns.length === 0 ? (
+                <p style={{ textAlign: 'center', fontSize: '13px', color: '#94A3B8', padding: '20px 0', margin: 0 }}>No vulnerabilities reported for this project</p>
+              ) : (
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '2px solid #E2E8F0' }}>
+                      <th style={{ textAlign: 'left', padding: '8px 10px', fontWeight: 600, color: '#64748B', fontSize: '11px', textTransform: 'uppercase' }}>Title</th>
+                      <th style={{ textAlign: 'center', padding: '8px 10px', fontWeight: 600, color: '#64748B', fontSize: '11px', textTransform: 'uppercase' }}>Severity</th>
+                      <th style={{ textAlign: 'center', padding: '8px 10px', fontWeight: 600, color: '#64748B', fontSize: '11px', textTransform: 'uppercase' }}>Status</th>
+                      <th style={{ textAlign: 'center', padding: '8px 10px', fontWeight: 600, color: '#64748B', fontSize: '11px', textTransform: 'uppercase' }}>Date Found</th>
+                      <th style={{ textAlign: 'center', padding: '8px 10px', fontWeight: 600, color: '#64748B', fontSize: '11px', textTransform: 'uppercase' }}>Fix Deadline</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {vulns.map(v => {
+                      const sc2 = SEV_COLORS[v.severity] || SEV_COLORS.Medium
+                      const stc2 = STATUS_COLORS[v.status] || STATUS_COLORS.Open
+                      const isOverdue = v.status !== 'Patched' && v.fix_deadline && new Date(v.fix_deadline) < new Date()
+                      return (
+                        <tr key={v.id} style={{ borderBottom: '1px solid #F1F5F9', background: isOverdue ? '#FFF5F5' : 'transparent' }}>
+                          <td style={{ padding: '12px 10px', fontWeight: 500, color: '#0F172A', maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={v.title}>{v.title}</td>
+                          <td style={{ textAlign: 'center', padding: '12px 10px' }}>
+                            <span style={{ background: sc2.bg, color: sc2.text, padding: '2px 10px', borderRadius: '4px', fontWeight: 600, fontSize: '11px' }}>{v.severity}</span>
+                          </td>
+                          <td style={{ textAlign: 'center', padding: '12px 10px' }}>
+                            <span style={{ background: stc2.bg, color: stc2.text, padding: '2px 10px', borderRadius: '4px', fontWeight: 600, fontSize: '11px' }}>{v.status}</span>
+                          </td>
+                          <td style={{ textAlign: 'center', padding: '12px 10px', color: '#64748B', fontSize: '12px' }}>{v.date_found?.slice(0, 10) || '—'}</td>
+                          <td style={{ textAlign: 'center', padding: '12px 10px', color: isOverdue ? '#DC2626' : '#64748B', fontWeight: isOverdue ? 700 : 400, fontSize: '12px' }}>{v.fix_deadline?.slice(0, 10) || '—'}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Vulnerabilities */}
-      <div style={{ background: '#fff', borderRadius: '14px', border: '1px solid #E2E8F0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-        <div style={{ padding: '18px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Shield className="w-4 h-4" style={{ color: '#DC2626' }} />
-          <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', margin: 0 }}>Vulnerabilities ({vulns.length})</h3>
-        </div>
-        <div style={{ padding: '16px 24px', overflowX: 'auto' }}>
-          {vulns.length === 0 ? (
-            <p style={{ textAlign: 'center', fontSize: '13px', color: '#94A3B8', padding: '20px 0', margin: 0 }}>No vulnerabilities reported for this project</p>
-          ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid #E2E8F0' }}>
-                  <th style={{ textAlign: 'left', padding: '8px 10px', fontWeight: 600, color: '#64748B', fontSize: '11px', textTransform: 'uppercase' }}>Title</th>
-                  <th style={{ textAlign: 'center', padding: '8px 10px', fontWeight: 600, color: '#64748B', fontSize: '11px', textTransform: 'uppercase' }}>Severity</th>
-                  <th style={{ textAlign: 'center', padding: '8px 10px', fontWeight: 600, color: '#64748B', fontSize: '11px', textTransform: 'uppercase' }}>Status</th>
-                  <th style={{ textAlign: 'center', padding: '8px 10px', fontWeight: 600, color: '#64748B', fontSize: '11px', textTransform: 'uppercase' }}>Date Found</th>
-                  <th style={{ textAlign: 'center', padding: '8px 10px', fontWeight: 600, color: '#64748B', fontSize: '11px', textTransform: 'uppercase' }}>Fix Deadline</th>
-                </tr>
-              </thead>
-              <tbody>
-                {vulns.map(v => {
-                  const sc = SEV_COLORS[v.severity] || SEV_COLORS.Medium
-                  const stc = STATUS_COLORS[v.status] || STATUS_COLORS.Open
-                  const isOverdue = v.status !== 'Patched' && v.fix_deadline && new Date(v.fix_deadline) < new Date()
-                  return (
-                    <tr key={v.id} style={{ borderBottom: '1px solid #F1F5F9', background: isOverdue ? '#FFF5F5' : 'transparent' }}>
-                      <td style={{ padding: '12px 10px', fontWeight: 500, color: '#0F172A', maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={v.title}>{v.title}</td>
-                      <td style={{ textAlign: 'center', padding: '12px 10px' }}>
-                        <span style={{ background: sc.bg, color: sc.text, padding: '2px 10px', borderRadius: '4px', fontWeight: 600, fontSize: '11px' }}>{v.severity}</span>
-                      </td>
-                      <td style={{ textAlign: 'center', padding: '12px 10px' }}>
-                        <span style={{ background: stc.bg, color: stc.text, padding: '2px 10px', borderRadius: '4px', fontWeight: 600, fontSize: '11px' }}>{v.status}</span>
-                      </td>
-                      <td style={{ textAlign: 'center', padding: '12px 10px', color: '#64748B', fontSize: '12px' }}>{v.date_found?.slice(0, 10) || '—'}</td>
-                      <td style={{ textAlign: 'center', padding: '12px 10px', color: isOverdue ? '#DC2626' : '#64748B', fontWeight: isOverdue ? 700 : 400, fontSize: '12px' }}>{v.fix_deadline?.slice(0, 10) || '—'}</td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          )}
+        {/* ═══ RIGHT COLUMN — Sidebar ═══ */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Project Summary */}
+          <div style={{ background: '#fff', borderRadius: '14px', border: '1px solid #E2E8F0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #E2E8F0' }}>
+              <p style={{ fontSize: '12px', fontWeight: 700, color: '#0F172A', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Quick Info</p>
+            </div>
+            <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <User className="w-3.5 h-3.5" style={{ color: '#1E40AF' }} />
+                </div>
+                <div>
+                  <p style={{ fontSize: '10px', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0 }}>Project Manager</p>
+                  <p style={{ fontSize: '13px', fontWeight: 500, color: '#0F172A', margin: '2px 0 0' }}>{project.pm_name || '—'}</p>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Clock className="w-3.5 h-3.5" style={{ color: '#059669' }} />
+                </div>
+                <div>
+                  <p style={{ fontSize: '10px', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0 }}>Service Type</p>
+                  <p style={{ fontSize: '13px', fontWeight: 500, color: '#0F172A', margin: '2px 0 0' }}>{project.service_type || '—'}</p>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Calendar className="w-3.5 h-3.5" style={{ color: '#D97706' }} />
+                </div>
+                <div>
+                  <p style={{ fontSize: '10px', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0 }}>Target Date</p>
+                  <p style={{ fontSize: '13px', fontWeight: 500, color: '#0F172A', margin: '2px 0 0' }}>{project.target_date?.slice(0, 10) || '—'}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Vulnerabilities Summary */}
+          <div style={{ background: '#fff', borderRadius: '14px', border: '1px solid #E2E8F0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <p style={{ fontSize: '12px', fontWeight: 700, color: '#0F172A', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Vulnerabilities</p>
+              <span style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A' }}>{vulns.length}</span>
+            </div>
+            <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#F59E0B' }} />
+                  <span style={{ fontSize: '13px', color: '#374151' }}>Open</span>
+                </div>
+                <span style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A' }}>{openVulns}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22C55E' }} />
+                  <span style={{ fontSize: '13px', color: '#374151' }}>Patched</span>
+                </div>
+                <span style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A' }}>{patchedVulns}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#DC2626' }} />
+                  <span style={{ fontSize: '13px', color: '#374151' }}>Overdue</span>
+                </div>
+                <span style={{ fontSize: '14px', fontWeight: 700, color: overdueVulns > 0 ? '#DC2626' : '#0F172A' }}>{overdueVulns}</span>
+              </div>
+              <button onClick={() => onNavigate('vulnerabilities')}
+                style={{ marginTop: '4px', fontSize: '12px', fontWeight: 600, color: '#1E40AF', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 0', transition: 'color .15s' }}
+                onMouseOver={e => e.currentTarget.style.color = '#1E3A5F'}
+                onMouseOut={e => e.currentTarget.style.color = '#1E40AF'}>
+                View All Vulnerabilities <ArrowRight className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+
+          {/* Upcoming Meetings */}
+          <div style={{ background: '#fff', borderRadius: '14px', border: '1px solid #E2E8F0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <p style={{ fontSize: '12px', fontWeight: 700, color: '#0F172A', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Upcoming Meetings</p>
+              <Calendar className="w-4 h-4" style={{ color: '#94A3B8' }} />
+            </div>
+            <div style={{ padding: '16px 20px' }}>
+              {projectMeetings.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '12px 0' }}>
+                  <p style={{ fontSize: '13px', color: '#94A3B8', margin: 0 }}>No upcoming meetings</p>
+                  <button onClick={() => onNavigate('meetings')}
+                    style={{ fontSize: '12px', fontWeight: 600, color: '#1E40AF', background: 'none', border: 'none', cursor: 'pointer', padding: '6px 0', marginTop: '6px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    Request a Meeting <ArrowRight className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {projectMeetings.map(m => (
+                    <div key={m.id} style={{ padding: '12px', background: '#F8FAFC', borderRadius: '10px', border: '1px solid #F1F5F9' }}>
+                      <p style={{ fontSize: '12px', fontWeight: 600, color: '#0F172A', margin: '0 0 4px', lineHeight: 1.3 }}>
+                        {m.agenda?.length > 60 ? m.agenda.slice(0, 60) + '...' : m.agenda || 'Meeting'}
+                      </p>
+                      <p style={{ fontSize: '11px', color: '#64748B', margin: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Calendar className="w-3 h-3" />
+                        {(m.confirmed_date || m.preferred_date)?.slice(0, 10)}
+                      </p>
+                      {m.meeting_link && (
+                        <a href={m.meeting_link} target="_blank" rel="noopener noreferrer"
+                          style={{ marginTop: '6px', display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 600, color: '#059669', textDecoration: 'none' }}
+                          onClick={e => e.stopPropagation()}>
+                          <ExternalLink className="w-3 h-3" /> Join
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                  <button onClick={() => onNavigate('meetings')}
+                    style={{ fontSize: '12px', fontWeight: 600, color: '#1E40AF', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 0', transition: 'color .15s' }}
+                    onMouseOver={e => e.currentTarget.style.color = '#1E3A5F'}
+                    onMouseOut={e => e.currentTarget.style.color = '#1E40AF'}>
+                    View All <ArrowRight className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1258,6 +1520,8 @@ if (typeof document !== 'undefined' && !document.getElementById('__client_portal
   s.textContent = `
     @keyframes spin { to { transform: rotate(360deg) } }
     @media (max-width: 767px) { .login-brand { display: none !important } }
+    @media (min-width: 1024px) { .project-detail-grid { display: grid; grid-template-columns: 1fr 320px; gap: 24px; align-items: start; } }
+    @media (max-width: 1023px) { .project-detail-grid { display: flex; flex-direction: column; gap: 24px; } }
   `
   document.head.appendChild(s)
 }

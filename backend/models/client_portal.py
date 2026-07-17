@@ -90,6 +90,7 @@ class ClientUpload(db.Model):
     file_name = db.Column(db.String(255), nullable=False)
     file_path = db.Column(db.String(500), nullable=False)
     file_type = db.Column(db.String(50))
+    file_size = db.Column(db.BigInteger, nullable=True)
     category = db.Column(db.String(50))
     description = db.Column(db.Text)
     status = db.Column(db.String(30), default='Uploaded')
@@ -104,7 +105,7 @@ class ClientUpload(db.Model):
             'id': self.id, 'project_id': self.project_id,
             'file_name': self.file_name, 'file_type': self.file_type,
             'category': self.category, 'description': self.description,
-            'status': self.status,
+            'status': self.status, 'file_size': self.file_size,
             'uploaded_by_name': self.uploader.full_name if self.uploader else None,
             'uploaded_at': self.uploaded_at.isoformat() if self.uploaded_at else None,
         }
