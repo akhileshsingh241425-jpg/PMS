@@ -71,12 +71,15 @@ const ACTIVITY_ICONS = {
 
 const formatDate = (d) => {
   if (!d) return '—'
-  return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+  const dt = new Date(d)
+  if (isNaN(dt.getTime())) return '—'
+  return dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 const formatDateTime = (d) => {
   if (!d) return '—'
   const dt = new Date(d)
+  if (isNaN(dt.getTime())) return '—'
   return dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) +
     ' ' + dt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
 }
@@ -106,7 +109,9 @@ const PRIORITY_STYLES = {
 
 const timeAgo = (d) => {
   if (!d) return ''
-  const diff = Date.now() - new Date(d).getTime()
+  const dt = new Date(d)
+  if (isNaN(dt.getTime())) return ''
+  const diff = Date.now() - dt.getTime()
   const mins = Math.floor(diff / 60000)
   if (mins < 1) return 'Just now'
   if (mins < 60) return `${mins}m ago`
@@ -450,32 +455,68 @@ export default function AccountsDetailPage() {
         </div>
 
         {/* ═══ 2-COLUMN: ACCOUNT INFO | ACTIVITY TIMELINE ═══ */}
-        <div style={{ display: 'grid', gridTemplateColumns: '70% 30%', gap: '32px', marginBottom: '32px', alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1.7fr 1fr', gap: '24px', marginBottom: '32px', alignItems: 'start' }} className="account-layout">
 
           {/* LEFT: Account Information */}
           <div style={{ background: '#fff', borderRadius: '14px', boxShadow: '0 8px 24px rgba(0,0,0,.05)', border: '1px solid #ECECEC' }}>
-            <div style={{ padding: '18px 24px', borderBottom: '1px solid #ECECEC', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Building2 className="w-4 h-4" style={{ color: '#5B3DF5' }} />
-              <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#1F2937', margin: 0 }}>Account Information</h3>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #ECECEC', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Building2 className="w-4 h-4" style={{ color: '#5B3DF5' }} />
+                <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#1F2937', margin: 0 }}>Account Information</h3>
+              </div>
+              <button onClick={() => navigate(`/accounts/${id}/edit`)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 12px', borderRadius: '6px', border: '1px solid #ECECEC', background: '#fff', color: '#5B3DF5', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                <Edit3 className="w-3 h-3" /> Edit
+              </button>
             </div>
-            <div style={{ padding: '20px 24px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 32px' }}>
-                <InfoRow2 label="Client ID" value={acc.acc_id} />
-                <InfoRow2 label="Company Name" value={acc.company_name} />
-                <InfoRow2 label="Client Name" value={acc.contact_name || '—'} />
-                <InfoRow2 label="Phone" value={acc.contact_phone || '—'} />
-                <InfoRow2 label="Email" value={acc.contact_email || '—'} />
-                <InfoRow2 label="Website" value={acc.website || '—'} />
-                <InfoRow2 label="Nature of Business" value={acc.industry || '—'} />
-                <InfoRow2 label="GST No." value={acc.gst_no || '—'} />
-                <InfoRow2 label="Address" value={acc.address || '—'} />
-                <InfoRow2 label="State" value={acc.state || '—'} />
-                <InfoRow2 label="Country" value={acc.country || '—'} />
-                <InfoRow2 label="Pincode" value={acc.pincode || '—'} />
-                <InfoRow2 label="Created" value={formatDate(acc.created_at)} />
-                <InfoRow2 label="Updated" value={formatDate(acc.updated_at)} />
+            <div style={{ padding: '16px 20px' }}>
+              {/* Basic Info */}
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 8 }}>Basic Information</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 20px' }} className="info-grid">
+                  <InfoField label="Client ID" value={acc.acc_id} icon={Hash} />
+                  <InfoField label="Client Name" value={acc.contact_name} icon={User} />
+                  <InfoField label="Company Name" value={acc.company_name} icon={Building2} />
+                  <InfoField label="Nature of Business" value={acc.industry} icon={Briefcase} />
+                </div>
+              </div>
+              <div style={{ height: 1, background: '#F0F0F0', margin: '0 0 14px' }} />
+              {/* Contact Details */}
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 8 }}>Contact Details</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 20px' }} className="info-grid">
+                  <InfoField label="Phone" value={acc.contact_phone} icon={Phone} />
+                  <InfoField label="Email" value={acc.contact_email} icon={Mail} />
+                  <InfoField label="Website" value={acc.website} icon={Globe} />
+                </div>
+              </div>
+              <div style={{ height: 1, background: '#F0F0F0', margin: '0 0 14px' }} />
+              {/* Address */}
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 8 }}>Address</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 20px' }} className="info-grid">
+                  <InfoField label="Address" value={acc.address} icon={MapPin} />
+                  <InfoField label="State" value={acc.state} icon={MapPin} />
+                  <InfoField label="Country" value={acc.country} icon={Globe} />
+                  <InfoField label="Pincode" value={acc.pincode} icon={Hash} />
+                  <InfoField label="GST No." value={acc.gst_no} icon={Tag} />
+                </div>
+              </div>
+              <div style={{ height: 1, background: '#F0F0F0', margin: '0 0 14px' }} />
+              {/* Meta */}
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 8 }}>Meta</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 20px' }} className="info-grid">
+                  <InfoField label="Created" value={formatDateTime(acc.created_at)} icon={Calendar} />
+                  <InfoField label="Updated" value={formatDateTime(acc.updated_at)} icon={Calendar} />
+                </div>
               </div>
             </div>
+            <style>{`
+              @media (max-width: 768px) {
+                .account-layout { grid-template-columns: 1fr !important; }
+                .info-grid { grid-template-columns: 1fr !important; }
+              }
+            `}</style>
           </div>
 
           {/* RIGHT: Activity Timeline */}
@@ -484,7 +525,7 @@ export default function AccountsDetailPage() {
               <Activity className="w-4 h-4" style={{ color: '#5B3DF5' }} />
               <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#1F2937', margin: 0 }}>Activity Timeline</h3>
             </div>
-            <div style={{ padding: '20px 24px', maxHeight: '520px', overflowY: 'auto' }}>
+            <div style={{ padding: '16px 20px', maxHeight: '500px', overflowY: 'auto' }}>
               {allTimelineItems.length > 0 ? (
                 <div style={{ position: 'relative', paddingLeft: '28px' }}>
                   <div style={{ position: 'absolute', left: '10px', top: '10px', bottom: '10px', width: '2px', background: '#E8EAF2', borderRadius: '1px' }} />
@@ -492,9 +533,11 @@ export default function AccountsDetailPage() {
                     const isNote = item._type === 'note'
                     const iconDef = isNote ? ACTIVITY_ICONS.note : ACTIVITY_ICONS.meeting
                     const Icon = iconDef.icon
-                    const d = new Date(isNote ? item.created_at : item.meeting_date)
+                    const d = item._date ? new Date(item._date) : null
+                    const validDate = d && !isNaN(d.getTime())
+                    const title = isNote ? (item.content || '') : (item.title || '')
                     return (
-                      <div key={item.id || idx} style={{ position: 'relative', marginBottom: '18px' }}>
+                      <div key={item.id || idx} style={{ position: 'relative', marginBottom: '16px' }}>
                         <div style={{ position: 'absolute', left: '-22px', top: '4px', width: '28px', height: '28px', borderRadius: '8px', background: iconDef.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1, transition: 'all .2s' }}
                           onMouseOver={e => { e.currentTarget.style.transform = 'scale(1.1)'; e.currentTarget.style.boxShadow = `0 0 0 3px ${iconDef.bg}` }}
                           onMouseOut={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}>
@@ -504,19 +547,29 @@ export default function AccountsDetailPage() {
                           onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
                           onMouseOut={e => e.currentTarget.style.background = '#F6F8FC'}>
                           <div className="flex items-center gap-2 text-xs" style={{ color: iconDef.color, fontWeight: 600, marginBottom: '3px' }}>
-                            <span>{formatDate(d)}</span>
-                            <span>{d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
+                            {validDate ? (
+                              <>
+                                <span>{formatDate(item._date)}</span>
+                                <span>{d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
+                              </>
+                            ) : (
+                              <span style={{ fontStyle: 'italic', opacity: 0.6 }}>Date not set</span>
+                            )}
                           </div>
-                          <p style={{ fontSize: '13px', color: '#1F2937', margin: 0, fontWeight: 500 }}>{isNote ? item.content : item.title}</p>
+                          <p title={title} style={{ fontSize: '13px', color: '#1F2937', margin: 0, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title || '—'}</p>
                           <p style={{ fontSize: '11px', color: '#6B7280', margin: '3px 0 0' }}>
                             {isNote ? `Note by ${item.author || '—'}` : `Meeting by ${item.created_by_name || '—'}`}
-                            <span style={{ color: '#D1D5DB', margin: '0 6px' }}>·</span>
-                            {timeAgo(isNote ? item.created_at : item.meeting_date)}
+                            {validDate && <><span style={{ color: '#D1D5DB', margin: '0 6px' }}>·</span>{timeAgo(item._date)}</>}
                           </p>
                         </div>
                       </div>
                     )
                   })}
+                  {allTimelineItems.length > 15 && (
+                    <div style={{ textAlign: 'center', marginTop: '8px' }}>
+                      <span style={{ fontSize: '12px', fontWeight: 600, color: '#5B3DF5', cursor: 'pointer' }}>View All Activity ({allTimelineItems.length}) →</span>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div style={{ textAlign: 'center', padding: '40px 16px', color: '#9CA3AF' }}>
@@ -563,10 +616,13 @@ export default function AccountsDetailPage() {
               ))}
             </div>
           ) : (
-            <div style={{ textAlign: 'center', padding: '24px 16px', color: '#9CA3AF' }}>
-              <User className="w-8 h-8 mx-auto mb-2" />
-              <p style={{ fontSize: 13, fontWeight: 500, margin: 0 }}>No contacts yet</p>
-              <p style={{ fontSize: 12, margin: '4px 0 0' }}>Add contacts for this account</p>
+            <div style={{ textAlign: 'center', padding: '32px 16px', color: '#9CA3AF' }}>
+              <User className="w-10 h-10 mx-auto mb-2" style={{ opacity: 0.4 }} />
+              <p style={{ fontSize: 14, fontWeight: 600, margin: '0 0 4px', color: '#6B7280' }}>No contacts added yet</p>
+              <p style={{ fontSize: 12, margin: '0 0 16px' }}>Add a contact person for this account</p>
+              <button onClick={() => openContactForm(null)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 8, border: 'none', background: '#5B21B6', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                <Plus className="w-4 h-4" /> Add Contact
+              </button>
             </div>
           )}
         </SectionCard>
@@ -1291,6 +1347,19 @@ function ActionBtn({ icon, label, onClick }) {
       {icon}
       {label}
     </button>
+  )
+}
+
+function InfoField({ label, value, icon: Icon }) {
+  const isEmpty = !value || value === '—'
+  return (
+    <div style={{ padding: '5px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
+      {Icon && <Icon className="w-3.5 h-3.5" style={{ color: '#9CA3AF', flexShrink: 0 }} />}
+      <div style={{ display: 'flex', gap: 6, alignItems: 'baseline', minWidth: 0 }}>
+        <span style={{ fontSize: '11px', color: '#9CA3AF', fontWeight: 500, whiteSpace: 'nowrap' }}>{label}:</span>
+        <span style={{ fontSize: '13px', color: isEmpty ? '#D1D5DB' : '#1F2937', fontWeight: isEmpty ? 400 : 600, fontStyle: isEmpty ? 'italic' : 'normal', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{isEmpty ? 'Not set' : value}</span>
+      </div>
+    </div>
   )
 }
 
