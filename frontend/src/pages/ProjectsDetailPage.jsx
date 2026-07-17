@@ -510,7 +510,7 @@ export default function ProjectsDetailPage() {
                     </div>
                     <select value={taskForm.assigned_to} onChange={e => setTaskForm({ ...taskForm, assigned_to: e.target.value })} style={{ padding: '8px 10px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 12, outline: 'none', fontFamily: 'inherit', background: C.card }}>
                       <option value="">Assign to...</option>
-                      {users.map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
+                      {team.map(t => <option key={t.user_id} value={t.user_id}>{t.user_name} ({t.role_in_project || 'Member'})</option>)}
                     </select>
                     <button type="submit" disabled={!taskForm.title.trim()} style={{ background: C.primary, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: taskForm.title.trim() ? 1 : 0.5 }}>
                       <PlusIcon /> Add Task
