@@ -19,6 +19,13 @@ import MyWorkspacePage from './pages/MyWorkspacePage'
 import MeetingDetailPage from './pages/MeetingDetailPage'
 import EmployeeLayout from './components/EmployeeLayout'
 import EmployeePortal from './pages/EmployeePortal'
+import PMLayout from './components/PMLayout'
+import PMDashboard from './pages/PMDashboard'
+import PMProjects from './pages/PMProjects'
+import PMTasks from './pages/PMTasks'
+import PMTeam from './pages/PMTeam'
+import PMMeetings from './pages/PMMeetings'
+import PMReports from './pages/PMReports'
 
 function Protected({ children }) {
   const { user } = useAuth()
@@ -37,17 +44,31 @@ function EmployeeRoute({ children }) {
   const { user } = useAuth()
   if (!user) return <Navigate to="/login" replace />
   if (user.role === 'admin') return <Navigate to="/" replace />
+  if (user.role === 'project_manager') return <Navigate to="/pm" replace />
+  return children
+}
+
+function PMRoute({ children }) {
+  const { user } = useAuth()
+  if (!user) return <Navigate to="/login" replace />
+  if (user.role !== 'project_manager' && user.role !== 'admin') return <Navigate to="/employee" replace />
   return children
 }
 
 function AppLayout() {
   const { user } = useAuth()
-  if (user && user.role !== 'admin') return <Navigate to="/employee" replace />
+  if (!user) return <Navigate to="/login" replace />
+  if (user.role === 'project_manager') return <Navigate to="/pm" replace />
+  if (user.role !== 'admin') return <Navigate to="/employee" replace />
   return <Layout><Outlet /></Layout>
 }
 
 function EmployeeAppLayout() {
   return <EmployeeLayout><Outlet /></EmployeeLayout>
+}
+
+function PMAppLayout() {
+  return <PMLayout><Outlet /></PMLayout>
 }
 
 export default function App() {
@@ -85,6 +106,14 @@ export default function App() {
                 <Route path="performance" element={<EmployeePortal activeTab="performance" />} />
                 <Route path="notifications" element={<EmployeePortal activeTab="notifications" />} />
                 <Route path="profile" element={<EmployeePortal activeTab="profile" />} />
+              </Route>
+              <Route path="/pm" element={<Protected><PMRoute><PMAppLayout /></PMRoute></Protected>}>
+                <Route index element={<PMDashboard />} />
+                <Route path="projects" element={<PMProjects />} />
+                <Route path="tasks" element={<PMTasks />} />
+                <Route path="team" element={<PMTeam />} />
+                <Route path="meetings" element={<PMMeetings />} />
+                <Route path="reports" element={<PMReports />} />
               </Route>
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
