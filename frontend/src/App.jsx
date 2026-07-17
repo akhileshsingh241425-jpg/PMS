@@ -16,6 +16,7 @@ import LeadsDetailPage from './pages/LeadsDetailPage'
 import ProjectsDetailPage from './pages/ProjectsDetailPage'
 import TeamsPage from './pages/TeamsPage'
 import MyWorkspacePage from './pages/MyWorkspacePage'
+import MeetingDetailPage from './pages/MeetingDetailPage'
 import EmployeeLayout from './components/EmployeeLayout'
 import EmployeePortal from './pages/EmployeePortal'
 
@@ -70,6 +71,7 @@ export default function App() {
                 <Route path="projects/:id" element={<ProjectsDetailPage />} />
                 <Route path="teams" element={<TeamsPage />} />
                 <Route path="my-workspace" element={<MyWorkspacePage />} />
+                <Route path="meetings" element={<MeetingDetailPage />} />
                 <Route path="users" element={<AdminRoute><UsersPage /></AdminRoute>} />
               </Route>
               <Route path="/employee" element={<Protected><EmployeeRoute><EmployeeAppLayout /></EmployeeRoute></Protected>}>

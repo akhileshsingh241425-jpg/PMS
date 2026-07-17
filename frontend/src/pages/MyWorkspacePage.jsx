@@ -119,7 +119,11 @@ export default function MyWorkspacePage() {
                     padding: '10px 12px', background: '#F9FAFB', borderRadius: 8,
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                     borderLeft: `3px solid ${isReq ? '#D97706' : '#5B21B6'}`,
-                  }}>
+                    cursor: 'pointer',
+                  }}
+                    onClick={() => window.open(`/meetings?id=${m.id}&type=${isReq ? 'request' : 'meeting'}`, '_blank')}
+                    onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
+                    onMouseOut={e => e.currentTarget.style.background = '#F9FAFB'}>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <span style={{ fontSize: 13, fontWeight: 600, color: '#1F2937' }}>{m.title}</span>

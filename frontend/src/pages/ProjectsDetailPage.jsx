@@ -656,7 +656,10 @@ export default function ProjectsDetailPage() {
                   allMeetings.map(m => {
                     const isReq = m._type === 'request'
                     return (
-                      <div key={`${m._type}-${m.id}`} style={{ background: '#F8F9FC', borderRadius: 8, marginBottom: 6, overflow: 'hidden', borderLeft: `3px solid ${isReq ? '#D97706' : '#4F46E5'}` }}>
+                      <div key={`${m._type}-${m.id}`} style={{ background: '#F8F9FC', borderRadius: 8, marginBottom: 6, overflow: 'hidden', borderLeft: `3px solid ${isReq ? '#D97706' : '#4F46E5'}`, cursor: 'pointer' }}
+                        onClick={() => window.open(`/meetings?id=${m.id}&type=${isReq ? 'request' : 'meeting'}`, '_blank')}
+                        onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
+                        onMouseOut={e => e.currentTarget.style.background = '#F8F9FC'}>
                         <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '8px 12px 4px' }}>
                           <div style={{ width: 28, height: 28, borderRadius: 8, background: isReq ? '#FEF3C7' : '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                             <CalendarIcon />

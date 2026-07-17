@@ -401,7 +401,10 @@ function ProjectDetail({ data, onBack }) {
               {allMeetings.map(m => {
                 const isReq = m._type === 'request'
                 return (
-                  <div key={`${m._type}-${m.id}`} style={{ padding: '16px 18px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 12, borderLeft: `3px solid ${isReq ? '#D97706' : '#7C3AED'}` }}>
+                  <div key={`${m._type}-${m.id}`} style={{ padding: '16px 18px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 12, borderLeft: `3px solid ${isReq ? '#D97706' : '#7C3AED'}`, cursor: 'pointer' }}
+                    onClick={() => window.open(`/meetings?id=${m.id}&type=${isReq ? 'request' : 'meeting'}`, '_blank')}
+                    onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
+                    onMouseOut={e => e.currentTarget.style.background = '#F8FAFC'}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <Calendar className="w-4 h-4" style={{ color: isReq ? '#D97706' : '#7C3AED' }} />

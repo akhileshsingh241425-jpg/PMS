@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
-import MeetingDetailView from '../components/MeetingDetailView'
 import {
   ChevronLeft, Calendar, FileText, Briefcase,
   Clock, MessageSquare, Send, Users, Building2,
@@ -130,14 +129,6 @@ export default function AccountsDetailPage() {
   const [editContact, setEditContact] = useState(null)
   const [contactForm, setContactForm] = useState({ salutation: '', first_name: '', last_name: '', email: '', phone: '', mobile: '', designation: '', department: '', is_primary: false, notes: '' })
   const [showOppForm, setShowOppForm] = useState(false)
-  const [showMeetingModal, setShowMeetingModal] = useState(false)
-  const [meetingModalItem, setMeetingModalItem] = useState(null)
-  const [meetingModalType, setMeetingModalType] = useState('meeting') // 'meeting' | 'request'
-  const [meetingResponseForm, setMeetingResponseForm] = useState({ status: 'Confirmed', confirmed_date: '', meeting_link: '', team_remarks: '' })
-  const [responding, setResponding] = useState(false)
-  const [meetingNotes, setMeetingNotes] = useState('')
-  const [savingMeetingNotes, setSavingMeetingNotes] = useState(false)
-  const [editingMeetingNotes, setEditingMeetingNotes] = useState(false)
   const [oppForm, setOppForm] = useState({
     company_name: '', contact_name: '', contact_email: '', contact_phone: '',
     source: 'Referral', service_interest: '', description: '', stage: 'Prospecting',
@@ -779,7 +770,7 @@ export default function AccountsDetailPage() {
                 <tbody>
                   {meetings.map((m, i) => (
                     <tr key={m.id} style={{ background: i % 2 === 0 ? '#fff' : '#F9FAFB', cursor: 'pointer', transition: 'background .15s' }}
-                      onClick={() => { setMeetingModalItem(m); setMeetingModalType('meeting'); setMeetingNotes(m.meeting_notes || m.mom || ''); setEditingMeetingNotes(false); setShowMeetingModal(true) }}
+                      onClick={() => window.open(`/meetings?id=${m.id}&type=meeting`, '_blank')}
                       onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
                       onMouseOut={e => e.currentTarget.style.background = i % 2 === 0 ? '#fff' : '#F9FAFB'}>
                       <Td style={{ fontWeight: 500 }}>{m.title}</Td>
@@ -791,7 +782,7 @@ export default function AccountsDetailPage() {
                   ))}
                   {meeting_requests.map((mr, i) => (
                     <tr key={`mr_${mr.id}`} style={{ background: '#F9FAFB', cursor: 'pointer', transition: 'background .15s' }}
-                      onClick={() => { setMeetingModalItem(mr); setMeetingModalType('request'); setMeetingResponseForm({ status: mr.status === 'Confirmed' ? 'Confirmed' : 'Confirmed', confirmed_date: mr.confirmed_date ? mr.confirmed_date.slice(0, 16) : '', meeting_link: mr.meeting_link || '', team_remarks: mr.team_remarks || '' }); setMeetingNotes(mr.meeting_notes || ''); setEditingMeetingNotes(false); setShowMeetingModal(true) }}
+                      onClick={() => window.open(`/meetings?id=${mr.id}&type=request`, '_blank')}
                       onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
                       onMouseOut={e => e.currentTarget.style.background = '#F9FAFB'}>
                       <Td style={{ color: '#6B7280' }}>{mr.agenda}</Td>
@@ -808,21 +799,6 @@ export default function AccountsDetailPage() {
             <EmptyState icon={Calendar} text="No meetings scheduled for this account" />
           )}
         </SectionCard>
-
-        {/* ═══ MEETING DETAIL MODAL (unified) ═══ */}
-        {showMeetingModal && meetingModalItem && (
-          <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
-            onClick={e => { if (e.target === e.currentTarget) setShowMeetingModal(false) }}>
-            <div style={{ background: '#fff', borderRadius: '16px', maxWidth: '680px', width: '100%', maxHeight: '90vh', overflow: 'auto', boxShadow: '0 25px 80px rgba(0,0,0,0.2)' }}>
-              <div style={{ padding: '12px 24px', display: 'flex', justifyContent: 'flex-end' }}>
-                <button onClick={() => { setShowMeetingModal(false); loadDetail() }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', padding: '4px' }}>
-                  <XCircle className="w-5 h-5" />
-                </button>
-              </div>
-              <MeetingDetailView meetingId={meetingModalItem.id} meetingType={meetingModalType} onBack={() => setShowMeetingModal(false)} onRefresh={loadDetail} />
-            </div>
-          </div>
-        )}
         {/* ═══ TASKS ═══ */}
         <SectionCard title="Tasks" icon={CheckCircle} iconColor="#EC4899" count={tasks.length}>
           {tasks.length > 0 ? (
