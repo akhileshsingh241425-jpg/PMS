@@ -444,39 +444,30 @@ export default function ProjectsDetailPage() {
           <KPICard icon={<TagIcon />} bg="#ECFDF5" color="#059669" label="Stage" value={getStageGroup(p.stage)} />
         </div>
 
-        {/* ═══ PIPELINE / STAGE TRACKER ═══ */}
-        <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '14px 16px', marginBottom: 16 }}>
-          {GROUP_CONFIG.map((group, gi) => {
-            const isMain = group.key === 'delivery'
-            const isVisible = isMain || showExtraStages
-            if (!isVisible) return null
-            const isLast = gi === GROUP_CONFIG.length - 1
-            return (
-              <div key={group.key}>
-                {gi > 0 && <div style={{ height: 1, background: C.border, margin: '8px 0' }} />}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <span style={{ fontSize: 11, fontWeight: 800, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{group.label}</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 0, overflowX: 'auto', paddingBottom: 2 }}>
-                  {group.stages.map(s => {
-                    const status = getStageStatus(s, group.key)
-                    const desc = STAGE_DESCRIPTIONS[s] || ''
-                    const tooltip = `${s}${desc ? ` — ${desc}` : ''}${status === 'current' ? ' (Current)' : status === 'completed' ? ' (Completed)' : ''}`
-                    return (
-                      <StageTab key={s} stage={s} status={status} tooltip={tooltip} onClick={() => changeStage(s)} />
-                    )
-                  })}
-                </div>
-              </div>
-            )
-          })}
-          <div style={{ marginTop: 12, display: 'flex', justifyContent: 'center' }}>
-            <button onClick={() => setShowExtraStages(!showExtraStages)}
-              style={{ border: `1px solid ${C.border}`, background: '#F9FAFB', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#6B7280', display: 'flex', alignItems: 'center', gap: 6, padding: '6px 16px', borderRadius: 8, transition: '0.15s' }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#F3F4F6'; e.currentTarget.style.color = '#374151' }}
-              onMouseLeave={e => { e.currentTarget.style.background = '#F9FAFB'; e.currentTarget.style.color = '#6B7280' }}>
-              {showExtraStages ? '▲' : '▼'} {showExtraStages ? 'Hide' : 'Show'} billing & exception stages
-            </button>
+        {/* ═══ STAGE SELECTOR ═══ */}
+        <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '12px 16px', marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: C.primaryLight, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <TagIcon />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', marginBottom: 2 }}>Current Stage</div>
+              <select value={p.stage} onChange={e => changeStage(e.target.value)}
+                style={{ width: '100%', padding: '8px 10px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 14, fontWeight: 600, color: '#1F2937', background: '#fff', outline: 'none', fontFamily: 'inherit', cursor: 'pointer' }}>
+                <optgroup label="— Project Lifecycle —">
+                  {DELIVERY_STAGES.map(s => <option key={s} value={s}>{s}{s === p.stage ? '  (current)' : ''}</option>)}
+                </optgroup>
+                <optgroup label="— Billing —">
+                  {FINANCE_STAGES.map(s => <option key={s} value={s}>{s}{s === p.stage ? '  (current)' : ''}</option>)}
+                </optgroup>
+                <optgroup label="— Support —">
+                  {SUPPORT_STAGES.map(s => <option key={s} value={s}>{s}{s === p.stage ? '  (current)' : ''}</option>)}
+                </optgroup>
+                <optgroup label="— Exceptions —">
+                  {BLOCKED_STAGES.map(s => <option key={s} value={s}>{s}{s === p.stage ? '  (current)' : ''}</option>)}
+                </optgroup>
+              </select>
+            </div>
           </div>
         </div>
 
