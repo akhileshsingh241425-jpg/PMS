@@ -647,7 +647,13 @@ export default function ProjectsDetailPage() {
                   <EmptyState icon={<CalendarIcon />} title="No meetings or requests" />
                 ) : (
                   <>
-                    <div style={{ maxHeight: 480, overflowY: 'auto', paddingRight: 4 }}>
+                    <style>{`
+                      #section-meetings .scroll-area::-webkit-scrollbar { width: 4px }
+                      #section-meetings .scroll-area::-webkit-scrollbar-track { background: transparent }
+                      #section-meetings .scroll-area::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 4px; opacity: 0 }
+                      #section-meetings .scroll-area:hover::-webkit-scrollbar-thumb { opacity: 1 }
+                    `}</style>
+                    <div className="scroll-area" style={{ maxHeight: 480, overflowY: 'auto', paddingRight: 6 }}>
                     {allMeetings.map(m => {
                       const isReq = m._type === 'request'
                       const status = (m.status || '').toLowerCase()
@@ -661,42 +667,42 @@ export default function ProjectsDetailPage() {
                       const iconColor = isCancelled ? '#DC2626' : isReq ? '#D97706' : '#2563EB'
                       return (
                         <div key={`${m._type}-${m.id}`} style={{
-                          display: 'flex', gap: 10, padding: '10px 12px', marginBottom: 6,
+                          display: 'flex', gap: 12, padding: '12px 16px', marginBottom: 8,
                           background: isCancelled ? '#F9FAFB' : '#F8F9FC',
-                          borderRadius: 8, cursor: 'pointer', opacity: isCancelled ? 0.55 : 1,
-                          border: `1px solid ${isCancelled ? '#F3F4F6' : 'transparent'}`,
+                          borderRadius: 10, cursor: 'pointer', opacity: isCancelled ? 0.7 : 1,
+                          border: `1px solid ${isCancelled ? '#E5E7EB' : 'transparent'}`,
                           transition: 'background 0.12s',
                         }}
                           onClick={() => navigate(`/meetings?id=${m.id}&type=${isReq ? 'request' : 'meeting'}`)}
                           onMouseOver={e => { if (!isCancelled) e.currentTarget.style.background = '#EEF2FF' }}
                           onMouseOut={e => { if (!isCancelled) e.currentTarget.style.background = '#F8F9FC' }}>
                           {/* Left: color-coded calendar icon */}
-                          <div style={{ width: 32, height: 32, borderRadius: 8, background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={iconColor} strokeWidth="2"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                          <div style={{ width: 36, height: 36, borderRadius: 8, background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={iconColor} strokeWidth="2"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                           </div>
                           {/* Middle: title, date, by, status */}
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div title={m.title} style={{ fontSize: 13, fontWeight: 600, color: isCancelled ? '#9CA3AF' : '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.title}</div>
-                            <div style={{ display: 'flex', gap: 4, alignItems: 'center', marginTop: 2, flexWrap: 'wrap' }}>
-                              <span style={{ fontSize: 10, color: isCancelled ? '#D1D5DB' : C.muted }}>{m.meeting_date ? formatDateTime(m.meeting_date) : '—'}</span>
-                              {isReq && m.requested_by_name && <span style={{ fontSize: 10, color: '#9CA3AF' }}>· By {m.requested_by_name}</span>}
+                          <div style={{ flex: 1, minWidth: 0, maxWidth: 'calc(100% - 120px)' }}>
+                            <div title={m.title} style={{ fontSize: 13, fontWeight: 600, color: isCancelled ? '#6B7280' : '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.4 }}>{m.title}</div>
+                            <div style={{ display: 'flex', gap: 4, alignItems: 'center', marginTop: 4, flexWrap: 'wrap' }}>
+                              <span style={{ fontSize: 11, color: isCancelled ? '#9CA3AF' : C.muted }}>{m.meeting_date ? formatDateTime(m.meeting_date) : '—'}</span>
+                              {isReq && m.requested_by_name && <span style={{ fontSize: 11, color: '#9CA3AF' }}>· By {m.requested_by_name}</span>}
                             </div>
-                            <div style={{ display: 'flex', gap: 4, marginTop: 3 }}>
-                              <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 4, background: statusBg, color: statusColor }}>{m.status || '—'}</span>
+                            <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+                              <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: statusBg, color: statusColor }}>{m.status || '—'}</span>
                             </div>
                           </div>
                           {/* Right: badge + actions */}
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
-                            <span style={{ fontSize: 8, fontWeight: 800, padding: '2px 6px', borderRadius: 4, background: isReq ? '#FEF3C7' : '#DBEAFE', color: isReq ? '#92400E' : '#1E40AF', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{isReq ? 'Request' : 'Meeting'}</span>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0, width: 80, justifyContent: 'space-between' }}>
+                            <span style={{ fontSize: 8, fontWeight: 800, padding: '2px 8px', borderRadius: 4, background: isReq ? '#FEF3C7' : '#DBEAFE', color: isReq ? '#92400E' : '#1E40AF', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{isReq ? 'Request' : 'Meeting'}</span>
                             <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                               {m.meeting_link && (
-                                <a href={m.meeting_link} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ fontSize: 10, color: '#fff', background: '#059669', padding: '2px 8px', borderRadius: 4, textDecoration: 'none', fontWeight: 600 }}>Join</a>
+                                <a href={m.meeting_link} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ fontSize: 10, color: '#fff', background: '#059669', padding: '2px 8px', borderRadius: 4, textDecoration: 'none', fontWeight: 600, whiteSpace: 'nowrap' }}>Join</a>
                               )}
                               {!isReq && (
-                                <span onClick={e => { e.stopPropagation(); /* reschedule handler */ }} style={{ fontSize: 10, color: '#5B21B6', background: '#EEF2FF', border: 'none', borderRadius: 4, padding: '2px 8px', cursor: 'pointer', fontWeight: 600 }}>Reschedule</span>
+                                <span onClick={e => { e.stopPropagation(); /* reschedule handler */ }} style={{ fontSize: 10, color: '#5B21B6', background: '#EEF2FF', border: 'none', borderRadius: 4, padding: '2px 8px', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}>Reschedule</span>
                               )}
                               {isReq && m.meeting_notes && (
-                                <span style={{ fontSize: 9, color: '#059669', fontWeight: 600 }}>Has Notes</span>
+                                <span style={{ fontSize: 9, color: '#059669', fontWeight: 600, whiteSpace: 'nowrap' }}>Has Notes</span>
                               )}
                             </div>
                           </div>
