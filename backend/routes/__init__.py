@@ -17,3 +17,4 @@ from .teams import team_bp
 from .myworkspace import me_bp
 from .employee import employee_bp
 from .pm import pm_bp
+from .vulnerabilities import vuln_bp

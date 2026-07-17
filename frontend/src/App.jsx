@@ -26,6 +26,7 @@ import PMTasks from './pages/PMTasks'
 import PMTeam from './pages/PMTeam'
 import PMMeetings from './pages/PMMeetings'
 import PMReports from './pages/PMReports'
+import VulnerabilityDashboard from './pages/VulnerabilityDashboard'
 
 function Protected({ children }) {
   const { user } = useAuth()
@@ -115,6 +116,7 @@ export default function App() {
                 <Route path="meetings" element={<PMMeetings />} />
                 <Route path="reports" element={<PMReports />} />
               </Route>
+              <Route path="/vulnerabilities" element={<Protected><Layout><VulnerabilityDashboard /></Layout></Protected>} />
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
           </ToastProvider>

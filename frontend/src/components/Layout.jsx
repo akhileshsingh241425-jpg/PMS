@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { LayoutDashboard, Target, FileText, Building2, Briefcase, Users, LogOut, Bell, Search, ChevronLeft, ChevronRight, UserCircle } from 'lucide-react'
+import { LayoutDashboard, Target, FileText, Building2, Briefcase, Users, LogOut, Bell, Search, ChevronLeft, ChevronRight, UserCircle, AlertTriangle } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import api from '../services/api'
 
@@ -11,6 +11,7 @@ const nav = [
   { to: '/accounts', icon: Building2, label: 'Accounts' },
   { to: '/projects', icon: Briefcase, label: 'Projects' },
   { to: '/teams', icon: Users, label: 'Teams' },
+  { to: '/vulnerabilities', icon: AlertTriangle, label: 'Vulnerabilities' },
 ]
 
 function NotifBell() {

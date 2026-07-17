@@ -14,5 +14,6 @@ from .opportunity import Opportunity, OpportunityRemark, OpportunityDocument, Op
 from .notification import Notification
 from .contact import Contact
 from .enterprise import ProjectRisk, ProjectIssue, ProjectMilestone, ProjectInvoice, ProjectTimesheet, ProjectChangeRequest, ApprovalHistory
+from .vulnerability import Vulnerability
 from .rbac import AuditLog, has_permission, is_higher_role, should_notify
 from .team import Team, TeamMember
