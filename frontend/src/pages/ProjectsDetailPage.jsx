@@ -487,8 +487,8 @@ export default function ProjectsDetailPage() {
               {(!remarks || remarks.length === 0) ? (
                 <EmptyState icon={<ChatIcon />} title="No remarks yet." />
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {remarks.map((r) => {
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  {remarks.map((r, i) => {
                     const d = new Date(r.created_at)
                     const now = new Date()
                     const diffMs = now - d
@@ -509,8 +509,9 @@ export default function ProjectsDetailPage() {
                     const isLong = r.text && r.text.replace(/<[^>]*>/g, '').length > 180
                     const isExpanded = expandedRemark === r.id
                     const shortText = isLong ? r.text.replace(/<[^>]*>/g, '').slice(0, 180) + '...' : r.text
+                    const isLast = i === remarks.length - 1
                     return (
-                      <div key={r.id} style={{ background: '#F8F9FC', borderRadius: 12, padding: 16, border: `1px solid ${C.border}` }}>
+                      <div key={r.id} style={{ padding: '16px 0', borderBottom: isLast ? 'none' : `1px solid ${C.border}` }}>
                         <div style={{ display: 'flex', gap: 12 }}>
                           <div style={{ width: 36, height: 36, borderRadius: '50%', background: avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                             <span style={{ fontSize: 14, fontWeight: 800, color: '#fff' }}>{initial}</span>
