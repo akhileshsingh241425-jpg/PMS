@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Navigate } from 'react-router-dom'
 import { useToast } from '../contexts/ToastContext'
 import api from '../services/api'
 import {
@@ -41,7 +41,7 @@ export function ClientLogin() {
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
-  if (getToken()) { navigate('/client-portal'); return null }
+  if (getToken()) { return <Navigate to="/client-portal" replace />; }
 
   const handleLogin = async (e) => {
     e.preventDefault(); setError(''); setLoading(true)
