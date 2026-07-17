@@ -45,26 +45,58 @@ const STAGE_ICONS = {
   'Awaiting Payment': 'M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
 }
 
+const STAGE_DESCRIPTIONS = {
+  'Initiated': 'Project kick-off and initial setup',
+  'Planning': 'Scope definition and resource planning',
+  'Information Gathering': 'Collecting requirements and data',
+  'Execution': 'Active work and implementation',
+  'Internal Review': 'Quality check by internal team',
+  'Client Review': 'Client reviews the deliverables',
+  'Remediation Support': 'Addressing client feedback',
+  'Final Delivery': 'Final handover to client',
+  'Invoice Raised': 'Invoice has been generated',
+  'Payment Pending': 'Awaiting payment from client',
+  'Partial Payment Received': 'Partial payment received',
+  'Full Payment Received': 'Full payment completed',
+  'Closed': 'Project is closed',
+  'On Hold': 'Project paused temporarily',
+  'Delayed': 'Project behind schedule',
+  'Cancelled': 'Project terminated',
+  'Escalated': 'Project escalated for attention',
+  'Awaiting Client Response': 'Waiting for client reply',
+  'Awaiting Documents': 'Waiting for required documents',
+  'Awaiting Payment': 'Waiting for payment clearance',
+}
+
 function StageIcon({ path, size = 16 }) {
   return <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d={path} /></svg>
 }
 
-function StageTab({ stage, isActive, onClick, isTerminal }) {
+function StageTab({ stage, status, tooltip, onClick }) {
   const icon = STAGE_ICONS[stage] || STAGE_ICONS['On Hold']
+  const isActive = status === 'current'
+  const isCompleted = status === 'completed'
+  const isTerminal = status === 'terminal'
+  const bgColor = isActive ? C.primary : isCompleted ? '#D1FAE5' : '#F0F2F8'
+  const iconColor = isActive ? '#fff' : isCompleted ? '#059669' : '#9CA3AF'
+  const labelColor = isActive ? C.primary : isCompleted ? '#065F46' : '#9CA3AF'
+  const labelWeight = isActive ? 800 : isCompleted ? 700 : 600
+  const borderColor = isActive ? C.primary : 'transparent'
+  const cursor = isTerminal && !isActive ? 'default' : 'pointer'
+  const opacity = isTerminal && !isActive ? 0.4 : 1
   return (
-    <div onClick={isTerminal ? undefined : onClick} style={{
+    <div title={tooltip} onClick={isTerminal && !isActive ? undefined : onClick} style={{
       flex: 1, minWidth: 80, display: 'flex', flexDirection: 'column', alignItems: 'center',
-      gap: 4, padding: '8px 4px', cursor: isTerminal ? 'default' : 'pointer',
-      borderBottom: `2.5px solid ${isActive ? C.primary : 'transparent'}`, transition: '0.15s', userSelect: 'none',
-      opacity: isTerminal && !isActive ? 0.4 : 1,
+      gap: 4, padding: '8px 4px', cursor, opacity,
+      borderBottom: `2.5px solid ${borderColor}`, transition: '0.15s', userSelect: 'none',
     }}>
       <div style={{
         width: 34, height: 34, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: isActive ? C.primary : '#F0F2F8', transition: '0.15s',
+        background: bgColor, transition: '0.15s',
       }}>
-        <StageIcon path={icon} size={12} />
+        {isCompleted ? <svg width={14} height={14} fill="none" stroke="#059669" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg> : <StageIcon path={icon} size={12} />}
       </div>
-      <span style={{ fontSize: 9, fontWeight: isActive ? 800 : 600, color: isActive ? C.primary : '#9CA3AF', textAlign: 'center', lineHeight: 1.15 }}>{stage}</span>
+      <span style={{ fontSize: 9, fontWeight: labelWeight, color: labelColor, textAlign: 'center', lineHeight: 1.15 }}>{stage}</span>
     </div>
   )
 }
@@ -109,6 +141,7 @@ export default function ProjectsDetailPage() {
   const remarkInputRef = useRef(null)
   const [editRemark, setEditRemark] = useState(null)
   const [viewRemark, setViewRemark] = useState(null)
+  const [showExtraStages, setShowExtraStages] = useState(false)
   const remarkEditorRef = useRef(null)
   const openRemarkEditor = (r) => { setEditRemark(r); setViewRemark(null); setTimeout(() => { if (remarkEditorRef.current) remarkEditorRef.current.innerHTML = r.text || '' }, 50) }
   const saveRemark = async () => {
@@ -326,6 +359,27 @@ export default function ProjectsDetailPage() {
     return 'Blocked'
   }
 
+  const currentDeliveryIdx = DELIVERY_STAGES.indexOf(p.stage)
+
+  const getStageStatus = (stage, group) => {
+    if (group === 'delivery') {
+      const idx = DELIVERY_STAGES.indexOf(stage)
+      if (stage === p.stage) return 'current'
+      if (currentDeliveryIdx >= 0 && idx < currentDeliveryIdx) return 'completed'
+      return 'pending'
+    }
+    if (stage === p.stage) return 'current'
+    if (TERMINAL_STAGES.includes(stage)) return 'terminal'
+    return 'pending'
+  }
+
+  const GROUP_CONFIG = [
+    { key: 'delivery', label: 'Project Lifecycle', stages: DELIVERY_STAGES, icon: '▶' },
+    { key: 'finance', label: 'Billing Status', stages: FINANCE_STAGES, icon: '💰' },
+    { key: 'support', label: 'Current Blockers', stages: SUPPORT_STAGES, icon: '⏳' },
+    { key: 'blocked', label: 'Exception States', stages: BLOCKED_STAGES, icon: '⚠' },
+  ]
+
   return (
     <div style={{ background: C.bg, minHeight: '100vh', fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif", color: C.text, fontSize: 14 }}>
       <div style={{ padding: '0 0 40px', width: '100%', maxWidth: 'none' }}>
@@ -390,27 +444,39 @@ export default function ProjectsDetailPage() {
           <KPICard icon={<TagIcon />} bg="#ECFDF5" color="#059669" label="Stage" value={getStageGroup(p.stage)} />
         </div>
 
-        {/* ═══ PIPELINE / STAGE TABS ═══ */}
-        <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '6px 10px', marginBottom: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 0, overflowX: 'auto' }}>
-            {DELIVERY_STAGES.map(s => (
-              <StageTab key={s} stage={s} isActive={s === p.stage} isTerminal={false} onClick={() => !isTerminal && changeStage(s)} />
-            ))}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 0, borderTop: `1px solid ${C.border}`, marginTop: 4, paddingTop: 4 }}>
-            {FINANCE_STAGES.map(s => (
-              <StageTab key={s} stage={s} isActive={s === p.stage} isTerminal={false} onClick={() => changeStage(s)} />
-            ))}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 0, borderTop: `1px solid ${C.border}`, marginTop: 4, paddingTop: 4 }}>
-            {SUPPORT_STAGES.map(s => (
-              <StageTab key={s} stage={s} isActive={s === p.stage} isTerminal={false} onClick={() => changeStage(s)} />
-            ))}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 0, borderTop: `1px solid ${C.border}`, marginTop: 4, paddingTop: 4 }}>
-            {BLOCKED_STAGES.map(s => (
-              <StageTab key={s} stage={s} isActive={s === p.stage} isTerminal={true} onClick={() => changeStage(s)} />
-            ))}
+        {/* ═══ PIPELINE / STAGE TRACKER ═══ */}
+        <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '12px 14px', marginBottom: 16 }}>
+          {GROUP_CONFIG.map((group, gi) => {
+            const isMain = group.key === 'delivery'
+            const isVisible = isMain || showExtraStages
+            if (!isVisible) return null
+            const isLast = gi === GROUP_CONFIG.length - 1
+            return (
+              <div key={group.key}>
+                {gi > 0 && <div style={{ height: 1, background: C.border, margin: '6px 0' }} />}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                  <span style={{ fontSize: 9, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.6px' }}>{group.label}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 0, overflowX: 'auto', paddingBottom: 2 }}>
+                  {group.stages.map(s => {
+                    const status = getStageStatus(s, group.key)
+                    const desc = STAGE_DESCRIPTIONS[s] || ''
+                    const tooltip = `${s}${desc ? ` — ${desc}` : ''}${status === 'current' ? ' (Current)' : status === 'completed' ? ' (Completed)' : ''}`
+                    return (
+                      <StageTab key={s} stage={s} status={status} tooltip={tooltip} onClick={() => changeStage(s)} />
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })}
+          <div style={{ marginTop: 10, display: 'flex', justifyContent: 'center' }}>
+            <button onClick={() => setShowExtraStages(!showExtraStages)}
+              style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: C.primary, display: 'flex', alignItems: 'center', gap: 4, padding: '4px 12px', borderRadius: 6, transition: 'background 0.15s' }}
+              onMouseEnter={e => e.currentTarget.style.background = C.primaryLight}
+              onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+              {showExtraStages ? '▲ Hide billing & exception stages' : '▼ Show billing & exception stages'}
+            </button>
           </div>
         </div>
 
