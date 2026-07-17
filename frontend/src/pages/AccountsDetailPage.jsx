@@ -770,7 +770,7 @@ export default function AccountsDetailPage() {
                 <tbody>
                   {meetings.map((m, i) => (
                     <tr key={m.id} style={{ background: i % 2 === 0 ? '#fff' : '#F9FAFB', cursor: 'pointer', transition: 'background .15s' }}
-                      onClick={() => window.open(`/meetings?id=${m.id}&type=meeting`, '_blank')}
+                      onClick={() => navigate(`/meetings?id=${m.id}&type=meeting`)}
                       onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
                       onMouseOut={e => e.currentTarget.style.background = i % 2 === 0 ? '#fff' : '#F9FAFB'}>
                       <Td style={{ fontWeight: 500 }}>{m.title}</Td>
@@ -782,7 +782,7 @@ export default function AccountsDetailPage() {
                   ))}
                   {meeting_requests.map((mr, i) => (
                     <tr key={`mr_${mr.id}`} style={{ background: '#F9FAFB', cursor: 'pointer', transition: 'background .15s' }}
-                      onClick={() => window.open(`/meetings?id=${mr.id}&type=request`, '_blank')}
+                      onClick={() => navigate(`/meetings?id=${mr.id}&type=request`)}
                       onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
                       onMouseOut={e => e.currentTarget.style.background = '#F9FAFB'}>
                       <Td style={{ color: '#6B7280' }}>{mr.agenda}</Td>

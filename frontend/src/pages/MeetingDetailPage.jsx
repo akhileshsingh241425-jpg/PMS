@@ -21,13 +21,11 @@ export default function MeetingDetailPage() {
   }
 
   return (
-    <div style={{ padding: '20px 24px', maxWidth: '1100px', margin: '0 auto' }}>
-      <MeetingDetailView
-        meetingId={meetingId}
-        meetingType={meetingType}
-        onBack={() => navigate(-1)}
-        onRefresh={() => window.location.reload()}
-      />
-    </div>
+    <MeetingDetailView
+      meetingId={meetingId}
+      meetingType={meetingType}
+      onBack={() => navigate(-1)}
+      onRefresh={() => window.location.reload()}
+    />
   )
 }

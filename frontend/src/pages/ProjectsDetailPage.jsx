@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../contexts/ToastContext'
 import api from '../services/api'
@@ -66,6 +66,7 @@ export default function ProjectsDetailPage() {
   const { id } = useParams()
   const { user, hasRole } = useAuth()
   const toast = useToast()
+  const navigate = useNavigate()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [remarkText, setRemarkText] = useState('')
@@ -657,7 +658,7 @@ export default function ProjectsDetailPage() {
                     const isReq = m._type === 'request'
                     return (
                       <div key={`${m._type}-${m.id}`} style={{ background: '#F8F9FC', borderRadius: 8, marginBottom: 6, overflow: 'hidden', borderLeft: `3px solid ${isReq ? '#D97706' : '#4F46E5'}`, cursor: 'pointer' }}
-                        onClick={() => window.open(`/meetings?id=${m.id}&type=${isReq ? 'request' : 'meeting'}`, '_blank')}
+                        onClick={() => navigate(`/meetings?id=${m.id}&type=${isReq ? 'request' : 'meeting'}`)}
                         onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
                         onMouseOut={e => e.currentTarget.style.background = '#F8F9FC'}>
                         <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '8px 12px 4px' }}>

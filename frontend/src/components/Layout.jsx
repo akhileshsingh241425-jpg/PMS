@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { LayoutDashboard, Target, FileText, Building2, Briefcase, Users, LogOut, Bell, Search, ChevronLeft, ChevronRight, UserCircle } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
@@ -66,7 +66,7 @@ function NotifBell() {
             <p className="text-sm text-slate-400 text-center py-10">No new notifications</p>
           ) : (
             notifs.map(n => (
-              <div key={n.id} className="px-4 py-3 border-b border-slate-50 hover:bg-slate-50 cursor-pointer transition-colors" onClick={() => { markRead(n.id); if (n.type === 'meeting_request' || n.type === 'meeting') { window.open(`/meetings?id=${n.module_id}&type=${n.type === 'meeting_request' ? 'request' : 'meeting'}`, '_blank') } else if (n.module_type === 'project' && n.module_id) { window.location.href = `/projects?projectId=${n.module_id}&tab=queries` } }}>
+              <div key={n.id} className="px-4 py-3 border-b border-slate-50 hover:bg-slate-50 cursor-pointer transition-colors" onClick={() => { markRead(n.id); if (n.type === 'meeting_request' || n.type === 'meeting') { navigate(`/meetings?id=${n.module_id}&type=${n.type === 'meeting_request' ? 'request' : 'meeting'}`) } else if (n.module_type === 'project' && n.module_id) { navigate(`/projects?projectId=${n.module_id}&tab=queries`) } }}>
                 <p className="text-sm font-semibold text-slate-800">{n.title}</p>
                 <p className="text-xs text-slate-500 mt-0.5">{n.message}</p>
                 <p className="text-[10px] text-slate-400 mt-1">{n.created_at?.slice(0, 16).replace('T', ' ')}</p>
@@ -92,6 +92,7 @@ const pageTitles = {
 export default function Layout({ children }) {
   const { user, logout } = useAuth()
   const { pathname } = useLocation()
+  const navigate = useNavigate()
   const [collapsed, setCollapsed] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState([])

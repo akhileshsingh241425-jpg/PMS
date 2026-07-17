@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import {
   Calendar, FileText, Clock, User, ExternalLink,
@@ -158,6 +159,7 @@ function StatusBadge({ status }) {
 }
 
 export default function MeetingDetailView({ meetingId, meetingType = 'meeting', onBack, onRefresh }) {
+  const nav = useNavigate()
   const [item, setItem] = useState(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
@@ -441,7 +443,7 @@ export default function MeetingDetailView({ meetingId, meetingType = 'meeting', 
   if (!item) return <div style={{ textAlign: 'center', padding: '80px', color: '#9CA3AF', fontSize: 15 }}>Meeting not found</div>
 
   const sStyle = STATUS_STYLES[item.status] || { bg: '#F3F4F6', text: '#6B7280', dot: '#9CA3AF' }
-  const title = isMR ? item.agenda : item.title
+  const title = isMR ? (item.agenda || item.title || 'Meeting Request') : (item.title || item.agenda || 'Meeting')
   const dateField = isMR ? item.preferred_date : item.meeting_date
   const createdByName = isMR ? item.requested_by_name : item.created_by_name
   const desc = isMR ? null : item.description
@@ -930,10 +932,10 @@ export default function MeetingDetailView({ meetingId, meetingType = 'meeting', 
       <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: '16px' }}>
         <h4 style={{ fontSize: 12, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 12px' }}>Quick Actions</h4>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <button style={{ padding: '8px 12px', borderRadius: 8, border: 'none', background: '#F0FDF4', color: '#059669', fontSize: 12, fontWeight: 600, cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <a href={item.meeting_link || '#'} target="_blank" rel="noopener noreferrer" style={{ padding: '8px 12px', borderRadius: 8, border: 'none', background: '#F0FDF4', color: '#059669', fontSize: 12, fontWeight: 600, cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
             <ExternalLink className="w-3.5 h-3.5" /> Join Meeting
-          </button>
-          <button style={{ padding: '8px 12px', borderRadius: 8, border: 'none', background: '#F5F3FF', color: '#5B21B6', fontSize: 12, fontWeight: 600, cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 8 }}>
+          </a>
+          <button style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #D1D5DB', background: '#fff', color: '#5B21B6', fontSize: 12, fontWeight: 600, cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 8 }}>
             <Share2 className="w-3.5 h-3.5" /> Share Meeting
           </button>
           <button style={{ padding: '8px 12px', borderRadius: 8, border: 'none', background: '#FFF7ED', color: '#D97706', fontSize: 12, fontWeight: 600, cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -976,7 +978,7 @@ export default function MeetingDetailView({ meetingId, meetingType = 'meeting', 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {upcomingMeetings.slice(0, 3).map(m => (
               <div key={m.id} style={{ fontSize: 12, color: '#374151', cursor: 'pointer' }}
-                onClick={() => window.open(`/meetings?id=${m.id}&type=meeting`, '_blank')}>
+                onClick={() => nav(`/meetings?id=${m.id}&type=meeting`)}>
                 <div style={{ fontWeight: 600 }}>{m.title || m.agenda}</div>
                 <div style={{ fontSize: 10, color: '#9CA3AF' }}>{formatDT(m.meeting_date || m.preferred_date)}</div>
               </div>
@@ -1023,7 +1025,7 @@ export default function MeetingDetailView({ meetingId, meetingType = 'meeting', 
       }}>
         <div style={{ display: 'flex', alignItems: 'center', height: 64, gap: 12 }}>
           {/* Back */}
-          <button onClick={onBack} style={{
+          <button onClick={() => { if (onBack) onBack(); else nav(-1) }} style={{
             width: 36, height: 36, borderRadius: 8,
             border: '1px solid #E5E7EB', background: '#fff',
             cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',

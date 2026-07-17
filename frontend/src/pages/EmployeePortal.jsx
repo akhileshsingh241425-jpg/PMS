@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import {
   LayoutDashboard, FolderOpen, ListChecks, Calendar, FileText,
@@ -402,7 +403,7 @@ function ProjectDetail({ data, onBack }) {
                 const isReq = m._type === 'request'
                 return (
                   <div key={`${m._type}-${m.id}`} style={{ padding: '16px 18px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 12, borderLeft: `3px solid ${isReq ? '#D97706' : '#7C3AED'}`, cursor: 'pointer' }}
-                    onClick={() => window.open(`/meetings?id=${m.id}&type=${isReq ? 'request' : 'meeting'}`, '_blank')}
+                    onClick={() => navigate(`/meetings?id=${m.id}&type=${isReq ? 'request' : 'meeting'}`)}
                     onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
                     onMouseOut={e => e.currentTarget.style.background = '#F8FAFC'}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
@@ -989,6 +990,7 @@ const TABS = [
 ]
 
 export default function EmployeePortal({ activeTab }) {
+  const navigate = useNavigate()
   const [tab, setTab] = useState(activeTab || 'dashboard')
   const [dashboardData, setDashboardData] = useState(null)
   const [projects, setProjects] = useState([])

@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import { Briefcase, CheckSquare, Calendar } from 'lucide-react'
 
 export default function MyWorkspacePage() {
+  const navigate = useNavigate()
   const [projects, setProjects] = useState([])
   const [tasks, setTasks] = useState([])
   const [meetings, setMeetings] = useState([])
@@ -121,7 +122,7 @@ export default function MyWorkspacePage() {
                     borderLeft: `3px solid ${isReq ? '#D97706' : '#5B21B6'}`,
                     cursor: 'pointer',
                   }}
-                    onClick={() => window.open(`/meetings?id=${m.id}&type=${isReq ? 'request' : 'meeting'}`, '_blank')}
+                    onClick={() => navigate(`/meetings?id=${m.id}&type=${isReq ? 'request' : 'meeting'}`)}
                     onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
                     onMouseOut={e => e.currentTarget.style.background = '#F9FAFB'}>
                     <div>
