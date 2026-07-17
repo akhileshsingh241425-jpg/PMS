@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useToast } from '../contexts/ToastContext'
 import api from '../services/api'
 import {
   ChevronLeft, Calendar, FileText, Briefcase,
@@ -126,6 +127,7 @@ export default function AccountsDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const toast = useToast()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [noteText, setNoteText] = useState('')
@@ -152,6 +154,12 @@ export default function AccountsDetailPage() {
   const [showPortalForm, setShowPortalForm] = useState(false)
   const [portalForm, setPortalForm] = useState({ email: '', password: '', first_name: '', last_name: '', phone: '', designation: '' })
   const [savingPortal, setSavingPortal] = useState(false)
+  const [showMeetingForm, setShowMeetingForm] = useState(false)
+  const [meetingForm, setMeetingForm] = useState({ title: '', meeting_date: '', meeting_link: '', project_id: '' })
+  const [addingMeeting, setAddingMeeting] = useState(false)
+  const [showTaskForm, setShowTaskForm] = useState(false)
+  const [taskForm, setTaskForm] = useState({ title: '', priority: 'Normal', due_date: '', assigned_to: '', project_id: '' })
+  const [addingTask, setAddingTask] = useState(false)
 
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth < 768)
@@ -224,6 +232,30 @@ export default function AccountsDetailPage() {
       loadDetail()
     } catch (error) {}
     finally { setAddingNote(false) }
+  }
+
+  const addMeeting = async () => {
+    if (!meetingForm.title.trim() || !meetingForm.meeting_date || !meetingForm.meeting_link.trim()) return
+    setAddingMeeting(true)
+    try {
+      const pid = meetingForm.project_id || data?.projects?.[0]?.id
+      if (!pid) { alert('Create a project first to add meetings.'); return }
+      await api.post('/api/activities/meetings', { ...meetingForm, project_id: pid })
+      setShowMeetingForm(false); setMeetingForm({ title: '', meeting_date: '', meeting_link: '', project_id: '' }); loadDetail()
+    } catch (e) { toast('Failed to create meeting', 'error') }
+    finally { setAddingMeeting(false) }
+  }
+
+  const addTask = async () => {
+    if (!taskForm.title.trim() || !taskForm.due_date) return
+    setAddingTask(true)
+    try {
+      const pid = taskForm.project_id || data?.projects?.[0]?.id
+      if (!pid) { alert('Create a project first to add tasks.'); return }
+      await api.post('/api/activities/tasks', { ...taskForm, project_id: pid })
+      setShowTaskForm(false); setTaskForm({ title: '', priority: 'Normal', due_date: '', assigned_to: '', project_id: '' }); loadDetail()
+    } catch (e) { toast('Failed to create task', 'error') }
+    finally { setAddingTask(false) }
   }
 
   const handleUpload = async (e) => {
@@ -819,6 +851,27 @@ export default function AccountsDetailPage() {
 
         {/* ═══ MEETINGS ═══ */}
         <SectionCard title="Meetings" icon={Calendar} iconColor="#3B82F6" count={meetings.length + meeting_requests.length} onViewAll={() => navigate('/meetings')}>
+          <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'flex-end' }}>
+            <button onClick={() => setShowMeetingForm(!showMeetingForm)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: '#5B3DF5', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+              <Plus className="w-4 h-4" /> Add Meeting
+            </button>
+          </div>
+          {showMeetingForm && (
+            <form onSubmit={e => { e.preventDefault(); addMeeting() }} style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14, padding: '14px', background: '#F8F9FC', borderRadius: 8 }}>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input value={meetingForm.title} onChange={e => setMeetingForm({ ...meetingForm, title: e.target.value })} placeholder="Meeting title *" style={{ flex: 1, padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 12, outline: 'none', fontFamily: 'inherit' }} />
+                <select value={meetingForm.project_id} onChange={e => setMeetingForm({ ...meetingForm, project_id: e.target.value })} style={{ padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 12, outline: 'none', fontFamily: 'inherit', background: '#fff' }}>
+                  <option value="">Select project...</option>
+                  {projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
+                </select>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input type="datetime-local" value={meetingForm.meeting_date} onChange={e => setMeetingForm({ ...meetingForm, meeting_date: e.target.value })} style={{ flex: 1, padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 12, outline: 'none', fontFamily: 'inherit' }} />
+                <input value={meetingForm.meeting_link} onChange={e => setMeetingForm({ ...meetingForm, meeting_link: e.target.value })} placeholder="Meeting link *" style={{ flex: 1, padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 12, outline: 'none', fontFamily: 'inherit' }} />
+              </div>
+              <button type="submit" disabled={addingMeeting || !meetingForm.title.trim() || !meetingForm.meeting_date || !meetingForm.meeting_link.trim()} style={{ padding: '8px 14px', border: 'none', borderRadius: 8, background: '#5B21B6', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: meetingForm.title.trim() && meetingForm.meeting_date && meetingForm.meeting_link.trim() ? 1 : 0.5 }}>{addingMeeting ? 'Adding...' : 'Add Meeting'}</button>
+            </form>
+          )}
           {meetings.length + meeting_requests.length > 0 ? (
             <div className="overflow-x-auto">
               <Table>
@@ -857,6 +910,29 @@ export default function AccountsDetailPage() {
         </SectionCard>
         {/* ═══ TASKS ═══ */}
         <SectionCard title="Tasks" icon={CheckCircle} iconColor="#EC4899" count={tasks.length}>
+          <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'flex-end' }}>
+            <button onClick={() => setShowTaskForm(!showTaskForm)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: '#EC4899', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+              <Plus className="w-4 h-4" /> Add Task
+            </button>
+          </div>
+          {showTaskForm && (
+            <form onSubmit={e => { e.preventDefault(); addTask() }} style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14, padding: '14px', background: '#FDF2F8', borderRadius: 8 }}>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input value={taskForm.title} onChange={e => setTaskForm({ ...taskForm, title: e.target.value })} placeholder="Task title *" style={{ flex: 1, padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 12, outline: 'none', fontFamily: 'inherit' }} />
+                <select value={taskForm.project_id} onChange={e => setTaskForm({ ...taskForm, project_id: e.target.value })} style={{ padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 12, outline: 'none', fontFamily: 'inherit', background: '#fff' }}>
+                  <option value="">Select project...</option>
+                  {projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
+                </select>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <select value={taskForm.priority} onChange={e => setTaskForm({ ...taskForm, priority: e.target.value })} style={{ padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 12, outline: 'none', fontFamily: 'inherit', background: '#fff' }}>
+                  <option>Low</option><option>Normal</option><option>High</option><option>Urgent</option>
+                </select>
+                <input type="date" value={taskForm.due_date} onChange={e => setTaskForm({ ...taskForm, due_date: e.target.value })} style={{ flex: 1, padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 12, outline: 'none', fontFamily: 'inherit' }} />
+              </div>
+              <button type="submit" disabled={addingTask || !taskForm.title.trim() || !taskForm.due_date} style={{ padding: '8px 14px', border: 'none', borderRadius: 8, background: '#EC4899', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: taskForm.title.trim() && taskForm.due_date ? 1 : 0.5 }}>{addingTask ? 'Adding...' : 'Add Task'}</button>
+            </form>
+          )}
           {tasks.length > 0 ? (
             <div className="overflow-x-auto">
               <Table>
