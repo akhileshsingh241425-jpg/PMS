@@ -240,7 +240,7 @@ export default function AccountsDetailPage() {
     try {
       const pid = meetingForm.project_id || data?.projects?.[0]?.id
       if (!pid) { alert('Create a project first to add meetings.'); return }
-      await api.post('/api/activities/meetings', { ...meetingForm, project_id: pid })
+      await api.post('/api/meetings', { ...meetingForm, project_id: pid })
       setShowMeetingForm(false); setMeetingForm({ title: '', meeting_date: '', meeting_link: '', project_id: '' }); loadDetail()
     } catch (e) { toast('Failed to create meeting', 'error') }
     finally { setAddingMeeting(false) }
@@ -252,7 +252,7 @@ export default function AccountsDetailPage() {
     try {
       const pid = taskForm.project_id || data?.projects?.[0]?.id
       if (!pid) { alert('Create a project first to add tasks.'); return }
-      await api.post('/api/activities/tasks', { ...taskForm, project_id: pid })
+      await api.post('/api/tasks', { ...taskForm, project_id: pid })
       setShowTaskForm(false); setTaskForm({ title: '', priority: 'Normal', due_date: '', assigned_to: '', project_id: '' }); loadDetail()
     } catch (e) { toast('Failed to create task', 'error') }
     finally { setAddingTask(false) }
