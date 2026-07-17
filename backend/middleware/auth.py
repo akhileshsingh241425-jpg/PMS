@@ -17,6 +17,8 @@ def generate_token(user):
 def _get_user():
     token = request.headers.get('Authorization', '').replace('Bearer ', '')
     if not token:
+        token = request.args.get('token', '')
+    if not token:
         return None
     try:
         data = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])

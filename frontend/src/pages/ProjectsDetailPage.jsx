@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../contexts/ToastContext'
 import api from '../services/api'
+const _token = () => localStorage.getItem('pms_token')
+const _url = u => u + (u.includes('?') ? '&' : '?') + 'token=' + _token()
 
 const C = {
   bg: '#F0F2F8', card: '#fff', border: '#E5E7EB',
@@ -564,7 +566,7 @@ export default function ProjectsDetailPage() {
                     return (
                       <div key={`doc-${d.id}`} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '8px 12px', background: '#F8F9FC', borderRadius: 8 }}>
                         <div style={{ width: 32, height: 32, borderRadius: 4, background: isImage ? '#F0F2F8' : isPdf ? '#FEE2E2' : '#EDE9FE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
-                          {isImage ? <img src={d.file_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : isPdf ? <PdfIcon /> : <FileIcon />}
+                          {isImage ? <img src={_url(d.file_url)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : isPdf ? <PdfIcon /> : <FileIcon />}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>{d.file_name}</div>
@@ -574,7 +576,7 @@ export default function ProjectsDetailPage() {
                           </div>
                         </div>
                         <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-                          {d.file_url && <a href={d.file_url} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: C.primary, textDecoration: 'none', fontWeight: 600 }}>Open</a>}
+                          {d.file_url && <a href={_url(d.file_url)} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: C.primary, textDecoration: 'none', fontWeight: 600 }}>Open</a>}
                           {user?.role === 'admin' && d.review_status !== 'Approved' && (
                             <><button onClick={() => reviewDoc(d.id, 'Approved')} style={{ fontSize: 10, padding: '2px 6px', border: 'none', borderRadius: 4, background: '#D1FAE5', color: '#059669', fontWeight: 700, cursor: 'pointer' }}>✓</button>
                               <button onClick={() => reviewDoc(d.id, 'Revision Required')} style={{ fontSize: 10, padding: '2px 6px', border: 'none', borderRadius: 4, background: '#FEE2E2', color: '#DC2626', fontWeight: 700, cursor: 'pointer' }}>✕</button></>
@@ -598,7 +600,7 @@ export default function ProjectsDetailPage() {
                           </div>
                         </div>
                         <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-                          <a href={r.file_url} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: C.primary, textDecoration: 'none', fontWeight: 600 }}>View</a>
+                          <a href={_url(r.file_url)} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: C.primary, textDecoration: 'none', fontWeight: 600 }}>View</a>
                           <button onClick={() => deleteReport(r.id)} style={{ fontSize: 11, color: '#DC2626', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Del</button>
                         </div>
                       </div>
