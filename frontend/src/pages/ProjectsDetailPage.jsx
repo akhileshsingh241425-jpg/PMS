@@ -74,10 +74,10 @@ export default function ProjectsDetailPage() {
   }
   const [imgUrls, setImgUrls] = useState({})
   useEffect(() => {
-    if (!documents) return; const pending = {}
-    documents.forEach(d => { if (/\.(jpg|jpeg|png|gif|webp|svg|bmp)$/i.test(d.file_name)) pending[d.id] = d.file_url })
+    if (!data) return; const docs = data.documents || []; const pending = {}
+    docs.forEach(d => { if (/\.(jpg|jpeg|png|gif|webp|svg|bmp)$/i.test(d.file_name)) pending[d.id] = d.file_url })
     Object.entries(pending).forEach(([id, url]) => { api.get(url.replace('/api/', ''), { responseType: 'blob' }).then(r => setImgUrls(p => ({ ...p, [id]: URL.createObjectURL(r.data) }))).catch(() => {}) })
-  }, [documents])
+  }, [data])
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [remarkText, setRemarkText] = useState('')
