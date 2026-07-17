@@ -353,7 +353,7 @@ export default function MeetingDetailView({ meetingId, meetingType = 'meeting', 
               <div>
                 <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>New Date *</label>
                 <input type="datetime-local" value={respondForm.confirmed_date} onChange={e => setRespondForm({ ...respondForm, confirmed_date: e.target.value })}
-                  style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #D1D5DB', borderRadius: '8px', fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
+                  style={{ width: '100%', padding: '14px 12px', border: '1.5px solid #D1D5DB', borderRadius: '10px', fontSize: 14, outline: 'none', fontFamily: 'inherit' }} />
               </div>
             )}
             <div>
@@ -384,7 +384,7 @@ export default function MeetingDetailView({ meetingId, meetingType = 'meeting', 
             <div>
               <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>New Date *</label>
               <input type="datetime-local" value={respondForm.confirmed_date} onChange={e => setRespondForm({ ...respondForm, confirmed_date: e.target.value })}
-                style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #D1D5DB', borderRadius: '8px', fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
+                style={{ width: '100%', padding: '14px 12px', border: '1.5px solid #D1D5DB', borderRadius: '10px', fontSize: 14, outline: 'none', fontFamily: 'inherit' }} />
             </div>
             <div>
               <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Meeting Link</label>
