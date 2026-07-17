@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app
 from datetime import datetime, timedelta
-from models import db, Vulnerability, Account, User, Notification
+from models import db, Vulnerability, Account, User, Notification, Project
 from middleware.auth import login_required, role_required
 
 
@@ -54,6 +54,7 @@ vuln_bp = Blueprint('vulnerabilities', __name__, url_prefix='/api/vulnerabilitie
 @login_required
 def list_vulnerabilities(current_user):
     account_id = request.args.get('account_id', type=int)
+    project_id = request.args.get('project_id', type=int)
     severity = request.args.get('severity')
     status = request.args.get('status')
     overdue_only = request.args.get('overdue_only', type=bool)
@@ -63,6 +64,8 @@ def list_vulnerabilities(current_user):
     q = Vulnerability.query
     if account_id:
         q = q.filter_by(account_id=account_id)
+    if project_id:
+        q = q.filter_by(project_id=project_id)
     if severity:
         q = q.filter_by(severity=severity)
     if status:
@@ -97,8 +100,16 @@ def create_vulnerability(current_user):
         date_found = datetime.fromisoformat(data.get('date_found') or datetime.utcnow().isoformat())
         deadline = date_found + timedelta(days=int(data['sla_days']))
 
+    project_id = int(data['project_id']) if data.get('project_id') else None
+    account_id = int(data['account_id'])
+    if project_id:
+        proj = Project.query.get(project_id)
+        if proj:
+            account_id = proj.account_id
+
     vuln = Vulnerability(
-        account_id=int(data['account_id']),
+        account_id=account_id,
+        project_id=project_id,
         title=data['title'],
         description=data.get('description'),
         severity=data['severity'],
@@ -146,6 +157,8 @@ def update_vulnerability(current_user, vid):
         vuln.fix_deadline = datetime.fromisoformat(data['fix_deadline']) if data['fix_deadline'] else None
     if 'assigned_to' in data:
         vuln.assigned_to = int(data['assigned_to']) if data['assigned_to'] else None
+    if 'project_id' in data:
+        vuln.project_id = int(data['project_id']) if data['project_id'] else None
 
     vuln.updated_at = datetime.utcnow()
     db.session.commit()

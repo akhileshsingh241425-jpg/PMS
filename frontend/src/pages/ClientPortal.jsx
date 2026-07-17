@@ -1146,6 +1146,7 @@ function VulnerabilitiesView({ vulnerabilities }) {
             <thead>
               <tr style={{ borderBottom: '1px solid #E2E8F0', background: '#F8FAFC' }}>
                 <th style={{ textAlign: 'left', padding: '12px 16px', fontWeight: 600, color: '#64748B', fontSize: 11, textTransform: 'uppercase' }}>Title</th>
+                <th style={{ textAlign: 'left', padding: '12px 16px', fontWeight: 600, color: '#64748B', fontSize: 11, textTransform: 'uppercase' }}>Project</th>
                 <th style={{ textAlign: 'center', padding: '12px 16px', fontWeight: 600, color: '#64748B', fontSize: 11, textTransform: 'uppercase' }}>Severity</th>
                 <th style={{ textAlign: 'center', padding: '12px 16px', fontWeight: 600, color: '#64748B', fontSize: 11, textTransform: 'uppercase' }}>Status</th>
                 <th style={{ textAlign: 'center', padding: '12px 16px', fontWeight: 600, color: '#64748B', fontSize: 11, textTransform: 'uppercase' }}>Date Found</th>
@@ -1160,6 +1161,7 @@ function VulnerabilitiesView({ vulnerabilities }) {
                 return (
                   <tr key={v.id} style={{ borderBottom: '1px solid #F1F5F9', background: v.overdue ? '#FFF5F5' : 'transparent' }}>
                     <td style={{ padding: '12px 16px', fontWeight: 500, color: '#0F172A', maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={v.title}>{v.title}</td>
+                    <td style={{ padding: '12px 16px', fontSize: 11, color: '#64748B', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={v.project_name || ''}>{v.project_name || '—'}</td>
                     <td style={{ textAlign: 'center', padding: '12px 16px' }}>
                       <span style={{ background: sc.bg, color: sc.text, padding: '2px 10px', borderRadius: 4, fontWeight: 700, fontSize: 11 }}>{v.severity}</span>
                     </td>
