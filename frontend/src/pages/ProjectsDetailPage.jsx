@@ -113,6 +113,7 @@ export default function ProjectsDetailPage() {
   const [mstoneForm, setMstoneForm] = useState(null)
   const [reports, setReports] = useState([])
   const [reportUploading, setReportUploading] = useState(false)
+  const [uploadCategory, setUploadCategory] = useState('document')
 
   // Inline edit for title & description
   const [editingTitle, setEditingTitle] = useState(false)
@@ -120,8 +121,6 @@ export default function ProjectsDetailPage() {
   const [editingDesc, setEditingDesc] = useState(false)
   const [descVal, setDescVal] = useState('')
   const [savingField, setSavingField] = useState(false)
-  const reportFileRef = useRef(null)
-  const reportTypeRef = useRef('working')
 
   const fetchData = async () => {
     try { const r = await api.get(`/api/projects/${id}`); setData(r.data) }
@@ -537,95 +536,76 @@ export default function ProjectsDetailPage() {
                   ))
                 )}
               </div>
-              {/* DOCUMENTS */}
-              <div id="section-documents" style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '18px 20px' }}>
-                <SectionTitle icon={<PaperclipIcon />} text={`Documents (${totalDocs})`} />
-                <input ref={fileRef} type="file" onChange={uploadDoc} style={{ display: 'none' }} />
-                <button onClick={() => fileRef.current?.click()} style={{ display: 'flex', alignItems: 'center', gap: 6, background: C.primary, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer', marginTop: 14, marginBottom: 14 }}>
-                  <UploadIcon /> Upload
+              {/* ═══ DOCUMENTS & REPORTS (UNIFIED) ═══ */}
+            <div id="section-documents" style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '18px 20px' }}>
+              <SectionTitle icon={<PaperclipIcon />} text={`Documents & Reports (${totalDocs + reports.length})`} />
+              <div style={{ display: 'flex', gap: 10, marginTop: 14, marginBottom: 14, alignItems: 'center' }}>
+                <select value={uploadCategory} onChange={e => setUploadCategory(e.target.value)}
+                  style={{ padding: '8px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 12, outline: 'none', background: C.card }}>
+                  <option value="document">General Document</option>
+                  <option value="working">Working Report</option>
+                  <option value="final">Final Report</option>
+                </select>
+                <input ref={fileRef} type="file" onChange={e => { const f = e.target.files?.[0]; if (!f) return; if (uploadCategory === 'document') { setUploading(true); const fd = new FormData(); fd.append('file', f); api.post(`/api/projects/${id}/documents`, fd).then(fetchData).catch(() => toast('Upload failed', 'error')).finally(() => { setUploading(false); e.target.value = '' }) } else { uploadReport(f, uploadCategory) } }} style={{ display: 'none' }} />
+                <button onClick={() => fileRef.current?.click()} disabled={uploading || reportUploading}
+                  style={{ padding: '8px 16px', border: 'none', borderRadius: 8, background: C.primary, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, opacity: uploading || reportUploading ? 0.5 : 1 }}>
+                  <UploadIcon /> {uploading || reportUploading ? 'Uploading...' : 'Upload'}
                 </button>
-                {uploading && <div style={{ fontSize: 12, color: C.primary, marginBottom: 10 }}>Uploading...</div>}
-                {(!documents || documents.length === 0) ? (
-                  <EmptyState icon={<PaperclipIcon />} title="No documents uploaded." />
-                ) : (
-                  documents.map(d => {
+              </div>
+              {(uploading || reportUploading) && <div style={{ fontSize: 12, color: C.primary, marginBottom: 10 }}>Uploading...</div>}
+
+              {(!documents || documents.length === 0) && reports.length === 0 ? (
+                <EmptyState icon={<PaperclipIcon />} title="No documents or reports uploaded." />
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {documents.map(d => {
                     const isImage = /\.(jpg|jpeg|png|gif|webp|svg|bmp)$/i.test(d.file_name)
                     const isPdf = /\.pdf$/i.test(d.file_name)
                     return (
-                      <div key={d.id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '8px 12px', background: '#F8F9FC', borderRadius: 8, marginBottom: 6 }}>
-                        {isImage ? (
-                          <div style={{ width: 32, height: 32, borderRadius: 4, overflow: 'hidden', flexShrink: 0, background: '#F0F2F8' }}>
-                            <img src={d.file_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          </div>
-                        ) : (
-                          <div style={{ width: 32, height: 32, borderRadius: 4, background: isPdf ? '#FEE2E2' : '#EDE9FE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            {isPdf ? <PdfIcon /> : <FileIcon />}
-                          </div>
-                        )}
+                      <div key={`doc-${d.id}`} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '8px 12px', background: '#F8F9FC', borderRadius: 8 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 4, background: isImage ? '#F0F2F8' : isPdf ? '#FEE2E2' : '#EDE9FE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
+                          {isImage ? <img src={d.file_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : isPdf ? <PdfIcon /> : <FileIcon />}
+                        </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>{d.file_name}</div>
                           <div style={{ display: 'flex', gap: 4, alignItems: 'center', marginTop: 2 }}>
-                            {d.category && <span style={{ fontSize: 9, fontWeight: 700, color: C.primary, background: '#F0EBFF', padding: '1px 6px', borderRadius: 4 }}>{d.category}</span>}
+                            <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 4, background: '#EDE9FE', color: C.primary }}>Document</span>
                             <DocStatusBadge status={d.review_status} />
                           </div>
                         </div>
                         <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
                           {d.file_url && <a href={d.file_url} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: C.primary, textDecoration: 'none', fontWeight: 600 }}>Open</a>}
                           {user?.role === 'admin' && d.review_status !== 'Approved' && (
-                            <>
-                              <button onClick={() => reviewDoc(d.id, 'Approved')} style={{ fontSize: 10, padding: '2px 6px', border: 'none', borderRadius: 4, background: '#D1FAE5', color: '#059669', fontWeight: 700, cursor: 'pointer' }}>✓</button>
-                              <button onClick={() => reviewDoc(d.id, 'Revision Required')} style={{ fontSize: 10, padding: '2px 6px', border: 'none', borderRadius: 4, background: '#FEE2E2', color: '#DC2626', fontWeight: 700, cursor: 'pointer' }}>✕</button>
-                            </>
+                            <><button onClick={() => reviewDoc(d.id, 'Approved')} style={{ fontSize: 10, padding: '2px 6px', border: 'none', borderRadius: 4, background: '#D1FAE5', color: '#059669', fontWeight: 700, cursor: 'pointer' }}>✓</button>
+                              <button onClick={() => reviewDoc(d.id, 'Revision Required')} style={{ fontSize: 10, padding: '2px 6px', border: 'none', borderRadius: 4, background: '#FEE2E2', color: '#DC2626', fontWeight: 700, cursor: 'pointer' }}>✕</button></>
                           )}
                         </div>
                       </div>
                     )
-                  })
-                )}
-              </div>
-            </div>
-
-            {/* REPORTS */}
-            <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 12 }}>
-              <SectionTitle icon={<FileIcon />} text={`Reports (${reports.length})`} />
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 14 }}>
-                <div style={{ padding: 16, background: '#F8F9FC', borderRadius: 8, border: `1px dashed ${C.border}` }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 8 }}>Working Reports</div>
-                  <div style={{ fontSize: 11, color: C.muted, marginBottom: 10 }}>Preliminary, partial, interim, progress reports</div>
-                  <input ref={reportFileRef} type="file" onChange={e => uploadReport(e, reportTypeRef.current)} style={{ display: 'none' }} />
-                  <button onClick={() => { reportTypeRef.current = 'working'; reportFileRef.current?.click() }} disabled={reportUploading}
-                    style={{ padding: '8px 16px', border: 'none', borderRadius: 8, background: C.primary, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: reportUploading ? 0.5 : 1 }}>
-                    {reportUploading ? 'Uploading...' : 'Upload Working Report'}
-                  </button>
-                  {reports.filter(r => r.report_type === 'working').map(r => (
-                    <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', background: '#fff', borderRadius: 6, marginTop: 8, border: `1px solid ${C.border}` }}>
-                      <FileIcon />
-                      <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.file_name}</span>
-                      <span style={{ fontSize: 10, color: C.muted }}>v{r.version}</span>
-                      <a href={r.file_url} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: C.primary, fontWeight: 600, textDecoration: 'none' }}>View</a>
-                      <button onClick={() => deleteReport(r.id)} style={{ fontSize: 11, color: '#DC2626', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Del</button>
-                    </div>
-                  ))}
+                  })}
+                  {reports.map(r => {
+                    const isWorking = r.report_type === 'working'
+                    return (
+                      <div key={`rpt-${r.id}`} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '8px 12px', background: '#F8F9FC', borderRadius: 8 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 4, background: isWorking ? '#EDE9FE' : '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <FileIcon />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>{r.file_name}</div>
+                          <div style={{ display: 'flex', gap: 4, alignItems: 'center', marginTop: 2 }}>
+                            <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 4, background: isWorking ? '#EDE9FE' : '#D1FAE5', color: isWorking ? C.primary : '#059669' }}>{isWorking ? 'Working Report' : 'Final Report'}</span>
+                            <span style={{ fontSize: 10, color: C.muted }}>v{r.version}</span>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                          <a href={r.file_url} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: C.primary, textDecoration: 'none', fontWeight: 600 }}>View</a>
+                          <button onClick={() => deleteReport(r.id)} style={{ fontSize: 11, color: '#DC2626', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Del</button>
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
-                <div style={{ padding: 16, background: '#F0FDF4', borderRadius: 8, border: `1px dashed #86EFAC` }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#065F46', marginBottom: 8 }}>Final Report</div>
-                  <div style={{ fontSize: 11, color: C.muted, marginBottom: 10 }}>Final deliverable — PDF, DOC, Excel</div>
-                  <input ref={reportFileRef} type="file" onChange={e => uploadReport(e, 'final')} style={{ display: 'none' }} />
-                  <button onClick={() => { reportTypeRef.current = 'final'; reportFileRef.current?.click() }} disabled={reportUploading}
-                    style={{ padding: '8px 16px', border: 'none', borderRadius: 8, background: '#059669', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: reportUploading ? 0.5 : 1 }}>
-                    {reportUploading ? 'Uploading...' : 'Upload Final Report'}
-                  </button>
-                  {reports.filter(r => r.report_type === 'final').map(r => (
-                    <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', background: '#fff', borderRadius: 6, marginTop: 8, border: `1px solid #86EFAC` }}>
-                      <FileIcon />
-                      <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: '#065F46', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.file_name}</span>
-                      <span style={{ fontSize: 10, color: C.muted }}>v{r.version}</span>
-                      <a href={r.file_url} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: '#059669', fontWeight: 600, textDecoration: 'none' }}>View</a>
-                      <button onClick={() => deleteReport(r.id)} style={{ fontSize: 11, color: '#DC2626', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Del</button>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              )}
             </div>
 
             {/* MEETINGS + NOTES */}
