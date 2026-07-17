@@ -607,6 +607,7 @@ export default function ProjectsDetailPage() {
                 </div>
               )}
             </div>
+            </div>
 
             {/* MEETINGS + NOTES */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
