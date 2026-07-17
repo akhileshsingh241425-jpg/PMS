@@ -3,8 +3,11 @@ from datetime import datetime
 from sqlalchemy.orm import validates
 
 PROJECT_STAGES = [
-    'Created', 'Planning', 'Kickoff', 'Execution', 'Internal QA', 'Client Review', 'UAT', 'Go Live', 'Completed',
-    'AMC/Support', 'Archived', 'On Hold', 'Cancelled',
+    'Initiated', 'Planning', 'Information Gathering', 'Execution', 'Internal Review', 'Client Review', 'Remediation Support', 'Final Delivery',
+    'Invoice Raised', 'Payment Pending', 'Partial Payment Received', 'Full Payment Received',
+    'Closed',
+    'On Hold', 'Delayed', 'Cancelled', 'Escalated',
+    'Awaiting Client Response', 'Awaiting Documents', 'Awaiting Payment',
 ]
 
 

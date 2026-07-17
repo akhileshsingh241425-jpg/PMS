@@ -46,8 +46,8 @@ def dashboard(current_user):
     return jsonify({
         'project_counts': {
             'total': len(projects),
-            'active': sum(1 for p in projects if p.stage not in ('Completed', 'Archived', 'Cancelled')),
-            'completed': sum(1 for p in projects if p.stage == 'Completed'),
+            'active': sum(1 for p in projects if p.stage not in ('Closed', 'Cancelled', 'Delayed')),
+            'completed': sum(1 for p in projects if p.stage == 'Closed'),
         },
         'task_counts': {
             'total': len(tasks),

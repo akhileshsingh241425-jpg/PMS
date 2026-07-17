@@ -62,8 +62,8 @@ export default function MyWorkspacePage() {
                   </div>
                   <span style={{
                     fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 4,
-                    background: p.stage === 'Completed' ? '#D1FAE5' : p.stage === 'On Hold' ? '#FEF3C7' : '#DBEAFE',
-                    color: p.stage === 'Completed' ? '#065F46' : p.stage === 'On Hold' ? '#92400E' : '#1E40AF',
+                    background: p.stage === 'Closed' ? '#D1FAE5' : p.stage === 'On Hold' ? '#FEF3C7' : '#DBEAFE',
+                    color: p.stage === 'Closed' ? '#065F46' : p.stage === 'On Hold' ? '#92400E' : '#1E40AF',
                   }}>{p.stage}</span>
                 </Link>
               ))}

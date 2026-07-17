@@ -71,8 +71,8 @@ export default function PMReports() {
                   <td style={{ padding: '12px 16px' }}>
                     <span style={{
                       padding: '2px 10px', borderRadius: 12, fontSize: 11, fontWeight: 600,
-                      background: p.stage === 'Completed' ? '#F0FDF4' : '#EFF6FF',
-                      color: p.stage === 'Completed' ? '#059669' : '#3B82F6',
+                      background: ['Closed','Full Payment Received','Cancelled'].includes(p.stage) ? '#F0FDF4' : '#EFF6FF',
+                      color: ['Closed','Full Payment Received','Cancelled'].includes(p.stage) ? '#059669' : '#3B82F6',
                     }}>{p.stage}</span>
                   </td>
                   <td style={{ padding: '12px 16px', fontSize: 13, color: '#374151' }}>{p.total_tasks}</td>

@@ -7,12 +7,13 @@ import Pagination from '../components/Pagination'
 import { TableSkeleton } from '../components/LoadingSkeleton'
 import { useToast } from '../contexts/ToastContext'
 
-const STAGES = ['Created','Planning','Kickoff','Execution','Internal QA','Client Review','UAT','Go Live','Completed','AMC/Support','Archived','On Hold','Cancelled']
+const STAGES = ['Initiated','Planning','Information Gathering','Execution','Internal Review','Client Review','Remediation Support','Final Delivery','Invoice Raised','Payment Pending','Partial Payment Received','Full Payment Received','Closed','On Hold','Delayed','Cancelled','Escalated','Awaiting Client Response','Awaiting Documents','Awaiting Payment']
 const STAGE_COLORS = {
-  'Created':'bg-slate-500','Planning':'bg-blue-500','Kickoff':'bg-indigo-500','Execution':'bg-violet-600',
-  'Internal QA':'bg-purple-500','Client Review':'bg-fuchsia-500','UAT':'bg-teal-500','Go Live':'bg-emerald-500',
-  'Completed':'bg-green-700','AMC/Support':'bg-blue-400','Archived':'bg-slate-600',
-  'On Hold':'bg-amber-500','Cancelled':'bg-red-600',
+  'Initiated':'bg-slate-500','Planning':'bg-blue-500','Information Gathering':'bg-indigo-500','Execution':'bg-violet-600',
+  'Internal Review':'bg-purple-500','Client Review':'bg-fuchsia-500','Remediation Support':'bg-teal-500','Final Delivery':'bg-emerald-500',
+  'Invoice Raised':'bg-amber-500','Payment Pending':'bg-orange-500','Partial Payment Received':'bg-yellow-500','Full Payment Received':'bg-green-700',
+  'Closed':'bg-green-700','On Hold':'bg-amber-500','Delayed':'bg-orange-500','Cancelled':'bg-red-600',
+  'Escalated':'bg-red-700','Awaiting Client Response':'bg-blue-400','Awaiting Documents':'bg-sky-400','Awaiting Payment':'bg-amber-400',
 }
 const SERVICES = ['VAPT','IS Audit','ISMS Implementation','RBI Audit','Compliance Audit','Cloud Security Audit','Network Security Audit','Application Security','Red Team Assessment','SOC Setup','Other']
 const TASK_PRIORITIES = ['Low','Normal','High','Urgent']

@@ -30,8 +30,8 @@ def pm_dashboard(current_user):
 
     # Project health
     total_projects = len(projects)
-    active_projects = [p for p in projects if p.stage not in ('Completed', 'Archived', 'Cancelled')]
-    completed_projects = [p for p in projects if p.stage == 'Completed']
+    active_projects = [p for p in projects if p.stage not in ('Closed', 'Cancelled', 'Delayed')]
+    completed_projects = [p for p in projects if p.stage == 'Closed']
 
     # Tasks across all PM's projects
     all_tasks = Task.query.filter(Task.project_id.in_(pids)).all() if pids else []

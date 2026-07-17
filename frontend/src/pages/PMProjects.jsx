@@ -3,15 +3,15 @@ import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import { FolderOpen, Search, Filter } from 'lucide-react'
 
-const STAGES = ['Created', 'Planning', 'Kickoff', 'Execution', 'Internal QA', 'Client Review', 'UAT', 'Go Live', 'Completed']
+const STAGES = ['Initiated','Planning','Information Gathering','Execution','Internal Review','Client Review','Remediation Support','Final Delivery','Invoice Raised','Payment Pending','Partial Payment Received','Full Payment Received','Closed','On Hold','Delayed','Cancelled','Escalated','Awaiting Client Response','Awaiting Documents','Awaiting Payment']
 
 function getHealthColor(stage) {
-  if (stage === 'Completed') return '#10B981'
+  if (stage === 'Closed') return '#10B981'
   return '#3B82F6'
 }
 
 function getHealthBg(stage) {
-  if (stage === 'Completed') return '#F0FDF4'
+  if (stage === 'Closed') return '#F0FDF4'
   return '#EFF6FF'
 }
 
@@ -77,7 +77,7 @@ export default function PMProjects() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 20, fontSize: 12, color: '#6B7280' }}>
                 <span>Deadline: {formatDate(p.target_date)}</span>
                 <span>Team: {p.team_count || 0}</span>
-                <span style={{ color: p.stage === 'Completed' ? '#10B981' : '#3B82F6', fontWeight: 600 }}>
+                <span style={{ color: p.stage === 'Closed' ? '#10B981' : '#3B82F6', fontWeight: 600 }}>
                   {p.account_name || '—'}
                 </span>
               </div>
