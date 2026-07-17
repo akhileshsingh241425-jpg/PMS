@@ -72,14 +72,14 @@ export default function ProjectsDetailPage() {
     try { const r = await api.get(url.replace('/api/', ''), { responseType: 'blob' }); const u = URL.createObjectURL(r.data); window.open(u, '_blank'); setTimeout(() => URL.revokeObjectURL(u), 60000) }
     catch (e) { toast('Failed to open file', 'error') }
   }
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
   const [imgUrls, setImgUrls] = useState({})
   useEffect(() => {
     if (!data) return; const docs = data.documents || []; const pending = {}
     docs.forEach(d => { if (/\.(jpg|jpeg|png|gif|webp|svg|bmp)$/i.test(d.file_name)) pending[d.id] = d.file_url })
     Object.entries(pending).forEach(([id, url]) => { api.get(url.replace('/api/', ''), { responseType: 'blob' }).then(r => setImgUrls(p => ({ ...p, [id]: URL.createObjectURL(r.data) }))).catch(() => {}) })
   }, [data])
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(true)
   const [remarkText, setRemarkText] = useState('')
   const [sending, setSending] = useState(false)
   const [uploading, setUploading] = useState(false)
