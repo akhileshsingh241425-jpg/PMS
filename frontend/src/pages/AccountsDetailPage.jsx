@@ -317,8 +317,8 @@ export default function AccountsDetailPage() {
   const lastActivity = allTimelineItems[0]?._date
 
   return (
-    <div style={{ background: '#F6F8FC', minHeight: '100vh', padding: '0 4px 32px' }}>
-      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+    <div style={{ background: '#F6F8FC', minHeight: '100vh', padding: '0 24px 32px' }}>
+      <div style={{ margin: '0 auto' }}>
 
         {/* Breadcrumb */}
         <button onClick={() => navigate('/accounts')} className="flex items-center gap-1.5 text-sm" style={{ color: '#6B7280', background: 'none', border: 'none', cursor: 'pointer', marginBottom: '12px', fontWeight: 500, padding: 0 }}>
@@ -536,10 +536,10 @@ export default function AccountsDetailPage() {
           <KpiCard icon={FileText} bg="#FCE7F3" color="#DB2777" label="Documents" value={documents.length} />
         </div>
 
-        {/* ═══ 2-COLUMN: ACCOUNT INFO | ACTIVITY TIMELINE ═══ */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '24px', marginBottom: '32px', alignItems: 'start' }} className="account-layout">
+        {/* ═══ FULL-WIDTH: ACCOUNT INFO & ACTIVITY TIMELINE ═══ */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24, marginBottom: 32 }} className="account-layout">
 
-          {/* LEFT: Account Information */}
+          {/* Account Information */}
           <div style={{ background: '#fff', borderRadius: '14px', boxShadow: '0 8px 24px rgba(0,0,0,.05)', border: '1px solid #ECECEC' }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid #ECECEC', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -594,9 +594,6 @@ export default function AccountsDetailPage() {
               </div>
             </div>
             <style>{`
-              @media (max-width: 1024px) {
-                .account-layout { grid-template-columns: 1fr !important; }
-              }
               @media (max-width: 1200px) {
                 .stat-cards { grid-template-columns: repeat(3, 1fr) !important; }
               }
@@ -613,115 +610,64 @@ export default function AccountsDetailPage() {
             `}</style>
           </div>
 
-          {/* RIGHT: Activity Timeline + Widgets */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <div style={{ background: '#fff', borderRadius: '14px', boxShadow: '0 8px 24px rgba(0,0,0,.05)', border: '1px solid #ECECEC' }}>
-              <div style={{ padding: '18px 24px', borderBottom: '1px solid #ECECEC', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Activity className="w-4 h-4" style={{ color: '#5B3DF5' }} />
-                <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#1F2937', margin: 0 }}>Activity Timeline</h3>
-              </div>
-              <div style={{ padding: '16px 20px', maxHeight: '500px', overflowY: 'auto' }}>
-                {allTimelineItems.length > 0 ? (
-                  <div style={{ position: 'relative', paddingLeft: '28px' }}>
-                    <div style={{ position: 'absolute', left: '10px', top: '10px', bottom: '10px', width: '2px', background: '#E8EAF2', borderRadius: '1px' }} />
-                    {allTimelineItems.slice(0, 15).map((item, idx) => {
-                      const isNote = item._type === 'note'
-                      const iconDef = isNote ? ACTIVITY_ICONS.note : ACTIVITY_ICONS.meeting
-                      const Icon = iconDef.icon
-                      const d = item._date ? new Date(item._date) : null
-                      const validDate = d && !isNaN(d.getTime())
-                      const title = isNote ? (item.content || '') : (item.title || '')
-                      return (
-                        <div key={item.id || idx} style={{ position: 'relative', marginBottom: '16px' }}>
-                          <div style={{ position: 'absolute', left: '-22px', top: '4px', width: '28px', height: '28px', borderRadius: '8px', background: iconDef.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1, transition: 'all .2s' }}
-                            onMouseOver={e => { e.currentTarget.style.transform = 'scale(1.1)'; e.currentTarget.style.boxShadow = `0 0 0 3px ${iconDef.bg}` }}
-                            onMouseOut={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}>
-                            <Icon className="w-3.5 h-3.5" style={{ color: iconDef.color }} />
-                          </div>
-                          <div style={{ padding: '10px 12px', borderRadius: '10px', background: '#F6F8FC', transition: 'all .2s' }}
-                            onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
-                            onMouseOut={e => e.currentTarget.style.background = '#F6F8FC'}>
-                            <div className="flex items-center gap-2 text-xs" style={{ color: iconDef.color, fontWeight: 600, marginBottom: '3px' }}>
-                              {validDate ? (
-                                <>
-                                  <span>{formatDate(item._date)}</span>
-                                  <span>{d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
-                                </>
-                              ) : (
-                                <span style={{ fontStyle: 'italic', opacity: 0.6 }}>Date not set</span>
-                              )}
-                            </div>
-                            <p title={title} style={{ fontSize: '13px', color: '#1F2937', margin: 0, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title || '—'}</p>
-                            <p style={{ fontSize: '11px', color: '#6B7280', margin: '3px 0 0' }}>
-                              {isNote ? `Note by ${item.author || '—'}` : `Meeting by ${item.created_by_name || '—'}`}
-                              {validDate && <><span style={{ color: '#D1D5DB', margin: '0 6px' }}>·</span>{timeAgo(item._date)}</>}
-                            </p>
-                          </div>
-                        </div>
-                      )
-                    })}
-                    {allTimelineItems.length > 15 && (
-                      <div style={{ textAlign: 'center', marginTop: '8px' }}>
-                        <span style={{ fontSize: '12px', fontWeight: 600, color: '#5B3DF5', cursor: 'pointer' }}>View All Activity ({allTimelineItems.length}) →</span>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div style={{ textAlign: 'center', padding: '40px 16px', color: '#9CA3AF' }}>
-                    <Activity className="w-8 h-8 mx-auto mb-2" />
-                    <p style={{ fontSize: '13px', fontWeight: 500, margin: 0 }}>No activity yet</p>
-                    <p style={{ fontSize: '12px', margin: '4px 0 0' }}>Activities will appear here as you work</p>
-                  </div>
-                )}
-              </div>
+          {/* Activity Timeline */}
+          <div style={{ background: '#fff', borderRadius: '14px', boxShadow: '0 8px 24px rgba(0,0,0,.05)', border: '1px solid #ECECEC' }}>
+            <div style={{ padding: '18px 24px', borderBottom: '1px solid #ECECEC', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Activity className="w-4 h-4" style={{ color: '#5B3DF5' }} />
+              <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#1F2937', margin: 0 }}>Activity Timeline</h3>
             </div>
-
-            {/* Quick Stats */}
-            <div style={{ background: '#fff', borderRadius: '14px', boxShadow: '0 8px 24px rgba(0,0,0,.05)', border: '1px solid #ECECEC', padding: '18px 24px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-                <BarChart3 className="w-4 h-4" style={{ color: '#5B3DF5' }} />
-                <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#1F2937', margin: 0 }}>Quick Stats</h3>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <div style={{ background: '#F6F8FC', borderRadius: 10, padding: '12px 14px' }}>
-                  <div style={{ fontSize: 20, fontWeight: 800, color: '#5B3DF5', lineHeight: 1.2 }}>{allTimelineItems.length}</div>
-                  <div style={{ fontSize: 11, color: '#6B7280', fontWeight: 500, marginTop: 2 }}>Total Activities</div>
-                </div>
-                <div style={{ background: '#F6F8FC', borderRadius: 10, padding: '12px 14px' }}>
-                  <div style={{ fontSize: 20, fontWeight: 800, color: '#5B3DF5', lineHeight: 1.2 }}>
-                    {lastActivity ? Math.floor((Date.now() - new Date(lastActivity).getTime()) / 86400000) : '—'}
-                  </div>
-                  <div style={{ fontSize: 11, color: '#6B7280', fontWeight: 500, marginTop: 2 }}>Days Since Last Activity</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Assigned Team */}
-            <div style={{ background: '#fff', borderRadius: '14px', boxShadow: '0 8px 24px rgba(0,0,0,.05)', border: '1px solid #ECECEC', padding: '18px 24px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-                <Users className="w-4 h-4" style={{ color: '#5B3DF5' }} />
-                <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#1F2937', margin: 0 }}>Assigned Team</h3>
-              </div>
-              {projects.filter(p => p.pm_name).length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {[...new Set(projects.filter(p => p.pm_name).map(p => p.pm_name))].slice(0, 5).map((name, i) => {
-                    const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
-                    const avatarColors = ['#5B3DF5', '#059669', '#DB2777', '#D97706', '#2563EB']
+            <div style={{ padding: '16px 20px', maxHeight: '500px', overflowY: 'auto' }}>
+              {allTimelineItems.length > 0 ? (
+                <div style={{ position: 'relative', paddingLeft: '28px' }}>
+                  <div style={{ position: 'absolute', left: '10px', top: '10px', bottom: '10px', width: '2px', background: '#E8EAF2', borderRadius: '1px' }} />
+                  {allTimelineItems.slice(0, 15).map((item, idx) => {
+                    const isNote = item._type === 'note'
+                    const iconDef = isNote ? ACTIVITY_ICONS.note : ACTIVITY_ICONS.meeting
+                    const Icon = iconDef.icon
+                    const d = item._date ? new Date(item._date) : null
+                    const validDate = d && !isNaN(d.getTime())
+                    const title = isNote ? (item.content || '') : (item.title || '')
                     return (
-                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: '50%', background: avatarColors[i % avatarColors.length], display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <span style={{ fontSize: 12, fontWeight: 800, color: '#fff' }}>{initials}</span>
+                      <div key={item.id || idx} style={{ position: 'relative', marginBottom: '16px' }}>
+                        <div style={{ position: 'absolute', left: '-22px', top: '4px', width: '28px', height: '28px', borderRadius: '8px', background: iconDef.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1, transition: 'all .2s' }}
+                          onMouseOver={e => { e.currentTarget.style.transform = 'scale(1.1)'; e.currentTarget.style.boxShadow = `0 0 0 3px ${iconDef.bg}` }}
+                          onMouseOut={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}>
+                          <Icon className="w-3.5 h-3.5" style={{ color: iconDef.color }} />
                         </div>
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: '#1F2937' }}>{name}</div>
-                          <div style={{ fontSize: 11, color: '#9CA3AF' }}>Project Manager</div>
+                        <div style={{ padding: '10px 12px', borderRadius: '10px', background: '#F6F8FC', transition: 'all .2s' }}
+                          onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
+                          onMouseOut={e => e.currentTarget.style.background = '#F6F8FC'}>
+                          <div className="flex items-center gap-2 text-xs" style={{ color: iconDef.color, fontWeight: 600, marginBottom: '3px' }}>
+                            {validDate ? (
+                              <>
+                                <span>{formatDate(item._date)}</span>
+                                <span>{d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
+                              </>
+                            ) : (
+                              <span style={{ fontStyle: 'italic', opacity: 0.6 }}>Date not set</span>
+                            )}
+                          </div>
+                          <p title={title} style={{ fontSize: '13px', color: '#1F2937', margin: 0, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title || '—'}</p>
+                          <p style={{ fontSize: '11px', color: '#6B7280', margin: '3px 0 0' }}>
+                            {isNote ? `Note by ${item.author || '—'}` : `Meeting by ${item.created_by_name || '—'}`}
+                            {validDate && <><span style={{ color: '#D1D5DB', margin: '0 6px' }}>·</span>{timeAgo(item._date)}</>}
+                          </p>
                         </div>
                       </div>
                     )
                   })}
+                  {allTimelineItems.length > 15 && (
+                    <div style={{ textAlign: 'center', marginTop: '8px' }}>
+                      <span style={{ fontSize: '12px', fontWeight: 600, color: '#5B3DF5', cursor: 'pointer' }}>View All Activity ({allTimelineItems.length}) →</span>
+                    </div>
+                  )}
                 </div>
               ) : (
-                <p style={{ fontSize: 13, color: '#9CA3AF', textAlign: 'center', padding: '12px 0', margin: 0 }}>No team members assigned yet</p>
+                <div style={{ textAlign: 'center', padding: '40px 16px', color: '#9CA3AF' }}>
+                  <Activity className="w-8 h-8 mx-auto mb-2" />
+                  <p style={{ fontSize: '13px', fontWeight: 500, margin: 0 }}>No activity yet</p>
+                  <p style={{ fontSize: '12px', margin: '4px 0 0' }}>Activities will appear here as you work</p>
+                </div>
               )}
             </div>
           </div>
