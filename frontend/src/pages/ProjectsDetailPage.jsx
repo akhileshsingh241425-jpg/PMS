@@ -112,6 +112,7 @@ export default function ProjectsDetailPage() {
     catch (e) { toast('Failed to save', 'error') }
   }
   const [showEmojiPicker, setShowEmojiPicker] = useState(null)
+  const [expandedRemark, setExpandedRemark] = useState(null)
   const [users, setUsers] = useState([])
   const [showMeetingForm, setShowMeetingForm] = useState(false)
   const [meetingForm, setMeetingForm] = useState({ title: '', meeting_date: '', meeting_link: '', status: 'Scheduled' })
@@ -464,22 +465,20 @@ export default function ProjectsDetailPage() {
               <SectionTitle icon={<ChatIcon />} text={`Remarks (${(remarks || []).length})`} />
               <div style={{ marginTop: 14, marginBottom: 20 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: 8, background: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 8, background: C.primaryLight, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <ChatIcon />
                   </div>
                   <span style={{ fontSize: 12, fontWeight: 700, color: '#374151' }}>Add a remark</span>
                 </div>
                 <textarea ref={remarkInputRef} rows={4} value={remarkText} onChange={e => { if (e.target.value.length <= 1000) setRemarkText(e.target.value) }}
                   style={{
-                    width: '100%', padding: '12px 14px', border: `1.5px solid ${C.border}`, borderRadius: 10,
-                    fontSize: 14, outline: 'none', fontFamily: "'Courier New', monospace", resize: 'vertical',
-                    lineHeight: 1.8, background: '#FFFEF5', color: '#374151', boxSizing: 'border-box',
-                    backgroundImage: 'repeating-linear-gradient(transparent, transparent 27px, #E5E7EB 27px, #E5E7EB 28px)',
-                    backgroundPosition: '0 12px',
+                    width: '100%', padding: '12px 14px', border: `1.5px solid ${remarkText.trim() ? C.primary : C.border}`, borderRadius: 10,
+                    fontSize: 14, outline: 'none', fontFamily: 'inherit', resize: 'vertical',
+                    lineHeight: 1.6, background: '#fff', color: '#374151', boxSizing: 'border-box', transition: 'border-color 0.15s',
                   }}
                   placeholder="Write your remark here..." />
                 <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center' }}>
-                  <button onClick={addRemark} disabled={sending || !remarkText.trim()} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'linear-gradient(135deg, #5B21B6, #7C3AED)', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: sending || !remarkText.trim() ? 0.5 : 1 }}>
+                  <button onClick={addRemark} disabled={sending || !remarkText.trim()} style={{ display: 'flex', alignItems: 'center', gap: 6, background: C.primary, color: '#fff', border: 'none', borderRadius: 8, padding: '9px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: sending || !remarkText.trim() ? 0.5 : 1, transition: 'opacity 0.15s' }}>
                     <SendIcon /> Add Remark
                   </button>
                   {remarkText.trim() && <span style={{ fontSize: 11, color: '#9CA3AF' }}>{remarkText.length} characters</span>}
@@ -488,39 +487,63 @@ export default function ProjectsDetailPage() {
               {(!remarks || remarks.length === 0) ? (
                 <EmptyState icon={<ChatIcon />} title="No remarks yet." />
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  {remarks.map((r, i) => {
-                    const isLast = i === remarks.length - 1
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {remarks.map((r) => {
                     const d = new Date(r.created_at)
+                    const now = new Date()
+                    const diffMs = now - d
+                    const diffMins = Math.floor(diffMs / 60000)
+                    const diffHrs = Math.floor(diffMs / 3600000)
+                    const diffDays = Math.floor(diffMs / 86400000)
+                    let timeAgo
+                    if (diffMins < 1) timeAgo = 'just now'
+                    else if (diffMins < 60) timeAgo = `${diffMins}m ago`
+                    else if (diffHrs < 24) timeAgo = `${diffHrs}h ago`
+                    else if (diffDays < 7) timeAgo = `${diffDays}d ago`
+                    else timeAgo = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+                    const author = r.author || 'User'
+                    const initial = author.charAt(0).toUpperCase()
+                    const avatarColors = ['#5B21B6', '#059669', '#DB2777', '#D97706', '#2563EB', '#DC2626', '#0891B2', '#7C3AED']
+                    const avatarColor = avatarColors[author.length % avatarColors.length]
                     const reactionEntries = r.reactions ? Object.entries(r.reactions) : []
+                    const isLong = r.text && r.text.replace(/<[^>]*>/g, '').length > 180
+                    const isExpanded = expandedRemark === r.id
+                    const shortText = isLong ? r.text.replace(/<[^>]*>/g, '').slice(0, 180) + '...' : r.text
                     return (
-                      <div key={r.id} style={{ display: 'flex', gap: 14, padding: '14px 0', position: 'relative' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                          <div style={{ width: 10, height: 10, borderRadius: '50%', background: C.primary, marginTop: 4, flexShrink: 0, zIndex: 1 }} />
-                          {!isLast && <div style={{ position: 'absolute', left: 4, top: 20, bottom: -14, width: 2, background: '#EDE9FE' }} />}
-                        </div>
-                        <div style={{ minWidth: 100, flexShrink: 0 }}>
-                          <div style={{ fontSize: 11, fontWeight: 700, color: '#374151' }}>{d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
-                          <div style={{ fontSize: 10, color: C.muted }}>{d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</div>
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div onClick={() => openRemarkEditor(r)} style={{ fontSize: 14, color: '#374151', lineHeight: 1.5, cursor: 'pointer' }}
-                            onMouseEnter={e => e.currentTarget.style.color = C.primary} onMouseLeave={e => e.currentTarget.style.color = '#374151'} dangerouslySetInnerHTML={{ __html: r.text }} />
-                          {reactionEntries.length > 0 && (
-                            <div style={{ display: 'flex', gap: 4, marginTop: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                      <div key={r.id} style={{ background: '#F8F9FC', borderRadius: 12, padding: 16, border: `1px solid ${C.border}` }}>
+                        <div style={{ display: 'flex', gap: 12 }}>
+                          <div style={{ width: 36, height: 36, borderRadius: '50%', background: avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <span style={{ fontSize: 14, fontWeight: 800, color: '#fff' }}>{initial}</span>
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: '#1F2937' }}>{author}</span>
+                              <span style={{ fontSize: 11, color: '#9CA3AF' }}>{timeAgo}</span>
+                            </div>
+                            <div onClick={() => openRemarkEditor(r)} style={{ fontSize: 14, color: '#374151', lineHeight: 1.6, cursor: 'pointer', wordBreak: 'break-word' }}>
+                              {isLong ? (
+                                <>
+                                  {isExpanded ? <span dangerouslySetInnerHTML={{ __html: r.text }} /> : <span>{shortText}</span>}
+                                  <span onClick={e => { e.stopPropagation(); setExpandedRemark(isExpanded ? null : r.id) }} style={{ color: C.primary, fontSize: 12, fontWeight: 600, cursor: 'pointer', marginLeft: 4 }}>
+                                    {isExpanded ? 'Show less' : 'Show more'}
+                                  </span>
+                                </>
+                              ) : (
+                                <span dangerouslySetInnerHTML={{ __html: r.text }} />
+                              )}
+                            </div>
+                            <div style={{ display: 'flex', gap: 4, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}>
                               {reactionEntries.map(([emoji, reactors]) => (
                                 <button key={emoji} onClick={() => toggleReaction(r.id, emoji)}
-                                  style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 99, border: `1.5px solid ${C.border}`, background: '#F8F9FC', fontSize: 13, cursor: 'pointer' }}>
+                                  style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 99, border: `1.5px solid ${C.border}`, background: '#fff', fontSize: 13, cursor: 'pointer' }}>
                                   <span>{emoji}</span>
                                   <span style={{ fontSize: 10, fontWeight: 700, color: C.secondary }}>{reactors.length}</span>
                                 </button>
                               ))}
                               <AddReactionBtn r={r} showEmojiPicker={showEmojiPicker} setShowEmojiPicker={setShowEmojiPicker} toggleReaction={toggleReaction} EMOJIS={EMOJIS} />
                             </div>
-                          )}
-                          {reactionEntries.length === 0 && <AddReactionBtn r={r} showEmojiPicker={showEmojiPicker} setShowEmojiPicker={setShowEmojiPicker} toggleReaction={toggleReaction} EMOJIS={EMOJIS} />}
+                          </div>
                         </div>
-                        <span style={{ fontSize: 12, color: C.secondary, flexShrink: 0, fontWeight: 500 }}>{r.author || 'User'}</span>
                       </div>
                     )
                   })}
