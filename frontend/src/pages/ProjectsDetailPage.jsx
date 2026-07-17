@@ -620,8 +620,8 @@ export default function ProjectsDetailPage() {
             </div>
             </div>
 
-            {/* MEETINGS + NOTES */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+            {/* ═══ MEETINGS + NOTES ═══ */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12, alignItems: 'start' }}>
               {/* MEETINGS */}
               <div id="section-meetings" style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '18px 20px' }}>
                 <SectionTitle icon={<CalendarIcon />} text={`Meetings (${totalMeetings})`} />
@@ -631,7 +631,7 @@ export default function ProjectsDetailPage() {
                   </button>
                 </div>
                 {showMeetingForm && (
-                  <form onSubmit={addMeeting} style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14, padding: '12px', background: '#F8F9FC', borderRadius: 8 }}>
+                  <form onSubmit={addMeeting} style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14, padding: '14px', background: '#F8F9FC', borderRadius: 8 }}>
                     <input value={meetingForm.title} onChange={e => setMeetingForm({ ...meetingForm, title: e.target.value })} placeholder="Meeting title *"
                       style={{ padding: '8px 10px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 12, outline: 'none', fontFamily: 'inherit' }} />
                     <input type="datetime-local" value={meetingForm.meeting_date} onChange={e => setMeetingForm({ ...meetingForm, meeting_date: e.target.value })}
@@ -646,40 +646,65 @@ export default function ProjectsDetailPage() {
                 {allMeetings.length === 0 ? (
                   <EmptyState icon={<CalendarIcon />} title="No meetings or requests" />
                 ) : (
-                  allMeetings.map(m => {
-                    const isReq = m._type === 'request'
-                    return (
-                      <div key={`${m._type}-${m.id}`} style={{ background: '#F8F9FC', borderRadius: 8, marginBottom: 6, overflow: 'hidden', borderLeft: `3px solid ${isReq ? '#D97706' : '#4F46E5'}`, cursor: 'pointer' }}
-                        onClick={() => navigate(`/meetings?id=${m.id}&type=${isReq ? 'request' : 'meeting'}`)}
-                        onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
-                        onMouseOut={e => e.currentTarget.style.background = '#F8F9FC'}>
-                        <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '8px 12px 4px' }}>
-                          <div style={{ width: 28, height: 28, borderRadius: 8, background: isReq ? '#FEF3C7' : '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <CalendarIcon />
+                  <>
+                    <div style={{ maxHeight: 480, overflowY: 'auto', paddingRight: 4 }}>
+                    {allMeetings.map(m => {
+                      const isReq = m._type === 'request'
+                      const status = (m.status || '').toLowerCase()
+                      const isCancelled = status === 'cancelled'
+                      const isConfirmed = status === 'confirmed'
+                      const isScheduled = status === 'scheduled'
+                      const isPending = status === 'pending'
+                      const statusColor = isConfirmed ? '#059669' : isCancelled ? '#DC2626' : isScheduled ? '#2563EB' : isPending ? '#D97706' : '#6B7280'
+                      const statusBg = isConfirmed ? '#D1FAE5' : isCancelled ? '#FEE2E2' : isScheduled ? '#DBEAFE' : isPending ? '#FEF3C7' : '#F3F4F6'
+                      const iconBg = isCancelled ? '#FEE2E2' : isReq ? '#FEF3C7' : '#DBEAFE'
+                      const iconColor = isCancelled ? '#DC2626' : isReq ? '#D97706' : '#2563EB'
+                      return (
+                        <div key={`${m._type}-${m.id}`} style={{
+                          display: 'flex', gap: 10, padding: '10px 12px', marginBottom: 6,
+                          background: isCancelled ? '#F9FAFB' : '#F8F9FC',
+                          borderRadius: 8, cursor: 'pointer', opacity: isCancelled ? 0.55 : 1,
+                          border: `1px solid ${isCancelled ? '#F3F4F6' : 'transparent'}`,
+                          transition: 'background 0.12s',
+                        }}
+                          onClick={() => navigate(`/meetings?id=${m.id}&type=${isReq ? 'request' : 'meeting'}`)}
+                          onMouseOver={e => { if (!isCancelled) e.currentTarget.style.background = '#EEF2FF' }}
+                          onMouseOut={e => { if (!isCancelled) e.currentTarget.style.background = '#F8F9FC' }}>
+                          {/* Left: color-coded calendar icon */}
+                          <div style={{ width: 32, height: 32, borderRadius: 8, background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={iconColor} strokeWidth="2"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                           </div>
+                          {/* Middle: title, date, by, status */}
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              <div style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>{m.title}</div>
-                              <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 4, background: isReq ? '#FEF3C7' : '#DBEAFE', color: isReq ? '#92400E' : '#1E40AF', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{isReq ? 'Request' : 'Meeting'}</span>
+                            <div title={m.title} style={{ fontSize: 13, fontWeight: 600, color: isCancelled ? '#9CA3AF' : '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.title}</div>
+                            <div style={{ display: 'flex', gap: 4, alignItems: 'center', marginTop: 2, flexWrap: 'wrap' }}>
+                              <span style={{ fontSize: 10, color: isCancelled ? '#D1D5DB' : C.muted }}>{m.meeting_date ? formatDateTime(m.meeting_date) : '—'}</span>
+                              {isReq && m.requested_by_name && <span style={{ fontSize: 10, color: '#9CA3AF' }}>· By {m.requested_by_name}</span>}
                             </div>
-                            <div style={{ fontSize: 10, color: C.muted }}>{m.meeting_date ? formatDateTime(m.meeting_date) : '—'} · {m.status}</div>
-                            {isReq && m.requested_by_name && <div style={{ fontSize: 10, color: '#9CA3AF' }}>By {m.requested_by_name}</div>}
+                            <div style={{ display: 'flex', gap: 4, marginTop: 3 }}>
+                              <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 4, background: statusBg, color: statusColor }}>{m.status || '—'}</span>
+                            </div>
+                          </div>
+                          {/* Right: badge + actions */}
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
+                            <span style={{ fontSize: 8, fontWeight: 800, padding: '2px 6px', borderRadius: 4, background: isReq ? '#FEF3C7' : '#DBEAFE', color: isReq ? '#92400E' : '#1E40AF', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{isReq ? 'Request' : 'Meeting'}</span>
+                            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                              {m.meeting_link && (
+                                <a href={m.meeting_link} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ fontSize: 10, color: '#fff', background: '#059669', padding: '2px 8px', borderRadius: 4, textDecoration: 'none', fontWeight: 600 }}>Join</a>
+                              )}
+                              {!isReq && (
+                                <span onClick={e => { e.stopPropagation(); /* reschedule handler */ }} style={{ fontSize: 10, color: '#5B21B6', background: '#EEF2FF', border: 'none', borderRadius: 4, padding: '2px 8px', cursor: 'pointer', fontWeight: 600 }}>Reschedule</span>
+                              )}
+                              {isReq && m.meeting_notes && (
+                                <span style={{ fontSize: 9, color: '#059669', fontWeight: 600 }}>Has Notes</span>
+                              )}
+                            </div>
                           </div>
                         </div>
-                        <div style={{ display: 'flex', gap: 4, padding: '4px 12px 8px 48px', flexWrap: 'wrap' }}>
-                          {m.meeting_link && (
-                            <a href={m.meeting_link} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#fff', background: '#059669', padding: '3px 10px', borderRadius: 5, textDecoration: 'none', fontWeight: 600 }}>Join</a>
-                          )}
-                          {!isReq && (
-                            <button style={{ fontSize: 11, color: '#5B21B6', background: '#EEF2FF', border: 'none', borderRadius: 5, padding: '3px 10px', cursor: 'pointer', fontWeight: 600 }}>Reschedule</button>
-                          )}
-                          {isReq && m.meeting_notes && (
-                            <span style={{ fontSize: 10, color: '#059669', fontWeight: 600 }}>Has Notes</span>
-                          )}
-                        </div>
-                      </div>
-                    )
-                  })
+                      )
+                    })}
+                    </div>
+                  </>
                 )}
               </div>
               {/* NOTES */}
@@ -694,12 +719,14 @@ export default function ProjectsDetailPage() {
                 {(!notes || notes.length === 0) ? (
                   <EmptyState icon={<NoteIcon />} title="No notes." />
                 ) : (
-                  notes.map(n => (
-                    <div key={n.id} style={{ padding: '12px 16px', background: '#F8F9FC', borderRadius: 8, fontSize: 14, color: '#374151', marginBottom: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span>{n.content}</span>
-                      <span style={{ fontSize: 11, color: C.muted, flexShrink: 0, marginLeft: 12 }}>{formatDate(n.created_at)}</span>
+                  <div style={{ maxHeight: 440, overflowY: 'auto', paddingRight: 4 }}>
+                  {notes.map(n => (
+                    <div key={n.id} style={{ padding: '10px 14px', background: '#F8F9FC', borderRadius: 8, marginBottom: 6 }}>
+                      <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.5 }}>{n.content}</div>
+                      <div style={{ fontSize: 10, color: C.muted, marginTop: 4 }}>{formatDateTime(n.created_at)}</div>
                     </div>
-                  ))
+                  ))}
+                  </div>
                 )}
               </div>
             </div>
