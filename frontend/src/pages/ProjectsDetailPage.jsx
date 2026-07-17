@@ -546,7 +546,7 @@ export default function ProjectsDetailPage() {
                   <option value="working">Working Report</option>
                   <option value="final">Final Report</option>
                 </select>
-                <input ref={fileRef} type="file" onChange={e => { const f = e.target.files?.[0]; if (!f) return; if (uploadCategory === 'document') { setUploading(true); const fd = new FormData(); fd.append('file', f); api.post(`/api/projects/${id}/documents`, fd).then(fetchData).catch(() => toast('Upload failed', 'error')).finally(() => { setUploading(false); e.target.value = '' }) } else { uploadReport(f, uploadCategory) } }} style={{ display: 'none' }} />
+                <input ref={fileRef} type="file" onChange={e => { if (!e.target.files?.[0]) return; if (uploadCategory === 'document') { setUploading(true); const fd = new FormData(); fd.append('file', e.target.files[0]); api.post(`/api/projects/${id}/documents`, fd).then(fetchData).catch(() => toast('Upload failed', 'error')).finally(() => { setUploading(false); e.target.value = '' }) } else { uploadReport(e, uploadCategory) } }} style={{ display: 'none' }} />
                 <button onClick={() => fileRef.current?.click()} disabled={uploading || reportUploading}
                   style={{ padding: '8px 16px', border: 'none', borderRadius: 8, background: C.primary, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, opacity: uploading || reportUploading ? 0.5 : 1 }}>
                   <UploadIcon /> {uploading || reportUploading ? 'Uploading...' : 'Upload'}
