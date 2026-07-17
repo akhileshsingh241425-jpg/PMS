@@ -275,6 +275,15 @@ export default function ProjectsDetailPage() {
     try { await api.delete(`/api/projects/team/${tid}`); fetchData() } catch (e) { toast('Failed', 'error') }
   }
 
+  const [vulnerabilities, setVulnerabilities] = useState([])
+  const [vulnFilterSev, setVulnFilterSev] = useState('')
+  const [vulnFilterStat, setVulnFilterStat] = useState('')
+  const [showVulnForm, setShowVulnForm] = useState(false)
+  const [vulnForm, setVulnForm] = useState({ title: '', severity: 'Medium', status: 'Open', date_found: new Date().toISOString().split('T')[0], fix_deadline: '', sla_days: '30' })
+  const [vulnSaving, setVulnSaving] = useState(false)
+  const loadVulns = () => { api.get(`/api/vulnerabilities?project_id=${id}`).then(r => setVulnerabilities(r.data.vulnerabilities)).catch(() => {}) }
+  useEffect(() => { loadVulns() }, [id])
+
   const formatDate = (d) => { if (!d) return '—'; return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) }
   const formatDateTime = (d) => { if (!d) return ''; const dt = new Date(d); return formatDate(d) + ' ' + dt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) }
 
@@ -295,15 +304,6 @@ export default function ProjectsDetailPage() {
     ...(meeting_requests || []).map(mr => ({ ...mr, _type: 'request', title: mr.agenda || 'Meeting Request', meeting_date: mr.preferred_date || mr.confirmed_date })),
   ].sort((a, b) => new Date(b.meeting_date || b.created_at) - new Date(a.meeting_date || a.created_at))
   const totalMeetings = allMeetings.length
-  const [vulnerabilities, setVulnerabilities] = useState([])
-  const [vulnFilterSev, setVulnFilterSev] = useState('')
-  const [vulnFilterStat, setVulnFilterStat] = useState('')
-  const [showVulnForm, setShowVulnForm] = useState(false)
-  const [vulnForm, setVulnForm] = useState({ title: '', severity: 'Medium', status: 'Open', date_found: new Date().toISOString().split('T')[0], fix_deadline: '', sla_days: '30' })
-  const [vulnSaving, setVulnSaving] = useState(false)
-  const loadVulns = () => { api.get(`/api/vulnerabilities?project_id=${id}`).then(r => setVulnerabilities(r.data.vulnerabilities)).catch(() => {}) }
-  useEffect(() => { loadVulns() }, [id])
-
   const vulnOverdueCount = vulnerabilities.filter(v => v.status !== 'Patched' && v.fix_deadline && new Date(v.fix_deadline) < new Date()).length
 
   const timelineEvents = [
