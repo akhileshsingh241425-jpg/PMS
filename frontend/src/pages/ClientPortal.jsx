@@ -360,11 +360,13 @@ function ProjectDetailView({ projectId, user, onBack, onRefresh }) {
   const [showRevForm, setShowRevForm] = useState(false)
   const [revDocId, setRevDocId] = useState(null)
   const [revComment, setRevComment] = useState('')
+  const [vulns, setVulns] = useState([])
   const fileRef = useRef(null)
   const toast = useToast()
 
-  useEffect(() => { load() }, [projectId])
+  useEffect(() => { load(); loadVulns() }, [projectId])
   const load = async () => { try { const r = await api.get(`/api/portal/projects/${projectId}`, authHeader()); setData(r.data) } catch(e){} }
+  const loadVulns = async () => { try { const r = await api.get(`/api/portal/vulnerabilities?project_id=${projectId}`, authHeader()); setVulns(r.data.vulnerabilities) } catch(e){} }
 
   const addNote = async (e) => { e.preventDefault(); if(!noteText.trim()) return; setSending(true); try { await api.post(`/api/portal/projects/${projectId}/notes`, { content: noteText }, authHeader()); setNoteText(''); load() } catch(e){ toast(e.response?.data?.error||'Failed', 'error') } finally{setSending(false)} }
 
@@ -557,6 +559,51 @@ function ProjectDetailView({ projectId, user, onBack, onRefresh }) {
               <p style={{ textAlign: 'center', fontSize: '13px', color: '#94A3B8', padding: '20px 0', margin: 0 }}>No messages yet</p>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Vulnerabilities */}
+      <div style={{ background: '#fff', borderRadius: '14px', border: '1px solid #E2E8F0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+        <div style={{ padding: '18px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Shield className="w-4 h-4" style={{ color: '#DC2626' }} />
+          <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', margin: 0 }}>Vulnerabilities ({vulns.length})</h3>
+        </div>
+        <div style={{ padding: '16px 24px', overflowX: 'auto' }}>
+          {vulns.length === 0 ? (
+            <p style={{ textAlign: 'center', fontSize: '13px', color: '#94A3B8', padding: '20px 0', margin: 0 }}>No vulnerabilities reported for this project</p>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #E2E8F0' }}>
+                  <th style={{ textAlign: 'left', padding: '8px 10px', fontWeight: 600, color: '#64748B', fontSize: '11px', textTransform: 'uppercase' }}>Title</th>
+                  <th style={{ textAlign: 'center', padding: '8px 10px', fontWeight: 600, color: '#64748B', fontSize: '11px', textTransform: 'uppercase' }}>Severity</th>
+                  <th style={{ textAlign: 'center', padding: '8px 10px', fontWeight: 600, color: '#64748B', fontSize: '11px', textTransform: 'uppercase' }}>Status</th>
+                  <th style={{ textAlign: 'center', padding: '8px 10px', fontWeight: 600, color: '#64748B', fontSize: '11px', textTransform: 'uppercase' }}>Date Found</th>
+                  <th style={{ textAlign: 'center', padding: '8px 10px', fontWeight: 600, color: '#64748B', fontSize: '11px', textTransform: 'uppercase' }}>Fix Deadline</th>
+                </tr>
+              </thead>
+              <tbody>
+                {vulns.map(v => {
+                  const sc = SEV_COLORS[v.severity] || SEV_COLORS.Medium
+                  const stc = STATUS_COLORS[v.status] || STATUS_COLORS.Open
+                  const isOverdue = v.status !== 'Patched' && v.fix_deadline && new Date(v.fix_deadline) < new Date()
+                  return (
+                    <tr key={v.id} style={{ borderBottom: '1px solid #F1F5F9', background: isOverdue ? '#FFF5F5' : 'transparent' }}>
+                      <td style={{ padding: '12px 10px', fontWeight: 500, color: '#0F172A', maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={v.title}>{v.title}</td>
+                      <td style={{ textAlign: 'center', padding: '12px 10px' }}>
+                        <span style={{ background: sc.bg, color: sc.text, padding: '2px 10px', borderRadius: '4px', fontWeight: 600, fontSize: '11px' }}>{v.severity}</span>
+                      </td>
+                      <td style={{ textAlign: 'center', padding: '12px 10px' }}>
+                        <span style={{ background: stc.bg, color: stc.text, padding: '2px 10px', borderRadius: '4px', fontWeight: 600, fontSize: '11px' }}>{v.status}</span>
+                      </td>
+                      <td style={{ textAlign: 'center', padding: '12px 10px', color: '#64748B', fontSize: '12px' }}>{v.date_found?.slice(0, 10) || '—'}</td>
+                      <td style={{ textAlign: 'center', padding: '12px 10px', color: isOverdue ? '#DC2626' : '#64748B', fontWeight: isOverdue ? 700 : 400, fontSize: '12px' }}>{v.fix_deadline?.slice(0, 10) || '—'}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>

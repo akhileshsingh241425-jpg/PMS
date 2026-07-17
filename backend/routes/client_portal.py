@@ -340,5 +340,8 @@ def raise_query(user):
 @portal_bp.route('/vulnerabilities', methods=['GET'])
 @client_auth
 def client_vulnerabilities(user):
-    vulns = Vulnerability.query.filter_by(account_id=user.account_id).order_by(Vulnerability.created_at.desc()).all()
+    query = Vulnerability.query.filter_by(account_id=user.account_id)
+    if pid := request.args.get('project_id'):
+        query = query.filter_by(project_id=int(pid))
+    vulns = query.order_by(Vulnerability.created_at.desc()).all()
     return jsonify({'vulnerabilities': [v.to_dict() for v in vulns]})
