@@ -239,6 +239,26 @@ export default function ProjectsDetailPage() {
     catch (e) { toast('Failed', 'error') }
   }
 
+  const addVuln = async (e) => {
+    e.preventDefault(); if (!vulnForm.title.trim()) return toast('Title required', 'error')
+    setVulnSaving(true)
+    try {
+      const payload = { ...vulnForm, project_id: parseInt(id), account_id: p.account_id }
+      if (payload.date_found) payload.date_found = payload.date_found + 'T00:00:00'
+      if (payload.fix_deadline) payload.fix_deadline = payload.fix_deadline + 'T00:00:00'
+      const slaDays = parseInt(payload.sla_days)
+      delete payload.sla_days
+      if (!payload.fix_deadline && !isNaN(slaDays) && slaDays > 0) payload.sla_days = slaDays
+      await api.post('/api/vulnerabilities', payload)
+      setVulnForm({ title: '', severity: 'Medium', status: 'Open', date_found: new Date().toISOString().split('T')[0], fix_deadline: '', sla_days: '30' })
+      setShowVulnForm(false); loadVulns(); toast('Vulnerability added')
+    } catch (e) { toast('Failed', 'error') } finally { setVulnSaving(false) }
+  }
+
+  const markVulnPatched = async (vid) => {
+    try { await api.post(`/api/vulnerabilities/${vid}/patch`); loadVulns() } catch (e) { toast('Failed', 'error') }
+  }
+
   const addNote = async (e) => {
     e.preventDefault(); if (!noteText.trim()) return
     try { await api.post(`/api/projects/${id}/notes`, { content: noteText }); setNoteText(''); fetchData() } catch (e) { toast('Failed', 'error') }
@@ -275,6 +295,16 @@ export default function ProjectsDetailPage() {
     ...(meeting_requests || []).map(mr => ({ ...mr, _type: 'request', title: mr.agenda || 'Meeting Request', meeting_date: mr.preferred_date || mr.confirmed_date })),
   ].sort((a, b) => new Date(b.meeting_date || b.created_at) - new Date(a.meeting_date || a.created_at))
   const totalMeetings = allMeetings.length
+  const [vulnerabilities, setVulnerabilities] = useState([])
+  const [vulnFilterSev, setVulnFilterSev] = useState('')
+  const [vulnFilterStat, setVulnFilterStat] = useState('')
+  const [showVulnForm, setShowVulnForm] = useState(false)
+  const [vulnForm, setVulnForm] = useState({ title: '', severity: 'Medium', status: 'Open', date_found: new Date().toISOString().split('T')[0], fix_deadline: '', sla_days: '30' })
+  const [vulnSaving, setVulnSaving] = useState(false)
+  const loadVulns = () => { api.get(`/api/vulnerabilities?project_id=${id}`).then(r => setVulnerabilities(r.data.vulnerabilities)).catch(() => {}) }
+  useEffect(() => { loadVulns() }, [id])
+
+  const vulnOverdueCount = vulnerabilities.filter(v => v.status !== 'Patched' && v.fix_deadline && new Date(v.fix_deadline) < new Date()).length
 
   const timelineEvents = [
     { date: p.created_at, label: 'Project Created', user: p.creator_name || 'System' },
@@ -342,12 +372,13 @@ export default function ProjectsDetailPage() {
         </div>
 
         {/* ═══ KPI CARDS ═══ */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12, marginBottom: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 12, marginBottom: 16 }}>
           <KPICard icon={<MoneyIcon />} bg="#ECFDF5" color="#059669" label="Total Value" value={p.total_value ? `₹${(p.total_value / 100000).toFixed(1)}L` : '—'} />
           <KPICard icon={<CheckCircleIcon />} bg="#F5F3FF" color={C.primary} label="Open Tasks" value={`${openTasks}/${tasks.length}`} onClick={() => document.getElementById('section-tasks')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />
           <KPICard icon={<UsersIcon />} bg="#EEF2FF" color="#4F46E5" label="Team" value={(team || []).length} onClick={() => document.getElementById('section-team')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />
           <KPICard icon={<PaperclipIcon />} bg="#FDF2F8" color="#DB2777" label="Documents" value={totalDocs} onClick={() => document.getElementById('section-documents')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />
           <KPICard icon={<CalendarIcon />} bg="#FFF7ED" color="#D97706" label="Meetings" value={totalMeetings} onClick={() => document.getElementById('section-meetings')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />
+          <KPICard icon={<ShieldExclamationIcon />} bg={vulnOverdueCount > 0 ? '#FEF2F2' : '#F5F3FF'} color={vulnOverdueCount > 0 ? '#DC2626' : C.primary} label="Vulnerabilities" value={vulnerabilities.length} onClick={() => document.getElementById('section-vulnerabilities')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />
           <KPICard icon={<TagIcon />} bg="#ECFDF5" color="#059669" label="Stage" value={getStageGroup(p.stage)} />
         </div>
 
@@ -371,18 +402,18 @@ export default function ProjectsDetailPage() {
         <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '16px 20px', marginBottom: 16 }}>
           <SectionTitle icon={<BriefcaseIcon />} text="Project Information" />
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginTop: 12 }}>
-            <InfoField icon={<BuildingIcon />} label="Account" value={p.account_name || '—'} />
-            <InfoField icon={<PersonIcon />} label="Project Manager" value={p.pm_name || '—'} />
-            <InfoField icon={<TagIcon />} label="Service" value={p.service_type || '—'} />
-            <InfoField icon={<CalendarIcon />} label="Start Date" value={formatDate(p.start_date)} />
-            <InfoField icon={<TargetIcon />} label="Target Date" value={formatDate(p.target_date)} />
-            <InfoField icon={<CalendarIcon />} label="End Date" value={formatDate(p.actual_end_date)} />
-            <InfoField icon={<MoneyIcon />} label="Total Value" value={p.total_value ? `₹${p.total_value.toLocaleString()}` : '—'} green />
+            <InfoField icon={<BuildingIcon />} label="Account" value={p.account_name || '—'} empty={!p.account_name} />
+            <InfoField icon={<PersonIcon />} label="Project Manager" value={p.pm_name || '—'} empty={!p.pm_name} />
+            <InfoField icon={<TagIcon />} label="Service" value={p.service_type || '—'} empty={!p.service_type} />
+            <InfoField icon={<CalendarIcon />} label="Start Date" value={formatDate(p.start_date)} empty={!p.start_date} />
+            <InfoField icon={<TargetIcon />} label="Target Date" value={formatDate(p.target_date)} empty={!p.target_date} />
+            <InfoField icon={<CalendarIcon />} label="End Date" value={formatDate(p.actual_end_date)} empty={!p.actual_end_date} />
+            <InfoField icon={<MoneyIcon />} label="Total Value" value={p.total_value ? `₹${p.total_value.toLocaleString()}` : '—'} empty={!p.total_value} green />
             <InfoField icon={<ShieldIcon />} label="Stage Group" value={getStageGroup(p.stage)} badge />
             <InfoField icon={<CheckCircleIcon />} label="Client Review" value={p.is_client_review_enabled ? 'Enabled' : 'Off'} />
             <InfoField icon={<UsersIcon />} label="Team Size" value={p.team_count || '0'} />
-            <InfoField icon={<PersonIcon />} label="Created By" value={p.creator_name || '—'} />
-            <InfoField icon={<CalendarIcon />} label="Updated" value={formatDate(p.updated_at)} />
+            <InfoField icon={<PersonIcon />} label="Created By" value={p.creator_name || '—'} empty={!p.creator_name} />
+            <InfoField icon={<CalendarIcon />} label="Updated" value={formatDate(p.updated_at)} empty={!p.updated_at} />
           </div>
         </div>
 
@@ -735,6 +766,103 @@ export default function ProjectsDetailPage() {
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* ═══ VULNERABILITIES ═══ */}
+            <div id="section-vulnerabilities" style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '18px 20px', marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <SectionTitle icon={<ShieldExclamationIcon size={16} />} text={`Vulnerabilities (${vulnerabilities.length})`} />
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  {vulnOverdueCount > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: '#DC2626', background: '#FEE2E2', padding: '3px 10px', borderRadius: 6 }}>{vulnOverdueCount} overdue</span>}
+                  <a href="/vulnerabilities" style={{ fontSize: 11, color: C.primary, fontWeight: 600, textDecoration: 'none' }}>View in Vulnerability Dashboard →</a>
+                  <button onClick={() => setShowVulnForm(!showVulnForm)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: C.primary, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                    <PlusIcon /> Add Vulnerability
+                  </button>
+                </div>
+              </div>
+              {showVulnForm && (
+                <form onSubmit={addVuln} style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14, padding: '14px', background: '#F8F9FC', borderRadius: 8 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                    <input value={vulnForm.title} onChange={e => setVulnForm({ ...vulnForm, title: e.target.value })} placeholder="Vulnerability title *"
+                      style={{ padding: '8px 10px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 12, outline: 'none', fontFamily: 'inherit' }} />
+                    <select value={vulnForm.severity} onChange={e => setVulnForm({ ...vulnForm, severity: e.target.value })}
+                      style={{ padding: '8px 10px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 12, outline: 'none', background: C.card, fontFamily: 'inherit' }}>
+                      <option>Critical</option><option>High</option><option>Medium</option><option>Low</option>
+                    </select>
+                    <select value={vulnForm.status} onChange={e => setVulnForm({ ...vulnForm, status: e.target.value })}
+                      style={{ padding: '8px 10px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 12, outline: 'none', background: C.card, fontFamily: 'inherit' }}>
+                      <option>Open</option><option>In Progress</option><option>Patched</option>
+                    </select>
+                    <input type="date" value={vulnForm.date_found} onChange={e => setVulnForm({ ...vulnForm, date_found: e.target.value })}
+                      style={{ padding: '8px 10px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 12, outline: 'none' }} />
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <input type="date" value={vulnForm.fix_deadline} onChange={e => setVulnForm({ ...vulnForm, fix_deadline: e.target.value })} placeholder="Fix deadline"
+                        style={{ flex: 1, padding: '8px 10px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 12, outline: 'none' }} />
+                      <input type="number" value={vulnForm.sla_days} onChange={e => setVulnForm({ ...vulnForm, sla_days: e.target.value })} placeholder="SLA"
+                        style={{ width: 70, padding: '8px 10px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 12, outline: 'none' }} />
+                    </div>
+                    <button type="submit" disabled={vulnSaving || !vulnForm.title.trim()} style={{ background: C.primary, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: vulnSaving || !vulnForm.title.trim() ? 0.5 : 1 }}>
+                      {vulnSaving ? 'Saving...' : 'Add'}
+                    </button>
+                  </div>
+                </form>
+              )}
+              <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                <select value={vulnFilterSev} onChange={e => setVulnFilterSev(e.target.value)} style={{ padding: '6px 10px', border: `1.5px solid ${C.border}`, borderRadius: 6, fontSize: 11, outline: 'none', background: C.card }}>
+                  <option value="">All Severities</option>
+                  <option>Critical</option><option>High</option><option>Medium</option><option>Low</option>
+                </select>
+                <select value={vulnFilterStat} onChange={e => setVulnFilterStat(e.target.value)} style={{ padding: '6px 10px', border: `1.5px solid ${C.border}`, borderRadius: 6, fontSize: 11, outline: 'none', background: C.card }}>
+                  <option value="">All Statuses</option>
+                  <option>Open</option><option>In Progress</option><option>Patched</option>
+                </select>
+              </div>
+              {vulnerabilities.length === 0 ? (
+                <EmptyState icon={<ShieldExclamationIcon size={24} />} title="No vulnerabilities recorded" sub="Add a vulnerability using the button above" />
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                    <thead>
+                      <tr style={{ borderBottom: `2px solid ${C.border}` }}>
+                        <th style={{ textAlign: 'left', padding: '8px 10px', fontWeight: 700, color: '#6B7280', fontSize: 11, textTransform: 'uppercase' }}>Title</th>
+                        <th style={{ textAlign: 'center', padding: '8px 10px', fontWeight: 700, color: '#6B7280', fontSize: 11, textTransform: 'uppercase' }}>Severity</th>
+                        <th style={{ textAlign: 'center', padding: '8px 10px', fontWeight: 700, color: '#6B7280', fontSize: 11, textTransform: 'uppercase' }}>Status</th>
+                        <th style={{ textAlign: 'center', padding: '8px 10px', fontWeight: 700, color: '#6B7280', fontSize: 11, textTransform: 'uppercase' }}>Date Found</th>
+                        <th style={{ textAlign: 'center', padding: '8px 10px', fontWeight: 700, color: '#6B7280', fontSize: 11, textTransform: 'uppercase' }}>Fix Deadline</th>
+                        <th style={{ textAlign: 'center', padding: '8px 10px', fontWeight: 700, color: '#6B7280', fontSize: 11, textTransform: 'uppercase' }}>Patched</th>
+                        <th style={{ textAlign: 'center', padding: '8px 10px' }}>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {vulnerabilities.filter(v => {
+                        if (vulnFilterSev && v.severity !== vulnFilterSev) return false
+                        if (vulnFilterStat && v.status !== vulnFilterStat) return false
+                        return true
+                      }).map(v => {
+                        const sevColors = { Critical: { bg: '#FEE2E2', text: '#991B1B' }, High: { bg: '#FFF7ED', text: '#9A3412' }, Medium: { bg: '#FEF3C7', text: '#92400E' }, Low: { bg: '#DBEAFE', text: '#1E40AF' } }
+                        const statColors = { Open: { bg: '#FEF3C7', text: '#92400E' }, 'In Progress': { bg: '#DBEAFE', text: '#1E40AF' }, Patched: { bg: '#D1FAE5', text: '#065F46' } }
+                        const sc = sevColors[v.severity] || sevColors.Medium
+                        const stc = statColors[v.status] || statColors.Open
+                        return (
+                          <tr key={v.id} style={{ borderBottom: `1px solid #F3F4F6`, background: v.overdue ? '#FFF5F5' : 'transparent' }}>
+                            <td style={{ padding: '10px', maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 500 }} title={v.title}>{v.title}</td>
+                            <td style={{ textAlign: 'center', padding: 10 }}><span style={{ background: sc.bg, color: sc.text, padding: '2px 10px', borderRadius: 4, fontWeight: 700, fontSize: 11 }}>{v.severity}</span></td>
+                            <td style={{ textAlign: 'center', padding: 10 }}><span style={{ background: stc.bg, color: stc.text, padding: '2px 10px', borderRadius: 4, fontWeight: 600, fontSize: 11 }}>{v.status}</span></td>
+                            <td style={{ textAlign: 'center', padding: 10, color: '#6B7280' }}>{formatDate(v.date_found)}</td>
+                            <td style={{ textAlign: 'center', padding: 10, color: v.overdue ? '#DC2626' : '#6B7280', fontWeight: v.overdue ? 700 : 400 }}>{formatDate(v.fix_deadline)}</td>
+                            <td style={{ textAlign: 'center', padding: 10, color: '#6B7280' }}>{formatDate(v.date_patched)}</td>
+                            <td style={{ textAlign: 'center', padding: 10 }}>
+                              {v.status !== 'Patched' && (
+                                <button onClick={() => markVulnPatched(v.id)} style={{ padding: '4px 10px', background: '#D1FAE5', color: '#065F46', border: 'none', borderRadius: 4, fontSize: 10, fontWeight: 700, cursor: 'pointer' }}>Mark Patched</button>
+                              )}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
 
             {/* FINDING QUERIES */}
@@ -1283,8 +1411,12 @@ function TagIcon() {
   return <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" /><path d="M6 6h.008v.008H6V6z" /></svg>
 }
 
-function ShieldIcon() {
-  return <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+function ShieldIcon({ size = 16 }) {
+  return <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+}
+
+function ShieldExclamationIcon({ size = 16 }) {
+  return <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 9v3.75m0-10.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.75c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285zM12 16.5h.008v.008H12v-.008z" /></svg>
 }
 
 function FileIcon() {
