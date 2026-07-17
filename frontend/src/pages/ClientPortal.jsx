@@ -6,7 +6,7 @@ import {
   Building2, FileText, MessageSquare, Send, Calendar, LogOut,
   ChevronLeft, Upload, HelpCircle, User, Briefcase, Shield,
   Clock, CheckCircle, Bell, AlertCircle, Mail, Phone, ArrowRight,
-  Plus, X, Download, Eye, Paperclip, ExternalLink, Edit3
+  Plus, X, Download, Eye, Paperclip, ExternalLink, Edit3, AlertTriangle
 } from 'lucide-react'
 
 const getToken = () => localStorage.getItem('client_token')
@@ -20,6 +20,17 @@ const STAGE_COLORS = {
   'Completed': { bg: '#D1FAE5', text: '#065F46', dot: '#22C55E' },
   'Closed': { bg: '#F3F4F6', text: '#6B7280', dot: '#9CA3AF' },
   'On Hold': { bg: '#FEF3C7', text: '#92400E', dot: '#F59E0B' },
+}
+const SEV_COLORS = {
+  Critical: { bg: '#FEE2E2', text: '#991B1B', bar: '#DC2626' },
+  High: { bg: '#FFF7ED', text: '#9A3412', bar: '#F97316' },
+  Medium: { bg: '#FEF3C7', text: '#92400E', bar: '#F59E0B' },
+  Low: { bg: '#DBEAFE', text: '#1E40AF', bar: '#3B82F6' },
+}
+const STATUS_COLORS = {
+  Open: { bg: '#FEF3C7', text: '#92400E' },
+  'In Progress': { bg: '#DBEAFE', text: '#1E40AF' },
+  Patched: { bg: '#D1FAE5', text: '#065F46' },
 }
 
 // ═══ CLIENT LOGIN ═══
@@ -130,13 +141,14 @@ export function ClientPortalDashboard() {
   const [selectedMeeting, setSelectedMeeting] = useState(null)
   const [meetings, setMeetings] = useState([])
   const [queries, setQueries] = useState([])
+  const [vulnerabilities, setVulnerabilities] = useState([])
   const toast = useToast()
   const navigate = useNavigate()
 
   useEffect(() => {
     if (!getToken()) { window.location.href = '/client-login'; return }
     api.get('/api/portal/me', authHeader()).then(r => { setUser(r.data.user); localStorage.setItem('client_user', JSON.stringify(r.data.user)) }).catch(() => logout())
-    loadDashboard(); loadProjects(); loadMeetings(); loadQueries()
+    loadDashboard(); loadProjects(); loadMeetings(); loadQueries(); loadVulnerabilities()
   }, [])
 
   const handleErr = (e) => { if (e.response?.status === 401) logout() }
@@ -144,12 +156,14 @@ export function ClientPortalDashboard() {
   const loadProjects = async () => { try { const r = await api.get('/api/portal/projects', authHeader()); setProjects(r.data.projects) } catch(e) { handleErr(e) } }
   const loadMeetings = async () => { try { const r = await api.get('/api/portal/meetings', authHeader()); setMeetings(r.data.meetings) } catch(e) { handleErr(e) } }
   const loadQueries = async () => { try { const r = await api.get('/api/portal/queries', authHeader()); setQueries(r.data.queries) } catch(e) { handleErr(e) } }
+  const loadVulnerabilities = async () => { try { const r = await api.get('/api/portal/vulnerabilities', authHeader()); setVulnerabilities(r.data.vulnerabilities) } catch(e) { handleErr(e) } }
 
   const logout = () => { localStorage.removeItem('client_token'); localStorage.removeItem('client_user'); navigate('/client-login') }
 
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: Building2 },
     { id: 'projects', label: 'Projects', icon: Briefcase },
+    { id: 'vulnerabilities', label: 'Vulnerabilities', icon: AlertTriangle },
     { id: 'meetings', label: 'Meetings', icon: Calendar },
     { id: 'queries', label: 'Queries', icon: HelpCircle },
     { id: 'profile', label: 'Profile', icon: User },
@@ -323,6 +337,9 @@ export function ClientPortalDashboard() {
         {/* MEETINGS */}
         {tab === 'meetings' && !selectedMeeting && <MeetingsView meetings={meetings} projects={projects} user={user} onRefresh={loadMeetings} onSelect={setSelectedMeeting} />}
         {tab === 'meetings' && selectedMeeting && <MeetingDetailView meetingId={selectedMeeting.id} user={user} onBack={() => setSelectedMeeting(null)} onRefresh={loadMeetings} />}
+
+        {/* VULNERABILITIES */}
+        {tab === 'vulnerabilities' && <VulnerabilitiesView vulnerabilities={vulnerabilities} />}
 
         {/* QUERIES */}
         {tab === 'queries' && <QueriesView queries={queries} projects={projects} user={user} onRefresh={loadQueries} />}
@@ -1086,6 +1103,79 @@ function ProfileView({ user, onUpdate }) {
           </button>
         </div>
       </form>
+    </div>
+  )
+}
+
+// ═══ VULNERABILITIES VIEW ═══
+function VulnerabilitiesView({ vulnerabilities }) {
+  const [filterSev, setFilterSev] = useState('')
+  const [filterStat, setFilterStat] = useState('')
+  const fmt = d => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
+
+  const filtered = vulnerabilities.filter(v => {
+    if (filterSev && v.severity !== filterSev) return false
+    if (filterStat && v.status !== filterStat) return false
+    return true
+  })
+
+  return (
+    <div>
+      <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#0F172A', marginBottom: 4 }}>Vulnerabilities</h2>
+      <p style={{ fontSize: '13px', color: '#64748B', marginBottom: 20 }}>Track and review remediation status for your account</p>
+
+      <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+        <select value={filterSev} onChange={e => setFilterSev(e.target.value)} style={{ padding: '8px 12px', border: '1.5px solid #E2E8F0', borderRadius: 8, fontSize: 12, outline: 'none', background: '#fff' }}>
+          <option value="">All Severities</option>
+          <option>Critical</option><option>High</option><option>Medium</option><option>Low</option>
+        </select>
+        <select value={filterStat} onChange={e => setFilterStat(e.target.value)} style={{ padding: '8px 12px', border: '1.5px solid #E2E8F0', borderRadius: 8, fontSize: 12, outline: 'none', background: '#fff' }}>
+          <option value="">All Statuses</option>
+          <option>Open</option><option>In Progress</option><option>Patched</option>
+        </select>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #E2E8F0', padding: '60px 20px', textAlign: 'center' }}>
+          <Shield className="w-12 h-12" style={{ color: '#CBD5E1', margin: '0 auto 12px' }} />
+          <p style={{ fontSize: '15px', fontWeight: 600, color: '#64748B', margin: '0 0 4px' }}>No vulnerabilities found</p>
+        </div>
+      ) : (
+        <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #E2E8F0', overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid #E2E8F0', background: '#F8FAFC' }}>
+                <th style={{ textAlign: 'left', padding: '12px 16px', fontWeight: 600, color: '#64748B', fontSize: 11, textTransform: 'uppercase' }}>Title</th>
+                <th style={{ textAlign: 'center', padding: '12px 16px', fontWeight: 600, color: '#64748B', fontSize: 11, textTransform: 'uppercase' }}>Severity</th>
+                <th style={{ textAlign: 'center', padding: '12px 16px', fontWeight: 600, color: '#64748B', fontSize: 11, textTransform: 'uppercase' }}>Status</th>
+                <th style={{ textAlign: 'center', padding: '12px 16px', fontWeight: 600, color: '#64748B', fontSize: 11, textTransform: 'uppercase' }}>Date Found</th>
+                <th style={{ textAlign: 'center', padding: '12px 16px', fontWeight: 600, color: '#64748B', fontSize: 11, textTransform: 'uppercase' }}>Fix Deadline</th>
+                <th style={{ textAlign: 'center', padding: '12px 16px', fontWeight: 600, color: '#64748B', fontSize: 11, textTransform: 'uppercase' }}>Date Patched</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(v => {
+                const sc = SEV_COLORS[v.severity] || SEV_COLORS.Medium
+                const stc = STATUS_COLORS[v.status] || STATUS_COLORS.Open
+                return (
+                  <tr key={v.id} style={{ borderBottom: '1px solid #F1F5F9', background: v.overdue ? '#FFF5F5' : 'transparent' }}>
+                    <td style={{ padding: '12px 16px', fontWeight: 500, color: '#0F172A', maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={v.title}>{v.title}</td>
+                    <td style={{ textAlign: 'center', padding: '12px 16px' }}>
+                      <span style={{ background: sc.bg, color: sc.text, padding: '2px 10px', borderRadius: 4, fontWeight: 700, fontSize: 11 }}>{v.severity}</span>
+                    </td>
+                    <td style={{ textAlign: 'center', padding: '12px 16px' }}>
+                      <span style={{ background: stc.bg, color: stc.text, padding: '2px 10px', borderRadius: 4, fontWeight: 600, fontSize: 11 }}>{v.status}</span>
+                    </td>
+                    <td style={{ textAlign: 'center', padding: '12px 16px', color: '#64748B' }}>{fmt(v.date_found)}</td>
+                    <td style={{ textAlign: 'center', padding: '12px 16px', color: v.overdue ? '#DC2626' : '#64748B', fontWeight: v.overdue ? 700 : 400 }}>{fmt(v.fix_deadline)}</td>
+                    <td style={{ textAlign: 'center', padding: '12px 16px', color: '#64748B' }}>{fmt(v.date_patched)}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
 }

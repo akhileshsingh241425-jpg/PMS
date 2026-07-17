@@ -3,7 +3,7 @@ import jwt, os
 from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify, current_app
 from functools import wraps
-from models import db, User, Account, Project, ProjectDocument, MeetingRequestDocument, Note
+from models import db, User, Account, Project, ProjectDocument, MeetingRequestDocument, Note, Vulnerability
 from models.client_portal import MeetingRequest, ClientUpload, FindingQuery
 from utils import validate_file, safe_filename, rate_limit
 
@@ -335,3 +335,10 @@ def raise_query(user):
     db.session.add(q)
     db.session.commit()
     return jsonify({'query': q.to_dict()}), 201
+
+
+@portal_bp.route('/vulnerabilities', methods=['GET'])
+@client_auth
+def client_vulnerabilities(user):
+    vulns = Vulnerability.query.filter_by(account_id=user.account_id).order_by(Vulnerability.created_at.desc()).all()
+    return jsonify({'vulnerabilities': [v.to_dict() for v in vulns]})

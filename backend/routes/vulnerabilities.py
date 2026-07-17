@@ -1,7 +1,52 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from datetime import datetime, timedelta
-from models import db, Vulnerability, Account, User
+from models import db, Vulnerability, Account, User, Notification
 from middleware.auth import login_required, role_required
+
+
+def _notify(user_id, title, message, module_type=None, module_id=None, notif_type='info'):
+    n = Notification(user_id=user_id, title=title, message=message,
+                     module_type=module_type, module_id=module_id, type=notif_type)
+    db.session.add(n)
+    try:
+        u = User.query.get(user_id)
+        if u and u.email and current_app.config.get('MAIL_SERVER'):
+            from email_utils import send_notification_email
+            send_notification_email(u.email, u.full_name or u.first_name,
+                                    title, message, module_type, module_id,
+                                    current_app.config.get('FRONTEND_URL', 'http://localhost:5174'))
+    except Exception:
+        pass
+
+
+def _send_vuln_reminders():
+    now = datetime.utcnow()
+    six_hours_ago = now - timedelta(hours=6)
+    vulns = Vulnerability.query.filter(
+        Vulnerability.status != 'Patched',
+        Vulnerability.fix_deadline.isnot(None),
+        db.or_(
+            Vulnerability.last_reminded_at.is_(None),
+            Vulnerability.last_reminded_at < six_hours_ago
+        )
+    ).all()
+    for v in vulns:
+        is_overdue = v.fix_deadline < now
+        needs_follow_up = v.fix_deadline <= now + timedelta(days=5)
+        if not (is_overdue or needs_follow_up):
+            continue
+        user_id = v.assigned_to or v.created_by
+        if not user_id:
+            continue
+        if is_overdue:
+            title = '⚠ Vulnerability Overdue'
+            message = f'"{v.title}" for {v.account.company_name} was due {v.fix_deadline.strftime("%d-%b-%Y")}.'
+        else:
+            title = '⏰ Vulnerability Follow-up Needed'
+            message = f'"{v.title}" for {v.account.company_name} is due by {v.fix_deadline.strftime("%d-%b-%Y")}.'
+        _notify(user_id, title, message, 'vulnerability', v.id)
+        v.last_reminded_at = now
+    db.session.commit()
 
 vuln_bp = Blueprint('vulnerabilities', __name__, url_prefix='/api/vulnerabilities')
 
@@ -60,6 +105,7 @@ def create_vulnerability(current_user):
         status=data.get('status', 'Open'),
         date_found=datetime.fromisoformat(data['date_found']) if data.get('date_found') else datetime.utcnow(),
         fix_deadline=deadline,
+        assigned_to=int(data['assigned_to']) if data.get('assigned_to') else None,
         created_by=current_user.id,
     )
     db.session.add(vuln)
@@ -98,6 +144,8 @@ def update_vulnerability(current_user, vid):
         vuln.date_found = datetime.fromisoformat(data['date_found']) if data['date_found'] else None
     if 'fix_deadline' in data:
         vuln.fix_deadline = datetime.fromisoformat(data['fix_deadline']) if data['fix_deadline'] else None
+    if 'assigned_to' in data:
+        vuln.assigned_to = int(data['assigned_to']) if data['assigned_to'] else None
 
     vuln.updated_at = datetime.utcnow()
     db.session.commit()
@@ -140,8 +188,6 @@ def dashboard(current_user):
 
     for acc in accounts:
         vulns = Vulnerability.query.filter_by(account_id=acc.id).all()
-        if not vulns:
-            continue
         total = len(vulns)
         patched = sum(1 for v in vulns if v.status == 'Patched')
         open_c = sum(1 for v in vulns if v.status == 'Open')
@@ -184,6 +230,8 @@ def dashboard(current_user):
     all_vulns = Vulnerability.query.all()
     total_all = len(all_vulns)
 
+    _send_vuln_reminders()
+
     return jsonify({
         'total_vulnerabilities': total_all,
         'total_open': org_open,
@@ -194,6 +242,18 @@ def dashboard(current_user):
         'per_client': per_client,
     })
 
+
+@vuln_bp.route('/check-reminders', methods=['POST'])
+@login_required
+def check_reminders(current_user):
+    _send_vuln_reminders()
+    return jsonify({'message': 'Reminders sent'})
+
+@vuln_bp.route('/users', methods=['GET'])
+@login_required
+def list_pm_users(current_user):
+    users = User.query.filter(User.role.in_(['admin', 'project_manager', 'lead'])).order_by(User.full_name).all()
+    return jsonify({'users': [{'id': u.id, 'name': u.full_name or u.first_name} for u in users]})
 
 @vuln_bp.route('/export/<int:account_id>', methods=['GET'])
 @login_required
