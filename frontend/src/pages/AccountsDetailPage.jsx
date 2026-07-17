@@ -13,7 +13,7 @@ import {
   DollarSign, TrendingUp, UserCircle,
   ChevronRight, ExternalLink, BarChart3,
   FolderOpen, ListChecks, PlusCircle,
-  Bell, Pause, Play, XCircle, UserPlus
+  Bell, Pause, Play, XCircle, UserPlus, Settings
 } from 'lucide-react'
 
 const STAGE_COLORS = {
@@ -160,6 +160,9 @@ export default function AccountsDetailPage() {
   const [showTaskForm, setShowTaskForm] = useState(false)
   const [taskForm, setTaskForm] = useState({ title: '', priority: 'Normal', due_date: '', assigned_to: '', project_id: '' })
   const [addingTask, setAddingTask] = useState(false)
+  const [showEditForm, setShowEditForm] = useState(false)
+  const [editForm, setEditForm] = useState(null)
+  const [savingEdit, setSavingEdit] = useState(false)
 
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth < 768)
@@ -258,6 +261,30 @@ export default function AccountsDetailPage() {
     finally { setAddingTask(false) }
   }
 
+  const openEditForm = () => {
+    setEditForm(acc ? {
+      company_name: acc.company_name || '', contact_name: acc.contact_name || '',
+      contact_email: acc.contact_email || '', contact_phone: acc.contact_phone || '',
+      website: acc.website || '', address: acc.address || '',
+      city: acc.city || '', state: acc.state || '',
+      country: acc.country || 'India', pincode: acc.pincode || '',
+      gst_no: acc.gst_no || '', pan_no: acc.pan_no || '',
+      industry: acc.industry || '', account_type: acc.account_type || 'B2B',
+    } : null)
+    setShowEditForm(true)
+  }
+  const saveEdit = async () => {
+    if (!editForm?.company_name) return
+    setSavingEdit(true)
+    try {
+      await api.put(`/api/accounts/${id}`, editForm)
+      setShowEditForm(false)
+      loadDetail()
+      toast('Account updated', 'success')
+    } catch (e) { toast(e.response?.data?.error || 'Update failed', 'error') }
+    finally { setSavingEdit(false) }
+  }
+
   const handleUpload = async (e) => {
     const file = e.target.files?.[0]; if (!file) return
     try {
@@ -340,10 +367,10 @@ export default function AccountsDetailPage() {
                     fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em',
                     color: PRIORITY_STYLES[item.priority].text,
                     background: PRIORITY_STYLES[item.priority].bg,
-                    padding: '2px 7px', borderRadius: '4px',
+                    padding: '2px 7px', borderRadius: '4px', flexShrink: 0,
                   }}>{item.type}</span>
-                  <span style={{ fontSize: '13px', color: '#1F2937', fontWeight: 500 }}>{item.message}</span>
-                  <span style={{ fontSize: '11px', color: '#9CA3AF', fontWeight: 400 }}>{item.time}</span>
+                  <span title={item.message} style={{ fontSize: '13px', color: '#1F2937', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '280px' }}>{item.message}</span>
+                  <span style={{ fontSize: '11px', color: '#9CA3AF', fontWeight: 400, flexShrink: 0 }}>{item.time}</span>
                   <span style={{ width: '1px', height: '14px', background: '#E8EAF2', display: 'inline-block' }} />
                 </div>
               ))}
@@ -374,22 +401,22 @@ export default function AccountsDetailPage() {
           </div>
 
           {/* Controls */}
-          <div className="flex items-center gap-0.5" style={{ paddingRight: '10px', flexShrink: 0 }}>
+          <div className="flex items-center gap-1" style={{ paddingRight: '10px', flexShrink: 0 }}>
             {[
-              { icon: ChevronLeft, action: goPrev },
-              { icon: tickerPaused ? Play : Pause, action: togglePause },
-              { icon: ChevronRight, action: goNext },
+              { icon: ChevronLeft, action: goPrev, label: 'Previous' },
+              { icon: tickerPaused ? Play : Pause, action: togglePause, label: tickerPaused ? 'Play' : 'Pause' },
+              { icon: ChevronRight, action: goNext, label: 'Next' },
             ].map((btn, i) => (
-              <button key={i} onClick={btn.action}
+              <button key={i} onClick={btn.action} title={btn.label}
                 style={{
-                  width: '28px', height: '28px', display: 'flex', alignItems: 'center',
-                  justifyContent: 'center', border: 'none', background: 'transparent',
-                  borderRadius: '6px', cursor: 'pointer', color: '#6B7280', transition: 'all .15s',
+                  width: '32px', height: '32px', display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', border: 'none', background: '#F1F5F9',
+                  borderRadius: '8px', cursor: 'pointer', color: '#475569', transition: 'all .15s',
                 }}
                 onMouseOver={e => { e.currentTarget.style.background = '#EEF2FF'; e.currentTarget.style.color = '#5B3DF5' }}
-                onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#6B7280' }}
+                onMouseOut={e => { e.currentTarget.style.background = '#F1F5F9'; e.currentTarget.style.color = '#475569' }}
               >
-                <btn.icon className="w-3.5 h-3.5" />
+                <btn.icon className="w-4 h-4" />
               </button>
             ))}
           </div>
@@ -434,17 +461,29 @@ export default function AccountsDetailPage() {
                 <ActionBtn icon={<Briefcase className="w-4 h-4" />} label="Create Project" onClick={() => navigate(`/projects?create=1&account_id=${id}`)} />
                 {client_users.length > 0 ? (
                   <button onClick={() => { setPortalForm({ email: client_users[0].email, password: '', first_name: '', last_name: '', phone: '', designation: '' }); setShowPortalForm(true) }}
-                    style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', borderRadius: '10px', border: '1px solid #BBF7D0', background: '#F0FDF4', color: '#059669', fontSize: '13px', fontWeight: 500, cursor: 'pointer', transition: 'all .2s' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 12px', borderRadius: '20px', border: '1px solid #BBF7D0', background: '#F0FDF4', color: '#059669', fontSize: '12px', fontWeight: 600, cursor: 'pointer', transition: 'all .2s' }}
                     onMouseOver={e => { e.currentTarget.style.background = '#DCFCE7'; e.currentTarget.style.borderColor = '#86EFAC' }}
-                    onMouseOut={e => { e.currentTarget.style.background = '#F0FDF4'; e.currentTarget.style.borderColor = '#BBF7D0' }}>
-                    <UserPlus className="w-4 h-4" /> Portal Active ({client_users[0].email})
+                    onMouseOut={e => { e.currentTarget.style.background = '#F0FDF4'; e.currentTarget.style.borderColor = '#BBF7D0' }}
+                    title="Manage portal access">
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#22C55E', display: 'inline-block' }} /> Portal Active
+                    <Settings className="w-3 h-3" style={{ opacity: 0.6 }} />
                   </button>
                 ) : (
                   <ActionBtn icon={<UserPlus className="w-4 h-4" />} label="Portal Access" onClick={() => { setPortalForm({ email: '', password: '', first_name: '', last_name: '', phone: '', designation: '' }); setShowPortalForm(true) }} />
                 )}
-                <ActionBtn icon={<PlusCircle className="w-4 h-4" />} label="Refer Client" onClick={() => { setOppForm({ ...oppForm, company_name: '' }); setShowOppForm(true) }} />
-                <ActionBtn icon={<Calendar className="w-4 h-4" />} label="Add Meeting" />
-                <button style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 18px', borderRadius: '10px', border: 'none', background: '#5B3DF5', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'all .2s' }}
+                <button onClick={() => { setOppForm({ ...oppForm, company_name: '' }); setShowOppForm(true) }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 10px', borderRadius: '8px', border: 'none', background: 'transparent', color: '#6B7280', fontSize: '12px', fontWeight: 500, cursor: 'pointer', transition: 'all .15s' }}
+                  onMouseOver={e => { e.currentTarget.style.background = '#F3F4F6'; e.currentTarget.style.color = '#1F2937' }}
+                  onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#6B7280' }}>
+                  <PlusCircle className="w-3.5 h-3.5" /> Refer
+                </button>
+                <button onClick={() => setShowMeetingForm(true)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 10px', borderRadius: '8px', border: 'none', background: 'transparent', color: '#6B7280', fontSize: '12px', fontWeight: 500, cursor: 'pointer', transition: 'all .15s' }}
+                  onMouseOver={e => { e.currentTarget.style.background = '#F3F4F6'; e.currentTarget.style.color = '#1F2937' }}
+                  onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#6B7280' }}>
+                  <Calendar className="w-3.5 h-3.5" /> Meeting
+                </button>
+                <button onClick={openEditForm} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 18px', borderRadius: '10px', border: 'none', background: '#5B3DF5', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'all .2s' }}
                   onMouseOver={e => e.currentTarget.style.background = '#4727F5'}
                   onMouseOut={e => e.currentTarget.style.background = '#5B3DF5'}>
                   <Edit3 className="w-4 h-4" /> Edit
@@ -457,32 +496,43 @@ export default function AccountsDetailPage() {
         {/* ═══ TABS ═══ */}
         <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderBottom: '2px solid #E5E7EB' }}>
           {[
-            { key: 'overview', label: 'Overview' },
-            { key: 'referrals', label: 'Referrals', count: opportunities.length },
-            { key: 'projects', label: 'Projects', count: projects.length },
-            { key: 'contacts', label: 'Contacts', count: contacts.length },
-          ].map(tab => (
-            <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-              style={{
-                padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer',
-                border: 'none', background: 'none', color: activeTab === tab.key ? '#5B3DF5' : '#6B7280',
-                borderBottom: activeTab === tab.key ? '2.5px solid #5B3DF5' : '2.5px solid transparent',
-                marginBottom: -2, transition: '0.15s', display: 'flex', alignItems: 'center', gap: 6,
-              }}>
-              {tab.label}
-              {tab.count !== undefined && <span style={{ fontSize: 11, background: activeTab === tab.key ? '#EDE9FE' : '#F3F4F6', color: activeTab === tab.key ? '#5B3DF5' : '#9CA3AF', padding: '1px 8px', borderRadius: 99, fontWeight: 700 }}>{tab.count}</span>}
-            </button>
-          ))}
+            { key: 'overview', label: 'Overview', icon: Building2 },
+            { key: 'referrals', label: 'Referrals', icon: Target, count: opportunities.length },
+            { key: 'projects', label: 'Projects', icon: Briefcase, count: projects.length },
+            { key: 'contacts', label: 'Contacts', icon: Users, count: contacts.length },
+          ].map(tab => {
+            const TabIcon = tab.icon
+            return (
+              <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+                style={{
+                  padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                  border: 'none', background: 'none', color: activeTab === tab.key ? '#5B3DF5' : '#6B7280',
+                  borderBottom: activeTab === tab.key ? '2.5px solid #5B3DF5' : '2.5px solid transparent',
+                  marginBottom: -2, transition: '0.15s', display: 'flex', alignItems: 'center', gap: 6,
+                }}>
+                <TabIcon className="w-4 h-4" />
+                {tab.label}
+                {tab.count !== undefined && (
+                  <span style={{
+                    fontSize: 11, padding: '1px 8px', borderRadius: 99, fontWeight: 700,
+                    background: activeTab === tab.key ? '#EDE9FE' : '#F3F4F6',
+                    color: activeTab === tab.key ? '#5B3DF5' : '#CBD5E1',
+                    border: activeTab === tab.key ? '1px solid #DDD6FE' : '1px solid transparent',
+                  }}>{tab.count}</span>
+                )}
+              </button>
+            )
+          })}
         </div>
 
         {activeTab === 'overview' && (
         <div>
         {/* ═══ KPI CARDS ═══ */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 20 }}>
-          <KpiCard icon={Target} bg="#EDE9FE" color="#5B21B6" label="Total Projects" value={projects.length} />
-          <KpiCard icon={DollarSign} bg="#D1FAE5" color="#059669" label="Revenue" value={projects.reduce((s,p) => s + (p.total_value || 0), 0) ? `₹${(projects.reduce((s,p) => s + (p.total_value || 0), 0) / 100000).toFixed(1)}L` : '—'} />
+          <KpiCard icon={Target} bg="#EDE9FE" color="#5B21B6" label="Total Projects" value={projects.length} onClick={() => setActiveTab('projects')} />
+          <KpiCard icon={DollarSign} bg="#D1FAE5" color="#059669" label="Revenue" value={projects.reduce((s,p) => s + (p.total_value || 0), 0) ? `₹${(projects.reduce((s,p) => s + (p.total_value || 0), 0) / 100000).toFixed(1)}L` : ''} />
           <KpiCard icon={TrendingUp} bg="#FEF3C7" color="#D97706" label="Opportunities" value={opportunities.length + referral_leads.length} />
-          <KpiCard icon={Users} bg="#DBEAFE" color="#2563EB" label="Contacts" value={contacts.length} />
+          <KpiCard icon={Users} bg="#DBEAFE" color="#2563EB" label="Contacts" value={contacts.length} onClick={() => setActiveTab('contacts')} />
           <KpiCard icon={FileText} bg="#FCE7F3" color="#DB2777" label="Documents" value={documents.length} />
         </div>
 
@@ -496,9 +546,9 @@ export default function AccountsDetailPage() {
                 <Building2 className="w-4 h-4" style={{ color: '#5B3DF5' }} />
                 <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#1F2937', margin: 0 }}>Account Information</h3>
               </div>
-              <button onClick={() => navigate(`/accounts/${id}/edit`)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 12px', borderRadius: '6px', border: '1px solid #ECECEC', background: '#fff', color: '#5B3DF5', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
-                <Edit3 className="w-3 h-3" /> Edit
-              </button>
+               <button onClick={openEditForm} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 12px', borderRadius: '6px', border: '1px solid #ECECEC', background: '#fff', color: '#5B3DF5', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                  <Edit3 className="w-3 h-3" /> Edit
+                </button>
             </div>
             <div style={{ padding: '16px 20px' }}>
               {/* Basic Info */}
@@ -727,6 +777,77 @@ export default function AccountsDetailPage() {
               <div style={{ padding: '12px 24px', borderTop: '1px solid #E5E7EB', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
                 <button onClick={() => setShowContactForm(false)} style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: '#F0F2F8', color: '#374151', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
                 <button onClick={saveContact} style={{ padding: '8px 24px', borderRadius: 8, border: 'none', background: '#5B21B6', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>{editContact ? 'Update' : 'Add Contact'}</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ═══ EDIT ACCOUNT FORM MODAL ═══ */}
+        {showEditForm && editForm && (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={() => setShowEditForm(false)}>
+            <div style={{ background: '#fff', borderRadius: 16, width: 600, maxWidth: '100%', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,.15)' }} onClick={e => e.stopPropagation()}>
+              <div style={{ padding: '20px 24px', borderBottom: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#1A1A2E' }}>Edit Account</span>
+                <button onClick={() => setShowEditForm(false)} style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', background: '#F0F2F8', cursor: 'pointer', fontSize: 14, color: '#6B7280' }}>✕</button>
+              </div>
+              <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1 }}>
+                <div style={{ marginBottom: 16 }}>
+                  <h3 style={{ fontSize: 13, fontWeight: 700, color: '#374151', borderBottom: '1px solid #E5E7EB', paddingBottom: 8, marginBottom: 14 }}>Company Information</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div style={{ gridColumn: 'span 2' }}>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Company Name <span style={{ color: '#DC2626' }}>*</span></label>
+                      <input value={editForm.company_name} onChange={e => setEditForm({...editForm, company_name: e.target.value})} required
+                        style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', marginTop: 4, boxSizing: 'border-box' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Industry / Sector</label>
+                      <select value={editForm.industry} onChange={e => setEditForm({...editForm, industry: e.target.value})}
+                        style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', background: '#fff', marginTop: 4 }}>
+                        <option value="">-- Select --</option>
+                        {['Finance & Banking','Education','IT & Technology','Government','PSU','Energy & Power','Healthcare','Defence','BFSI','Manufacturing','Retail','Other'].map(i => <option key={i}>{i}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Account Type</label>
+                      <select value={editForm.account_type} onChange={e => setEditForm({...editForm, account_type: e.target.value})}
+                        style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', background: '#fff', marginTop: 4 }}>
+                        <option value="B2B">B2B (Business)</option><option value="B2C">B2C (Individual)</option>
+                      </select>
+                    </div>
+                    <div style={{ gridColumn: 'span 2' }}>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Website</label>
+                      <input value={editForm.website} onChange={e => setEditForm({...editForm, website: e.target.value})}
+                        style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', marginTop: 4, boxSizing: 'border-box' }} />
+                    </div>
+                  </div>
+                </div>
+                <div style={{ marginBottom: 16 }}>
+                  <h3 style={{ fontSize: 13, fontWeight: 700, color: '#374151', borderBottom: '1px solid #E5E7EB', paddingBottom: 8, marginBottom: 14 }}>Primary Contact</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div><label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Contact Person</label><input value={editForm.contact_name} onChange={e => setEditForm({...editForm, contact_name: e.target.value})} style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', marginTop: 4, boxSizing: 'border-box' }} /></div>
+                    <div><label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Email</label><input type="email" value={editForm.contact_email} onChange={e => setEditForm({...editForm, contact_email: e.target.value})} style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', marginTop: 4, boxSizing: 'border-box' }} /></div>
+                    <div style={{ gridColumn: 'span 2' }}><label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Phone</label><input value={editForm.contact_phone} onChange={e => setEditForm({...editForm, contact_phone: e.target.value})} style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', marginTop: 4, boxSizing: 'border-box' }} /></div>
+                  </div>
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 13, fontWeight: 700, color: '#374151', borderBottom: '1px solid #E5E7EB', paddingBottom: 8, marginBottom: 14 }}>Address & Tax</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div style={{ gridColumn: 'span 2' }}><label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Address</label><input value={editForm.address} onChange={e => setEditForm({...editForm, address: e.target.value})} style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', marginTop: 4, boxSizing: 'border-box' }} /></div>
+                    <div><label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>City</label><input value={editForm.city} onChange={e => setEditForm({...editForm, city: e.target.value})} style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', marginTop: 4, boxSizing: 'border-box' }} /></div>
+                    <div><label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>State</label><input value={editForm.state} onChange={e => setEditForm({...editForm, state: e.target.value})} style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', marginTop: 4, boxSizing: 'border-box' }} /></div>
+                    <div><label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Country</label><input value={editForm.country} onChange={e => setEditForm({...editForm, country: e.target.value})} style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', marginTop: 4, boxSizing: 'border-box' }} /></div>
+                    <div><label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Pincode</label><input value={editForm.pincode} onChange={e => setEditForm({...editForm, pincode: e.target.value})} style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', marginTop: 4, boxSizing: 'border-box' }} /></div>
+                    <div><label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>GST No</label><input value={editForm.gst_no} onChange={e => setEditForm({...editForm, gst_no: e.target.value})} style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', marginTop: 4, boxSizing: 'border-box' }} /></div>
+                    <div><label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>PAN No</label><input value={editForm.pan_no} onChange={e => setEditForm({...editForm, pan_no: e.target.value})} style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', marginTop: 4, boxSizing: 'border-box' }} /></div>
+                  </div>
+                </div>
+              </div>
+              <div style={{ padding: '12px 24px', borderTop: '1px solid #E5E7EB', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                <button onClick={() => setShowEditForm(false)} style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: '#F0F2F8', color: '#374151', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+                <button onClick={saveEdit} disabled={savingEdit || !editForm.company_name}
+                  style={{ padding: '8px 24px', borderRadius: 8, border: 'none', background: '#5B21B6', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: (savingEdit || !editForm.company_name) ? 0.6 : 1 }}>
+                  {savingEdit ? 'Saving...' : 'Update Account'}
+                </button>
               </div>
             </div>
           </div>
@@ -1524,14 +1645,21 @@ function EmptyState({ icon: Icon, text, action }) {
   )
 }
 
-function KpiCard({ icon: Icon, bg, color, label, value }) {
+function KpiCard({ icon: Icon, bg, color, label, value, onClick }) {
+  const isEmpty = !value || value === '—' || value === ''
   return (
-    <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #ECECEC', padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
+    <div onClick={onClick} style={{
+      background: '#fff', borderRadius: 12, border: '1px solid #ECECEC',
+      padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14,
+      cursor: onClick ? 'pointer' : 'default', transition: 'all .15s',
+    }}
+      onMouseOver={e => { if (onClick) { e.currentTarget.style.borderColor = color; e.currentTarget.style.boxShadow = `0 2px 8px ${bg}40` } }}
+      onMouseOut={e => { e.currentTarget.style.borderColor = '#ECECEC'; e.currentTarget.style.boxShadow = 'none' }}>
       <div style={{ width: 40, height: 40, borderRadius: 10, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         <Icon className="w-4 h-4" style={{ color }} />
       </div>
       <div>
-        <div style={{ fontSize: 20, fontWeight: 900, color, letterSpacing: '-0.3px', lineHeight: 1.2 }}>{value}</div>
+        <div style={{ fontSize: 20, fontWeight: isEmpty ? 500 : 900, color: isEmpty ? '#CBD5E1' : color, fontStyle: isEmpty ? 'italic' : 'normal', letterSpacing: '-0.3px', lineHeight: 1.2 }}>{isEmpty ? 'No data' : value}</div>
         <div style={{ fontSize: 11, fontWeight: 600, color: '#6B7280' }}>{label}</div>
       </div>
     </div>
