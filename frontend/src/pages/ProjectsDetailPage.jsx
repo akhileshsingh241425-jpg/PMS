@@ -397,13 +397,21 @@ export default function ProjectsDetailPage() {
               <StageTab key={s} stage={s} isActive={s === p.stage} isTerminal={false} onClick={() => !isTerminal && changeStage(s)} />
             ))}
           </div>
-          {(FINANCE_STAGES.includes(p.stage) || BLOCKED_STAGES.includes(p.stage) || SUPPORT_STAGES.includes(p.stage)) && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 0, borderTop: `1px solid ${C.border}`, marginTop: 4, paddingTop: 4 }}>
-              {(FINANCE_STAGES.includes(p.stage) ? FINANCE_STAGES : SUPPORT_STAGES.includes(p.stage) ? SUPPORT_STAGES : BLOCKED_STAGES).map(s => (
-                <StageTab key={s} stage={s} isActive={s === p.stage} isTerminal={TERMINAL_STAGES.includes(s)} onClick={() => changeStage(s)} />
-              ))}
-            </div>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 0, borderTop: `1px solid ${C.border}`, marginTop: 4, paddingTop: 4 }}>
+            {FINANCE_STAGES.map(s => (
+              <StageTab key={s} stage={s} isActive={s === p.stage} isTerminal={false} onClick={() => changeStage(s)} />
+            ))}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 0, borderTop: `1px solid ${C.border}`, marginTop: 4, paddingTop: 4 }}>
+            {SUPPORT_STAGES.map(s => (
+              <StageTab key={s} stage={s} isActive={s === p.stage} isTerminal={false} onClick={() => changeStage(s)} />
+            ))}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 0, borderTop: `1px solid ${C.border}`, marginTop: 4, paddingTop: 4 }}>
+            {BLOCKED_STAGES.map(s => (
+              <StageTab key={s} stage={s} isActive={s === p.stage} isTerminal={true} onClick={() => changeStage(s)} />
+            ))}
+          </div>
         </div>
 
         {/* ═══ PROJECT INFO (FULL WIDTH) ═══ */}
