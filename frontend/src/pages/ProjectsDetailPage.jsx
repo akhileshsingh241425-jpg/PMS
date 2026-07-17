@@ -77,26 +77,26 @@ function StageTab({ stage, status, tooltip, onClick }) {
   const isActive = status === 'current'
   const isCompleted = status === 'completed'
   const isTerminal = status === 'terminal'
-  const bgColor = isActive ? '#5B21B6' : isCompleted ? '#065F46' : '#1F2937'
-  const iconColor = isActive ? '#fff' : isCompleted ? '#34D399' : '#6B7280'
-  const labelColor = isActive ? '#5B21B6' : isCompleted ? '#34D399' : '#9CA3AF'
-  const labelWeight = isActive ? 800 : isCompleted ? 700 : 500
-  const borderColor = isActive ? '#5B21B6' : 'transparent'
+  const bgColor = isActive ? C.primary : isCompleted ? '#D1FAE5' : '#F0F2F8'
+  const iconColor = isActive ? '#fff' : isCompleted ? '#059669' : '#9CA3AF'
+  const labelColor = isActive ? C.primary : isCompleted ? '#065F46' : '#6B7280'
+  const labelWeight = isActive ? 800 : isCompleted ? 700 : 600
+  const borderColor = isActive ? C.primary : 'transparent'
   const cursor = isTerminal && !isActive ? 'default' : 'pointer'
-  const opacity = isTerminal && !isActive ? 0.35 : 1
+  const opacity = isTerminal && !isActive ? 0.4 : 1
   return (
     <div title={tooltip} onClick={isTerminal && !isActive ? undefined : onClick} style={{
-      flex: 1, minWidth: 100, display: 'flex', flexDirection: 'column', alignItems: 'center',
-      gap: 6, padding: '10px 6px', cursor, opacity,
+      flex: 1, minWidth: 110, display: 'flex', flexDirection: 'column', alignItems: 'center',
+      gap: 6, padding: '12px 8px', cursor, opacity,
       borderBottom: `3px solid ${borderColor}`, transition: '0.15s', userSelect: 'none',
     }}>
       <div style={{
-        width: 42, height: 42, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: bgColor, transition: '0.15s', boxShadow: isActive ? '0 0 0 3px rgba(91,33,182,0.2)' : 'none',
+        width: 44, height: 44, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: bgColor, transition: '0.15s',
       }}>
-        {isCompleted ? <svg width={18} height={18} fill="none" stroke="#34D399" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg> : <StageIcon path={icon} size={16} />}
+        {isCompleted ? <svg width={18} height={18} fill="none" stroke="#059669" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg> : <StageIcon path={icon} size={16} />}
       </div>
-      <span style={{ fontSize: 10, fontWeight: labelWeight, color: labelColor, textAlign: 'center', lineHeight: 1.2, maxWidth: 100 }}>{stage}</span>
+      <span style={{ fontSize: 11, fontWeight: labelWeight, color: labelColor, textAlign: 'center', lineHeight: 1.2, maxWidth: 110 }}>{stage}</span>
     </div>
   )
 }
@@ -445,7 +445,7 @@ export default function ProjectsDetailPage() {
         </div>
 
         {/* ═══ PIPELINE / STAGE TRACKER ═══ */}
-        <div style={{ background: '#111827', borderRadius: 12, border: '1px solid #1F2937', padding: '14px 16px', marginBottom: 16 }}>
+        <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '14px 16px', marginBottom: 16 }}>
           {GROUP_CONFIG.map((group, gi) => {
             const isMain = group.key === 'delivery'
             const isVisible = isMain || showExtraStages
@@ -453,9 +453,9 @@ export default function ProjectsDetailPage() {
             const isLast = gi === GROUP_CONFIG.length - 1
             return (
               <div key={group.key}>
-                {gi > 0 && <div style={{ height: 1, background: '#1F2937', margin: '8px 0' }} />}
+                {gi > 0 && <div style={{ height: 1, background: C.border, margin: '8px 0' }} />}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <span style={{ fontSize: 10, fontWeight: 800, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{group.label}</span>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{group.label}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 0, overflowX: 'auto', paddingBottom: 2 }}>
                   {group.stages.map(s => {
@@ -472,9 +472,9 @@ export default function ProjectsDetailPage() {
           })}
           <div style={{ marginTop: 12, display: 'flex', justifyContent: 'center' }}>
             <button onClick={() => setShowExtraStages(!showExtraStages)}
-              style={{ border: '1px solid #374151', background: '#1F2937', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#9CA3AF', display: 'flex', alignItems: 'center', gap: 6, padding: '6px 16px', borderRadius: 8, transition: '0.15s' }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#374151'; e.currentTarget.style.color = '#fff' }}
-              onMouseLeave={e => { e.currentTarget.style.background = '#1F2937'; e.currentTarget.style.color = '#9CA3AF' }}>
+              style={{ border: `1px solid ${C.border}`, background: '#F9FAFB', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#6B7280', display: 'flex', alignItems: 'center', gap: 6, padding: '6px 16px', borderRadius: 8, transition: '0.15s' }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#F3F4F6'; e.currentTarget.style.color = '#374151' }}
+              onMouseLeave={e => { e.currentTarget.style.background = '#F9FAFB'; e.currentTarget.style.color = '#6B7280' }}>
               {showExtraStages ? '▲' : '▼'} {showExtraStages ? 'Hide' : 'Show'} billing & exception stages
             </button>
           </div>
