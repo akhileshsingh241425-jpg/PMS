@@ -19,3 +19,4 @@ from .rbac import AuditLog, has_permission, is_higher_role, should_notify
 from .team import Team, TeamMember
 from .attendance import Attendance
 from .device_token import DeviceToken
+from .location_log import LocationLog

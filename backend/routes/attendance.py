@@ -1,6 +1,6 @@
 from datetime import datetime, date
 from flask import Blueprint, request, jsonify
-from models import db, Attendance, User, Project, ProjectTeam
+from models import db, Attendance, User, Project, ProjectTeam, LocationLog
 from middleware.auth import login_required
 from face_utils import register_face, verify_face, save_attendance_face, face_detected, get_face_path, delete_face
 
@@ -135,6 +135,24 @@ def report(current_user):
         'records': [r.to_dict() for r in records],
         'summary': list(summary.values()),
     })
+
+
+@attendance_bp.route('/locations', methods=['POST'])
+@login_required
+def sync_locations(current_user):
+    data = request.get_json() or {}
+    locations = data.get('locations', [])
+    for loc in locations:
+        log = LocationLog(
+            user_id=current_user.id,
+            lat=loc.get('lat'),
+            lon=loc.get('lon'),
+            accuracy=loc.get('accuracy'),
+            recorded_at=datetime.fromisoformat(loc['timestamp'].replace('Z', '+00:00')) if loc.get('timestamp') else datetime.utcnow(),
+        )
+        db.session.add(log)
+    db.session.commit()
+    return jsonify({'synced': len(locations)})
 
 
 @attendance_bp.route('/register-face', methods=['POST'])
