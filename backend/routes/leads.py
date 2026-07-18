@@ -582,47 +582,131 @@ def get_audit_logs(current_user, lid):
 # --- Proposal routes ---
 
 DEFAULT_PROPOSAL_TEMPLATE = """<!DOCTYPE html>
-<html><head><meta charset="utf-8"><style>
-body {{ font-family: 'Segoe UI',Arial,sans-serif; margin:0; padding:0; color:#1F2937; }}
-.wrapper {{ max-width:700px; margin:0 auto; padding:40px 30px; }}
-.header {{ background:linear-gradient(135deg,#5B21B6,#7C3AED); color:#fff; padding:30px; text-align:center; border-radius:12px 12px 0 0; }}
-.header h1 {{ margin:0; font-size:24px; }}
-.header p {{ margin:8px 0 0; opacity:.85; font-size:13px; }}
-.section {{ margin:24px 0; }}
-.section h2 {{ font-size:16px; color:#5B21B6; border-bottom:2px solid #EDE9FE; padding-bottom:6px; }}
-table {{ width:100%; border-collapse:collapse; font-size:13px; }}
-td, th {{ padding:8px 12px; text-align:left; border-bottom:1px solid #E5E7EB; }}
-th {{ background:#F9FAFB; font-weight:700; color:#374151; }}
-.footer {{ text-align:center; font-size:11px; color:#9CA3AF; margin-top:30px; padding-top:16px; border-top:1px solid #E5E7EB; }}
+<html><head><meta charset="utf-8">
+<style>
+@page {{ size: A4; margin: 0; }}
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+body {{ font-family: 'Times New Roman',Times,serif; font-size:12pt; line-height:1.5; color:#1F2937; background:#f0f0f0; padding:40px 20px; }}
+.page {{ max-width:794px; margin:0 auto; background:#fff; padding:50px 60px; box-shadow:0 2px 12px rgba(0,0,0,.08); }}
+.border-top {{ border-top:3px solid #1E3A5F; margin-bottom:20px; }}
+.header {{ text-align:center; margin-bottom:30px; padding-bottom:20px; border-bottom:2px solid #1E3A5F; }}
+.header h1 {{ font-size:22pt; color:#1E3A5F; margin-bottom:4px; letter-spacing:1px; }}
+.header .sub {{ font-size:11pt; color:#475569; }}
+.ref-row {{ display:flex; justify-content:space-between; font-size:10pt; color:#475569; margin-bottom:20px; }}
+.ref-row table {{ width:100%; }}
+.ref-row td {{ padding:2px 0; }}
+.to-block {{ margin-bottom:24px; }}
+.to-block .label {{ font-weight:700; font-size:11pt; color:#1E3A5F; }}
+.to-block .value {{ font-size:12pt; }}
+.subject {{ font-size:13pt; font-weight:700; color:#1E3A5F; text-align:center; margin:20px 0; padding:8px 0; border-top:1px solid #CBD5E1; border-bottom:1px solid #CBD5E1; }}
+.section {{ margin:20px 0; }}
+.section h2 {{ font-size:14pt; color:#1E3A5F; border-bottom:1px solid #CBD5E1; padding-bottom:4px; margin-bottom:10px; }}
+.section h3 {{ font-size:12pt; color:#1E3A5F; margin:10px 0 6px; }}
+table {{ width:100%; border-collapse:collapse; font-size:11pt; margin:8px 0; }}
+td, th {{ padding:7px 10px; text-align:left; border:1px solid #CBD5E1; vertical-align:top; }}
+th {{ background:#F1F5F9; font-weight:700; color:#1E3A5F; }}
+.pricing {{ margin:16px 0; }}
+.pricing td:last-child {{ text-align:right; font-weight:700; }}
+.total-row td {{ font-weight:700; font-size:12pt; background:#F8FAFC; }}
+.terms {{ margin:16px 0; }}
+.terms ol {{ margin-left:20px; }}
+.terms li {{ margin:4px 0; }}
+.signature {{ margin-top:30px; padding-top:20px; border-top:1px solid #CBD5E1; }}
+.signature table {{ border:none; }}
+.signature td {{ border:none; padding:10px 20px 10px 0; vertical-align:top; }}
+.signature .line {{ border-top:1px solid #1F2937; width:200px; margin-top:30px; padding-top:4px; font-size:10pt; color:#475569; }}
+.footer {{ text-align:center; font-size:9pt; color:#94A3B8; margin-top:30px; padding-top:12px; border-top:1px solid #E2E8F0; }}
 </style></head><body>
-<div class="wrapper">
+<div class="page">
+<div class="border-top"></div>
 <div class="header">
 <h1>PROPOSAL</h1>
-<p>Proposal No: <strong>{proposal_no}</strong> | Date: {date}</p>
+<div class="sub">InFocus IT Solutions — Information Security Services</div>
 </div>
+<table class="ref-row"><tr>
+<td><strong>Proposal No:</strong> {proposal_no}</td>
+<td style="text-align:right"><strong>Date:</strong> {date}</td>
+</tr><tr>
+<td><strong>Version:</strong> v{version}</td>
+<td style="text-align:right"><strong>Prepared By:</strong> {prepared_by}</td>
+</tr></table>
+
+<div class="to-block">
+<div class="label">To,</div>
+<div class="value">{company}<br>{contact_name}<br>{contact_email}<br>Phone: {contact_phone}</div>
+</div>
+
+<div class="subject">Subject: Proposal for {service} Services</div>
+
 <div class="section">
-<h2>Client Information</h2>
-<table><tr><th>Company</th><td>{company}</td></tr>
-<tr><th>Contact</th><td>{contact_name} ({contact_email})</td></tr>
-<tr><th>Phone</th><td>{contact_phone}</td></tr></table>
+<h2>1. Executive Summary</h2>
+<p style="font-size:11pt;color:#475569;line-height:1.7;text-align:justify">Dear Sir/Madam,</p>
+<p style="font-size:11pt;color:#475569;line-height:1.7;text-align:justify">Thank you for providing us the opportunity to submit this proposal for <strong>{service}</strong>. InFocus IT Solutions is pleased to present our comprehensive solution tailored to meet your requirements. We are confident that our approach, methodology, and experience will deliver the desired outcomes within the stipulated timeline.</p>
 </div>
+
 <div class="section">
-<h2>Proposal Details</h2>
-<table><tr><th>Service</th><td>{service}</td></tr>
-<tr><th>Amount</th><td><strong>₹{amount}</strong></td></tr>
-<tr><th>Version</th><td>v{version}</td></tr></table>
+<h2>2. Scope of Work</h2>
+<p style="font-size:11pt;color:#475569;line-height:1.7;text-align:justify">{description}</p>
 </div>
+
 <div class="section">
-<h2>Terms & Notes</h2>
-<p style="font-size:13px;color:#4B5563;line-height:1.6">{notes}</p>
+<h2>3. Deliverables</h2>
+<table>
+<tr><th style="width:8%">#</th><th style="width:52%">Deliverable</th><th style="width:20%">Timeline</th><th style="width:20%">Format</th></tr>
+<tr><td>1</td><td>Detailed Assessment Report</td><td>Within 2 weeks</td><td>PDF / DOCX</td></tr>
+<tr><td>2</td><td>Findings & Recommendations</td><td>Within 3 weeks</td><td>PDF / PPT</td></tr>
+<tr><td>3</td><td>Executive Summary Presentation</td><td>Within 4 weeks</td><td>PPT / PDF</td></tr>
+<tr><td>4</td><td>Remediation Support</td><td>As per agreement</td><td>On-site / Remote</td></tr>
+</table>
 </div>
+
 <div class="section">
-<h2>Scope of Work</h2>
-<p style="font-size:13px;color:#4B5563;line-height:1.6">{description}</p>
+<h2>4. Commercial Proposal</h2>
+<table class="pricing">
+<tr><th style="width:60%">Particulars</th><th style="width:40%">Amount (INR)</th></tr>
+<tr><td>{service} — Professional Fees</td><td>₹{amount}</td></tr>
+<tr><td>GST @ 18%</td><td>₹{gst}</td></tr>
+<tr class="total-row"><td><strong>Total Amount (Including GST)</strong></td><td><strong>₹{total_with_gst}</strong></td></tr>
+</table>
+<p style="font-size:10pt;color:#475569;margin-top:4px;"><em>Amount in Words: [Amount in words]</em></p>
 </div>
+
+<div class="section">
+<h2>5. Terms & Conditions</h2>
+<div class="terms">
+<ol>
+<li><strong>Validity:</strong> This proposal is valid for <strong>15 days</strong> from the date mentioned above.</li>
+<li><strong>Payment Terms:</strong> 50% advance payment upon acceptance, 40% on submission of draft report, 10% upon final delivery.</li>
+<li><strong>Timeline:</strong> The project shall be completed within 4 weeks from the date of receiving the signed proposal and advance payment.</li>
+<li><strong>Confidentiality:</strong> All information shared during the engagement shall be treated as strictly confidential.</li>
+<li><strong>Non-Disclosure:</strong> Both parties agree to maintain confidentiality of all proprietary information exchanged.</li>
+<li><strong>Force Majeure:</strong> Neither party shall be liable for delays due to circumstances beyond reasonable control.</li>
+<li><strong>Governing Law:</strong> This agreement shall be governed by the laws of India.</li>
+</ol>
+</div>
+</div>
+
+<div class="section">
+<h2>6. Notes</h2>
+<p style="font-size:11pt;color:#475569;line-height:1.7;text-align:justify">{notes}</p>
+</div>
+
+<div class="signature">
+<table>
+<tr>
+<td style="width:50%">
+<div class="line">Authorized Signatory — InFocus IT Solutions</div>
+</td>
+<td style="width:50%">
+<div class="line">Authorized Signatory — Client</div>
+</td>
+</tr>
+</table>
+</div>
+
 <div class="footer">
-<p>InFocus IT Project Management System</p>
-<p>This proposal is valid for 15 days from the date above.</p>
+<p>InFocus IT Solutions — <strong>Proposal #{proposal_no}</strong> — Page 1 of 1</p>
+<p>This document is confidential and intended solely for the addressee.</p>
 </div>
 </div></body></html>"""
 
@@ -635,12 +719,15 @@ def get_proposal_template(current_user, lid):
     html = DEFAULT_PROPOSAL_TEMPLATE.format(
         proposal_no='PROP-_____',
         date=today_str,
+        prepared_by=current_user.full_name,
         company=lead.company_name or 'Client Company',
         contact_name=lead.contact_name or 'Contact Person',
         contact_email=lead.contact_email or 'email@example.com',
         contact_phone=lead.contact_phone or '---',
         service=lead.service_type or 'Service',
         amount='[Enter Amount]',
+        gst='[GST]',
+        total_with_gst='[Total]',
         version='1',
         notes='[Enter terms & conditions here]',
         description=lead.description or '[Enter scope of work]',
@@ -708,11 +795,17 @@ def delete_proposal(current_user, lid, pid):
 @login_required
 def preview_proposal(current_user, lid, pid):
     prop = LeadProposal.query.filter_by(id=pid, lead_id=lid).first_or_404()
-    return prop.html_content or DEFAULT_PROPOSAL_TEMPLATE.format(
+    if prop.html_content:
+        return prop.html_content, 200, {'Content-Type': 'text/html; charset=utf-8'}
+    amt = prop.amount or 0
+    return DEFAULT_PROPOSAL_TEMPLATE.format(
         proposal_no=prop.proposal_no,
         date=prop.created_at.strftime('%d %B %Y') if prop.created_at else '',
+        prepared_by=prop.preparer.full_name if prop.preparer else 'N/A',
         company='N/A', contact_name='N/A', contact_email='N/A',
         contact_phone='N/A', service='N/A', amount=str(prop.amount or ''),
+        gst=str(round(amt * 0.18, 2)) if amt else '—',
+        total_with_gst=str(round(amt * 1.18, 2)) if amt else '—',
         version=str(prop.version), notes=prop.notes or '', description='',
     ), 200, {'Content-Type': 'text/html; charset=utf-8'}
 

@@ -980,17 +980,20 @@ export default function LeadsDetailPage() {
 
       {/* ═══ PROPOSAL PREVIEW MODAL ═══ */}
       {showPreview && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 30 }} onClick={() => setShowPreview(false)}>
-          <div style={{ background: '#fff', borderRadius: 16, width: 800, maxWidth: '100%', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,.2)' }} onClick={e => e.stopPropagation()}>
-            <div style={{ padding: '12px 20px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 14, fontWeight: 700, color: '#1A1A2E' }}>Proposal Preview</span>
-              <button onClick={() => setShowPreview(false)} style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', background: '#F0F2F8', cursor: 'pointer', fontSize: 14, color: '#6B7280', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(0,0,0,.6)', display: 'flex', flexDirection: 'column' }} onClick={() => setShowPreview(false)}>
+          <div style={{ background: '#fff', display: 'flex', flexDirection: 'column', height: '100vh' }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '10px 20px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: '#1A1A2E' }}>Proposal Preview — <span style={{ color: C.muted, fontWeight: 400 }}>Print-ready format</span></span>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button onClick={() => { const w = window.open(); if (w) { w.document.write(previewHtml); w.document.close(); w.focus(); } }}
+                  style={{ padding: '6px 14px', borderRadius: 6, border: `1px solid ${C.border}`, background: '#F9FAFB', color: '#374151', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                  Open in New Tab
+                </button>
+                <button onClick={() => setShowPreview(false)} style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', background: '#F0F2F8', cursor: 'pointer', fontSize: 14, color: '#6B7280', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+              </div>
             </div>
-            <div style={{ flex: 1, overflow: 'auto', padding: 0 }}>
-              <iframe srcDoc={previewHtml} title="Preview" style={{ width: '100%', height: '70vh', border: 'none' }} />
-            </div>
-            <div style={{ padding: '10px 20px', borderTop: `1px solid ${C.border}`, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-              <button onClick={() => setShowPreview(false)} style={{ padding: '8px 20px', borderRadius: 8, border: 'none', background: '#F0F2F8', color: '#374151', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Close</button>
+            <div style={{ flex: 1, overflow: 'auto', background: '#f0f0f0' }}>
+              <iframe srcDoc={previewHtml} title="Preview" style={{ width: '100%', height: '100%', border: 'none' }} />
             </div>
           </div>
         </div>
