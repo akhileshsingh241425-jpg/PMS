@@ -76,8 +76,11 @@ export default function LeadsDetailPage() {
   const [viewActivity, setViewActivity] = useState(null)
   const [proposals, setProposals] = useState([])
   const [showProposalForm, setShowProposalForm] = useState(false)
-  const [proposalForm, setProposalForm] = useState({ amount: '', version: 1, status: 'Draft', notes: '' })
+  const [proposalForm, setProposalForm] = useState({ amount: '', version: 1, status: 'Draft', notes: '', html_content: '' })
   const [editingProposal, setEditingProposal] = useState(null)
+  const [proposalTab, setProposalTab] = useState('edit')
+  const [showPreview, setShowPreview] = useState(false)
+  const [previewHtml, setPreviewHtml] = useState('')
   const [showConvertModal, setShowConvertModal] = useState(false)
   const [convertMode, setConvertMode] = useState('account')
   const [converting, setConverting] = useState(false)
@@ -151,7 +154,8 @@ export default function LeadsDetailPage() {
         toast('Proposal created')
       }
       setShowProposalForm(false); setEditingProposal(null)
-      setProposalForm({ amount: '', version: 1, status: 'Draft', notes: '' })
+      setProposalForm({ amount: '', version: 1, status: 'Draft', notes: '', html_content: '' })
+      setProposalTab('edit')
       loadProposals()
     } catch (e) { toast(e.response?.data?.error || 'Failed', 'error') }
   }
@@ -596,7 +600,12 @@ export default function LeadsDetailPage() {
             <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                 <SectionTitle icon={<FileIcon />} text={`Proposals (${(proposals || []).length})`} />
-                <button onClick={() => { setEditingProposal(null); setProposalForm({ amount: '', version: 1, status: 'Draft', notes: '' }); setShowProposalForm(true) }}
+                <button onClick={async () => {
+                  setEditingProposal(null)
+                  setProposalForm({ amount: '', version: 1, status: 'Draft', notes: '', html_content: '' })
+                  try { const r = await api.get(`/api/leads/${id}/proposals/template`); setProposalForm(prev => ({ ...prev, html_content: r.data.html })) } catch (e) {}
+                  setShowProposalForm(true)
+                }}
                   style={{ display: 'flex', alignItems: 'center', gap: 6, background: C.primary, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
                   <PlusIcon /> New Proposal
                 </button>
@@ -613,8 +622,10 @@ export default function LeadsDetailPage() {
                         <div style={{ fontSize: 11, color: C.muted }}>v{p.version} · ₹{p.amount?.toLocaleString()} · {p.prepared_by_name}</div>
                       </div>
                       <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 99, background: p.status === 'Accepted' ? '#D1FAE5' : p.status === 'Sent' ? '#DBEAFE' : p.status === 'Draft' ? '#F3F4F6' : p.status === 'Rejected' ? '#FEE2E2' : '#FFF7ED', color: p.status === 'Accepted' ? '#065F46' : p.status === 'Sent' ? '#1E40AF' : p.status === 'Draft' ? '#6B7280' : p.status === 'Rejected' ? '#991B1B' : '#9A3412' }}>{p.status}</span>
-                      <button onClick={() => { setEditingProposal(p); setProposalForm({ amount: p.amount, version: p.version, status: p.status, notes: p.notes || '' }); setShowProposalForm(true) }}
+                      <button onClick={() => { setEditingProposal(p); setProposalForm({ amount: p.amount, version: p.version, status: p.status, notes: p.notes || '', html_content: p.html_content || '' }); setShowProposalForm(true); setProposalTab('edit') }}
                         style={{ padding: '4px 8px', borderRadius: 6, border: 'none', background: '#F0F2F8', color: '#6B7280', cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>Edit</button>
+                      <button onClick={() => { setPreviewHtml(p.html_content); setShowPreview(true) }}
+                        style={{ padding: '4px 8px', borderRadius: 6, border: 'none', background: '#EDE9FE', color: C.primary, cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>Preview</button>
                     </div>
                   ))}
                 </div>
@@ -880,45 +891,88 @@ export default function LeadsDetailPage() {
       {/* ═══ PROPOSAL FORM MODAL ═══ */}
       {showProposalForm && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={() => setShowProposalForm(false)}>
-          <div style={{ background: '#fff', borderRadius: 16, width: 480, maxWidth: '100%', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,.15)' }} onClick={e => e.stopPropagation()}>
-            <div style={{ padding: '20px 24px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 16, fontWeight: 700, color: '#1A1A2E' }}>{editingProposal ? 'Edit Proposal' : 'New Proposal'}</span>
+          <div style={{ background: '#fff', borderRadius: 16, width: 720, maxWidth: '100%', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,.15)' }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '16px 20px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 15, fontWeight: 700, color: '#1A1A2E' }}>{editingProposal ? 'Edit Proposal' : 'New Proposal'}</span>
               <button onClick={() => setShowProposalForm(false)} style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', background: '#F0F2F8', cursor: 'pointer', fontSize: 14, color: '#6B7280', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
             </div>
-            <form onSubmit={saveProposal} style={{ padding: '20px 24px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <div style={{ display: 'flex', gap: 0, borderBottom: `1px solid ${C.border}`, padding: '0 20px' }}>
+              {['details', 'template'].map(t => (
+                <button key={t} onClick={() => setProposalTab(t)}
+                  style={{ padding: '10px 16px', border: 'none', background: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: proposalTab === t ? C.primary : C.muted, borderBottom: `2px solid ${proposalTab === t ? C.primary : 'transparent'}`, transition: '0.1s' }}>
+                  {t === 'details' ? 'Details' : 'HTML Template'}
+                </button>
+              ))}
+            </div>
+            <form onSubmit={saveProposal} style={{ padding: '16px 20px', overflowY: 'auto', flex: 1 }}>
+              {proposalTab === 'details' ? (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
                   <label style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 4, display: 'block' }}>Amount (₹)</label>
                   <input type="number" value={proposalForm.amount} onChange={e => setProposalForm({ ...proposalForm, amount: e.target.value })} required
-                    style={{ width: '100%', padding: '10px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit' }} placeholder="e.g., 500000" />
+                    style={{ width: '100%', padding: '8px 10px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit' }} placeholder="e.g., 500000" />
                 </div>
                 <div>
                   <label style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 4, display: 'block' }}>Version</label>
                   <input type="number" value={proposalForm.version} onChange={e => setProposalForm({ ...proposalForm, version: parseInt(e.target.value) || 1 })}
-                    style={{ width: '100%', padding: '10px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
+                    style={{ width: '100%', padding: '8px 10px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
                 </div>
                 <div>
                   <label style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 4, display: 'block' }}>Status</label>
                   <select value={proposalForm.status} onChange={e => setProposalForm({ ...proposalForm, status: e.target.value })}
-                    style={{ width: '100%', padding: '10px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', background: C.card }}>
+                    style={{ width: '100%', padding: '8px 10px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', background: C.card }}>
                     <option>Draft</option><option>Sent</option><option>Accepted</option><option>Rejected</option><option>Revised</option>
                   </select>
                 </div>
                 <div>
                   <label style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 4, display: 'block' }}>Lead</label>
-                  <div style={{ padding: '10px 12px', background: '#F0F2F8', borderRadius: 8, fontSize: 13, color: '#374151', fontWeight: 600 }}>{l.lead_id}</div>
+                  <div style={{ padding: '8px 10px', background: '#F0F2F8', borderRadius: 8, fontSize: 13, color: '#374151', fontWeight: 600 }}>{l.lead_id}</div>
                 </div>
                 <div style={{ gridColumn: '1 / -1' }}>
                   <label style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 4, display: 'block' }}>Notes</label>
-                  <textarea value={proposalForm.notes} onChange={e => setProposalForm({ ...proposalForm, notes: e.target.value })} rows={3}
-                    style={{ width: '100%', padding: '10px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical' }} placeholder="Proposal notes or terms..." />
+                  <textarea value={proposalForm.notes} onChange={e => setProposalForm({ ...proposalForm, notes: e.target.value })} rows={2}
+                    style={{ width: '100%', padding: '8px 10px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical' }}
+                    placeholder="Proposal notes or terms..." />
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20, paddingTop: 16, borderTop: `1px solid ${C.border}` }}>
-                <button type="button" onClick={() => setShowProposalForm(false)} style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: '#F0F2F8', color: '#374151', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
-                <button type="submit" style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: C.primary, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>{editingProposal ? 'Update' : 'Create Proposal'}</button>
+              ) : (
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 4 }}>HTML Template</div>
+                  <p style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>Edit the HTML proposal template directly. Use Preview to see how it looks.</p>
+                  <textarea value={proposalForm.html_content} onChange={e => setProposalForm({ ...proposalForm, html_content: e.target.value })} rows={16}
+                    style={{ width: '100%', padding: '10px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 12, fontFamily: 'monospace', outline: 'none', resize: 'vertical' }}
+                    placeholder="<html>..." />
+                  <button type="button" onClick={() => setPreviewHtml(proposalForm.html_content)}
+                    style={{ marginTop: 6, padding: '6px 14px', borderRadius: 6, border: `1px solid ${C.border}`, background: '#F9FAFB', color: '#374151', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                    Preview Template
+                  </button>
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16, paddingTop: 12, borderTop: `1px solid ${C.border}` }}>
+                <button type="button" onClick={() => setShowProposalForm(false)} style={{ padding: '8px 20px', borderRadius: 8, border: 'none', background: '#F0F2F8', color: '#374151', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+                <button type="submit" style={{ padding: '8px 20px', borderRadius: 8, border: 'none', background: C.primary, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                  {editingProposal ? 'Update' : 'Create Proposal'}
+                </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ PROPOSAL PREVIEW MODAL ═══ */}
+      {showPreview && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 30 }} onClick={() => setShowPreview(false)}>
+          <div style={{ background: '#fff', borderRadius: 16, width: 800, maxWidth: '100%', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,.2)' }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '12px 20px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: '#1A1A2E' }}>Proposal Preview</span>
+              <button onClick={() => setShowPreview(false)} style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', background: '#F0F2F8', cursor: 'pointer', fontSize: 14, color: '#6B7280', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+            </div>
+            <div style={{ flex: 1, overflow: 'auto', padding: 0 }}>
+              <iframe srcDoc={previewHtml} title="Preview" style={{ width: '100%', height: '70vh', border: 'none' }} />
+            </div>
+            <div style={{ padding: '10px 20px', borderTop: `1px solid ${C.border}`, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <button onClick={() => setShowPreview(false)} style={{ padding: '8px 20px', borderRadius: 8, border: 'none', background: '#F0F2F8', color: '#374151', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Close</button>
+            </div>
           </div>
         </div>
       )}

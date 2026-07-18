@@ -581,6 +581,73 @@ def get_audit_logs(current_user, lid):
 
 # --- Proposal routes ---
 
+DEFAULT_PROPOSAL_TEMPLATE = """<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>
+body { font-family: 'Segoe UI',Arial,sans-serif; margin:0; padding:0; color:#1F2937; }
+.wrapper { max-width:700px; margin:0 auto; padding:40px 30px; }
+.header { background:linear-gradient(135deg,#5B21B6,#7C3AED); color:#fff; padding:30px; text-align:center; border-radius:12px 12px 0 0; }
+.header h1 { margin:0; font-size:24px; }
+.header p { margin:8px 0 0; opacity:.85; font-size:13px; }
+.section { margin:24px 0; }
+.section h2 { font-size:16px; color:#5B21B6; border-bottom:2px solid #EDE9FE; padding-bottom:6px; }
+table { width:100%; border-collapse:collapse; font-size:13px; }
+td, th { padding:8px 12px; text-align:left; border-bottom:1px solid #E5E7EB; }
+th { background:#F9FAFB; font-weight:700; color:#374151; }
+.footer { text-align:center; font-size:11px; color:#9CA3AF; margin-top:30px; padding-top:16px; border-top:1px solid #E5E7EB; }
+</style></head><body>
+<div class="wrapper">
+<div class="header">
+<h1>PROPOSAL</h1>
+<p>Proposal No: <strong>{proposal_no}</strong> | Date: {date}</p>
+</div>
+<div class="section">
+<h2>Client Information</h2>
+<table><tr><th>Company</th><td>{company}</td></tr>
+<tr><th>Contact</th><td>{contact_name} ({contact_email})</td></tr>
+<tr><th>Phone</th><td>{contact_phone}</td></tr></table>
+</div>
+<div class="section">
+<h2>Proposal Details</h2>
+<table><tr><th>Service</th><td>{service}</td></tr>
+<tr><th>Amount</th><td><strong>₹{amount}</strong></td></tr>
+<tr><th>Version</th><td>v{version}</td></tr></table>
+</div>
+<div class="section">
+<h2>Terms & Notes</h2>
+<p style="font-size:13px;color:#4B5563;line-height:1.6">{notes}</p>
+</div>
+<div class="section">
+<h2>Scope of Work</h2>
+<p style="font-size:13px;color:#4B5563;line-height:1.6">{description}</p>
+</div>
+<div class="footer">
+<p>InFocus IT Project Management System</p>
+<p>This proposal is valid for 15 days from the date above.</p>
+</div>
+</div></body></html>"""
+
+
+@leads_bp.route('/<int:lid>/proposals/template', methods=['GET'])
+@login_required
+def get_proposal_template(current_user, lid):
+    lead = Lead.query.get_or_404(lid)
+    today_str = datetime.utcnow().strftime('%d %B %Y')
+    html = DEFAULT_PROPOSAL_TEMPLATE.format(
+        proposal_no='PROP-_____',
+        date=today_str,
+        company=lead.company_name or 'Client Company',
+        contact_name=lead.contact_name or 'Contact Person',
+        contact_email=lead.contact_email or 'email@example.com',
+        contact_phone=lead.contact_phone or '---',
+        service=lead.service_type or 'Service',
+        amount='[Enter Amount]',
+        version='1',
+        notes='[Enter terms & conditions here]',
+        description=lead.description or '[Enter scope of work]',
+    )
+    return jsonify({'html': html})
+
+
 @leads_bp.route('/<int:lid>/proposals', methods=['GET'])
 @login_required
 def list_proposals(current_user, lid):
@@ -604,6 +671,7 @@ def create_proposal(current_user, lid):
         prepared_by=current_user.id,
         status=data.get('status', 'Draft'),
         notes=data.get('notes'),
+        html_content=data.get('html_content'),
     )
     db.session.add(prop)
     db.session.flush()
@@ -618,7 +686,7 @@ def update_proposal(current_user, lid, pid):
     prop = LeadProposal.query.filter_by(id=pid, lead_id=lid).first_or_404()
     data = request.get_json()
     old_status = prop.status
-    for f in ['amount', 'version', 'status', 'notes']:
+    for f in ['amount', 'version', 'status', 'notes', 'html_content']:
         if f in data:
             setattr(prop, f, data[f])
     if prop.status != old_status:
@@ -634,6 +702,19 @@ def delete_proposal(current_user, lid, pid):
     db.session.delete(prop)
     db.session.commit()
     return jsonify({'message': 'Proposal deleted'})
+
+
+@leads_bp.route('/<int:lid>/proposals/<int:pid>/preview', methods=['GET'])
+@login_required
+def preview_proposal(current_user, lid, pid):
+    prop = LeadProposal.query.filter_by(id=pid, lead_id=lid).first_or_404()
+    return prop.html_content or DEFAULT_PROPOSAL_TEMPLATE.format(
+        proposal_no=prop.proposal_no,
+        date=prop.created_at.strftime('%d %B %Y') if prop.created_at else '',
+        company='N/A', contact_name='N/A', contact_email='N/A',
+        contact_phone='N/A', service='N/A', amount=str(prop.amount or ''),
+        version=str(prop.version), notes=prop.notes or '', description='',
+    ), 200, {'Content-Type': 'text/html; charset=utf-8'}
 
 
 # --- Existing sub-resource routes (unchanged) ---

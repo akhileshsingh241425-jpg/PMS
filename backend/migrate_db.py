@@ -51,6 +51,9 @@ MIGRATIONS = {
         ('converted_lead_id', 'INTEGER'),
         ('conversion_date', 'DATETIME'),
     ],
+    'lead_proposals': [
+        ('html_content', 'TEXT'),
+    ],
 }
 
 for table, cols in MIGRATIONS.items():

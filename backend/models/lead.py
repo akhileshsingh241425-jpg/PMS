@@ -234,6 +234,7 @@ class LeadProposal(db.Model):
     prepared_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
     status = db.Column(db.String(20), default='Draft')
     notes = db.Column(db.Text)
+    html_content = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -251,6 +252,7 @@ class LeadProposal(db.Model):
             'prepared_by_name': self.preparer.full_name if self.preparer else None,
             'status': self.status,
             'notes': self.notes,
+            'html_content': self.html_content,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
         }

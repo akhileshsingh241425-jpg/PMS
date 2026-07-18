@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import api from '../services/api'
-import { Clock, MapPin, Briefcase, LogOut, History, Users, CheckCircle, XCircle } from 'lucide-react'
+import { Clock, MapPin, Briefcase, LogOut, History, Users, CheckCircle, XCircle, RefreshCw } from 'lucide-react'
 
 const C = {
   card: '#fff',
@@ -25,10 +25,12 @@ export default function AttendancePage() {
   const [loading, setLoading] = useState(true)
   const [clocking, setClocking] = useState(false)
   const [location, setLocation] = useState({ lat: null, lon: null, name: '' })
+  const [manualLocation, setManualLocation] = useState('')
   const [selectedProject, setSelectedProject] = useState('')
   const [workDesc, setWorkDesc] = useState('')
   const [tab, setTab] = useState('today')
   const [locStatus, setLocStatus] = useState('')
+  const [locDetecting, setLocDetecting] = useState(false)
 
   const loadAll = useCallback(async () => {
     try {
@@ -40,9 +42,6 @@ export default function AttendancePage() {
       setToday(t.data.attendance)
       setActiveSessions(a.data.active)
       setMyProjects(p.data.projects || [])
-      if (!t.data.attendance?.clock_in) {
-        detectLocation()
-      }
     } catch (e) { console.error(e) }
     setLoading(false)
   }, [])
@@ -51,35 +50,48 @@ export default function AttendancePage() {
 
   const detectLocation = () => {
     if (!navigator.geolocation) {
-      setLocStatus('Geolocation not available')
+      setLocStatus('Geolocation not supported in this browser. Enter location manually below.')
       return
     }
+    setLocDetecting(true)
     setLocStatus('Detecting location...')
     navigator.geolocation.getCurrentPosition(
       async pos => {
         const { latitude, longitude } = pos.coords
         setLocation({ lat: latitude, lon: longitude, name: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}` })
-        setLocStatus('')
+        setLocDetecting(false)
         try {
           const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=16`)
           const d = await r.json()
-          if (d.display_name) setLocation(prev => ({ ...prev, name: d.display_name }))
-        } catch (_) {}
+          if (d.display_name) {
+            setLocation(prev => ({ ...prev, name: d.display_name }))
+            setManualLocation(d.display_name)
+          } else {
+            setManualLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`)
+          }
+          setLocStatus('')
+        } catch (_) {
+          setManualLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`)
+          setLocStatus('')
+        }
       },
       err => {
-        setLocStatus('Could not detect location. Please allow location access or enter manually.')
+        setLocDetecting(false)
+        setLocStatus('Could not detect location. Enter manually below.')
+        setManualLocation('')
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 15000 }
     )
   }
 
   const handleClockIn = async () => {
     setClocking(true)
     try {
+      const locName = manualLocation || location.name || ''
       const r = await api.post('/api/attendance/clock-in', {
         lat: location.lat,
         lon: location.lon,
-        location_name: location.name,
+        location_name: locName,
         project_id: selectedProject ? Number(selectedProject) : undefined,
         work_description: workDesc,
       })
@@ -137,6 +149,7 @@ export default function AttendancePage() {
   const todayStart = today ? new Date(today.clock_in) : null
 
   return (
+    <><style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     <div>
       <h1 style={{ fontSize: 20, fontWeight: 700, color: '#1A1A2E', marginBottom: 24 }}>Attendance</h1>
 
@@ -238,13 +251,17 @@ export default function AttendancePage() {
                     <div style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
                       <MapPin className="w-3 h-3" /> Location
                     </div>
-                    <div style={{ fontSize: 12, color: C.text, wordBreak: 'break-all' }}>
-                      {location.name || (locStatus || 'Click "Detect Location"')}
+                    <input value={manualLocation} onChange={e => { setManualLocation(e.target.value); setLocation(prev => ({ ...prev, name: e.target.value })) }}
+                      placeholder="Type your location or click Detect"
+                      style={{ width: '100%', padding: '8px 10px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, fontFamily: 'inherit', outline: 'none', marginBottom: 4 }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <button onClick={detectLocation} disabled={locDetecting}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: C.primary, background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>
+                        {locDetecting ? <><RefreshCw className="w-3 h-3" style={{ animation: 'spin 1s linear infinite' }} /> Detecting...</> : <><MapPin className="w-3 h-3" /> Auto-detect location</>}
+                      </button>
+                      {locDetecting && <span style={{ fontSize: 11, color: C.warning }}>Please allow location access when prompted</span>}
                     </div>
-                    <button onClick={detectLocation}
-                      style={{ fontSize: 11, color: C.primary, background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginTop: 4, textDecoration: 'underline' }}>
-                      {location.name ? 'Refresh' : 'Detect Location'}
-                    </button>
+                    {locStatus && <div style={{ fontSize: 11, color: locStatus.includes('not') ? C.danger : C.warning, marginTop: 2 }}>{locStatus}</div>}
                   </div>
                 </div>
               )}
@@ -332,7 +349,7 @@ export default function AttendancePage() {
           )}
         </div>
       )}
-    </div>
+    </div></>
   )
 }
 
