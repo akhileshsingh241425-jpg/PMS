@@ -583,17 +583,17 @@ def get_audit_logs(current_user, lid):
 
 DEFAULT_PROPOSAL_TEMPLATE = """<!DOCTYPE html>
 <html><head><meta charset="utf-8"><style>
-body { font-family: 'Segoe UI',Arial,sans-serif; margin:0; padding:0; color:#1F2937; }
-.wrapper { max-width:700px; margin:0 auto; padding:40px 30px; }
-.header { background:linear-gradient(135deg,#5B21B6,#7C3AED); color:#fff; padding:30px; text-align:center; border-radius:12px 12px 0 0; }
-.header h1 { margin:0; font-size:24px; }
-.header p { margin:8px 0 0; opacity:.85; font-size:13px; }
-.section { margin:24px 0; }
-.section h2 { font-size:16px; color:#5B21B6; border-bottom:2px solid #EDE9FE; padding-bottom:6px; }
-table { width:100%; border-collapse:collapse; font-size:13px; }
-td, th { padding:8px 12px; text-align:left; border-bottom:1px solid #E5E7EB; }
-th { background:#F9FAFB; font-weight:700; color:#374151; }
-.footer { text-align:center; font-size:11px; color:#9CA3AF; margin-top:30px; padding-top:16px; border-top:1px solid #E5E7EB; }
+body {{ font-family: 'Segoe UI',Arial,sans-serif; margin:0; padding:0; color:#1F2937; }}
+.wrapper {{ max-width:700px; margin:0 auto; padding:40px 30px; }}
+.header {{ background:linear-gradient(135deg,#5B21B6,#7C3AED); color:#fff; padding:30px; text-align:center; border-radius:12px 12px 0 0; }}
+.header h1 {{ margin:0; font-size:24px; }}
+.header p {{ margin:8px 0 0; opacity:.85; font-size:13px; }}
+.section {{ margin:24px 0; }}
+.section h2 {{ font-size:16px; color:#5B21B6; border-bottom:2px solid #EDE9FE; padding-bottom:6px; }}
+table {{ width:100%; border-collapse:collapse; font-size:13px; }}
+td, th {{ padding:8px 12px; text-align:left; border-bottom:1px solid #E5E7EB; }}
+th {{ background:#F9FAFB; font-weight:700; color:#374151; }}
+.footer {{ text-align:center; font-size:11px; color:#9CA3AF; margin-top:30px; padding-top:16px; border-top:1px solid #E5E7EB; }}
 </style></head><body>
 <div class="wrapper">
 <div class="header">
