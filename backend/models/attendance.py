@@ -21,14 +21,16 @@ class Attendance(db.Model):
     project = db.relationship('Project', foreign_keys=[project_id])
 
     def to_dict(self):
+        def _fmt(dt):
+            return dt.strftime('%Y-%m-%dT%H:%M:%SZ') if dt else None
         return {
             'id': self.id,
             'user_id': self.user_id,
             'user_name': self.user.full_name if self.user else None,
             'user_email': self.user.email if self.user else None,
             'date': self.date.isoformat() if self.date else None,
-            'clock_in': self.clock_in.isoformat() if self.clock_in else None,
-            'clock_out': self.clock_out.isoformat() if self.clock_out else None,
+            'clock_in': _fmt(self.clock_in),
+            'clock_out': _fmt(self.clock_out),
             'location_lat': self.location_lat,
             'location_lon': self.location_lon,
             'location_name': self.location_name,
@@ -37,5 +39,5 @@ class Attendance(db.Model):
             'status': self.status,
             'work_description': self.work_description,
             'duration': (self.clock_out - self.clock_in).total_seconds() / 3600 if self.clock_in and self.clock_out else None,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'created_at': _fmt(self.created_at),
         }
