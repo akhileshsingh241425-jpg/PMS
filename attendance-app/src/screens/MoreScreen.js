@@ -11,6 +11,12 @@ const MENU_ITEMS = [
   {icon: '📄', label: 'Documents', screen: 'Documents'},
   {icon: '📋', label: 'Calendar', screen: 'Calendar'},
   {icon: '📸', label: 'Face Registration', screen: 'FaceRegister'},
+  {icon: '📷', label: 'QR Attendance', screen: 'QRScanner'},
+  {icon: '🔐', label: 'Biometric', screen: 'Biometric'},
+  {icon: '⏱️', label: 'Timesheet', screen: 'Timesheet'},
+  {icon: '🧾', label: 'Invoices', screen: 'Invoices'},
+  {icon: '📊', label: 'PM Dashboard', screen: 'PMDashboard'},
+  {icon: '🏢', label: 'Client Portal', screen: 'ClientPortal'},
 ]
 
 export default function MoreScreen({navigation}) {

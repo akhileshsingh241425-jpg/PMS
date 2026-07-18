@@ -27,7 +27,8 @@
     "@react-native-firebase/app": "^21.0.0",
     "@react-native-firebase/messaging": "^21.0.0",
     "react-native-background-actions": "^4.0.1",
-    "react-native-background-fetch": "^4.2.0"
+    "react-native-background-fetch": "^4.2.0",
+    "@react-native-community/netinfo": "^11.4.0"
   },
   "devDependencies": {
     "@react-native/babel-preset": "^0.79.0",

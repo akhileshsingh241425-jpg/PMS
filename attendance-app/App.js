@@ -15,6 +15,12 @@ import MoreScreen from './src/screens/MoreScreen'
 import DocumentsScreen from './src/screens/DocumentsScreen'
 import CalendarScreen from './src/screens/CalendarScreen'
 import FaceRegisterScreen from './src/screens/FaceRegisterScreen'
+import QRScannerScreen from './src/screens/QRScannerScreen'
+import BiometricScreen from './src/screens/BiometricScreen'
+import TimesheetScreen from './src/screens/TimesheetScreen'
+import InvoicesScreen from './src/screens/InvoicesScreen'
+import PMDashboardScreen from './src/screens/PMDashboardScreen'
+import ClientPortalScreen from './src/screens/ClientPortalScreen'
 import {NavigationContainer, useNavigation} from '@react-navigation/native'
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs'
 import {createNativeStackNavigator} from '@react-navigation/native-stack'
@@ -74,6 +80,12 @@ function MoreStack() {
       <Stack.Screen name="Documents" component={DocumentsScreen} options={{title: 'Documents'}} />
       <Stack.Screen name="Calendar" component={CalendarScreen} options={{title: 'Calendar'}} />
       <Stack.Screen name="FaceRegister" component={FaceRegisterScreen} options={{title: 'Face Registration'}} />
+      <Stack.Screen name="QRScanner" component={QRScannerScreen} options={{title: 'QR Attendance'}} />
+      <Stack.Screen name="Biometric" component={BiometricScreen} options={{title: 'Biometric Auth'}} />
+      <Stack.Screen name="Timesheet" component={TimesheetScreen} options={{title: 'Timesheet'}} />
+      <Stack.Screen name="Invoices" component={InvoicesScreen} options={{title: 'Invoices'}} />
+      <Stack.Screen name="PMDashboard" component={PMDashboardScreen} options={{title: 'PM Dashboard'}} />
+      <Stack.Screen name="ClientPortal" component={ClientPortalScreen} options={{title: 'Client Portal'}} />
     </Stack.Navigator>
   )
 }
