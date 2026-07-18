@@ -57,11 +57,13 @@ class Task(db.Model):
     creator = db.relationship('User', foreign_keys=[created_by])
     checklist = db.relationship('TaskChecklistItem', backref='task', lazy='dynamic', cascade='all, delete-orphan')
     comments = db.relationship('TaskComment', backref='task', lazy='dynamic', cascade='all, delete-orphan', order_by='TaskComment.created_at.asc()')
+    project = db.relationship('Project', foreign_keys=[project_id], lazy='joined')
 
     def to_dict(self):
         return {
             'id': self.id, 'title': self.title, 'description': self.description,
             'project_id': self.project_id,
+            'project_name': self.project.title if self.project else None,
             'status': self.status, 'priority': self.priority,
             'due_date': self.due_date.isoformat() if self.due_date else None,
             'estimated_hours': self.estimated_hours,
@@ -95,11 +97,13 @@ class Meeting(db.Model):
     creator = db.relationship('User', foreign_keys=[created_by])
     shares = db.relationship('MeetingShare', backref='meeting', lazy='dynamic', cascade='all, delete-orphan')
     activities = db.relationship('MeetingActivity', backref='meeting', lazy='dynamic', cascade='all, delete-orphan', order_by='MeetingActivity.created_at.asc()')
+    project = db.relationship('Project', foreign_keys=[project_id], lazy='joined')
 
     def to_dict(self):
         return {
             'id': self.id, 'title': self.title, 'description': self.description,
             'project_id': self.project_id,
+            'project_name': self.project.title if self.project else None,
             'meeting_date': self.meeting_date.isoformat() if self.meeting_date else None,
             'location': self.location, 'meeting_link': self.meeting_link,
             'status': self.status, 'mom': self.mom, 'meeting_notes': self.meeting_notes,
