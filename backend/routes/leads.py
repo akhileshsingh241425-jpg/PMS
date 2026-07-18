@@ -19,9 +19,12 @@ def _audit(lead_id, action, prev, new, user_id):
 
 
 def _notify(user_id, title, message, module_type=None, module_id=None, notif_type='info'):
+    from push_utils import send_push
     n = Notification(user_id=user_id, title=title, message=message,
                      module_type=module_type, module_id=module_id, type=notif_type)
     db.session.add(n)
+    db.session.flush()
+    send_push(user_id, title, message, {'module_type': module_type, 'module_id': str(module_id) if module_id else None})
     try:
         from flask import current_app
         u = User.query.get(user_id)

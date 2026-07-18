@@ -1,3 +1,4 @@
+import {useRef, useEffect, useCallback} from 'react'
 import {useAuth, AuthProvider} from './src/contexts/AuthContext'
 import LoginScreen from './src/screens/LoginScreen'
 import DashboardScreen from './src/screens/DashboardScreen'
@@ -14,14 +15,16 @@ import MoreScreen from './src/screens/MoreScreen'
 import DocumentsScreen from './src/screens/DocumentsScreen'
 import CalendarScreen from './src/screens/CalendarScreen'
 import FaceRegisterScreen from './src/screens/FaceRegisterScreen'
-import {NavigationContainer} from '@react-navigation/native'
+import {NavigationContainer, useNavigation} from '@react-navigation/native'
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs'
 import {createNativeStackNavigator} from '@react-navigation/native-stack'
-import {View, Text, ActivityIndicator, StyleSheet, StatusBar} from 'react-native'
+import {View, Text, ActivityIndicator, StyleSheet, StatusBar, Alert} from 'react-native'
 import {C} from './src/theme'
+import {requestPermission, registerDeviceToken, setupForegroundHandler, setupBackgroundHandler, setupNotificationOpenedHandler} from './src/services/notifications'
 
 const Tab = createBottomTabNavigator()
 const Stack = createNativeStackNavigator()
+const navigationRef = useRef(null)
 
 function TabIcon({label, focused}) {
   const icons = {Dashboard: '📊', Tasks: '✅', Projects: '📁', More: '☰'}
@@ -78,6 +81,19 @@ function MoreStack() {
 function AppContent() {
   const {user, loading} = useAuth()
 
+  useEffect(() => {
+    if (!user) return
+    setupBackgroundHandler()
+    requestPermission().then(granted => {
+      if (granted) registerDeviceToken()
+    })
+    const unsub = setupForegroundHandler(msg => {
+      Alert.alert(msg.notification?.title || '', msg.notification?.body || '')
+    })
+    setupNotificationOpenedHandler(navigationRef)
+    return () => { if (unsub) unsub() }
+  }, [user])
+
   if (loading) {
     return (
       <View style={styles.loading}>
@@ -89,7 +105,7 @@ function AppContent() {
   if (!user) return <LoginScreen />
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
       <Tab.Navigator
         screenOptions={({route}) => ({
