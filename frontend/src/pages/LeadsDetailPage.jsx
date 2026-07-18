@@ -90,6 +90,7 @@ export default function LeadsDetailPage() {
   const editorRef = useRef(null)
   const fileRef = useRef(null)
   const remarkInputRef = useRef(null)
+  const proposalEditorRef = useRef(null)
 
   // Inline edit for company name & description
   const [editingCompany, setEditingCompany] = useState(false)
@@ -900,7 +901,7 @@ export default function LeadsDetailPage() {
               {['details', 'template'].map(t => (
                 <button key={t} onClick={() => setProposalTab(t)}
                   style={{ padding: '10px 16px', border: 'none', background: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: proposalTab === t ? C.primary : C.muted, borderBottom: `2px solid ${proposalTab === t ? C.primary : 'transparent'}`, transition: '0.1s' }}>
-                  {t === 'details' ? 'Details' : 'HTML Template'}
+                  {t === 'details' ? 'Details' : 'Visual Editor'}
                 </button>
               ))}
             </div>
@@ -937,15 +938,33 @@ export default function LeadsDetailPage() {
               </div>
               ) : (
                 <div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 4 }}>HTML Template</div>
-                  <p style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>Edit the HTML proposal template directly. Use Preview to see how it looks.</p>
-                  <textarea value={proposalForm.html_content} onChange={e => setProposalForm({ ...proposalForm, html_content: e.target.value })} rows={16}
-                    style={{ width: '100%', padding: '10px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 12, fontFamily: 'monospace', outline: 'none', resize: 'vertical' }}
-                    placeholder="<html>..." />
-                  <button type="button" onClick={() => setPreviewHtml(proposalForm.html_content)}
-                    style={{ marginTop: 6, padding: '6px 14px', borderRadius: 6, border: `1px solid ${C.border}`, background: '#F9FAFB', color: '#374151', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-                    Preview Template
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 8, flexWrap: 'wrap', padding: '4px 0', borderBottom: `1px solid ${C.border}`, paddingBottom: 6 }}>
+                    {['Bold','Italic','Underline'].map(cmd => (
+                      <button key={cmd} type="button" onMouseDown={e => { e.preventDefault(); document.execCommand(cmd.toLowerCase(), false, null); proposalEditorRef.current?.focus() }}
+                        style={{ padding: '4px 10px', borderRadius: 4, border: '1px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: cmd === 'Bold' ? 700 : 400, fontStyle: cmd === 'Italic' ? 'italic' : 'normal', textDecoration: cmd === 'Underline' ? 'underline' : 'none', color: '#374151' }}>
+                        {cmd === 'Bold' ? 'B' : cmd === 'Italic' ? 'I' : 'U'}
+                      </button>
+                    ))}
+                    <span style={{ width: 1, height: 16, background: '#E5E7EB', margin: '0 4px' }} />
+                    {[{ cmd: 'formatBlock', val: 'h2', label: 'H2' }, { cmd: 'formatBlock', val: 'h3', label: 'H3' }, { cmd: 'formatBlock', val: 'p', label: 'P' }].map(b => (
+                      <button key={b.label} type="button" onMouseDown={e => { e.preventDefault(); document.execCommand(b.cmd, false, b.val); proposalEditorRef.current?.focus() }}
+                        style={{ padding: '4px 8px', borderRadius: 4, border: '1px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontSize: 11, fontWeight: 700, color: '#374151' }}>{b.label}</button>
+                    ))}
+                    <span style={{ width: 1, height: 16, background: '#E5E7EB', margin: '0 4px' }} />
+                    {[{ cmd: 'insertUnorderedList', label: 'UL' }, { cmd: 'insertOrderedList', label: 'OL' }].map(b => (
+                      <button key={b.label} type="button" onMouseDown={e => { e.preventDefault(); document.execCommand(b.cmd, false, null); proposalEditorRef.current?.focus() }}
+                        style={{ padding: '4px 8px', borderRadius: 4, border: '1px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: '#374151' }}>{b.label}</button>
+                    ))}
+                    <span style={{ flex: 1 }} />
+                    <button type="button" onClick={() => setPreviewHtml(proposalForm.html_content)}
+                      style={{ padding: '4px 12px', borderRadius: 4, border: `1px solid ${C.primary}`, background: C.primaryLight, color: C.primary, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                      Preview
+                    </button>
+                  </div>
+                  <div ref={proposalEditorRef} contentEditable suppressContentEditableWarning
+                    onInput={() => { if (proposalEditorRef.current) setProposalForm(prev => ({ ...prev, html_content: proposalEditorRef.current.innerHTML })) }}
+                    style={{ width: '100%', minHeight: 300, padding: 16, border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', overflowY: 'auto', lineHeight: 1.6, background: '#fff' }}
+                    dangerouslySetInnerHTML={{ __html: proposalForm.html_content }} />
                 </div>
               )}
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16, paddingTop: 12, borderTop: `1px solid ${C.border}` }}>
