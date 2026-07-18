@@ -10,6 +10,7 @@ const MENU_ITEMS = [
   {icon: '🔔', label: 'Notifications', screen: 'Notifications'},
   {icon: '📄', label: 'Documents', screen: 'Documents'},
   {icon: '📋', label: 'Calendar', screen: 'Calendar'},
+  {icon: '📸', label: 'Face Registration', screen: 'FaceRegister'},
 ]
 
 export default function MoreScreen({navigation}) {

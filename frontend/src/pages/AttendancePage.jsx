@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import api from '../services/api'
-import { Clock, MapPin, Briefcase, LogOut, History, Users, CheckCircle, XCircle, RefreshCw } from 'lucide-react'
+import { Clock, MapPin, Briefcase, LogOut, History, Users, CheckCircle, XCircle, RefreshCw, Camera, CameraOff } from 'lucide-react'
 
 const C = {
   card: '#fff',
@@ -31,17 +31,25 @@ export default function AttendancePage() {
   const [tab, setTab] = useState('today')
   const [locStatus, setLocStatus] = useState('')
   const [locDetecting, setLocDetecting] = useState(false)
+  const [faceMode, setFaceMode] = useState(false)
+  const [faceImage, setFaceImage] = useState(null)
+  const [faceRequired, setFaceRequired] = useState(false)
+  const videoRef = useRef(null)
+  const canvasRef = useRef(null)
+  const streamRef = useRef(null)
 
   const loadAll = useCallback(async () => {
     try {
-      const [t, a, p] = await Promise.all([
+      const [t, a, p, fs] = await Promise.all([
         api.get('/api/attendance/today'),
         api.get('/api/attendance/active'),
         api.get('/api/employee/projects'),
+        api.get('/api/attendance/face-status'),
       ])
       setToday(t.data.attendance)
       setActiveSessions(a.data.active)
       setMyProjects(p.data.projects || [])
+      setFaceRequired(fs.data.face_registered)
     } catch (e) { console.error(e) }
     setLoading(false)
   }, [])
@@ -84,7 +92,35 @@ export default function AttendancePage() {
     )
   }
 
-  const handleClockIn = async () => {
+  const startCamera = async () => {
+    setFaceMode(true)
+    setFaceImage(null)
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 320, height: 240 } })
+      streamRef.current = stream
+      if (videoRef.current) videoRef.current.srcObject = stream
+    } catch (_) { alert('Camera access denied. Please allow camera permission.'); setFaceMode(false) }
+  }
+
+  const stopCamera = () => {
+    if (streamRef.current) { streamRef.current.getTracks().forEach(t => t.stop()); streamRef.current = null }
+    setFaceMode(false)
+  }
+
+  const captureFace = () => {
+    const video = videoRef.current
+    const canvas = canvasRef.current
+    if (!video || !canvas) return
+    canvas.width = video.videoWidth || 320
+    canvas.height = video.videoHeight || 240
+    const ctx = canvas.getContext('2d')
+    ctx.drawImage(video, 0, 0)
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.8)
+    setFaceImage(dataUrl)
+    stopCamera()
+  }
+
+  const doClockIn = async () => {
     setClocking(true)
     try {
       const locName = manualLocation || location.name || ''
@@ -94,9 +130,11 @@ export default function AttendancePage() {
         location_name: locName,
         project_id: selectedProject ? Number(selectedProject) : undefined,
         work_description: workDesc,
+        face_image: faceImage || undefined,
       })
       setToday(r.data.attendance)
       setWorkDesc('')
+      setFaceImage(null)
       const a = await api.get('/api/attendance/active')
       setActiveSessions(a.data.active)
     } catch (e) {
@@ -105,12 +143,13 @@ export default function AttendancePage() {
     setClocking(false)
   }
 
-  const handleClockOut = async () => {
+  const doClockOut = async () => {
     setClocking(true)
     try {
-      const r = await api.post('/api/attendance/clock-out', { work_description: workDesc || undefined })
+      const r = await api.post('/api/attendance/clock-out', { work_description: workDesc || undefined, face_image: faceImage || undefined })
       setToday(r.data.attendance)
       setWorkDesc('')
+      setFaceImage(null)
       const a = await api.get('/api/attendance/active')
       setActiveSessions(a.data.active)
     } catch (e) {
@@ -118,6 +157,9 @@ export default function AttendancePage() {
     }
     setClocking(false)
   }
+
+  const handleClockIn = () => { if (faceRequired && !faceImage) { startCamera(); return }; doClockIn() }
+  const handleClockOut = () => { if (faceRequired && !faceImage) { startCamera(); return }; doClockOut() }
 
   const loadHistory = async () => {
     try {
@@ -151,7 +193,12 @@ export default function AttendancePage() {
   return (
     <><style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     <div>
-      <h1 style={{ fontSize: 20, fontWeight: 700, color: '#1A1A2E', marginBottom: 24 }}>Attendance</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: '#1A1A2E' }}>Attendance</h1>
+          <a href="/attendance/face-register" style={{ fontSize: 12, color: '#5B21B6', fontWeight: 600, textDecoration: 'none' }}>
+            {faceRequired ? '✅ Face On' : '📸 Register Face'}
+          </a>
+        </div>
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: `1px solid ${C.border}`, paddingBottom: 8 }}>
@@ -194,28 +241,55 @@ export default function AttendancePage() {
                 </div>
               )}
               <div style={{ marginTop: 20 }}>
-                {isClockedIn ? (
-                  <button onClick={handleClockOut} disabled={clocking}
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 32px',
-                      border: 'none', borderRadius: 10, cursor: 'pointer', fontSize: 15, fontWeight: 700,
-                      background: C.danger, color: '#fff', transition: '0.15s', opacity: clocking ? 0.6 : 1,
-                    }}>
-                    <LogOut className="w-5 h-5" /> Clock Out
-                  </button>
-                ) : (
-                  <div>
-                    {locStatus && <div style={{ fontSize: 12, color: C.warning, marginBottom: 8 }}>{locStatus}</div>}
-                    <button onClick={handleClockIn} disabled={clocking}
-                      style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 32px',
-                        border: 'none', borderRadius: 10, cursor: 'pointer', fontSize: 15, fontWeight: 700,
-                        background: C.success, color: '#fff', transition: '0.15s', opacity: clocking ? 0.6 : 1,
-                      }}>
-                      <Clock className="w-5 h-5" /> Clock In
-                    </button>
-                  </div>
-                )}
+{faceMode ? (
+  <div>
+    <video ref={videoRef} autoPlay playsInline style={{ width: '100%', borderRadius: 8, marginBottom: 8, maxHeight: 180, objectFit: 'cover' }} />
+    <canvas ref={canvasRef} style={{ display: 'none' }} />
+    <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+      <button onClick={captureFace} style={{ padding: '8px 20px', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 700, background: C.primary, color: '#fff' }}>Capture</button>
+      <button onClick={stopCamera} style={{ padding: '8px 20px', border: `1px solid ${C.border}`, borderRadius: 8, cursor: 'pointer', fontWeight: 600, background: '#fff', color: C.muted }}>Cancel</button>
+    </div>
+  </div>
+) : faceImage ? (
+  <div>
+    <img src={faceImage} alt="captured" style={{ width: 100, height: 100, borderRadius: 12, objectFit: 'cover', marginBottom: 8 }} />
+    <div style={{ fontSize: 11, color: C.success, marginBottom: 8 }}>✓ Face captured</div>
+    {isClockedIn ? (
+      <button onClick={doClockOut} disabled={clocking}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 32px', border: 'none', borderRadius: 10, cursor: 'pointer', fontSize: 15, fontWeight: 700, background: C.danger, color: '#fff', transition: '0.15s', opacity: clocking ? 0.6 : 1 }}>
+        <LogOut className="w-5 h-5" /> Clock Out
+      </button>
+    ) : (
+      <button onClick={doClockIn} disabled={clocking}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 32px', border: 'none', borderRadius: 10, cursor: 'pointer', fontSize: 15, fontWeight: 700, background: C.success, color: '#fff', transition: '0.15s', opacity: clocking ? 0.6 : 1 }}>
+        <Clock className="w-5 h-5" /> Clock In
+      </button>
+    )}
+  </div>
+) : isClockedIn ? (
+  <div>
+    <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>{faceRequired ? 'Face verification required' : 'Optional face capture'}</div>
+    <button onClick={handleClockOut} disabled={clocking}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 32px', border: 'none', borderRadius: 10, cursor: 'pointer', fontSize: 15, fontWeight: 700, background: C.danger, color: '#fff', transition: '0.15s', opacity: clocking ? 0.6 : 1 }}>
+      <LogOut className="w-5 h-5" /> Clock Out
+    </button>
+    <button onClick={startCamera} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginLeft: 8, padding: '12px 14px', border: `1.5px solid ${C.border}`, borderRadius: 10, cursor: 'pointer', fontSize: 13, fontWeight: 600, background: C.card, color: C.muted }}>
+      <Camera className="w-4 h-4" />
+    </button>
+  </div>
+) : (
+  <div>
+    {locStatus && <div style={{ fontSize: 12, color: C.warning, marginBottom: 8 }}>{locStatus}</div>}
+    <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>{faceRequired ? '📸 Face verification required before clock in' : 'Optional face capture'}</div>
+    <button onClick={handleClockIn} disabled={clocking}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 32px', border: 'none', borderRadius: 10, cursor: 'pointer', fontSize: 15, fontWeight: 700, background: C.success, color: '#fff', transition: '0.15s', opacity: clocking ? 0.6 : 1 }}>
+      <Clock className="w-5 h-5" /> Clock In
+    </button>
+    <button onClick={startCamera} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginLeft: 8, padding: '12px 14px', border: `1.5px solid ${C.border}`, borderRadius: 10, cursor: 'pointer', fontSize: 13, fontWeight: 600, background: C.card, color: C.muted }}>
+      <Camera className="w-4 h-4" />
+    </button>
+  </div>
+)}
               </div>
             </div>
 

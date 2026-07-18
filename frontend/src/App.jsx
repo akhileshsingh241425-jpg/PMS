@@ -18,6 +18,7 @@ import TeamsPage from './pages/TeamsPage'
 import MyWorkspacePage from './pages/MyWorkspacePage'
 import MeetingDetailPage from './pages/MeetingDetailPage'
 import AttendancePage from './pages/AttendancePage'
+import FaceRegisterPage from './pages/FaceRegisterPage'
 import EmployeeLayout from './components/EmployeeLayout'
 import EmployeePortal from './pages/EmployeePortal'
 import PMLayout from './components/PMLayout'
@@ -96,6 +97,7 @@ export default function App() {
                 <Route path="my-workspace" element={<MyWorkspacePage />} />
                 <Route path="meetings" element={<MeetingDetailPage />} />
                 <Route path="attendance" element={<AttendancePage />} />
+                <Route path="attendance/face-register" element={<FaceRegisterPage />} />
                 <Route path="users" element={<AdminRoute><UsersPage /></AdminRoute>} />
               </Route>
               <Route path="/employee" element={<Protected><EmployeeRoute><EmployeeAppLayout /></EmployeeRoute></Protected>}>
@@ -109,8 +111,10 @@ export default function App() {
                 <Route path="performance" element={<EmployeePortal activeTab="performance" />} />
                 <Route path="notifications" element={<EmployeePortal activeTab="notifications" />} />
                 <Route path="profile" element={<EmployeePortal activeTab="profile" />} />
+                <Route path="face-register" element={<FaceRegisterPage />} />
               </Route>
               <Route path="/pm" element={<Protected><PMRoute><PMAppLayout /></PMRoute></Protected>}>
+                <Route path="face-register" element={<FaceRegisterPage />} />
                 <Route index element={<PMDashboard />} />
                 <Route path="projects" element={<PMProjects />} />
                 <Route path="tasks" element={<PMTasks />} />

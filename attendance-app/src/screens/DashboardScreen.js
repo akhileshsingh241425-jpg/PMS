@@ -8,17 +8,20 @@ import StatsCard from '../components/StatsCard'
 export default function DashboardScreen() {
   const [today, setToday] = useState(null)
   const [active, setActive] = useState([])
+  const [faceRequired, setFaceRequired] = useState(false)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
 
   const load = useCallback(async () => {
     try {
-      const [t, a] = await Promise.all([
+      const [t, a, fs] = await Promise.all([
         api.get('/api/attendance/today'),
         api.get('/api/attendance/active'),
+        api.get('/api/attendance/face-status'),
       ])
       setToday(t.data.attendance)
       setActive(a.data.active)
+      setFaceRequired(fs.data.face_registered)
     } catch (_) {}
     setLoading(false)
     setRefreshing(false)
@@ -44,7 +47,7 @@ export default function DashboardScreen() {
             ? `Last session: ${Math.round(today.duration || 0)}h`
             : 'Not clocked in today'}
         </Text>
-        <ClockButton today={today} onUpdate={load} />
+        <ClockButton today={today} onUpdate={load} faceRequired={faceRequired} />
       </View>
 
       {/* Stats */}

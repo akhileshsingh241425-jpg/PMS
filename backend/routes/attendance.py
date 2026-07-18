@@ -2,6 +2,7 @@ from datetime import datetime, date
 from flask import Blueprint, request, jsonify
 from models import db, Attendance, User, Project, ProjectTeam
 from middleware.auth import login_required
+from face_utils import register_face, verify_face, save_attendance_face, face_detected, get_face_path, delete_face
 
 attendance_bp = Blueprint('attendance', __name__, url_prefix='/api/attendance')
 
@@ -32,6 +33,18 @@ def clock_in(current_user):
         status='Present',
     )
     db.session.add(rec)
+    db.session.flush()
+
+    face_img = data.get('face_image')
+    if face_img:
+        if face_detected(face_img):
+            path = save_attendance_face(rec.id, face_img)
+            rec.face_image_path = path
+            ref_path = get_face_path(current_user.id)
+            if ref_path:
+                vr = verify_face(current_user.id, face_img)
+                rec.face_verified = vr.get('verified', False)
+
     db.session.commit()
     return jsonify({'attendance': rec.to_dict()}), 201
 
@@ -46,6 +59,17 @@ def clock_out(current_user):
     record.clock_out = datetime.utcnow()
     if data.get('work_description'):
         record.work_description = data['work_description']
+
+    face_img = data.get('face_image')
+    if face_img:
+        if face_detected(face_img):
+            path = save_attendance_face(record.id, face_img)
+            record.face_image_path = path
+            ref_path = get_face_path(current_user.id)
+            if ref_path:
+                vr = verify_face(current_user.id, face_img)
+                record.face_verified = vr.get('verified', False)
+
     db.session.commit()
     return jsonify({'attendance': record.to_dict()})
 
@@ -111,3 +135,38 @@ def report(current_user):
         'records': [r.to_dict() for r in records],
         'summary': list(summary.values()),
     })
+
+
+@attendance_bp.route('/register-face', methods=['POST'])
+@login_required
+def register_face_route(current_user):
+    data = request.get_json() or {}
+    image = data.get('image')
+    if not image:
+        return jsonify({'error': 'face_image required'}), 400
+    if not face_detected(image):
+        return jsonify({'error': 'No face detected in image. Please try again with better lighting.'}), 400
+    path = register_face(current_user.id, image)
+    current_user.face_registration_path = path
+    current_user.face_registered_at = datetime.utcnow()
+    db.session.commit()
+    return jsonify({'message': 'Face registered successfully', 'face_registered': True})
+
+
+@attendance_bp.route('/face-status', methods=['GET'])
+@login_required
+def face_status(current_user):
+    return jsonify({
+        'face_registered': current_user.face_registration_path is not None,
+        'face_registered_at': current_user.face_registered_at.isoformat() if current_user.face_registered_at else None,
+    })
+
+
+@attendance_bp.route('/delete-face', methods=['POST'])
+@login_required
+def delete_face_route(current_user):
+    delete_face(current_user.id)
+    current_user.face_registration_path = None
+    current_user.face_registered_at = None
+    db.session.commit()
+    return jsonify({'message': 'Face deleted', 'face_registered': False})

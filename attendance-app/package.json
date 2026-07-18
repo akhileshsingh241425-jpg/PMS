@@ -22,7 +22,8 @@
     "axios": "^1.7.0",
     "@react-native-community/geolocation": "^3.4.0",
     "react-native-calendars": "^1.1309.0",
-    "react-native-biometrics": "^3.0.1"
+    "react-native-biometrics": "^3.0.1",
+    "react-native-image-picker": "^7.2.0"
   },
   "devDependencies": {
     "@react-native/babel-preset": "^0.79.0",

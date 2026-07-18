@@ -14,6 +14,8 @@ class Attendance(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete='SET NULL'), index=True)
     status = db.Column(db.String(20), default='Present')
     work_description = db.Column(db.Text)
+    face_image_path = db.Column(db.String(500))
+    face_verified = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -38,6 +40,8 @@ class Attendance(db.Model):
             'project_name': self.project.title if self.project else None,
             'status': self.status,
             'work_description': self.work_description,
+            'face_image_path': self.face_image_path,
+            'face_verified': self.face_verified,
             'duration': (self.clock_out - self.clock_in).total_seconds() / 3600 if self.clock_in and self.clock_out else None,
             'created_at': _fmt(self.created_at),
         }

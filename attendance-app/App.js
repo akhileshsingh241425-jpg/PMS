@@ -13,6 +13,7 @@ import ReportsScreen from './src/screens/ReportsScreen'
 import MoreScreen from './src/screens/MoreScreen'
 import DocumentsScreen from './src/screens/DocumentsScreen'
 import CalendarScreen from './src/screens/CalendarScreen'
+import FaceRegisterScreen from './src/screens/FaceRegisterScreen'
 import {NavigationContainer} from '@react-navigation/native'
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs'
 import {createNativeStackNavigator} from '@react-navigation/native-stack'
@@ -69,6 +70,7 @@ function MoreStack() {
       <Stack.Screen name="Reports" component={ReportsScreen} options={{title: 'Reports'}} />
       <Stack.Screen name="Documents" component={DocumentsScreen} options={{title: 'Documents'}} />
       <Stack.Screen name="Calendar" component={CalendarScreen} options={{title: 'Calendar'}} />
+      <Stack.Screen name="FaceRegister" component={FaceRegisterScreen} options={{title: 'Face Registration'}} />
     </Stack.Navigator>
   )
 }

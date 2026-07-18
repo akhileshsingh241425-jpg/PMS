@@ -21,6 +21,8 @@ class User(db.Model):
     account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), index=True)
     client_company_name = db.Column(db.String(255))
     # Common
+    face_registration_path = db.Column(db.String(500))
+    face_registered_at = db.Column(db.DateTime)
     reset_token = db.Column(db.String(255))
     reset_token_expiry = db.Column(db.DateTime)
     is_active = db.Column(db.Boolean, default=True)
@@ -67,5 +69,7 @@ class User(db.Model):
             'account_id': self.account_id,
             'client_company_name': self.client_company_name,
             'is_active': self.is_active,
+            'face_registered': self.face_registration_path is not None,
+            'face_registered_at': self.face_registered_at.isoformat() if self.face_registered_at else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
