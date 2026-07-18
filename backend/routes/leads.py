@@ -791,12 +791,45 @@ def delete_proposal(current_user, lid, pid):
     return jsonify({'message': 'Proposal deleted'})
 
 
+PROPOSAL_CSS = """
+@page { size: A4; margin: 0; }
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: 'Times New Roman',Times,serif; font-size:12pt; line-height:1.5; color:#1F2937; background:#f0f0f0; padding:40px 20px; }
+.page { max-width:794px; margin:0 auto; background:#fff; padding:50px 60px; box-shadow:0 2px 12px rgba(0,0,0,.08); }
+.border-top { border-top:3px solid #1E3A5F; margin-bottom:20px; }
+.header { text-align:center; margin-bottom:30px; padding-bottom:20px; border-bottom:2px solid #1E3A5F; }
+.header h1 { font-size:22pt; color:#1E3A5F; margin-bottom:4px; letter-spacing:1px; }
+.header .sub { font-size:11pt; color:#475569; }
+.ref-row td { padding:2px 12px 2px 0; font-size:10pt; color:#475569; }
+.to-block { margin-bottom:24px; }
+.to-block .label { font-weight:700; font-size:11pt; color:#1E3A5F; }
+.to-block .value { font-size:12pt; }
+.subject { font-size:13pt; font-weight:700; color:#1E3A5F; text-align:center; margin:20px 0; padding:8px 0; border-top:1px solid #CBD5E1; border-bottom:1px solid #CBD5E1; }
+.section { margin:20px 0; }
+.section h2 { font-size:14pt; color:#1E3A5F; border-bottom:1px solid #CBD5E1; padding-bottom:4px; margin-bottom:10px; }
+.section h3 { font-size:12pt; color:#1E3A5F; margin:10px 0 6px; }
+table { width:100%; border-collapse:collapse; font-size:11pt; margin:8px 0; }
+td, th { padding:7px 10px; text-align:left; border:1px solid #CBD5E1; vertical-align:top; }
+th { background:#F1F5F9; font-weight:700; color:#1E3A5F; }
+.pricing td:last-child { text-align:right; font-weight:700; }
+.total-row td { font-weight:700; font-size:12pt; background:#F8FAFC; }
+.terms ol { margin-left:20px; }
+.terms li { margin:4px 0; }
+.sig-section { margin-top:30px; padding-top:20px; border-top:1px solid #CBD5E1; display:flex; justify-content:space-between; }
+.sig-box { text-align:center; }
+.sig-box img { max-height:60px; margin-bottom:6px; }
+.sig-line { border-top:1px solid #1F2937; width:220px; padding-top:4px; font-size:10pt; color:#475569; }
+.footer { text-align:center; font-size:9pt; color:#94A3B8; margin-top:30px; padding-top:12px; border-top:1px solid #E2E8F0; }
+"""
+PROPOSAL_FULL_WRAPPER_TOP = '<!DOCTYPE html>\n<html><head><meta charset="utf-8"><style>' + PROPOSAL_CSS + '</style></head><body>\n<div class="page">\n'
+PROPOSAL_FULL_WRAPPER_BOTTOM = '\n</div></body></html>'
+
 @leads_bp.route('/<int:lid>/proposals/<int:pid>/preview', methods=['GET'])
 @login_required
 def preview_proposal(current_user, lid, pid):
     prop = LeadProposal.query.filter_by(id=pid, lead_id=lid).first_or_404()
     if prop.html_content:
-        return prop.html_content, 200, {'Content-Type': 'text/html; charset=utf-8'}
+        return (PROPOSAL_FULL_WRAPPER_TOP + prop.html_content + PROPOSAL_FULL_WRAPPER_BOTTOM), 200, {'Content-Type': 'text/html; charset=utf-8'}
     amt = prop.amount or 0
     return DEFAULT_PROPOSAL_TEMPLATE.format(
         proposal_no=prop.proposal_no,

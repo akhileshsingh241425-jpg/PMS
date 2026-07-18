@@ -11,6 +11,55 @@ const C = {
   text: '#1A1A2E', muted: '#9CA3AF', secondary: '#6B7280',
 }
 
+const PROPOSAL_WRAPPER_TOP = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>
+@page { size: A4; margin: 0; }
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: 'Times New Roman',Times,serif; font-size:12pt; line-height:1.5; color:#1F2937; background:#f0f0f0; padding:40px 20px; }
+.page { max-width:794px; margin:0 auto; background:#fff; padding:50px 60px; box-shadow:0 2px 12px rgba(0,0,0,.08); }
+.border-top { border-top:3px solid #1E3A5F; margin-bottom:20px; }
+.header { text-align:center; margin-bottom:30px; padding-bottom:20px; border-bottom:2px solid #1E3A5F; }
+.header h1 { font-size:22pt; color:#1E3A5F; margin-bottom:4px; letter-spacing:1px; }
+.header .sub { font-size:11pt; color:#475569; }
+.ref-row td { padding:2px 12px 2px 0; font-size:10pt; color:#475569; }
+.to-block { margin-bottom:24px; }
+.to-block .label { font-weight:700; font-size:11pt; color:#1E3A5F; }
+.to-block .value { font-size:12pt; }
+.subject { font-size:13pt; font-weight:700; color:#1E3A5F; text-align:center; margin:20px 0; padding:8px 0; border-top:1px solid #CBD5E1; border-bottom:1px solid #CBD5E1; }
+.section { margin:20px 0; }
+.section h2 { font-size:14pt; color:#1E3A5F; border-bottom:1px solid #CBD5E1; padding-bottom:4px; margin-bottom:10px; }
+.section h3 { font-size:12pt; color:#1E3A5F; margin:10px 0 6px; }
+table { width:100%; border-collapse:collapse; font-size:11pt; margin:8px 0; }
+td, th { padding:7px 10px; text-align:left; border:1px solid #CBD5E1; vertical-align:top; }
+th { background:#F1F5F9; font-weight:700; color:#1E3A5F; }
+.pricing td:last-child { text-align:right; font-weight:700; }
+.total-row td { font-weight:700; font-size:12pt; background:#F8FAFC; }
+.terms ol { margin-left:20px; }
+.terms li { margin:4px 0; }
+.sig-section { margin-top:30px; padding-top:20px; border-top:1px solid #CBD5E1; display:flex; justify-content:space-between; }
+.sig-box { text-align:center; }
+.sig-box img { max-height:60px; margin-bottom:6px; }
+.sig-line { border-top:1px solid #1F2937; width:220px; padding-top:4px; font-size:10pt; color:#475569; }
+.footer { text-align:center; font-size:9pt; color:#94A3B8; margin-top:30px; padding-top:12px; border-top:1px solid #E2E8F0; }
+</style></head><body>
+<div class="page">`
+
+const PROPOSAL_WRAPPER_BOTTOM = `</div></body></html>`
+
+const proposalFullHtml = (body, sig, stamp) => {
+  const sigHtml = sig ? `<div class="sig-box"><img src="${sig}" alt="Signature" /><div class="sig-line">Authorized Signatory — InFocus IT Solutions</div></div>` : `<div class="sig-box"><div class="sig-line">Authorized Signatory — InFocus IT Solutions</div></div>`
+  const stampHtml = stamp ? `<div class="sig-box"><img src="${stamp}" alt="Stamp" /><div class="sig-line">Company Stamp</div></div>` : ''
+  return `${PROPOSAL_WRAPPER_TOP}
+    ${body}
+    <div class="sig-section">${sigHtml}${stampHtml ? `<div style="width:20px"></div>${stampHtml}` : ''}</div>
+    ${PROPOSAL_WRAPPER_BOTTOM}`
+}
+
+const extractBody = (fullHtml) => {
+  const m = fullHtml.match(/<body[^>]*>([\s\S]*)<\/body>/i)
+  return m ? m[1].trim() : fullHtml
+}
+
 const STAGE_TABS = [
   { key: 'Prospecting', label: 'Prospecting', icon: 'M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0' },
   { key: 'Lead Qualification', label: 'Lead Qualification', icon: 'M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z' },
@@ -81,6 +130,8 @@ export default function LeadsDetailPage() {
   const [proposalTab, setProposalTab] = useState('edit')
   const [showPreview, setShowPreview] = useState(false)
   const [previewHtml, setPreviewHtml] = useState('')
+  const [proposalSig, setProposalSig] = useState('')
+  const [proposalStamp, setProposalStamp] = useState('')
   const [showConvertModal, setShowConvertModal] = useState(false)
   const [convertMode, setConvertMode] = useState('account')
   const [converting, setConverting] = useState(false)
@@ -91,6 +142,8 @@ export default function LeadsDetailPage() {
   const fileRef = useRef(null)
   const remarkInputRef = useRef(null)
   const proposalEditorRef = useRef(null)
+  const sigFileRef = useRef(null)
+  const stampFileRef = useRef(null)
 
   // Inline edit for company name & description
   const [editingCompany, setEditingCompany] = useState(false)
@@ -602,9 +655,9 @@ export default function LeadsDetailPage() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                 <SectionTitle icon={<FileIcon />} text={`Proposals (${(proposals || []).length})`} />
                 <button onClick={async () => {
-                  setEditingProposal(null)
+                  setEditingProposal(null); setProposalSig(''); setProposalStamp('')
                   setProposalForm({ amount: '', version: 1, status: 'Draft', notes: '', html_content: '' })
-                  try { const r = await api.get(`/api/leads/${id}/proposals/template`); setProposalForm(prev => ({ ...prev, html_content: r.data.html })) } catch (e) {}
+                  try { const r = await api.get(`/api/leads/${id}/proposals/template`); setProposalForm(prev => ({ ...prev, html_content: extractBody(r.data.html) })) } catch (e) {}
                   setShowProposalForm(true)
                 }}
                   style={{ display: 'flex', alignItems: 'center', gap: 6, background: C.primary, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
@@ -623,9 +676,9 @@ export default function LeadsDetailPage() {
                         <div style={{ fontSize: 11, color: C.muted }}>v{p.version} · ₹{p.amount?.toLocaleString()} · {p.prepared_by_name}</div>
                       </div>
                       <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 99, background: p.status === 'Accepted' ? '#D1FAE5' : p.status === 'Sent' ? '#DBEAFE' : p.status === 'Draft' ? '#F3F4F6' : p.status === 'Rejected' ? '#FEE2E2' : '#FFF7ED', color: p.status === 'Accepted' ? '#065F46' : p.status === 'Sent' ? '#1E40AF' : p.status === 'Draft' ? '#6B7280' : p.status === 'Rejected' ? '#991B1B' : '#9A3412' }}>{p.status}</span>
-                      <button onClick={() => { setEditingProposal(p); setProposalForm({ amount: p.amount, version: p.version, status: p.status, notes: p.notes || '', html_content: p.html_content || '' }); setShowProposalForm(true); setProposalTab('edit') }}
+                      <button onClick={() => { setEditingProposal(p); setProposalForm({ amount: p.amount, version: p.version, status: p.status, notes: p.notes || '', html_content: extractBody(p.html_content || '') }); setShowProposalForm(true); setProposalTab('edit') }}
                         style={{ padding: '4px 8px', borderRadius: 6, border: 'none', background: '#F0F2F8', color: '#6B7280', cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>Edit</button>
-                      <button onClick={() => { setPreviewHtml(p.html_content); setShowPreview(true) }}
+                      <button onClick={() => { setPreviewHtml(proposalFullHtml(extractBody(p.html_content || ''), '', '')); setShowPreview(true) }}
                         style={{ padding: '4px 8px', borderRadius: 6, border: 'none', background: '#EDE9FE', color: C.primary, cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>Preview</button>
                     </div>
                   ))}
@@ -935,6 +988,43 @@ export default function LeadsDetailPage() {
                     style={{ width: '100%', padding: '8px 10px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical' }}
                     placeholder="Proposal notes or terms..." />
                 </div>
+                <div style={{ gridColumn: '1 / -1', borderTop: `1px solid ${C.border}`, paddingTop: 12, marginTop: 4 }}>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 8, display: 'block' }}>Digital Signature & Stamp</label>
+                  <div style={{ display: 'flex', gap: 16 }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>Signature</div>
+                      {proposalSig ? (
+                        <div style={{ padding: 8, border: `1px solid ${C.border}`, borderRadius: 8, background: '#F9FAFB', textAlign: 'center' }}>
+                          <img src={proposalSig} alt="Signature" style={{ maxHeight: 50 }} />
+                          <button type="button" onClick={() => setProposalSig('')} style={{ display: 'block', margin: '4px auto 0', fontSize: 10, color: C.danger, background: 'none', border: 'none', cursor: 'pointer' }}>Remove</button>
+                        </div>
+                      ) : (
+                        <button type="button" onClick={() => sigFileRef.current?.click()}
+                          style={{ width: '100%', padding: '16px 8px', border: `1.5px dashed ${C.border}`, borderRadius: 8, background: '#F9FAFB', color: C.muted, fontSize: 11, cursor: 'pointer', textAlign: 'center' }}>
+                          Upload Signature Image
+                        </button>
+                      )}
+                      <input ref={sigFileRef} type="file" accept="image/*" style={{ display: 'none' }}
+                        onChange={e => { const f = e.target.files?.[0]; if (f) { const r = new FileReader(); r.onload = () => setProposalSig(r.result); r.readAsDataURL(f) } }} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>Company Stamp</div>
+                      {proposalStamp ? (
+                        <div style={{ padding: 8, border: `1px solid ${C.border}`, borderRadius: 8, background: '#F9FAFB', textAlign: 'center' }}>
+                          <img src={proposalStamp} alt="Stamp" style={{ maxHeight: 50 }} />
+                          <button type="button" onClick={() => setProposalStamp('')} style={{ display: 'block', margin: '4px auto 0', fontSize: 10, color: C.danger, background: 'none', border: 'none', cursor: 'pointer' }}>Remove</button>
+                        </div>
+                      ) : (
+                        <button type="button" onClick={() => stampFileRef.current?.click()}
+                          style={{ width: '100%', padding: '16px 8px', border: `1.5px dashed ${C.border}`, borderRadius: 8, background: '#F9FAFB', color: C.muted, fontSize: 11, cursor: 'pointer', textAlign: 'center' }}>
+                          Upload Stamp Image
+                        </button>
+                      )}
+                      <input ref={stampFileRef} type="file" accept="image/*" style={{ display: 'none' }}
+                        onChange={e => { const f = e.target.files?.[0]; if (f) { const r = new FileReader(); r.onload = () => setProposalStamp(r.result); r.readAsDataURL(f) } }} />
+                    </div>
+                  </div>
+                </div>
               </div>
               ) : (
                 <div>
@@ -956,7 +1046,7 @@ export default function LeadsDetailPage() {
                         style={{ padding: '4px 8px', borderRadius: 4, border: '1px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: '#374151' }}>{b.label}</button>
                     ))}
                     <span style={{ flex: 1 }} />
-                    <button type="button" onClick={() => setPreviewHtml(proposalForm.html_content)}
+                     <button type="button" onClick={() => { setPreviewHtml(proposalFullHtml(proposalForm.html_content, proposalSig, proposalStamp)); setShowPreview(true) }}
                       style={{ padding: '4px 12px', borderRadius: 4, border: `1px solid ${C.primary}`, background: C.primaryLight, color: C.primary, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
                       Preview
                     </button>
