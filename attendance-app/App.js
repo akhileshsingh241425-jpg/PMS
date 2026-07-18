@@ -21,6 +21,7 @@ import TimesheetScreen from './src/screens/TimesheetScreen'
 import InvoicesScreen from './src/screens/InvoicesScreen'
 import PMDashboardScreen from './src/screens/PMDashboardScreen'
 import ClientPortalScreen from './src/screens/ClientPortalScreen'
+import ChatScreen from './src/screens/ChatScreen'
 import {NavigationContainer, useNavigation} from '@react-navigation/native'
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs'
 import {createNativeStackNavigator} from '@react-navigation/native-stack'
@@ -86,6 +87,7 @@ function MoreStack() {
       <Stack.Screen name="Invoices" component={InvoicesScreen} options={{title: 'Invoices'}} />
       <Stack.Screen name="PMDashboard" component={PMDashboardScreen} options={{title: 'PM Dashboard'}} />
       <Stack.Screen name="ClientPortal" component={ClientPortalScreen} options={{title: 'Client Portal'}} />
+      <Stack.Screen name="Chat" component={ChatScreen} options={{title: 'Team Chat'}} />
     </Stack.Navigator>
   )
 }

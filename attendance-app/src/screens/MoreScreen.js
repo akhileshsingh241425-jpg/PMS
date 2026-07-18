@@ -17,6 +17,7 @@ const MENU_ITEMS = [
   {icon: '🧾', label: 'Invoices', screen: 'Invoices'},
   {icon: '📊', label: 'PM Dashboard', screen: 'PMDashboard'},
   {icon: '🏢', label: 'Client Portal', screen: 'ClientPortal'},
+  {icon: '💬', label: 'Team Chat', screen: 'Chat'},
 ]
 
 export default function MoreScreen({navigation}) {
