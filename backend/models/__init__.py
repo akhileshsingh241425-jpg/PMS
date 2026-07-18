@@ -17,3 +17,4 @@ from .enterprise import ProjectRisk, ProjectIssue, ProjectMilestone, ProjectInvo
 from .vulnerability import Vulnerability
 from .rbac import AuditLog, has_permission, is_higher_role, should_notify
 from .team import Team, TeamMember
+from .attendance import Attendance

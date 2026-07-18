@@ -17,6 +17,7 @@ import ProjectsDetailPage from './pages/ProjectsDetailPage'
 import TeamsPage from './pages/TeamsPage'
 import MyWorkspacePage from './pages/MyWorkspacePage'
 import MeetingDetailPage from './pages/MeetingDetailPage'
+import AttendancePage from './pages/AttendancePage'
 import EmployeeLayout from './components/EmployeeLayout'
 import EmployeePortal from './pages/EmployeePortal'
 import PMLayout from './components/PMLayout'
@@ -94,6 +95,7 @@ export default function App() {
                 <Route path="teams" element={<TeamsPage />} />
                 <Route path="my-workspace" element={<MyWorkspacePage />} />
                 <Route path="meetings" element={<MeetingDetailPage />} />
+                <Route path="attendance" element={<AttendancePage />} />
                 <Route path="users" element={<AdminRoute><UsersPage /></AdminRoute>} />
               </Route>
               <Route path="/employee" element={<Protected><EmployeeRoute><EmployeeAppLayout /></EmployeeRoute></Protected>}>
