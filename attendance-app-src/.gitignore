@@ -1,0 +1,16 @@
+node_modules/
+.gradle/
+build/
+*.apk
+*.aab
+*.hprof
+*.keystore
+!debug.keystore
+android/app/build/
+android/build/
+ios/Pods/
+ios/build/
+.buck*
+*.log
+.metro-health-check*
+*.tsbuildinfo

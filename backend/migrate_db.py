@@ -128,6 +128,55 @@ if 'referral_status_log' not in tables:
     )''')
     print('  referral_status_log table created')
 
+if 'attendance' not in tables:
+    c.execute('''CREATE TABLE attendance (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        date DATE NOT NULL,
+        clock_in DATETIME NOT NULL,
+        clock_out DATETIME,
+        location_lat FLOAT,
+        location_lon FLOAT,
+        location_name VARCHAR(255),
+        project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL,
+        status VARCHAR(20) DEFAULT 'Present',
+        work_description TEXT,
+        face_image_path VARCHAR(500),
+        face_verified BOOLEAN DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )''')
+    c.execute('CREATE INDEX IF NOT EXISTS idx_attendance_user_id ON attendance(user_id)')
+    c.execute('CREATE INDEX IF NOT EXISTS idx_attendance_date ON attendance(date)')
+    print('  attendance table created')
+
+if 'location_logs' not in tables:
+    c.execute('''CREATE TABLE location_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        lat FLOAT NOT NULL,
+        lon FLOAT NOT NULL,
+        accuracy FLOAT,
+        recorded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )''')
+    c.execute('CREATE INDEX IF NOT EXISTS idx_location_logs_user_id ON location_logs(user_id)')
+    print('  location_logs table created')
+
+if 'chat_messages' not in tables:
+    c.execute('''CREATE TABLE chat_messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        sender_id INTEGER NOT NULL REFERENCES users(id),
+        receiver_id INTEGER REFERENCES users(id),
+        channel VARCHAR(100),
+        message TEXT NOT NULL,
+        msg_type VARCHAR(20) DEFAULT 'text',
+        is_read BOOLEAN DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )''')
+    c.execute('CREATE INDEX IF NOT EXISTS idx_chat_messages_channel ON chat_messages(channel)')
+    print('  chat_messages table created')
+
 conn.commit()
 conn.close()
 print('Migration done')
