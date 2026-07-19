@@ -18,18 +18,6 @@ def create_app():
     init_mail(app)
     CORS(app, origins=['*'], supports_credentials=True)
 
-    @app.route('/api/debug/tables', methods=['GET'])
-    def debug_tables():
-        import sqlite3
-        from models import db
-        inspector = db.inspect(db.engine)
-        tables = inspector.get_table_names()
-        result = {}
-        for t in tables:
-            cols = [c['name'] for c in inspector.get_columns(t)]
-            result[t] = cols
-        return jsonify(result)
-
     @app.route('/api/health', methods=['GET'])
     def health():
         return jsonify({'status': 'ok', 'version': '2.0'})
@@ -42,9 +30,7 @@ def create_app():
 
     @app.errorhandler(500)
     def server_error(e):
-        import traceback
-        traceback.print_exc()
-        return jsonify({'error': 'Internal server error', 'detail': str(e.original_exception) if hasattr(e, 'original_exception') else str(e)}), 500
+        return jsonify({'error': 'Internal server error'}), 500
 
     from routes import auth_bp, account_bp, project_bp, activity_bp, portal_bp, queries_bp, dash_bp, meeting_req_bp, notif_bp, leads_bp, opp_bp, contact_bp, enterprise_bp, admin_bp, search_bp, team_bp, me_bp, employee_bp, pm_bp, vuln_bp, attendance_bp
     from routes.push_routes import push_bp
