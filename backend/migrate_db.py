@@ -150,6 +150,24 @@ if 'attendance' not in tables:
     c.execute('CREATE INDEX IF NOT EXISTS idx_attendance_date ON attendance(date)')
     print('  attendance table created')
 
+if 'attendance' in tables:
+    att_cols = {r[1] for r in c.execute('PRAGMA table_info(attendance)').fetchall()}
+    att_migrations = [
+        ('location_lat', 'FLOAT'),
+        ('location_lon', 'FLOAT'),
+        ('location_name', 'VARCHAR(255)'),
+        ('project_id', 'INTEGER REFERENCES projects(id) ON DELETE SET NULL'),
+        ('work_description', 'TEXT'),
+        ('face_image_path', 'VARCHAR(500)'),
+        ('face_verified', 'BOOLEAN DEFAULT 0'),
+        ('created_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP'),
+        ('updated_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP'),
+    ]
+    for col, typ in att_migrations:
+        if col not in att_cols:
+            c.execute(f'ALTER TABLE attendance ADD COLUMN {col} {typ}')
+            print(f'  attendance.{col} added')
+
 if 'location_logs' not in tables:
     c.execute('''CREATE TABLE location_logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
