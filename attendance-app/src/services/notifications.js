@@ -1,19 +1,33 @@
 import {Platform} from 'react-native'
-import messaging from '@react-native-firebase/messaging'
 import api from './api'
 
-let onNotificationOpened = null
-let onMessageReceived = null
+let messaging = null
+try {
+  messaging = require('@react-native-firebase/messaging').default
+} catch {}
+
+function isFirebaseAvailable() {
+  try {
+    return !!messaging && typeof messaging === 'function'
+  } catch {
+    return false
+  }
+}
 
 export async function requestPermission() {
-  const auth = await messaging().requestPermission()
-  return auth === messaging.AuthorizationStatus.AUTHORIZED || auth === messaging.AuthorizationStatus.PROVISIONAL
+  if (!isFirebaseAvailable()) return false
+  try {
+    const auth = await messaging().requestPermission()
+    return auth === 1 || auth === 2
+  } catch {
+    return false
+  }
 }
 
 export async function getToken() {
+  if (!isFirebaseAvailable()) return null
   try {
-    const token = await messaging().getToken()
-    return token
+    return await messaging().getToken()
   } catch {
     return null
   }
@@ -35,29 +49,37 @@ export async function unregisterDeviceToken() {
 }
 
 export function setupForegroundHandler(handler) {
-  onMessageReceived = handler
-  return messaging().onMessage(async remoteMessage => {
-    if (handler) handler(remoteMessage)
-  })
+  if (!isFirebaseAvailable()) return null
+  try {
+    return messaging().onMessage(async remoteMessage => {
+      if (handler) handler(remoteMessage)
+    })
+  } catch {
+    return null
+  }
 }
 
 export function setupBackgroundHandler() {
-  messaging().setBackgroundMessageHandler(async remoteMessage => {
-    // System notification auto-displayed by FCM
-    return Promise.resolve()
-  })
+  if (!isFirebaseAvailable()) return
+  try {
+    messaging().setBackgroundMessageHandler(async remoteMessage => {
+      return Promise.resolve()
+    })
+  } catch {}
 }
 
 export function setupNotificationOpenedHandler(navigationRef) {
-  messaging().onNotificationOpenedApp(remoteMessage => {
-    handleNotificationData(remoteMessage.data, navigationRef)
-  })
-
-  messaging().getInitialNotification().then(remoteMessage => {
-    if (remoteMessage) {
-      setTimeout(() => handleNotificationData(remoteMessage.data, navigationRef), 500)
-    }
-  })
+  if (!isFirebaseAvailable()) return
+  try {
+    messaging().onNotificationOpenedApp(remoteMessage => {
+      handleNotificationData(remoteMessage.data, navigationRef)
+    })
+    messaging().getInitialNotification().then(remoteMessage => {
+      if (remoteMessage) {
+        setTimeout(() => handleNotificationData(remoteMessage.data, navigationRef), 500)
+      }
+    })
+  } catch {}
 }
 
 function handleNotificationData(data, navigationRef) {
