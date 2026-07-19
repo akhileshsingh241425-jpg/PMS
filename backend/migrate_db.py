@@ -16,6 +16,8 @@ MIGRATIONS = {
         ('reporting_manager_id', 'INTEGER REFERENCES users(id)'),
         ('certifications', 'TEXT'),
         ('experience_years', 'FLOAT'),
+        ('face_registration_path', 'TEXT'),
+        ('face_registered_at', 'DATETIME'),
     ],
     'leads': [
         ('closed_by', 'INTEGER'), ('approval_status', 'VARCHAR(20)'),
