@@ -1,4 +1,4 @@
-import {useRef, useEffect, useCallback} from 'react'
+import {useEffect, useCallback} from 'react'
 import {useAuth, AuthProvider} from './src/contexts/AuthContext'
 import LoginScreen from './src/screens/LoginScreen'
 import DashboardScreen from './src/screens/DashboardScreen'
@@ -26,12 +26,13 @@ import {NavigationContainer, useNavigation} from '@react-navigation/native'
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs'
 import {createNativeStackNavigator} from '@react-navigation/native-stack'
 import {View, Text, ActivityIndicator, StyleSheet, StatusBar, Alert} from 'react-native'
+import {createRef} from 'react'
 import {C} from './src/theme'
 import {requestPermission, registerDeviceToken, setupForegroundHandler, setupBackgroundHandler, setupNotificationOpenedHandler} from './src/services/notifications'
 
 const Tab = createBottomTabNavigator()
 const Stack = createNativeStackNavigator()
-const navigationRef = useRef(null)
+const navigationRef = createRef()
 
 function TabIcon({label, focused}) {
   const icons = {Dashboard: '📊', Tasks: '✅', Projects: '📁', More: '☰'}

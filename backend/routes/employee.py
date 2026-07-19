@@ -430,13 +430,13 @@ def project_activities(current_user, pid):
     for m in meetings:
         activities.append({
             'type': 'meeting', 'action': f'Meeting created: {m.title}',
-            'user_name': m.created_by_name, 'created_at': m.created_at.isoformat() if m.created_at else None,
+            'user_name': m.creator.full_name if m.creator else 'Unknown', 'created_at': m.created_at.isoformat() if m.created_at else None,
         })
     tasks = Task.query.filter_by(project_id=pid).order_by(Task.created_at.desc()).limit(10).all()
     for t in tasks:
         activities.append({
             'type': 'task', 'action': f'Task {t.status.lower()}: {t.title}',
-            'user_name': t.assigned_name, 'created_at': t.created_at.isoformat() if t.created_at else None,
+            'user_name': t.assignee.full_name if t.assignee else 'Unknown', 'created_at': t.created_at.isoformat() if t.created_at else None,
         })
     docs = ProjectDocument.query.filter_by(project_id=pid).order_by(ProjectDocument.uploaded_at.desc()).limit(10).all()
     for d in docs:

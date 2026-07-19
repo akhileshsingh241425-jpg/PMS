@@ -1,6 +1,7 @@
 import re, time
 from datetime import datetime
 from werkzeug.utils import secure_filename
+from models import db
 
 
 ALLOWED_EXTENSIONS = {'pdf', 'docx', 'xlsx', 'png', 'jpg', 'jpeg', 'zip', 'pptx', 'csv', 'txt'}
@@ -92,7 +93,6 @@ def generate_id(model_class, prefix, field='id', zfill=4):
     max_attempts = 5
     for attempt in range(max_attempts):
         try:
-            from . import db
             last = db.session.query(db.func.max(getattr(model_class, field))).scalar()
             last_id = int(last.replace(prefix, '')) if last else 0
             new_id = f'{prefix}{str(last_id + 1).zfill(zfill)}'

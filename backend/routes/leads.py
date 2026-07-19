@@ -1,7 +1,7 @@
 from datetime import datetime
 from flask import Blueprint, request, jsonify
 import os
-from models import db, Lead, LeadRemark, LeadDocument, LeadActivity, LeadNote, LeadAuditLog, LeadProposal, Account, Notification, User, Project, ProjectRemark, Note, Opportunity
+from models import db, Lead, LeadRemark, LeadDocument, LeadActivity, LeadNote, LeadAuditLog, LeadProposal, LeadRemarkReaction, Account, Notification, User, Project, ProjectRemark, Note, Opportunity
 from middleware.auth import login_required
 from utils import validate_file, safe_filename, generate_id, paginate, safe_float, safe_int
 

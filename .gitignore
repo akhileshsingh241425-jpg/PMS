@@ -11,3 +11,20 @@ venv/
 # passenger_wsgi.py needed for deployment, keep it
 frontend/dist/
 backend/static/
+
+# Attendance App
+attendance-app/node_modules/
+attendance-app/android/app/build/
+attendance-app/android/.gradle/
+attendance-app/android/build/
+attendance-app/android/.kotlin/
+attendance-app/android/app/.cxx/
+attendance-app/ios/
+attendance-app/.bundle/
+attendance-app/__tests__/
+attendance-app/package-lock.json
+attendance-app/.watchmanconfig
+
+# Log files
+backend_err.log
+backend_out.log
