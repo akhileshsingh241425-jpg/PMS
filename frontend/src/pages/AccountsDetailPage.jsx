@@ -307,7 +307,7 @@ export default function AccountsDetailPage() {
   )
   if (!data) return null
 
-  const { account: acc, contacts = [], opportunities = [], leads = [], referral_leads = [], projects = [], documents = [], tasks = [], meetings = [], notes = [], meeting_requests = [], finding_queries = [], client_users = [] } = data
+  const { account: acc, sub_accounts = [], contacts = [], opportunities = [], leads = [], referral_leads = [], projects = [], documents = [], tasks = [], meetings = [], notes = [], meeting_requests = [], finding_queries = [], client_users = [] } = data
 
   const allTimelineItems = [
     ...notes.map(n => ({ ...n, _type: 'note', _date: n.created_at })),
@@ -592,6 +592,18 @@ export default function AccountsDetailPage() {
                   <InfoField label="Updated" value={formatDateTime(acc.updated_at)} icon={Calendar} />
                 </div>
               </div>
+              <div style={{ height: 1, background: '#F0F0F0', margin: '0 0 14px' }} />
+              {/* Parent Client */}
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 8 }}>Parent Client</div>
+                {acc.referred_by_account_id ? (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 20px' }} className="info-grid">
+                    <InfoField label="Parent Company" value={acc.referred_by_name} icon={Building2} />
+                  </div>
+                ) : (
+                  <p style={{ fontSize: 12, color: '#9CA3AF', margin: 0 }}>This is a main client {acc.sub_accounts_count > 0 ? `with ${acc.sub_accounts_count} sub-client(s)` : ''}</p>
+                )}
+              </div>
             </div>
             <style>{`
               @media (max-width: 1200px) {
@@ -672,6 +684,53 @@ export default function AccountsDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* ═══ SUB-CLIENTS ═══ */}
+        {(sub_accounts.length > 0) && (
+          <SectionCard title="Sub-Clients" icon={Building2} iconColor="#D97706" count={sub_accounts.length}>
+            <div style={{ padding: '0 0 8px', display: 'flex', justifyContent: 'flex-end' }}>
+              <button onClick={() => navigate('/accounts', { state: { filter: 'sub_clients', parent_id: acc.acc_id } })} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 14px', borderRadius: 8, border: '1px solid #D1D5DB', background: '#fff', color: '#374151', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                View All Sub-Clients
+              </button>
+            </div>
+            {sub_accounts.length === 0 ? (
+              <p style={{ fontSize: 13, color: '#9CA3AF', padding: '20px 0', textAlign: 'center', margin: 0 }}>No sub-clients yet</p>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid #E5E7EB' }}>
+                      <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 600, color: '#6B7280', whiteSpace: 'nowrap' }}>Client ID</th>
+                      <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 600, color: '#6B7280', whiteSpace: 'nowrap' }}>Company</th>
+                      <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 600, color: '#6B7280', whiteSpace: 'nowrap' }}>Status</th>
+                      <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 600, color: '#6B7280', whiteSpace: 'nowrap' }}>Stage</th>
+                      <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 600, color: '#6B7280', whiteSpace: 'nowrap' }}>Created</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sub_accounts.map(sub => (
+                      <tr key={sub.id} style={{ borderBottom: '1px solid #F3F4F6', cursor: 'pointer' }} onClick={() => navigate(`/accounts/${sub.id}`)}>
+                        <td style={{ padding: '8px 12px', color: '#5B21B6', fontWeight: 600 }}>{sub.acc_id}</td>
+                        <td style={{ padding: '8px 12px', fontWeight: 500 }}>{sub.company_name || '-'}</td>
+                        <td style={{ padding: '8px 12px' }}>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 9999, fontSize: 11, fontWeight: 600, background: sub.status === 'Active' ? '#D1FAE5' : '#FEF3C7', color: sub.status === 'Active' ? '#065F46' : '#92400E' }}>
+                            {sub.status || 'Active'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '8px 12px' }}>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 9999, fontSize: 11, fontWeight: 600, background: '#EDE9FE', color: '#5B21B6' }}>
+                            {sub.stage || 'Active'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '8px 12px', color: '#6B7280' }}>{sub.created_at ? new Date(sub.created_at).toLocaleDateString() : '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </SectionCard>
+        )}
 
         {/* ═══ CONTACTS ═══ */}
         <SectionCard title="Contacts" icon={User} iconColor="#8B5CF6" count={contacts.length} onViewAll={() => {}}>

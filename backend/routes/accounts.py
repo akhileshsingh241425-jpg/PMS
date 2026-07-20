@@ -22,7 +22,8 @@ def list_accounts(current_user):
     lead_counts = dict(db.session.query(Lead.account_id, db.func.count(Lead.id)).filter(Lead.account_id.in_(ids)).group_by(Lead.account_id).all()) if ids else {}
     opp_counts = dict(db.session.query(Opportunity.account_id, db.func.count(Opportunity.id)).filter(Opportunity.account_id.in_(ids)).group_by(Opportunity.account_id).all()) if ids else {}
     contact_counts = dict(db.session.query(Contact.account_id, db.func.count(Contact.id)).filter(Contact.account_id.in_(ids)).group_by(Contact.account_id).all()) if ids else {}
-    return jsonify({'accounts': [a.to_dict(counts={'projects': proj_counts.get(a.id, 0), 'leads': lead_counts.get(a.id, 0), 'opportunities': opp_counts.get(a.id, 0), 'contacts': contact_counts.get(a.id, 0)}) for a in result['items']], 'pagination': {'page': result['page'], 'per_page': result['per_page'], 'total': result['total'], 'pages': result['pages']}})
+    sub_account_counts = dict(db.session.query(Account.referred_by_account_id, db.func.count(Account.id)).filter(Account.referred_by_account_id.in_(ids)).group_by(Account.referred_by_account_id).all()) if ids else {}
+    return jsonify({'accounts': [a.to_dict(counts={'projects': proj_counts.get(a.id, 0), 'leads': lead_counts.get(a.id, 0), 'opportunities': opp_counts.get(a.id, 0), 'contacts': contact_counts.get(a.id, 0), 'sub_accounts': sub_account_counts.get(a.id, 0)}) for a in result['items']], 'pagination': {'page': result['page'], 'per_page': result['per_page'], 'total': result['total'], 'pages': result['pages']}})
 
 
 @account_bp.route('', methods=['POST'])
@@ -47,6 +48,7 @@ def create_account(current_user):
         pan_no=data.get('pan_no'),
         industry=data.get('industry'),
         account_type=data.get('account_type', 'B2B'),
+        referred_by_account_id=data.get('referred_by_account_id') or None,
         created_by=current_user.id,
     )
     db.session.add(acc)
@@ -66,8 +68,10 @@ def get_account(current_user, aid):
     contacts = Contact.query.filter_by(account_id=aid).order_by(Contact.is_primary.desc(), Contact.created_at.desc()).all()
     lead_ids = [l.id for l in leads]
     client_users = User.query.filter_by(account_id=aid, role='client').order_by(User.created_at.desc()).all()
+    sub_accounts = Account.query.filter_by(referred_by_account_id=aid).all()
     return jsonify({
-        'account': acc.to_dict(),
+        'account': acc.to_dict(counts={'sub_accounts': len(sub_accounts)}),
+        'sub_accounts': [s.to_dict() for s in sub_accounts],
         'contacts': [c.to_dict() for c in contacts],
         'projects': [p.to_dict() for p in projects],
         'opportunities': [o.to_dict() for o in opportunities],
@@ -92,7 +96,7 @@ def get_account(current_user, aid):
 def update_account(current_user, aid):
     acc = Account.query.get_or_404(aid)
     data = request.get_json()
-    for f in ['company_name', 'contact_name', 'contact_email', 'contact_phone', 'website', 'address', 'city', 'state', 'country', 'pincode', 'gst_no', 'pan_no', 'industry', 'account_type', 'status']:
+    for f in ['company_name', 'contact_name', 'contact_email', 'contact_phone', 'website', 'address', 'city', 'state', 'country', 'pincode', 'gst_no', 'pan_no', 'industry', 'account_type', 'status', 'referred_by_account_id']:
         if f in data:
             setattr(acc, f, data[f] or None)
     db.session.commit()

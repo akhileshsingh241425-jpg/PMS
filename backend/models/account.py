@@ -58,6 +58,7 @@ class Account(db.Model):
             'leads_count': counts['leads'] if counts and 'leads' in counts else 0,
             'opportunities_count': counts['opportunities'] if counts and 'opportunities' in counts else 0,
             'contacts_count': counts['contacts'] if counts and 'contacts' in counts else self.contacts.count() if hasattr(self, 'contacts') else 0,
+            'sub_accounts_count': counts['sub_accounts'] if counts and 'sub_accounts' in counts else 0,
             'acquisition_source': self.acquisition_source,
             'referred_by_account_id': self.referred_by_account_id,
             'referred_by_name': self.referred_by.company_name if self.referred_by else None,
