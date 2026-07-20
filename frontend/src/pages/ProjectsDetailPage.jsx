@@ -528,111 +528,197 @@ export default function ProjectsDetailPage() {
           </div>
         )}
 
-        {/* ═══ PO IN SECTION ═══ */}
-        {(p.po_number || p.project_type || p.plan_generated) && (
-          <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '16px 20px', marginBottom: 12 }}>
-            <SectionTitle icon={<FileTextIcon />} text={p.plan_generated ? 'Project Plan' : 'Purchase Order (PO In)'} />
-            {!p.plan_generated && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginTop: 12 }}>
-                {p.po_number && <InfoField icon={<HashIcon />} label="PO Number" value={p.po_number} empty={!p.po_number} />}
-                {p.po_date && <InfoField icon={<CalendarIcon />} label="PO Date" value={formatDate(p.po_date)} empty={!p.po_date} />}
-                {p.po_amount && <InfoField icon={<MoneyIcon />} label="PO Amount" value={`₹${p.po_amount.toLocaleString()}`} empty={!p.po_amount} green />}
-                {p.tds ? <InfoField icon={<MinusIcon />} label="TDS" value={`₹${p.tds.toLocaleString()}`} /> : null}
-                {p.gst ? <InfoField icon={<PlusIcon />} label="GST @18%" value={`₹${p.gst.toLocaleString()}`} /> : null}
-                {p.net_amount ? <InfoField icon={<DollarIcon />} label="Net Amount" value={`₹${p.net_amount.toLocaleString()}`} green /> : null}
-                {p.project_type && <InfoField icon={<TagIcon />} label="Project Type" value={p.project_type} empty={!p.project_type} badge />}
-                {p.po_terms && <div style={{ gridColumn: '1 / -1' }}><InfoField icon={<FileTextIcon />} label="Terms & Conditions" value={p.po_terms} empty={!p.po_terms} /></div>}
-              </div>
-            )}
-            {!p.plan_generated && p.project_type && (
-              <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
-                <button onClick={generatePlan} disabled={generatingPlan}
-                  style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: C.primary, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: generatingPlan ? 0.6 : 1 }}>
-                  {generatingPlan ? 'Generating...' : `Generate Plan from ${p.project_type} Template`}
-                </button>
-              </div>
-            )}
-            {p.plan_generated && phases.length > 0 && (
-              <div style={{ marginTop: 12 }}>
-                {phases.map((phase, pi) => (
-                  <div key={phase.id} style={{ marginBottom: 14, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px', background: '#F8FAFC', borderBottom: `1px solid ${C.border}` }}>
-                      <div style={{ width: 28, height: 28, borderRadius: '50%', background: C.primaryLight, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: C.primary, flexShrink: 0 }}>{pi + 1}</div>
-                      <span style={{ fontSize: 15, fontWeight: 700, color: '#1F2937', flex: 1 }}>{phase.name}</span>
-                      <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: phase.status === 'Completed' ? '#D1FAE5' : phase.status === 'In Progress' ? '#FEF3C7' : '#F3F4F6', color: phase.status === 'Completed' ? '#065F46' : phase.status === 'In Progress' ? '#92400E' : '#6B7280' }}>
-                        {phase.status}
-                      </span>
-                    </div>
-                    <div style={{ padding: '4px 18px 10px' }}>
-                      {phase.tasks.map(task => (
-                        <div key={task.id} style={{ borderBottom: '1px solid #F3F4F6', padding: '8px 0' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <div style={{ width: 8, height: 8, minWidth: 8, borderRadius: '50%', background: task.status === 'Completed' ? '#059669' : task.status === 'In Progress' ? '#D97706' : '#D1D5DB' }} />
-                            <span style={{ fontSize: 14, fontWeight: 600, color: '#1F2937', flex: 1 }}>{task.title}</span>
-                            <span style={{ fontSize: 12, color: task.assigned_name ? '#6B7280' : '#9CA3AF', whiteSpace: 'nowrap' }}>{task.assigned_name || 'Unassigned'}</span>
-                            <span style={{ fontSize: 12, color: '#9CA3AF', whiteSpace: 'nowrap' }}>{task.due_date ? formatDate(task.due_date) : ''}</span>
-                            <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20, background: task.status === 'Completed' ? '#D1FAE5' : task.status === 'In Progress' ? '#FEF3C7' : '#F3F4F6', color: task.status === 'Completed' ? '#065F46' : task.status === 'In Progress' ? '#92400E' : '#6B7280', whiteSpace: 'nowrap' }}>
-                              {task.status}
-                            </span>
-                            <button onClick={() => { setAddSubtaskOf(task.id); setSubtaskForm({ title: '', assigned_to: '', due_date: '', status: 'Open' }) }} style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #D1D5DB', background: '#fff', color: '#6B7280', fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>+ Subtask</button>
-                          </div>
-                          {task.subtasks?.map(st => (
-                            <div key={st.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0 2px 28px' }}>
-                              <div style={{ width: 6, height: 6, minWidth: 6, borderRadius: '50%', background: st.status === 'Completed' ? '#059669' : '#D1D5DB' }} />
-                              <span style={{ fontSize: 13, color: '#6B7280', flex: 1 }}>{st.title}</span>
-                              <span style={{ fontSize: 11, color: '#9CA3AF' }}>{st.assigned_name || ''}</span>
-                              <span style={{ fontSize: 11, color: '#9CA3AF' }}>{st.due_date ? formatDate(st.due_date) : ''}</span>
-                              <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 8px', borderRadius: 20, background: st.status === 'Completed' ? '#D1FAE5' : '#F3F4F6', color: st.status === 'Completed' ? '#065F46' : '#6B7280' }}>{st.status}</span>
-                            </div>
-                          ))}
-                          {addSubtaskOf === task.id && (
-                            <form onSubmit={addSubtask} style={{ display: 'flex', gap: 8, padding: '8px 0 4px 28px', flexWrap: 'wrap' }}>
-                              <input value={subtaskForm.title} onChange={e => setSubtaskForm({ ...subtaskForm, title: e.target.value })} placeholder="Subtask title" required style={{ flex: '1 1 180px', padding: '6px 10px', border: `1.5px solid ${C.border}`, borderRadius: 6, fontSize: 12, outline: 'none', fontFamily: 'inherit' }} />
-                              <select value={subtaskForm.assigned_to} onChange={e => setSubtaskForm({ ...subtaskForm, assigned_to: e.target.value })} style={{ padding: '6px 8px', border: `1.5px solid ${C.border}`, borderRadius: 6, fontSize: 12, background: '#fff', fontFamily: 'inherit' }}>
-                                <option value="">Owner</option>
-                                {team.map(t => <option key={t.user_id} value={t.user_id}>{t.user_name}</option>)}
-                              </select>
-                              <input type="date" value={subtaskForm.due_date} onChange={e => setSubtaskForm({ ...subtaskForm, due_date: e.target.value })} style={{ padding: '6px 8px', border: `1.5px solid ${C.border}`, borderRadius: 6, fontSize: 12, fontFamily: 'inherit' }} />
-                              <select value={subtaskForm.status} onChange={e => setSubtaskForm({ ...subtaskForm, status: e.target.value })} style={{ padding: '6px 8px', border: `1.5px solid ${C.border}`, borderRadius: 6, fontSize: 12, background: '#fff', fontFamily: 'inherit' }}>
-                                <option value="Open">Open</option>
-                                <option value="In Progress">In Progress</option>
-                                <option value="Completed">Completed</option>
-                              </select>
-                              <button type="submit" style={{ padding: '6px 14px', borderRadius: 6, border: 'none', background: C.primary, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Add</button>
-                              <button type="button" onClick={() => setAddSubtaskOf(null)} style={{ padding: '6px 12px', borderRadius: 6, border: `1.5px solid ${C.border}`, background: '#fff', color: '#6B7280', fontSize: 12, cursor: 'pointer' }}>Cancel</button>
-                            </form>
-                          )}
+        {/* ═══ PLAN + TASKS + MILESTONES (COMBINED) ═══ */}
+        <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '18px 22px', marginBottom: 12 }}>
+          <SectionTitle icon={<FileTextIcon />} text="Plan & Tasks" />
+          
+          {/* ── PO In Info ── */}
+          {(p.po_number || p.po_amount || p.po_date || p.project_type) && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginTop: 14, marginBottom: 14, padding: 12, background: '#F9FAFB', borderRadius: 10 }}>
+              {p.po_number && <InfoField icon={<HashIcon />} label="PO Number" value={p.po_number} />}
+              {p.po_date && <InfoField icon={<CalendarIcon />} label="PO Date" value={formatDate(p.po_date)} />}
+              {p.po_amount && <InfoField icon={<MoneyIcon />} label="PO Amount" value={`₹${p.po_amount.toLocaleString()}`} green />}
+              {p.tds ? <InfoField icon={<MinusIcon />} label="TDS" value={`₹${p.tds.toLocaleString()}`} /> : null}
+              {p.gst ? <InfoField icon={<PlusIcon />} label="GST @18%" value={`₹${p.gst.toLocaleString()}`} /> : null}
+              {p.net_amount ? <InfoField icon={<DollarIcon />} label="Net Amount" value={`₹${p.net_amount.toLocaleString()}`} green /> : null}
+              {p.project_type && <InfoField icon={<TagIcon />} label="Project Type" value={p.project_type} badge />}
+              {p.po_terms && <div style={{ gridColumn: '1 / -1' }}><InfoField icon={<FileTextIcon />} label="Terms" value={p.po_terms} /></div>}
+            </div>
+          )}
+
+          {/* ── Generate Plan Button ── */}
+          {!p.plan_generated && p.project_type && (
+            <div style={{ marginBottom: 16 }}>
+              <button onClick={generatePlan} disabled={generatingPlan}
+                style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: C.primary, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: generatingPlan ? 0.6 : 1 }}>
+                {generatingPlan ? 'Generating...' : `Generate Plan from ${p.project_type} Template`}
+              </button>
+            </div>
+          )}
+
+          {/* ── Phases (Plan Generated) ── */}
+          {p.plan_generated && phases.length > 0 && (
+            <div style={{ marginBottom: 20 }}>
+              {phases.map((phase, pi) => (
+                <div key={phase.id} style={{ marginBottom: 14, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px', background: '#F8FAFC', borderBottom: `1px solid ${C.border}` }}>
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: C.primaryLight, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: C.primary, flexShrink: 0 }}>{pi + 1}</div>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: '#1F2937', flex: 1 }}>{phase.name}</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: phase.status === 'Completed' ? '#D1FAE5' : phase.status === 'In Progress' ? '#FEF3C7' : '#F3F4F6', color: phase.status === 'Completed' ? '#065F46' : phase.status === 'In Progress' ? '#92400E' : '#6B7280' }}>
+                      {phase.status}
+                    </span>
+                  </div>
+                  <div style={{ padding: '4px 18px 10px' }}>
+                    {phase.tasks.map(task => (
+                      <div key={task.id} style={{ borderBottom: '1px solid #F3F4F6', padding: '8px 0' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div style={{ width: 8, height: 8, minWidth: 8, borderRadius: '50%', background: task.status === 'Completed' ? '#059669' : task.status === 'In Progress' ? '#D97706' : '#D1D5DB' }} />
+                          <span style={{ fontSize: 14, fontWeight: 600, color: '#1F2937', flex: 1 }}>{task.title}</span>
+                          <span style={{ fontSize: 12, color: task.assigned_name ? '#6B7280' : '#9CA3AF', whiteSpace: 'nowrap' }}>{task.assigned_name || 'Unassigned'}</span>
+                          <span style={{ fontSize: 12, color: '#9CA3AF', whiteSpace: 'nowrap' }}>{task.due_date ? formatDate(task.due_date) : ''}</span>
+                          <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20, background: task.status === 'Completed' ? '#D1FAE5' : task.status === 'In Progress' ? '#FEF3C7' : '#F3F4F6', color: task.status === 'Completed' ? '#065F46' : task.status === 'In Progress' ? '#92400E' : '#6B7280', whiteSpace: 'nowrap' }}>
+                            {task.status}
+                          </span>
+                          <button onClick={() => { setAddSubtaskOf(task.id); setSubtaskForm({ title: '', assigned_to: '', due_date: '', status: 'Open' }) }} style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #D1D5DB', background: '#fff', color: '#6B7280', fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>+ Subtask</button>
                         </div>
-                      ))}
+                        {task.subtasks?.map(st => (
+                          <div key={st.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0 2px 28px' }}>
+                            <div style={{ width: 6, height: 6, minWidth: 6, borderRadius: '50%', background: st.status === 'Completed' ? '#059669' : '#D1D5DB' }} />
+                            <span style={{ fontSize: 13, color: '#6B7280', flex: 1 }}>{st.title}</span>
+                            <span style={{ fontSize: 11, color: '#9CA3AF' }}>{st.assigned_name || ''}</span>
+                            <span style={{ fontSize: 11, color: '#9CA3AF' }}>{st.due_date ? formatDate(st.due_date) : ''}</span>
+                            <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 8px', borderRadius: 20, background: st.status === 'Completed' ? '#D1FAE5' : '#F3F4F6', color: st.status === 'Completed' ? '#065F46' : '#6B7280' }}>{st.status}</span>
+                          </div>
+                        ))}
+                        {addSubtaskOf === task.id && (
+                          <form onSubmit={addSubtask} style={{ display: 'flex', gap: 8, padding: '8px 0 4px 28px', flexWrap: 'wrap' }}>
+                            <input value={subtaskForm.title} onChange={e => setSubtaskForm({ ...subtaskForm, title: e.target.value })} placeholder="Subtask title" required style={{ flex: '1 1 180px', padding: '6px 10px', border: `1.5px solid ${C.border}`, borderRadius: 6, fontSize: 12, outline: 'none', fontFamily: 'inherit' }} />
+                            <select value={subtaskForm.assigned_to} onChange={e => setSubtaskForm({ ...subtaskForm, assigned_to: e.target.value })} style={{ padding: '6px 8px', border: `1.5px solid ${C.border}`, borderRadius: 6, fontSize: 12, background: '#fff', fontFamily: 'inherit' }}>
+                              <option value="">Owner</option>
+                              {team.map(t => <option key={t.user_id} value={t.user_id}>{t.user_name}</option>)}
+                            </select>
+                            <input type="date" value={subtaskForm.due_date} onChange={e => setSubtaskForm({ ...subtaskForm, due_date: e.target.value })} style={{ padding: '6px 8px', border: `1.5px solid ${C.border}`, borderRadius: 6, fontSize: 12, fontFamily: 'inherit' }} />
+                            <select value={subtaskForm.status} onChange={e => setSubtaskForm({ ...subtaskForm, status: e.target.value })} style={{ padding: '6px 8px', border: `1.5px solid ${C.border}`, borderRadius: 6, fontSize: 12, background: '#fff', fontFamily: 'inherit' }}>
+                              <option value="Open">Open</option>
+                              <option value="In Progress">In Progress</option>
+                              <option value="Completed">Completed</option>
+                            </select>
+                            <button type="submit" style={{ padding: '6px 14px', borderRadius: 6, border: 'none', background: C.primary, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Add</button>
+                            <button type="button" onClick={() => setAddSubtaskOf(null)} style={{ padding: '6px 12px', borderRadius: 6, border: `1.5px solid ${C.border}`, background: '#fff', color: '#6B7280', fontSize: 12, cursor: 'pointer' }}>Cancel</button>
+                          </form>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ padding: '10px 18px', borderTop: `1px solid ${C.border}`, background: '#FAFAFA' }}>
+                    {addTaskPhase === phase.id ? (
+                      <form onSubmit={addTaskToPhase} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        <input value={phaseTaskForm.title} onChange={e => setPhaseTaskForm({ ...phaseTaskForm, title: e.target.value })} placeholder="Task title" required style={{ flex: '1 1 200px', padding: '6px 10px', border: `1.5px solid ${C.border}`, borderRadius: 6, fontSize: 12, outline: 'none', fontFamily: 'inherit' }} />
+                        <select value={phaseTaskForm.assigned_to} onChange={e => setPhaseTaskForm({ ...phaseTaskForm, assigned_to: e.target.value })} style={{ padding: '6px 8px', border: `1.5px solid ${C.border}`, borderRadius: 6, fontSize: 12, background: '#fff', fontFamily: 'inherit' }}>
+                          <option value="">Owner</option>
+                          {team.map(t => <option key={t.user_id} value={t.user_id}>{t.user_name}</option>)}
+                        </select>
+                        <input type="date" value={phaseTaskForm.due_date} onChange={e => setPhaseTaskForm({ ...phaseTaskForm, due_date: e.target.value })} style={{ padding: '6px 8px', border: `1.5px solid ${C.border}`, borderRadius: 6, fontSize: 12, fontFamily: 'inherit' }} />
+                        <select value={phaseTaskForm.status} onChange={e => setPhaseTaskForm({ ...phaseTaskForm, status: e.target.value })} style={{ padding: '6px 8px', border: `1.5px solid ${C.border}`, borderRadius: 6, fontSize: 12, background: '#fff', fontFamily: 'inherit' }}>
+                          <option value="Open">Open</option>
+                          <option value="In Progress">In Progress</option>
+                          <option value="Completed">Completed</option>
+                        </select>
+                        <button type="submit" style={{ padding: '6px 14px', borderRadius: 6, border: 'none', background: C.primary, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Add</button>
+                        <button type="button" onClick={() => setAddTaskPhase(null)} style={{ padding: '6px 12px', borderRadius: 6, border: `1.5px solid ${C.border}`, background: '#fff', color: '#6B7280', fontSize: 12, cursor: 'pointer' }}>Cancel</button>
+                      </form>
+                    ) : (
+                      <button onClick={() => { setAddTaskPhase(phase.id); setPhaseTaskForm({ title: '', assigned_to: '', due_date: '', status: 'Open' }) }} style={{ padding: '6px 14px', borderRadius: 6, border: '1.5px dashed #D1D5DB', background: 'none', color: C.primary, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>+ Add Task</button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── Standalone Tasks ── */}
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#374151' }}>All Tasks ({tasks.length})</span>
+              <button onClick={() => setShowTaskForm(!showTaskForm)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: C.primary, fontSize: 12, fontWeight: 700, padding: 0 }}>
+                {showTaskForm ? 'Cancel' : '+ Assign Task'}
+              </button>
+            </div>
+            {showTaskForm && (
+              <form onSubmit={addTask} style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12, padding: 14, background: '#F8F9FC', borderRadius: 10 }}>
+                <input value={taskForm.title} onChange={e => setTaskForm({ ...taskForm, title: e.target.value })} placeholder="Task title..." required
+                  style={{ padding: '8px 10px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 12, outline: 'none', fontFamily: 'inherit' }} />
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <select value={taskForm.priority} onChange={e => setTaskForm({ ...taskForm, priority: e.target.value })} style={{ flex: 1, padding: '8px 10px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 12, outline: 'none', fontFamily: 'inherit', background: C.card }}>
+                    <option>Low</option><option>Normal</option><option>High</option><option>Urgent</option>
+                  </select>
+                  <input type="date" value={taskForm.due_date} onChange={e => setTaskForm({ ...taskForm, due_date: e.target.value })}
+                    style={{ flex: 1, padding: '8px 8px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 12, outline: 'none' }} />
+                  <select value={taskForm.assigned_to} onChange={e => setTaskForm({ ...taskForm, assigned_to: e.target.value })} style={{ flex: 1, padding: '8px 10px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 12, outline: 'none', fontFamily: 'inherit', background: C.card }}>
+                    <option value="">Assign to...</option>
+                    {team.map(t => <option key={t.user_id} value={t.user_id}>{t.user_name}</option>)}
+                  </select>
+                </div>
+                <button type="submit" disabled={!taskForm.title.trim()} style={{ background: C.primary, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', alignSelf: 'flex-start', opacity: taskForm.title.trim() ? 1 : 0.5 }}>
+                  + Add Task
+                </button>
+              </form>
+            )}
+            {tasks.length === 0 ? (
+              <div style={{ fontSize: 13, color: C.muted, padding: '8px 0' }}>No tasks yet</div>
+            ) : (
+              tasks.map(t => (
+                <div key={t.id} onClick={() => openTaskEditor(t)} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '8px 12px', background: '#F8F9FC', borderRadius: 8, marginBottom: 6, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={t.status === 'Completed'} onChange={e => { e.stopPropagation(); updateTaskStatus(t.id, t.status === 'Completed' ? 'Open' : 'Completed') }}
+                    style={{ width: 16, height: 16, accentColor: C.primary, cursor: 'pointer', flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: t.status === 'Completed' ? C.muted : '#374151', textDecoration: t.status === 'Completed' ? 'line-through' : 'none' }}>{t.title}</div>
+                    <div style={{ display: 'flex', gap: 6, marginTop: 2, flexWrap: 'wrap' }}>
+                      {t.priority && <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 4, background: t.priority === 'Urgent' || t.priority === 'High' ? '#FEE2E2' : '#F0F2F8', color: t.priority === 'Urgent' || t.priority === 'High' ? '#DC2626' : C.secondary }}>{t.priority}</span>}
+                      {t.assigned_name && <span style={{ fontSize: 10, color: C.secondary }}>{t.assigned_name}</span>}
+                      {t.due_date && <span style={{ fontSize: 10, color: C.muted }}>{formatDate(t.due_date)}</span>}
+                      <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 6px', borderRadius: 4, background: t.status === 'Completed' ? '#D1FAE5' : '#F3F4F6', color: t.status === 'Completed' ? '#065F46' : '#6B7280' }}>{t.status}</span>
                     </div>
-                    <div style={{ padding: '10px 18px', borderTop: `1px solid ${C.border}`, background: '#FAFAFA' }}>
-                      {addTaskPhase === phase.id ? (
-                        <form onSubmit={addTaskToPhase} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                          <input value={phaseTaskForm.title} onChange={e => setPhaseTaskForm({ ...phaseTaskForm, title: e.target.value })} placeholder="Task title" required style={{ flex: '1 1 200px', padding: '6px 10px', border: `1.5px solid ${C.border}`, borderRadius: 6, fontSize: 12, outline: 'none', fontFamily: 'inherit' }} />
-                          <select value={phaseTaskForm.assigned_to} onChange={e => setPhaseTaskForm({ ...phaseTaskForm, assigned_to: e.target.value })} style={{ padding: '6px 8px', border: `1.5px solid ${C.border}`, borderRadius: 6, fontSize: 12, background: '#fff', fontFamily: 'inherit' }}>
-                            <option value="">Owner</option>
-                            {team.map(t => <option key={t.user_id} value={t.user_id}>{t.user_name}</option>)}
-                          </select>
-                          <input type="date" value={phaseTaskForm.due_date} onChange={e => setPhaseTaskForm({ ...phaseTaskForm, due_date: e.target.value })} style={{ padding: '6px 8px', border: `1.5px solid ${C.border}`, borderRadius: 6, fontSize: 12, fontFamily: 'inherit' }} />
-                          <select value={phaseTaskForm.status} onChange={e => setPhaseTaskForm({ ...phaseTaskForm, status: e.target.value })} style={{ padding: '6px 8px', border: `1.5px solid ${C.border}`, borderRadius: 6, fontSize: 12, background: '#fff', fontFamily: 'inherit' }}>
-                            <option value="Open">Open</option>
-                            <option value="In Progress">In Progress</option>
-                            <option value="Completed">Completed</option>
-                          </select>
-                          <button type="submit" style={{ padding: '6px 14px', borderRadius: 6, border: 'none', background: C.primary, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Add</button>
-                          <button type="button" onClick={() => setAddTaskPhase(null)} style={{ padding: '6px 12px', borderRadius: 6, border: `1.5px solid ${C.border}`, background: '#fff', color: '#6B7280', fontSize: 12, cursor: 'pointer' }}>Cancel</button>
-                        </form>
-                      ) : (
-                        <button onClick={() => { setAddTaskPhase(phase.id); setPhaseTaskForm({ title: '', assigned_to: '', due_date: '', status: 'Open' }) }} style={{ padding: '6px 14px', borderRadius: 6, border: '1.5px dashed #D1D5DB', background: 'none', color: C.primary, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>+ Add Task</button>
-                      )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* ── Milestones ── */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#374151' }}>Milestones ({milestones.length})</span>
+              <button onClick={() => setMstoneForm(mstoneForm ? null : { title: '', due_date: '', description: '' })} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: C.primary, fontSize: 12, fontWeight: 700, padding: 0 }}>
+                {mstoneForm ? 'Cancel' : '+ Add Milestone'}
+              </button>
+            </div>
+            {mstoneForm && (
+              <div style={{ display: 'flex', gap: 8, marginBottom: 14, padding: 14, background: '#F8F9FC', borderRadius: 10, flexWrap: 'wrap' }}>
+                <input value={mstoneForm.title} onChange={e => setMstoneForm({...mstoneForm, title: e.target.value})} placeholder="Milestone title" style={{ flex: '1 1 200px', padding:'8px 10px', border:`1.5px solid ${C.border}`, borderRadius:6, fontSize:12, outline:'none', fontFamily:'inherit' }} />
+                <input type="date" value={mstoneForm.due_date} onChange={e => setMstoneForm({...mstoneForm, due_date: e.target.value})} style={{ padding:'8px 10px', border:`1.5px solid ${C.border}`, borderRadius:6, fontSize:12, outline:'none', fontFamily:'inherit' }} />
+                <button onClick={async () => { if (!mstoneForm.title) return; await api.post(`/api/projects/${id}/milestones`, mstoneForm); setMstoneForm(null); fetchData() }} style={{ padding:'8px 16px', border:'none', borderRadius:6, background:C.primary, color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer' }}>Add</button>
+              </div>
+            )}
+            {milestones.length === 0 ? (
+              <div style={{ fontSize: 13, color: C.muted, padding: '8px 0' }}>No milestones added</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {milestones.map(m => (
+                  <div key={m.id} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', borderRadius:8, background:'#F9FAFB', border: `1px solid ${C.border}` }}>
+                    <div style={{ width: 10, height: 10, minWidth: 10, borderRadius: '50%', background: m.status === 'Completed' ? '#059669' : '#D97706' }} />
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: '#1F2937' }}>{m.title}</div>
+                      <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>{m.due_date ? formatDate(m.due_date) : 'No date'} {m.description ? `· ${m.description}` : ''}</div>
                     </div>
+                    <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20, background: m.status === 'Completed' ? '#D1FAE5' : '#FEF3C7', color: m.status === 'Completed' ? '#065F46' : '#92400E', whiteSpace: 'nowrap' }}>{m.status}</span>
+                    {m.status !== 'Completed' && <button onClick={async () => { await api.put(`/api/projects/${id}/milestones/${m.id}`, { status: 'Completed' }); fetchData() }} style={{ fontSize: 11, fontWeight: 700, padding:'5px 12px', borderRadius:6, border:'none', background:C.primary, color:'#fff', cursor:'pointer', whiteSpace:'nowrap' }}>Mark Done</button>}
                   </div>
                 ))}
               </div>
             )}
-
           </div>
-        )}
+        </div>
 
         {/* ═══ FULL WIDTH SECTIONS ═══ */}
         <div>
@@ -754,59 +840,7 @@ export default function ProjectsDetailPage() {
               )}
             </div>
 
-            {/* TASKS + DOCUMENTS */}
-            <div style={{ display: 'grid', gridTemplateColumns: p.plan_generated ? '1fr' : '1fr 1fr', gap: 12, marginBottom: 12 }}>
-              {/* TASKS */}
-              {!p.plan_generated && (
-              <div id="section-tasks" style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '18px 20px' }}>
-                <SectionTitle icon={<CheckCircleIcon />} text={`Tasks (${tasks.length})`} />
-                <div style={{ marginTop: 14, marginBottom: 12 }}>
-                  <button onClick={() => setShowTaskForm(!showTaskForm)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: C.primary, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                    <PlusIcon /> Assign Task
-                  </button>
-                </div>
-                {showTaskForm && (
-                  <form onSubmit={addTask} style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14, padding: '12px', background: '#F8F9FC', borderRadius: 8 }}>
-                    <input value={taskForm.title} onChange={e => setTaskForm({ ...taskForm, title: e.target.value })} placeholder="Task title..."
-                      style={{ padding: '8px 10px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 12, outline: 'none', fontFamily: 'inherit' }} />
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <select value={taskForm.priority} onChange={e => setTaskForm({ ...taskForm, priority: e.target.value })} style={{ flex: 1, padding: '8px 10px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 12, outline: 'none', fontFamily: 'inherit', background: C.card }}>
-                        <option>Low</option><option>Normal</option><option>High</option><option>Urgent</option>
-                      </select>
-                      <input type="date" value={taskForm.due_date} onChange={e => setTaskForm({ ...taskForm, due_date: e.target.value })}
-                        style={{ padding: '8px 8px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 12, outline: 'none' }} />
-                    </div>
-                    <select value={taskForm.assigned_to} onChange={e => setTaskForm({ ...taskForm, assigned_to: e.target.value })} style={{ padding: '8px 10px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 12, outline: 'none', fontFamily: 'inherit', background: C.card }}>
-                      <option value="">Assign to...</option>
-                      {team.map(t => <option key={t.user_id} value={t.user_id}>{t.user_name} ({t.role_in_project || 'Member'})</option>)}
-                    </select>
-                    <button type="submit" disabled={!taskForm.title.trim()} style={{ background: C.primary, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: taskForm.title.trim() ? 1 : 0.5 }}>
-                      <PlusIcon /> Add Task
-                    </button>
-                  </form>
-                )}
-                {tasks.length === 0 ? (
-                  <EmptyState icon={<CheckCircleIcon />} title="No tasks yet" />
-                ) : (
-                  tasks.map(t => (
-                    <div key={t.id} onClick={() => openTaskEditor(t)} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '8px 12px', background: '#F8F9FC', borderRadius: 8, marginBottom: 6, cursor: 'pointer' }}>
-                      <input type="checkbox" checked={t.status === 'Completed'} onChange={e => { e.stopPropagation(); updateTaskStatus(t.id, t.status === 'Completed' ? 'Open' : 'Completed') }}
-                        style={{ width: 16, height: 16, accentColor: C.primary, cursor: 'pointer', flexShrink: 0 }} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 500, color: t.status === 'Completed' ? C.muted : '#374151', textDecoration: t.status === 'Completed' ? 'line-through' : 'none' }}>{t.title}</div>
-                        <div style={{ display: 'flex', gap: 4, marginTop: 2 }}>
-                          {t.priority && <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 4, background: t.priority === 'Urgent' || t.priority === 'High' ? '#FEE2E2' : '#F0F2F8', color: t.priority === 'Urgent' || t.priority === 'High' ? '#DC2626' : C.secondary }}>{t.priority}</span>}
-                          {t.assigned_name && <span style={{ fontSize: 10, color: C.secondary }}>{t.assigned_name}</span>}
-                        </div>
-                      </div>
-                      {t.description && <span style={{ fontSize: 9, color: C.muted, fontStyle: 'italic' }}>notes</span>}
-                      {t.due_date && <span style={{ fontSize: 10, color: C.muted }}>{formatDate(t.due_date)}</span>}
-                    </div>
-                  ))
-                )}
-              </div>
-              )}
-              {/* ═══ DOCUMENTS & REPORTS (UNIFIED) ═══ */}
+            {/* DOCUMENTS */}
             <div id="section-documents" style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '18px 20px' }}>
               <SectionTitle icon={<PaperclipIcon />} text={`Documents & Reports (${totalDocs + reports.length})`} />
               <div style={{ display: 'flex', gap: 10, marginTop: 14, marginBottom: 14, alignItems: 'center' }}>
@@ -876,7 +910,6 @@ export default function ProjectsDetailPage() {
                   })}
                 </div>
               )}
-            </div>
             </div>
 
             {/* ═══ MEETINGS + NOTES ═══ */}
@@ -1114,40 +1147,6 @@ export default function ProjectsDetailPage() {
               </div>
             )}
 
-            {/* ═══ MILESTONES ═══ */}
-            <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '18px 20px', marginBottom: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <SectionTitle icon={<TargetIcon />} text={`Milestones (${milestones.length})`} />
-                <button onClick={() => setMstoneForm(mstoneForm ? null : { title: '', due_date: '', description: '' })} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: C.primary, fontSize: 12, fontWeight: 700, padding: 0 }}>+ Add Milestone</button>
-              </div>
-              {mstoneForm && (
-                <div style={{ display: 'flex', gap: 8, marginTop: 14, marginBottom: 14, padding: 14, background: '#F8F9FC', borderRadius: 10, flexWrap: 'wrap' }}>
-                  <input value={mstoneForm.title} onChange={e => setMstoneForm({...mstoneForm, title: e.target.value})} placeholder="Milestone title" style={{ flex: '1 1 200px', padding:'8px 10px', border:`1.5px solid ${C.border}`, borderRadius:6, fontSize:12, outline:'none', fontFamily:'inherit' }} />
-                  <input type="date" value={mstoneForm.due_date} onChange={e => setMstoneForm({...mstoneForm, due_date: e.target.value})} style={{ padding:'8px 10px', border:`1.5px solid ${C.border}`, borderRadius:6, fontSize:12, outline:'none', fontFamily:'inherit' }} />
-                  <button onClick={async () => { if (!mstoneForm.title) return; await api.post(`/api/projects/${id}/milestones`, mstoneForm); setMstoneForm(null); fetchData() }} style={{ padding:'8px 16px', border:'none', borderRadius:6, background:C.primary, color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer' }}>Add</button>
-                  <button onClick={() => setMstoneForm(null)} style={{ padding:'8px 12px', border:`1.5px solid ${C.border}`, borderRadius:6, background:'#fff', color:'#6B7280', fontSize:12, cursor:'pointer' }}>Cancel</button>
-                </div>
-              )}
-              {milestones.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '28px 10px', color: C.muted }}>
-                  <div style={{ opacity: 0.3, marginBottom: 8 }}><TargetIcon /></div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#374151' }}>No milestones</div>
-                  <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>Add key milestones to track project progress</div>
-                </div>
-              ) : (
-                <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>{milestones.map(m => (
-                  <div key={m.id} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', borderRadius:8, background:'#F9FAFB', border: `1px solid ${C.border}` }}>
-                    <div style={{ width: 10, height: 10, minWidth: 10, borderRadius: '50%', background: m.status === 'Completed' ? '#059669' : '#D97706' }} />
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: '#1F2937' }}>{m.title}</div>
-                      <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>{m.due_date ? formatDate(m.due_date) : 'No date'} · {m.description || ''}</div>
-                    </div>
-                    <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20, background: m.status === 'Completed' ? '#D1FAE5' : '#FEF3C7', color: m.status === 'Completed' ? '#065F46' : '#92400E', whiteSpace: 'nowrap' }}>{m.status}</span>
-                    {m.status !== 'Completed' && <button onClick={async () => { await api.put(`/api/projects/${id}/milestones/${m.id}`, { status: 'Completed' }); fetchData() }} style={{ fontSize: 11, fontWeight: 700, padding:'5px 12px', borderRadius:6, border:'none', background:C.primary, color:'#fff', cursor:'pointer', whiteSpace:'nowrap' }}>Mark Done</button>}
-                  </div>
-                ))}</div>
-              )}
-            </div>
             {/* TEAM */}
             <div id="section-team" style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}` }}>
               <div style={{ padding: '14px 18px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
