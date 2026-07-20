@@ -126,7 +126,7 @@ def get_project(current_user, pid):
 def update_project(current_user, pid):
     proj = Project.query.get_or_404(pid)
     data = request.get_json()
-    for f in ['title', 'description', 'stage', 'service_type', 'is_client_review_enabled', 'po_number', 'po_terms', 'project_type']:
+    for f in ['title', 'description', 'stage', 'service_type', 'is_client_review_enabled', 'po_number', 'po_terms', 'project_type', 'po_document_id']:
         if f in data:
             setattr(proj, f, data[f])
     try:

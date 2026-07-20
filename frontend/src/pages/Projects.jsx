@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
-import { Plus, Search, X, Briefcase } from 'lucide-react'
+import { Plus, Search, X, Briefcase, Upload } from 'lucide-react'
 import Pagination from '../components/Pagination'
 import { TableSkeleton } from '../components/LoadingSkeleton'
 import { useToast } from '../contexts/ToastContext'
@@ -153,7 +153,9 @@ export default function Projects() {
 
 // ═══════════ PROJECT FORM ═══════════
 function ProjectForm({ accounts, users, onClose, onSaved, initialAccountId }) {
+  const toast = useToast()
   const [form, setForm] = useState({ title:'', description:'', account_id: initialAccountId || '', service_type:'', service_type_other:'', project_type:'', pm_id:'', total_value:'', start_date:'', target_date:'', is_client_review_enabled: false, po_number:'', po_date:'', po_amount:'', po_terms:'', tds:'', gst:'', net_amount:'' })
+  const [poDocument, setPoDocument] = useState(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const f = (k, v) => setForm({ ...form, [k]: v })
@@ -194,7 +196,15 @@ function ProjectForm({ accounts, users, onClose, onSaved, initialAccountId }) {
       if (!p.start_date) delete p.start_date
       if (!p.target_date) delete p.target_date
       if (!p.po_date) delete p.po_date
-      await api.post('/api/projects', p)
+      const res = await api.post('/api/projects', p)
+      const proj = res.data.project
+      if (poDocument) {
+        const fd = new FormData()
+        fd.append('file', poDocument)
+        const docRes = await api.post(`/api/projects/${proj.id}/documents`, fd)
+        await api.put(`/api/projects/${proj.id}`, { po_document_id: docRes.data.document.id })
+      }
+      toast('Project created successfully', 'success')
       onSaved()
     } catch (e) { setError(e.response?.data?.error || 'Error') } finally { setSaving(false) }
   }
@@ -216,6 +226,7 @@ function ProjectForm({ accounts, users, onClose, onSaved, initialAccountId }) {
               <div className="col-span-3"><label className="block text-sm font-medium text-slate-700 mb-1.5">Project Title <span className="text-red-500">*</span></label><input value={form.title} onChange={e => f('title', e.target.value)} required className="w-full px-4 py-3 border border-slate-300  text-sm outline-none " placeholder="e.g., IFCI Cloud Security Audit 2026" /></div>
               <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Client Account <span className="text-red-500">*</span></label><select value={form.account_id} onChange={e => f('account_id', e.target.value)} required className="w-full px-4 py-3 border border-slate-300  text-sm outline-none "><option value="">-- Select Client --</option>{accounts.map(a => <option key={a.id} value={a.id}>{a.company_name} ({a.acc_id})</option>)}</select></div>
               <div><label className="block text-sm font-medium text-slate-700 mb-1.5">PO Number</label><input value={form.po_number} onChange={e => f('po_number', e.target.value)} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none " placeholder="Client PO #" /></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1.5">PO Document</label><label className="flex items-center gap-2 px-4 py-3 border border-slate-300  text-sm outline-none  cursor-pointer hover:bg-slate-50"><Upload className="w-4 h-4 text-slate-400" /><span className={`${poDocument ? 'text-slate-900' : 'text-slate-400'}`}>{poDocument ? poDocument.name : 'Upload PO file...'}</span><input type="file" className="hidden" onChange={e => { const f2 = e.target.files?.[0]; if (f2) setPoDocument(f2) }} /></label></div>
               <div><label className="block text-sm font-medium text-slate-700 mb-1.5">PO Date</label><input type="date" value={form.po_date} onChange={e => f('po_date', e.target.value)} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none " /></div>
               <div><label className="block text-sm font-medium text-slate-700 mb-1.5">PO Amount / Project Cost (₹)</label><input type="number" value={form.po_amount} onChange={e => onPoAmountChange(e.target.value)} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none " placeholder="e.g., 500000" /></div>
               <div><label className="block text-sm font-medium text-slate-700 mb-1.5">TDS (₹)</label><input type="number" value={form.tds} onChange={e => onTdsChange(e.target.value)} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none " placeholder="0" /></div>
