@@ -5,7 +5,8 @@ import api from '../services/api'
 import {
   Plus, Search, X, Edit3, UserCheck, UserX,
   Shield, Briefcase, Key, CheckCircle, XCircle,
-  ChevronDown, ChevronRight, RefreshCw, Link, Unlink
+  ChevronDown, ChevronRight, RefreshCw, Link, Unlink,
+  Trash2, AlertTriangle
 } from 'lucide-react'
 
 const DESIGNATIONS = ['Director','CEO','CTO','Project Lead','Senior Consultant','Security Consultant','Senior Auditor','Auditor','Junior Auditor','Security Analyst','BD Manager','BD Executive','Admin Manager','Finance Manager','Other']
@@ -59,6 +60,24 @@ const [showForm, setShowForm] = useState(false)
       toast('Removed from project', 'info')
       load()
     } catch (e) { toast('Failed', 'error') }
+  }
+
+  const toggleActive = async (u) => {
+    if (!confirm(`${u.is_active ? 'Suspend' : 'Activate'} user "${u.full_name}"?`)) return
+    try {
+      await api.put(`/api/auth/users/${u.id}`, { is_active: !u.is_active })
+      toast(`User ${u.is_active ? 'suspended' : 'activated'}`)
+      load()
+    } catch (e) { toast(e.response?.data?.error || 'Failed', 'error') }
+  }
+
+  const deleteUser = async (u) => {
+    if (!confirm(`Permanently delete "${u.full_name}" (${u.email})? This cannot be undone.`)) return
+    try {
+      await api.delete(`/api/auth/users/${u.id}`)
+      toast('User deleted')
+      load()
+    } catch (e) { toast(e.response?.data?.error || 'Failed', 'error') }
   }
 
   const openCreate = ()=>{setEditUser(null);setError('');setUserType('employee');setForm({first_name:'',last_name:'',email:'',password:'',phone:'',designation:'',department_id:'',manager_id:'',role_id:5,client_company_name:''});setShowForm(true)}
@@ -215,9 +234,17 @@ const [showForm, setShowForm] = useState(false)
                   </div>
                   <span>{u.is_active ? <UserCheck className="w-4 h-4 text-green-500" /> : <UserX className="w-4 h-4 text-red-500" />}</span>
                   {isSuperAdmin && (
-                    <button onClick={(e) => { e.stopPropagation(); openEdit(u) }} className="p-1.5  hover:bg-slate-200 text-slate-400 hover:text-blue-700">
-                      <Edit3 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                      <button onClick={() => openEdit(u)} className="p-1.5 hover:bg-slate-200 text-slate-400 hover:text-blue-700" title="Edit">
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => toggleActive(u)} className={`p-1.5 hover:bg-slate-200 ${u.is_active ? 'text-amber-400 hover:text-amber-600' : 'text-green-400 hover:text-green-600'}`} title={u.is_active ? 'Suspend' : 'Activate'}>
+                        {u.is_active ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
+                      </button>
+                      <button onClick={() => deleteUser(u)} className="p-1.5 hover:bg-slate-200 text-red-400 hover:text-red-600" title="Delete">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   )}
                   {isExpanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
                 </div>
@@ -271,6 +298,19 @@ const [showForm, setShowForm] = useState(false)
                       </div>
                     )}
                   </div>
+
+                  {/* Actions */}
+                  {isSuperAdmin && (
+                    <div className="flex items-center gap-3 pt-3 border-t border-slate-200">
+                      <button onClick={() => toggleActive(u)} className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border ${u.is_active ? 'text-amber-700 border-amber-200 bg-amber-50 hover:bg-amber-100' : 'text-green-700 border-green-200 bg-green-50 hover:bg-green-100'}`}>
+                        {u.is_active ? <UserX className="w-3.5 h-3.5" /> : <UserCheck className="w-3.5 h-3.5" />}
+                        {u.is_active ? 'Suspend User' : 'Activate User'}
+                      </button>
+                      <button onClick={() => deleteUser(u)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-700 border border-red-200 bg-red-50 hover:bg-red-100">
+                        <Trash2 className="w-3.5 h-3.5" /> Delete User
+                      </button>
+                    </div>
+                  )}
 
                   {/* Roles & Permissions (super admin only) — not for client users */}
                   {isSuperAdmin && u.role!=='client' && (

@@ -141,6 +141,17 @@ def update_user(current_user, uid):
     return jsonify({'message': 'Updated', 'user': user.to_dict()})
 
 
+@auth_bp.route('/users/<int:uid>', methods=['DELETE'])
+@role_required('admin')
+def delete_user(current_user, uid):
+    user = User.query.get_or_404(uid)
+    if user.id == current_user.id:
+        return jsonify({'error': 'Cannot delete yourself'}), 400
+    db.session.delete(user)
+    db.session.commit()
+    return jsonify({'message': 'User deleted'})
+
+
 @auth_bp.route('/designations', methods=['GET'])
 @login_required
 def list_designations(current_user):
