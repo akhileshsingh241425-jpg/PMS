@@ -153,7 +153,7 @@ export default function Projects() {
 
 // ═══════════ PROJECT FORM ═══════════
 function ProjectForm({ accounts, users, onClose, onSaved, initialAccountId }) {
-  const [form, setForm] = useState({ title:'', description:'', account_id: initialAccountId || '', service_type:'', project_type:'', pm_id:'', total_value:'', start_date:'', target_date:'', is_client_review_enabled: false, po_number:'', po_date:'', po_amount:'', po_terms:'', tds:'', gst:'', net_amount:'' })
+  const [form, setForm] = useState({ title:'', description:'', account_id: initialAccountId || '', service_type:'', service_type_other:'', project_type:'', pm_id:'', total_value:'', start_date:'', target_date:'', is_client_review_enabled: false, po_number:'', po_date:'', po_amount:'', po_terms:'', tds:'', gst:'', net_amount:'' })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const f = (k, v) => setForm({ ...form, [k]: v })
@@ -165,10 +165,27 @@ function ProjectForm({ accounts, users, onClose, onSaved, initialAccountId }) {
     return a + g - t
   }
 
+  const onPoAmountChange = (val) => {
+    const net = calcNet(val, form.tds, form.gst)
+    setForm({ ...form, po_amount: val, net_amount: net })
+  }
+
+  const onTdsChange = (val) => {
+    const net = calcNet(form.po_amount, val, form.gst)
+    setForm({ ...form, tds: val, net_amount: net })
+  }
+
+  const onGstChange = (val) => {
+    const net = calcNet(form.po_amount, form.tds, val)
+    setForm({ ...form, gst: val, net_amount: net })
+  }
+
   const save = async (e) => {
     e.preventDefault(); setSaving(true); setError('')
     try {
       const p = { ...form }
+      if (p.service_type === 'Other' && p.service_type_other) p.service_type = p.service_type_other
+      delete p.service_type_other
       for (const k of ['total_value','po_amount','tds','gst','net_amount']) {
         if (p[k]) p[k] = parseFloat(p[k]); else delete p[k]
       }
@@ -200,10 +217,10 @@ function ProjectForm({ accounts, users, onClose, onSaved, initialAccountId }) {
               <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Client Account <span className="text-red-500">*</span></label><select value={form.account_id} onChange={e => f('account_id', e.target.value)} required className="w-full px-4 py-3 border border-slate-300  text-sm outline-none "><option value="">-- Select Client --</option>{accounts.map(a => <option key={a.id} value={a.id}>{a.company_name} ({a.acc_id})</option>)}</select></div>
               <div><label className="block text-sm font-medium text-slate-700 mb-1.5">PO Number</label><input value={form.po_number} onChange={e => f('po_number', e.target.value)} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none " placeholder="Client PO #" /></div>
               <div><label className="block text-sm font-medium text-slate-700 mb-1.5">PO Date</label><input type="date" value={form.po_date} onChange={e => f('po_date', e.target.value)} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none " /></div>
-              <div><label className="block text-sm font-medium text-slate-700 mb-1.5">PO Amount / Project Cost (₹)</label><input type="number" value={form.po_amount} onChange={e => { f('po_amount', e.target.value); f('net_amount', calcNet(e.target.value, form.tds, form.gst)) }} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none " placeholder="e.g., 500000" /></div>
-              <div><label className="block text-sm font-medium text-slate-700 mb-1.5">TDS (₹)</label><input type="number" value={form.tds} onChange={e => { f('tds', e.target.value); f('net_amount', calcNet(form.po_amount, e.target.value, form.gst)) }} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none " placeholder="TDS deduction" /></div>
-              <div><label className="block text-sm font-medium text-slate-700 mb-1.5">GST @18% (₹)</label><input type="number" value={form.gst} onChange={e => { f('gst', e.target.value); f('net_amount', calcNet(form.po_amount, form.tds, e.target.value)) }} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none " placeholder="Auto or manual" /></div>
-              <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Net Amount (₹)</label><input type="number" value={form.net_amount} onChange={e => f('net_amount', e.target.value)} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none  font-bold text-emerald-700" readOnly style={{ background: '#F9FAFB' }} /></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1.5">PO Amount / Project Cost (₹)</label><input type="number" value={form.po_amount} onChange={e => onPoAmountChange(e.target.value)} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none " placeholder="e.g., 500000" /></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1.5">TDS (₹)</label><input type="number" value={form.tds} onChange={e => onTdsChange(e.target.value)} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none " placeholder="0" /></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1.5">GST @18% (₹)</label><input type="number" value={form.gst} onChange={e => onGstChange(e.target.value)} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none " placeholder="Auto-calc or manual" /></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Net Amount (₹)</label><input type="number" value={form.net_amount} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none  font-bold text-emerald-700" readOnly style={{ background: '#F9FAFB' }} /></div>
               <div className="col-span-3"><label className="block text-sm font-medium text-slate-700 mb-1.5">Terms & Conditions</label><textarea value={form.po_terms} onChange={e => f('po_terms', e.target.value)} rows={2} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none  resize-none" placeholder="Payment terms, delivery conditions..." /></div>
             </div>
           </div>
@@ -213,7 +230,7 @@ function ProjectForm({ accounts, users, onClose, onSaved, initialAccountId }) {
             <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2"><Briefcase className="w-4 h-4 text-indigo-500" /> Project Details</h3>
             <div className="grid grid-cols-2 gap-5">
               <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Project Type <span className="text-red-500">*</span></label><select value={form.project_type} onChange={e => f('project_type', e.target.value)} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none "><option value="">-- Select Plan Template --</option><option value="VAPT">VAPT</option><option value="IS Audit">IS Audit</option><option value="ISMS Implementation">ISMS Implementation</option></select></div>
-              <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Service Type</label><select value={form.service_type} onChange={e => f('service_type', e.target.value)} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none "><option value="">-- Select --</option>{SERVICES.map(s => <option key={s}>{s}</option>)}</select></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Service Type</label><select value={form.service_type} onChange={e => f('service_type', e.target.value)} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none "><option value="">-- Select --</option>{SERVICES.map(s => <option key={s}>{s}</option>)}</select>{form.service_type === 'Other' && <input type="text" value={form.service_type_other || ''} onChange={e => f('service_type_other', e.target.value)} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none  mt-2" placeholder="Enter service type..." />}</div>
               <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Project Manager <span className="text-red-500">*</span></label><select value={form.pm_id} onChange={e => f('pm_id', e.target.value)} required className="w-full px-4 py-3 border border-slate-300  text-sm outline-none "><option value="">-- Select PM --</option>{users.filter(u => u.is_active).map(u => <option key={u.id} value={u.id}>{u.full_name} ({u.designation || ''})</option>)}</select></div>
               <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Total Project Value (₹)</label><input type="number" value={form.total_value} onChange={e => f('total_value', e.target.value)} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none " placeholder="e.g., 350000" /></div>
               <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Start Date</label><input type="date" value={form.start_date} onChange={e => f('start_date', e.target.value)} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none " /></div>

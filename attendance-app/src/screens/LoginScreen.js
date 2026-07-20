@@ -24,7 +24,7 @@ export default function LoginScreen() {
     <KeyboardAvoidingView style={s.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={s.card}>
         <View style={s.logo}>
-          <Text style={s.logoText}>PMS</Text>
+          <Text style={s.logoText}>A</Text>
         </View>
         <Text style={s.title}>Attendance App</Text>
         <Text style={s.subtitle}>Sign in to your account</Text>

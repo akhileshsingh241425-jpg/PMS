@@ -87,9 +87,9 @@ function handleNotificationData(data, navigationRef) {
   const {module_type, module_id} = data
   if (module_type === 'task' && module_id) {
     navigationRef.current.navigate('Tasks', {screen: 'TaskDetail', params: {taskId: Number(module_id)}})
-  } else if (module_type === 'meeting' && module_id) {
-    navigationRef.current.navigate('More', {screen: 'Meetings'})
+  } else if (module_type === 'meeting') {
+    navigationRef.current.navigate('Meetings')
   } else if (module_type === 'attendance') {
-    navigationRef.current.navigate('Dashboard')
+    navigationRef.current.navigate('Attendance')
   }
 }
