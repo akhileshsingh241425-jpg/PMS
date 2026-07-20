@@ -162,7 +162,7 @@ class ProjectDocument(db.Model):
 
     uploader = db.relationship('User', foreign_keys=[uploaded_by])
     reviewer = db.relationship('User', foreign_keys=[reviewed_by])
-    project = db.relationship('Project', back_populates='documents')
+    project = db.relationship('Project', foreign_keys=[project_id], back_populates='documents')
 
     def to_dict(self):
         return {
