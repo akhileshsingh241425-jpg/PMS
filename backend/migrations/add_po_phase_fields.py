@@ -25,6 +25,13 @@ with app.app_context():
 
     # === projects columns ===
     for col, typ in [
+        ('po_number', 'VARCHAR(100)'),
+        ('po_date', 'DATE'),
+        ('po_amount', 'FLOAT'),
+        ('po_terms', 'TEXT'),
+        ('po_document_id', 'INTEGER'),
+        ('project_type', 'VARCHAR(50)'),
+        ('plan_generated', 'BOOLEAN'),
         ('tds', 'FLOAT'),
         ('gst', 'FLOAT'),
         ('net_amount', 'FLOAT'),
