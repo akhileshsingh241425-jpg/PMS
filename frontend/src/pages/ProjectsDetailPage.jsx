@@ -537,6 +537,9 @@ export default function ProjectsDetailPage() {
                 {p.po_number && <InfoField icon={<HashIcon />} label="PO Number" value={p.po_number} empty={!p.po_number} />}
                 {p.po_date && <InfoField icon={<CalendarIcon />} label="PO Date" value={formatDate(p.po_date)} empty={!p.po_date} />}
                 {p.po_amount && <InfoField icon={<MoneyIcon />} label="PO Amount" value={`₹${p.po_amount.toLocaleString()}`} empty={!p.po_amount} green />}
+                {p.tds ? <InfoField icon={<MinusIcon />} label="TDS" value={`₹${p.tds.toLocaleString()}`} /> : null}
+                {p.gst ? <InfoField icon={<PlusIcon />} label="GST @18%" value={`₹${p.gst.toLocaleString()}`} /> : null}
+                {p.net_amount ? <InfoField icon={<DollarIcon />} label="Net Amount" value={`₹${p.net_amount.toLocaleString()}`} green /> : null}
                 {p.project_type && <InfoField icon={<TagIcon />} label="Project Type" value={p.project_type} empty={!p.project_type} badge />}
                 {p.po_terms && <div style={{ gridColumn: '1 / -1' }}><InfoField icon={<FileTextIcon />} label="Terms & Conditions" value={p.po_terms} empty={!p.po_terms} /></div>}
               </div>
@@ -1678,6 +1681,14 @@ function FileTextIcon() {
 
 function HashIcon() {
   return <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M5.25 8.25h15m-16.5 7.5h15m-1.8-13.5l-3.9 19.5m-2.1-19.5l-3.9 19.5" /></svg>
+}
+
+function MinusIcon() {
+  return <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14" /></svg>
+}
+
+function DollarIcon() {
+  return <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" /></svg>
 }
 
 
