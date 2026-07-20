@@ -69,7 +69,7 @@ class Project(db.Model):
     pm = db.relationship('User', foreign_keys=[pm_id])
     creator = db.relationship('User', foreign_keys=[created_by])
     remarks = db.relationship('ProjectRemark', back_populates='project', order_by='ProjectRemark.created_at.desc()', cascade='all, delete-orphan')
-    documents = db.relationship('ProjectDocument', back_populates='project', order_by='ProjectDocument.uploaded_at.desc()', cascade='all, delete-orphan')
+    documents = db.relationship('ProjectDocument', foreign_keys='ProjectDocument.project_id', back_populates='project', order_by='ProjectDocument.uploaded_at.desc()', cascade='all, delete-orphan')
     team = db.relationship('ProjectTeam', back_populates='project', cascade='all, delete-orphan')
     phases = db.relationship('ProjectPhase', back_populates='project', order_by='ProjectPhase.order', cascade='all, delete-orphan')
 
