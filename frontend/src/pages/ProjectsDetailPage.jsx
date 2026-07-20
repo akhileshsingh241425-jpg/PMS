@@ -174,6 +174,10 @@ export default function ProjectsDetailPage() {
   const [descVal, setDescVal] = useState('')
   const [savingField, setSavingField] = useState(false)
   const [generatingPlan, setGeneratingPlan] = useState(false)
+  const [addTaskPhase, setAddTaskPhase] = useState(null)
+  const [phaseTaskForm, setPhaseTaskForm] = useState({ title: '', assigned_to: '', due_date: '', status: 'Open' })
+  const [addSubtaskOf, setAddSubtaskOf] = useState(null)
+  const [subtaskForm, setSubtaskForm] = useState({ title: '', assigned_to: '', due_date: '', status: 'Open' })
 
   const fetchData = async () => {
     try { const r = await api.get(`/api/projects/${id}`); setData(r.data) }
@@ -208,6 +212,18 @@ export default function ProjectsDetailPage() {
     try { await api.post(`/api/projects/${id}/generate-plan`); fetchData(); toast('Project plan generated from template') }
     catch (e) { toast(e.response?.data?.error || 'Failed', 'error') }
     finally { setGeneratingPlan(false) }
+  }
+
+  const addTaskToPhase = async (e) => {
+    e.preventDefault(); if (!phaseTaskForm.title.trim()) return
+    try { await api.post(`/api/projects/${id}/phases/${addTaskPhase}/tasks`, phaseTaskForm); setAddTaskPhase(null); setPhaseTaskForm({ title: '', assigned_to: '', due_date: '', status: 'Open' }); fetchData(); toast('Task added') }
+    catch (e) { toast(e.response?.data?.error || 'Failed', 'error') }
+  }
+
+  const addSubtask = async (e) => {
+    e.preventDefault(); if (!subtaskForm.title.trim()) return
+    try { await api.post(`/api/projects/${id}/tasks/${addSubtaskOf}/subtasks`, subtaskForm); setAddSubtaskOf(null); setSubtaskForm({ title: '', assigned_to: '', due_date: '', status: 'Open' }); fetchData(); toast('Subtask added') }
+    catch (e) { toast(e.response?.data?.error || 'Failed', 'error') }
   }
 
   const addRemark = async (e) => {
@@ -546,17 +562,70 @@ export default function ProjectsDetailPage() {
                     </div>
                     <div style={{ padding: '6px 14px' }}>
                       {phase.tasks.map(task => (
-                        <div key={task.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: '1px solid #F3F4F6' }}>
-                          <div style={{ width: 6, height: 6, borderRadius: '50%', background: task.status === 'Completed' ? '#059669' : task.status === 'In Progress' ? '#D97706' : '#D1D5DB', flexShrink: 0 }} />
-                          <div style={{ fontSize: 13, color: '#374151', flex: 1 }}>{task.title}</div>
-                          <div style={{ fontSize: 11, fontWeight: 500, color: task.assigned_name ? '#6B7280' : '#9CA3AF' }}>{task.assigned_name || 'Unassigned'}</div>
+                        <div key={task.id}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: task.subtasks?.length ? 'none' : '1px solid #F3F4F6' }}>
+                            <div style={{ width: 6, height: 6, borderRadius: '50%', background: task.status === 'Completed' ? '#059669' : task.status === 'In Progress' ? '#D97706' : '#D1D5DB', flexShrink: 0 }} />
+                            <div style={{ fontSize: 13, color: '#374151', flex: 1 }}>{task.title}</div>
+                            <div style={{ fontSize: 11, fontWeight: 500, color: task.assigned_name ? '#6B7280' : '#9CA3AF' }}>{task.assigned_name || 'Unassigned'}</div>
+                            <div style={{ fontSize: 11, color: '#9CA3AF' }}>{task.due_date ? formatDate(task.due_date) : ''}</div>
+                            <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 4, background: task.status === 'Completed' ? '#D1FAE5' : task.status === 'In Progress' ? '#FEF3C7' : '#F3F4F6', color: task.status === 'Completed' ? '#065F46' : task.status === 'In Progress' ? '#92400E' : '#6B7280' }}>{task.status}</span>
+                            <button onClick={() => { setAddSubtaskOf(task.id); setSubtaskForm({ title: '', assigned_to: '', due_date: '', status: 'Open' }) }} style={{ padding: '2px 8px', borderRadius: 4, border: '1px solid #D1D5DB', background: '#fff', color: '#6B7280', fontSize: 10, cursor: 'pointer', whiteSpace: 'nowrap' }}>+ Subtask</button>
+                          </div>
+                          {task.subtasks?.map(st => (
+                            <div key={st.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0 4px 24px', borderBottom: '1px solid #F9FAFB' }}>
+                              <div style={{ width: 4, height: 4, borderRadius: '50%', background: st.status === 'Completed' ? '#059669' : '#D1D5DB', flexShrink: 0 }} />
+                              <div style={{ fontSize: 12, color: '#6B7280', flex: 1 }}>{st.title}</div>
+                              <div style={{ fontSize: 11, color: '#9CA3AF' }}>{st.assigned_name || ''}</div>
+                              <div style={{ fontSize: 11, color: '#9CA3AF' }}>{st.due_date ? formatDate(st.due_date) : ''}</div>
+                              <span style={{ fontSize: 10, fontWeight: 500, padding: '1px 6px', borderRadius: 4, background: st.status === 'Completed' ? '#D1FAE5' : '#F3F4F6', color: st.status === 'Completed' ? '#065F46' : '#6B7280' }}>{st.status}</span>
+                            </div>
+                          ))}
+                          {addSubtaskOf === task.id && (
+                            <form onSubmit={addSubtask} style={{ display: 'flex', gap: 6, padding: '6px 0 6px 24px', borderBottom: '1px solid #F3F4F6' }}>
+                              <input value={subtaskForm.title} onChange={e => setSubtaskForm({ ...subtaskForm, title: e.target.value })} placeholder="Subtask title" style={{ flex: 1, padding: '4px 8px', border: '1px solid #D1D5DB', borderRadius: 4, fontSize: 12, outline: 'none' }} />
+                              <select value={subtaskForm.assigned_to} onChange={e => setSubtaskForm({ ...subtaskForm, assigned_to: e.target.value })} style={{ padding: '4px 6px', border: '1px solid #D1D5DB', borderRadius: 4, fontSize: 11, background: '#fff' }}>
+                                <option value="">Owner</option>
+                                {users.map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
+                              </select>
+                              <input type="date" value={subtaskForm.due_date} onChange={e => setSubtaskForm({ ...subtaskForm, due_date: e.target.value })} style={{ padding: '4px 6px', border: '1px solid #D1D5DB', borderRadius: 4, fontSize: 11 }} />
+                              <select value={subtaskForm.status} onChange={e => setSubtaskForm({ ...subtaskForm, status: e.target.value })} style={{ padding: '4px 6px', border: '1px solid #D1D5DB', borderRadius: 4, fontSize: 11, background: '#fff' }}>
+                                <option value="Open">Open</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="Completed">Completed</option>
+                              </select>
+                              <button type="submit" style={{ padding: '4px 10px', borderRadius: 4, border: 'none', background: C.primary, color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Add</button>
+                              <button type="button" onClick={() => setAddSubtaskOf(null)} style={{ padding: '4px 8px', borderRadius: 4, border: '1px solid #D1D5DB', background: '#fff', color: '#6B7280', fontSize: 11, cursor: 'pointer' }}>Cancel</button>
+                            </form>
+                          )}
                         </div>
                       ))}
+                    </div>
+                    <div style={{ padding: '8px 14px', borderTop: `1px solid ${C.border}` }}>
+                      {addTaskPhase === phase.id ? (
+                        <form onSubmit={addTaskToPhase} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                          <input value={phaseTaskForm.title} onChange={e => setPhaseTaskForm({ ...phaseTaskForm, title: e.target.value })} placeholder="Task title" style={{ flex: 1, padding: '4px 8px', border: '1px solid #D1D5DB', borderRadius: 4, fontSize: 12, outline: 'none' }} />
+                          <select value={phaseTaskForm.assigned_to} onChange={e => setPhaseTaskForm({ ...phaseTaskForm, assigned_to: e.target.value })} style={{ padding: '4px 6px', border: '1px solid #D1D5DB', borderRadius: 4, fontSize: 11, background: '#fff' }}>
+                            <option value="">Owner</option>
+                            {users.map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
+                          </select>
+                          <input type="date" value={phaseTaskForm.due_date} onChange={e => setPhaseTaskForm({ ...phaseTaskForm, due_date: e.target.value })} style={{ padding: '4px 6px', border: '1px solid #D1D5DB', borderRadius: 4, fontSize: 11 }} />
+                          <select value={phaseTaskForm.status} onChange={e => setPhaseTaskForm({ ...phaseTaskForm, status: e.target.value })} style={{ padding: '4px 6px', border: '1px solid #D1D5DB', borderRadius: 4, fontSize: 11, background: '#fff' }}>
+                            <option value="Open">Open</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                          </select>
+                          <button type="submit" style={{ padding: '4px 10px', borderRadius: 4, border: 'none', background: C.primary, color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Add</button>
+                          <button type="button" onClick={() => setAddTaskPhase(null)} style={{ padding: '4px 8px', borderRadius: 4, border: '1px solid #D1D5DB', background: '#fff', color: '#6B7280', fontSize: 11, cursor: 'pointer' }}>Cancel</button>
+                        </form>
+                      ) : (
+                        <button onClick={() => { setAddTaskPhase(phase.id); setPhaseTaskForm({ title: '', assigned_to: '', due_date: '', status: 'Open' }) }} style={{ padding: '4px 12px', borderRadius: 4, border: '1px dashed #D1D5DB', background: 'none', color: C.primary, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>+ Add Task</button>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
             )}
+
           </div>
         )}
 

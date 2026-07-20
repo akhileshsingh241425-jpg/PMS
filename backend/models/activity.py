@@ -44,6 +44,7 @@ class Task(db.Model):
     description = db.Column(db.Text)
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete='CASCADE'), nullable=False, index=True)
     phase_id = db.Column(db.Integer, db.ForeignKey('project_phases.id', ondelete='SET NULL'), index=True)
+    parent_task_id = db.Column(db.Integer, db.ForeignKey('tasks.id', ondelete='CASCADE'), index=True)
     status = db.Column(db.String(30), default='Open')
     priority = db.Column(db.String(20), default='Normal')
     due_date = db.Column(db.Date)
@@ -56,6 +57,7 @@ class Task(db.Model):
 
     assignee = db.relationship('User', foreign_keys=[assigned_to])
     creator = db.relationship('User', foreign_keys=[created_by])
+    subtasks = db.relationship('Task', backref=db.backref('parent_task', remote_side='Task.id'), lazy='dynamic', cascade='all, delete-orphan')
     checklist = db.relationship('TaskChecklistItem', backref='task', lazy='dynamic', cascade='all, delete-orphan')
     comments = db.relationship('TaskComment', backref='task', lazy='dynamic', cascade='all, delete-orphan', order_by='TaskComment.created_at.asc()')
     project = db.relationship('Project', foreign_keys=[project_id], lazy='joined')
@@ -65,6 +67,7 @@ class Task(db.Model):
             'id': self.id, 'title': self.title, 'description': self.description,
             'project_id': self.project_id,
             'phase_id': self.phase_id,
+            'parent_task_id': self.parent_task_id,
             'project_name': self.project.title if self.project else None,
             'status': self.status, 'priority': self.priority,
             'due_date': self.due_date.isoformat() if self.due_date else None,
@@ -78,6 +81,8 @@ class Task(db.Model):
             'checklist_count': self.checklist.count(),
             'checklist_completed': self.checklist.filter_by(is_completed=True).count(),
             'comment_count': self.comments.count(),
+            'subtask_count': self.subtasks.count(),
+        }
         }
 
 

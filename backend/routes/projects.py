@@ -177,6 +177,81 @@ def generate_plan(current_user, pid):
     return jsonify({'message': 'Plan generated', 'phases': [p.to_dict() for p in phases]}), 201
 
 
+@project_bp.route('/<int:pid>/phases/<int:phase_id>/tasks', methods=['POST'])
+@login_required
+def add_task_to_phase(current_user, pid, phase_id):
+    Project.query.get_or_404(pid)
+    phase = ProjectPhase.query.filter_by(id=phase_id, project_id=pid).first_or_404()
+    data = request.get_json()
+    if not data.get('title'):
+        return jsonify({'error': 'title required'}), 400
+    try:
+        due_date = datetime.strptime(data['due_date'], '%Y-%m-%d').date() if data.get('due_date') else None
+    except (ValueError, TypeError):
+        return jsonify({'error': 'Invalid date format'}), 400
+    task = Task(
+        title=data['title'],
+        description=data.get('description'),
+        project_id=pid,
+        phase_id=phase_id,
+        status=data.get('status', 'Open'),
+        priority=data.get('priority', 'Normal'),
+        due_date=due_date,
+        assigned_to=int(data['assigned_to']) if data.get('assigned_to') else None,
+        created_by=current_user.id,
+    )
+    db.session.add(task)
+    db.session.commit()
+    return jsonify({'task': task.to_dict()}), 201
+
+
+@project_bp.route('/<int:pid>/tasks/<int:task_id>/subtasks', methods=['POST'])
+@login_required
+def add_subtask(current_user, pid, task_id):
+    Project.query.get_or_404(pid)
+    parent = Task.query.filter_by(id=task_id, project_id=pid).first_or_404()
+    data = request.get_json()
+    if not data.get('title'):
+        return jsonify({'error': 'title required'}), 400
+    try:
+        due_date = datetime.strptime(data['due_date'], '%Y-%m-%d').date() if data.get('due_date') else None
+    except (ValueError, TypeError):
+        return jsonify({'error': 'Invalid date format'}), 400
+    subtask = Task(
+        title=data['title'],
+        description=data.get('description'),
+        project_id=pid,
+        phase_id=parent.phase_id,
+        parent_task_id=task_id,
+        status=data.get('status', 'Open'),
+        priority=data.get('priority', 'Normal'),
+        due_date=due_date,
+        assigned_to=int(data['assigned_to']) if data.get('assigned_to') else None,
+        created_by=current_user.id,
+    )
+    db.session.add(subtask)
+    db.session.commit()
+    return jsonify({'subtask': subtask.to_dict()}), 201
+
+
+@project_bp.route('/<int:pid>/phases/<int:phase_id>/tasks', methods=['GET'])
+@login_required
+def list_phase_tasks(current_user, pid, phase_id):
+    Project.query.get_or_404(pid)
+    ProjectPhase.query.filter_by(id=phase_id, project_id=pid).first_or_404()
+    tasks = Task.query.filter_by(project_id=pid, phase_id=phase_id, parent_task_id=None).order_by(Task.created_at.asc()).all()
+    return jsonify({'tasks': [t.to_dict() for t in tasks]})
+
+
+@project_bp.route('/<int:pid>/tasks/<int:task_id>/subtasks', methods=['GET'])
+@login_required
+def list_subtasks(current_user, pid, task_id):
+    Project.query.get_or_404(pid)
+    Task.query.filter_by(id=task_id, project_id=pid).first_or_404()
+    subtasks = Task.query.filter_by(parent_task_id=task_id).order_by(Task.created_at.asc()).all()
+    return jsonify({'subtasks': [t.to_dict() for t in subtasks]})
+
+
 @project_bp.route('/<int:pid>/remarks/<int:rid>/react', methods=['POST'])
 @login_required
 def toggle_reaction(current_user, pid, rid):

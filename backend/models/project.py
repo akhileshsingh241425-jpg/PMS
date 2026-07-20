@@ -1,6 +1,7 @@
 from . import db
 from datetime import datetime
 from sqlalchemy.orm import validates
+from .activity import Task
 
 PROJECT_STAGES = [
     'Initiated', 'Planning', 'Information Gathering', 'Execution', 'Internal Review', 'Client Review', 'Remediation Support', 'Final Delivery',
@@ -12,23 +13,25 @@ PROJECT_STAGES = [
 
 PLAN_TEMPLATES = {
     'VAPT': [
-        {'phase': 'Reconnaissance', 'tasks': ['Scope Confirmation', 'Passive Reconnaissance', 'Active Reconnaissance', 'Subdomain Enumeration']},
-        {'phase': 'Scanning & Enumeration', 'tasks': ['Port Scanning', 'Service Enumeration', 'Vulnerability Scanning', 'Manual Verification']},
-        {'phase': 'Exploitation', 'tasks': ['Vulnerability Exploitation', 'Privilege Escalation', 'Lateral Movement', 'Post-Exploitation']},
-        {'phase': 'Reporting', 'tasks': ['Draft Report Preparation', 'Findings Review', 'Remediation Recommendations', 'Final Report Submission']},
+        {'phase': 'Scoping & Asset List', 'tasks': ['Scope confirmation with client', 'Asset list compilation', 'Environment access setup', 'Rules of engagement document']},
+        {'phase': 'Vulnerability Assessment', 'tasks': ['Automated vulnerability scanning', 'Port & service enumeration', 'Configuration review', 'Vulnerability validation']},
+        {'phase': 'Penetration Testing', 'tasks': ['Web application testing', 'Network penetration testing', 'Exploitation & post-exploitation', 'Privilege escalation testing']},
+        {'phase': 'Draft Report & Review', 'tasks': ['Findings documentation', 'Risk rating & classification', 'Remediation recommendations', 'Internal review & quality check']},
+        {'phase': 'Retest & Final Report', 'tasks': ['Remediation retesting', 'Final report preparation', 'Management summary', 'Report delivery & closure']},
     ],
     'IS Audit': [
-        {'phase': 'Planning', 'tasks': ['Audit Scope Definition', 'Risk Assessment', 'Audit Program Development', 'Team Assignment']},
-        {'phase': 'Fieldwork', 'tasks': ['Opening Meeting', 'Document Review', 'Process Walkthrough', 'Control Testing', 'Evidence Collection']},
-        {'phase': 'Reporting', 'tasks': ['Draft Audit Report', 'Management Review', 'Exit Meeting', 'Final Audit Report']},
-        {'phase': 'Follow-up', 'tasks': ['Remediation Plan', 'Follow-up Audit', 'Closure']},
+        {'phase': 'Audit Scope & Checklist', 'tasks': ['Audit scope finalization', 'Checklist preparation (ISO 27001 / standards)', 'Audit team assignment', 'Opening meeting scheduling']},
+        {'phase': 'Document Review', 'tasks': ['Policy & procedure review', 'Risk assessment documentation review', 'Compliance evidence review', 'Gap identification']},
+        {'phase': 'Onsite / Remote Audit', 'tasks': ['Site visit / remote session', 'Control testing & sampling', 'Personnel interviews', 'Evidence collection & verification']},
+        {'phase': 'Findings & NC Report', 'tasks': ['Non-conformity identification', 'Draft audit report', 'Management presentation', 'Corrective action plan discussion']},
+        {'phase': 'Compliance Verification', 'tasks': ['Corrective action verification', 'Closure of NCs', 'Final audit report submission', 'Certificate recommendation']},
     ],
     'ISMS Implementation': [
-        {'phase': 'Initiation', 'tasks': ['Management Commitment', 'Scope Definition', 'ISMS Policy Development', 'Project Plan']},
-        {'phase': 'Risk Assessment', 'tasks': ['Asset Identification', 'Threat & Vulnerability Assessment', 'Risk Analysis', 'Risk Treatment Plan']},
-        {'phase': 'Implementation', 'tasks': ['Control Implementation', 'Awareness Training', 'Documentation', 'Procedure Development']},
-        {'phase': 'Monitoring & Review', 'tasks': ['Internal Audit', 'Management Review', 'Corrective Actions', 'Continual Improvement']},
-        {'phase': 'Certification', 'tasks': ['Stage 1 Audit', 'Stage 2 Audit', 'Certification', 'Surveillance']},
+        {'phase': 'Gap Assessment', 'tasks': ['Current state assessment', 'ISMS gap analysis', 'Stakeholder interviews', 'Gap report preparation']},
+        {'phase': 'Risk Assessment & SoA', 'tasks': ['Asset identification & classification', 'Risk assessment methodology', 'Risk analysis & evaluation', 'Statement of Applicability (SoA) preparation']},
+        {'phase': 'Policy & Control Implementation', 'tasks': ['ISMS policy framework', 'Control implementation planning', 'Control deployment', 'Awareness training & documentation']},
+        {'phase': 'Internal Audit & MRM', 'tasks': ['Internal audit planning', 'Internal audit execution', 'Management Review Meeting (MRM)', 'Corrective actions tracking']},
+        {'phase': 'Certification Support', 'tasks': ['Stage 1 audit preparation', 'Stage 1 audit support', 'Stage 2 audit preparation', 'Stage 2 audit support & certification']},
     ],
 }
 
@@ -252,12 +255,17 @@ class ProjectPhase(db.Model):
     tasks = db.relationship('Task', backref='phase', lazy='dynamic')
 
     def to_dict(self):
-        tasks = self.tasks.all()
+        parent_tasks = self.tasks.filter_by(parent_task_id=None).order_by(Task.created_at.asc()).all()
+        task_dicts = []
+        for t in parent_tasks:
+            td = t.to_dict()
+            td['subtasks'] = [s.to_dict() for s in t.subtasks.order_by(Task.created_at.asc()).all()]
+            task_dicts.append(td)
         return {
             'id': self.id,
             'project_id': self.project_id,
             'name': self.name,
             'order': self.order,
             'status': self.status,
-            'tasks': [t.to_dict() for t in tasks],
+            'tasks': task_dicts,
         }
