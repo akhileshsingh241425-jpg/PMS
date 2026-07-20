@@ -83,7 +83,6 @@ class Task(db.Model):
             'comment_count': self.comments.count(),
             'subtask_count': self.subtasks.count(),
         }
-        }
 
 
 class Meeting(db.Model):
