@@ -157,6 +157,9 @@ function AccountForm({ editData, onClose, onSaved }) {
   const save = async (e) => {
     e.preventDefault(); setSaving(true); setError('')
     try {
+      if (form.account_type === 'B2B' && !form.referred_by_account_id) {
+        setError('Please select a Parent Client for B2B accounts'); setSaving(false); return
+      }
       const payload = { ...form }
       if (!payload.referred_by_account_id) delete payload.referred_by_account_id
       else payload.referred_by_account_id = parseInt(payload.referred_by_account_id)
@@ -183,7 +186,7 @@ function AccountForm({ editData, onClose, onSaved }) {
               <div><label className="block text-xs font-bold text-slate-600 mb-0.5">Industry / Sector</label><select value={form.industry} onChange={e => f('industry', e.target.value)} className="w-full border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-blue-500 bg-white"><option value="">-- Select --</option>{INDUSTRIES.map(i => <option key={i}>{i}</option>)}</select></div>
               <div><label className="block text-xs font-bold text-slate-600 mb-0.5">Account Type</label><select value={form.account_type} onChange={e => f('account_type', e.target.value)} className="w-full border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-blue-500 bg-white"><option value="B2B">B2B (Business)</option><option value="B2C">B2C (Individual)</option></select></div>
               <div><label className="block text-xs font-bold text-slate-600 mb-0.5">Website</label><input value={form.website} onChange={e => f('website', e.target.value)} className="w-full border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-blue-500" /></div>
-              {form.account_type === 'B2B' && <div className="col-span-2"><label className="block text-xs font-bold text-slate-600 mb-0.5">Parent Client <span className="text-gray-400 font-normal">(main customer)</span></label><select value={form.referred_by_account_id} onChange={e => f('referred_by_account_id', e.target.value)} className="w-full border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-blue-500 bg-white"><option value="">-- Select Parent Client --</option>{parentClients.filter(c => c.id !== editData?.id).map(c => <option key={c.id} value={c.id}>{c.company_name} ({c.acc_id})</option>)}</select></div>}
+              {form.account_type === 'B2B' && <div className="col-span-2"><label className="block text-xs font-bold text-slate-600 mb-0.5">Parent Client <span className="text-red-500">*</span></label><select value={form.referred_by_account_id} onChange={e => f('referred_by_account_id', e.target.value)} className="w-full border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-blue-500 bg-white"><option value="">-- Select Parent Client --</option>{parentClients.filter(c => c.id !== editData?.id).map(c => <option key={c.id} value={c.id}>{c.company_name} ({c.acc_id})</option>)}</select></div>}
             </div>
           </div>
 
