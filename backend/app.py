@@ -1,4 +1,5 @@
 import os
+import traceback
 from flask import Flask, jsonify, send_from_directory, request
 from flask_cors import CORS
 from flask_migrate import Migrate
@@ -30,6 +31,7 @@ def create_app():
 
     @app.errorhandler(500)
     def server_error(e):
+        app.logger.error('500 error: %s', traceback.format_exc())
         return jsonify({'error': 'Internal server error'}), 500
 
     from routes import auth_bp, account_bp, project_bp, activity_bp, portal_bp, queries_bp, dash_bp, meeting_req_bp, notif_bp, leads_bp, opp_bp, contact_bp, enterprise_bp, admin_bp, search_bp, team_bp, me_bp, employee_bp, pm_bp, vuln_bp, attendance_bp
