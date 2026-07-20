@@ -43,6 +43,7 @@ class Task(db.Model):
     title = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text)
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete='CASCADE'), nullable=False, index=True)
+    phase_id = db.Column(db.Integer, db.ForeignKey('project_phases.id', ondelete='SET NULL'), index=True)
     status = db.Column(db.String(30), default='Open')
     priority = db.Column(db.String(20), default='Normal')
     due_date = db.Column(db.Date)
@@ -63,6 +64,7 @@ class Task(db.Model):
         return {
             'id': self.id, 'title': self.title, 'description': self.description,
             'project_id': self.project_id,
+            'phase_id': self.phase_id,
             'project_name': self.project.title if self.project else None,
             'status': self.status, 'priority': self.priority,
             'due_date': self.due_date.isoformat() if self.due_date else None,

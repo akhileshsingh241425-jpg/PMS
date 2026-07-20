@@ -1,7 +1,7 @@
 from datetime import datetime
 from flask import Blueprint, request, jsonify
 import os
-from models import db, Project, ProjectRemark, ProjectRemarkReaction, ProjectDocument, ProjectReport, ProjectTeam, Task, Meeting, Note, User, ProjectRisk, ProjectIssue, ProjectMilestone, ProjectInvoice, ProjectTimesheet, ProjectChangeRequest, ApprovalHistory
+from models import db, Project, ProjectRemark, ProjectRemarkReaction, ProjectDocument, ProjectReport, ProjectTeam, ProjectPhase, Task, Meeting, Note, User, ProjectRisk, ProjectIssue, ProjectMilestone, ProjectInvoice, ProjectTimesheet, ProjectChangeRequest, ApprovalHistory
 from models.client_portal import MeetingRequest, FindingQuery
 from middleware.auth import login_required, role_required
 from utils import validate_file, safe_filename, generate_id, paginate
@@ -55,6 +55,8 @@ def create_project(current_user):
         total_value = float(data['total_value']) if data.get('total_value') else None
         start_date = datetime.strptime(data['start_date'], '%Y-%m-%d').date() if data.get('start_date') else None
         target_date = datetime.strptime(data['target_date'], '%Y-%m-%d').date() if data.get('target_date') else None
+        po_date = datetime.strptime(data['po_date'], '%Y-%m-%d').date() if data.get('po_date') else None
+        po_amount = float(data['po_amount']) if data.get('po_amount') else None
     except (ValueError, TypeError):
         return jsonify({'error': 'Invalid format for numeric or date fields'}), 400
     proj = Project(
@@ -69,6 +71,11 @@ def create_project(current_user):
         start_date=start_date,
         target_date=target_date,
         is_client_review_enabled=data.get('is_client_review_enabled', False),
+        po_number=data.get('po_number'),
+        po_date=po_date,
+        po_amount=po_amount,
+        po_terms=data.get('po_terms'),
+        project_type=data.get('project_type'),
         created_by=current_user.id,
     )
     db.session.add(proj)
@@ -84,6 +91,7 @@ def get_project(current_user, pid):
     open_tasks = [t for t in all_tasks if t.status != 'Completed']
     team = ProjectTeam.query.filter_by(project_id=pid).all()
     member_ids = [t.user_id for t in team if t.user_id]
+    phases = ProjectPhase.query.filter_by(project_id=pid).order_by(ProjectPhase.order).all()
     return jsonify({
         'project': proj.to_dict(),
         'remarks': [r.to_dict() for r in proj.remarks],
@@ -92,6 +100,7 @@ def get_project(current_user, pid):
         'tasks': [t.to_dict() for t in all_tasks],
         'open_tasks_count': len(open_tasks),
         'team_member_ids': member_ids,
+        'phases': [p.to_dict() for p in phases],
         'meetings': [m.to_dict() for m in Meeting.query.filter_by(project_id=pid).order_by(Meeting.created_at.desc()).all()],
         'notes': [n.to_dict() for n in Note.query.filter_by(project_id=pid).order_by(Note.created_at.desc()).all()],
         'queries': [q.to_dict() for q in FindingQuery.query.filter_by(project_id=pid).order_by(FindingQuery.created_at.desc()).all()],
@@ -111,7 +120,7 @@ def get_project(current_user, pid):
 def update_project(current_user, pid):
     proj = Project.query.get_or_404(pid)
     data = request.get_json()
-    for f in ['title', 'description', 'stage', 'service_type', 'is_client_review_enabled']:
+    for f in ['title', 'description', 'stage', 'service_type', 'is_client_review_enabled', 'po_number', 'po_terms', 'project_type']:
         if f in data:
             setattr(proj, f, data[f])
     try:
@@ -123,10 +132,49 @@ def update_project(current_user, pid):
             proj.start_date = datetime.strptime(data['start_date'], '%Y-%m-%d').date() if data['start_date'] else None
         if 'target_date' in data:
             proj.target_date = datetime.strptime(data['target_date'], '%Y-%m-%d').date() if data['target_date'] else None
+        if 'po_date' in data:
+            proj.po_date = datetime.strptime(data['po_date'], '%Y-%m-%d').date() if data['po_date'] else None
+        if 'po_amount' in data:
+            proj.po_amount = float(data['po_amount']) if data['po_amount'] else None
     except (ValueError, TypeError):
         return jsonify({'error': 'Invalid format for numeric or date fields'}), 400
     db.session.commit()
     return jsonify({'project': proj.to_dict()})
+
+
+@project_bp.route('/<int:pid>/generate-plan', methods=['POST'])
+@login_required
+def generate_plan(current_user, pid):
+    from models.project import PLAN_TEMPLATES
+    proj = Project.query.get_or_404(pid)
+    if proj.plan_generated:
+        return jsonify({'error': 'Plan already generated'}), 400
+    ptype = proj.project_type
+    if not ptype:
+        return jsonify({'error': 'Project type not set. Set project_type (VAPT, IS Audit, ISMS Implementation)'}), 400
+    template = PLAN_TEMPLATES.get(ptype)
+    if not template:
+        return jsonify({'error': f'No template found for project type: {ptype}'}), 400
+    for i, phase_data in enumerate(template):
+        phase = ProjectPhase(project_id=pid, name=phase_data['phase'], order=i, status='Pending')
+        db.session.add(phase)
+        db.session.flush()
+        for task_title in phase_data['tasks']:
+            task = Task(
+                title=task_title,
+                project_id=pid,
+                phase_id=phase.id,
+                status='Open',
+                priority='Normal',
+                created_by=current_user.id,
+            )
+            db.session.add(task)
+    proj.plan_generated = True
+    if proj.stage == 'Created':
+        proj.stage = 'Initiated'
+    db.session.commit()
+    phases = ProjectPhase.query.filter_by(project_id=pid).order_by(ProjectPhase.order).all()
+    return jsonify({'message': 'Plan generated', 'phases': [p.to_dict() for p in phases]}), 201
 
 
 @project_bp.route('/<int:pid>/remarks/<int:rid>/react', methods=['POST'])

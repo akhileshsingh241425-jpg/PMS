@@ -10,6 +10,28 @@ PROJECT_STAGES = [
     'Awaiting Client Response', 'Awaiting Documents', 'Awaiting Payment',
 ]
 
+PLAN_TEMPLATES = {
+    'VAPT': [
+        {'phase': 'Reconnaissance', 'tasks': ['Scope Confirmation', 'Passive Reconnaissance', 'Active Reconnaissance', 'Subdomain Enumeration']},
+        {'phase': 'Scanning & Enumeration', 'tasks': ['Port Scanning', 'Service Enumeration', 'Vulnerability Scanning', 'Manual Verification']},
+        {'phase': 'Exploitation', 'tasks': ['Vulnerability Exploitation', 'Privilege Escalation', 'Lateral Movement', 'Post-Exploitation']},
+        {'phase': 'Reporting', 'tasks': ['Draft Report Preparation', 'Findings Review', 'Remediation Recommendations', 'Final Report Submission']},
+    ],
+    'IS Audit': [
+        {'phase': 'Planning', 'tasks': ['Audit Scope Definition', 'Risk Assessment', 'Audit Program Development', 'Team Assignment']},
+        {'phase': 'Fieldwork', 'tasks': ['Opening Meeting', 'Document Review', 'Process Walkthrough', 'Control Testing', 'Evidence Collection']},
+        {'phase': 'Reporting', 'tasks': ['Draft Audit Report', 'Management Review', 'Exit Meeting', 'Final Audit Report']},
+        {'phase': 'Follow-up', 'tasks': ['Remediation Plan', 'Follow-up Audit', 'Closure']},
+    ],
+    'ISMS Implementation': [
+        {'phase': 'Initiation', 'tasks': ['Management Commitment', 'Scope Definition', 'ISMS Policy Development', 'Project Plan']},
+        {'phase': 'Risk Assessment', 'tasks': ['Asset Identification', 'Threat & Vulnerability Assessment', 'Risk Analysis', 'Risk Treatment Plan']},
+        {'phase': 'Implementation', 'tasks': ['Control Implementation', 'Awareness Training', 'Documentation', 'Procedure Development']},
+        {'phase': 'Monitoring & Review', 'tasks': ['Internal Audit', 'Management Review', 'Corrective Actions', 'Continual Improvement']},
+        {'phase': 'Certification', 'tasks': ['Stage 1 Audit', 'Stage 2 Audit', 'Certification', 'Surveillance']},
+    ],
+}
+
 
 class Project(db.Model):
     __tablename__ = 'projects'
@@ -26,6 +48,13 @@ class Project(db.Model):
     target_date = db.Column(db.Date)
     actual_end_date = db.Column(db.Date)
     is_client_review_enabled = db.Column(db.Boolean, default=False)
+    po_number = db.Column(db.String(100))
+    po_date = db.Column(db.Date)
+    po_amount = db.Column(db.Float)
+    po_terms = db.Column(db.Text)
+    po_document_id = db.Column(db.Integer, db.ForeignKey('project_documents.id'))
+    project_type = db.Column(db.String(50))
+    plan_generated = db.Column(db.Boolean, default=False)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -36,6 +65,7 @@ class Project(db.Model):
     remarks = db.relationship('ProjectRemark', back_populates='project', order_by='ProjectRemark.created_at.desc()', cascade='all, delete-orphan')
     documents = db.relationship('ProjectDocument', back_populates='project', order_by='ProjectDocument.uploaded_at.desc()', cascade='all, delete-orphan')
     team = db.relationship('ProjectTeam', back_populates='project', cascade='all, delete-orphan')
+    phases = db.relationship('ProjectPhase', back_populates='project', order_by='ProjectPhase.order', cascade='all, delete-orphan')
 
     @validates('stage')
     def validate_stage(self, key, stage):
@@ -60,6 +90,13 @@ class Project(db.Model):
             'target_date': self.target_date.isoformat() if self.target_date else None,
             'actual_end_date': self.actual_end_date.isoformat() if self.actual_end_date else None,
             'is_client_review_enabled': self.is_client_review_enabled,
+            'po_number': self.po_number,
+            'po_date': self.po_date.isoformat() if self.po_date else None,
+            'po_amount': self.po_amount,
+            'po_terms': self.po_terms,
+            'po_document_id': self.po_document_id,
+            'project_type': self.project_type,
+            'plan_generated': self.plan_generated,
             'team_count': len(self.team),
             'team_names': ', '.join(tm.user.full_name for tm in self.team if tm.user) if self.team else '',
             'creator_name': self.creator.full_name if self.creator else None,
@@ -186,7 +223,7 @@ class ProjectReport(db.Model):
     uploader = db.relationship('User', foreign_keys=[uploaded_by])
     project = db.relationship('Project', backref=db.backref('reports', lazy='dynamic', order_by='ProjectReport.uploaded_at.desc()', cascade='all, delete-orphan'))
 
-    def to_dict(self):
+    def     to_dict(self):
         from flask import request as flask_request
         base_url = flask_request.host_url.rstrip('/') if flask_request else ''
         return {
@@ -200,4 +237,27 @@ class ProjectReport(db.Model):
             'uploaded_by_name': self.uploader.full_name if self.uploader else None,
             'uploaded_at': self.uploaded_at.isoformat() if self.uploaded_at else None,
             'file_url': f"{base_url}/api/projects/reports/{self.id}",
+        }
+
+
+class ProjectPhase(db.Model):
+    __tablename__ = 'project_phases'
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete='CASCADE'), nullable=False, index=True)
+    name = db.Column(db.String(255), nullable=False)
+    order = db.Column(db.Integer, default=0)
+    status = db.Column(db.String(30), default='Pending')
+
+    project = db.relationship('Project', back_populates='phases')
+    tasks = db.relationship('Task', backref='phase', lazy='dynamic')
+
+    def to_dict(self):
+        tasks = self.tasks.all()
+        return {
+            'id': self.id,
+            'project_id': self.project_id,
+            'name': self.name,
+            'order': self.order,
+            'status': self.status,
+            'tasks': [t.to_dict() for t in tasks],
         }

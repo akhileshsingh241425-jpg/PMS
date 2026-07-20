@@ -173,6 +173,7 @@ export default function ProjectsDetailPage() {
   const [editingDesc, setEditingDesc] = useState(false)
   const [descVal, setDescVal] = useState('')
   const [savingField, setSavingField] = useState(false)
+  const [generatingPlan, setGeneratingPlan] = useState(false)
 
   const fetchData = async () => {
     try { const r = await api.get(`/api/projects/${id}`); setData(r.data) }
@@ -200,6 +201,13 @@ export default function ProjectsDetailPage() {
     try { await api.put(`/api/projects/${id}`, { description: descVal }); setEditingDesc(false); fetchData(); toast('Description updated') }
     catch (e) { toast('Failed', 'error') }
     finally { setSavingField(false) }
+  }
+
+  const generatePlan = async () => {
+    setGeneratingPlan(true)
+    try { await api.post(`/api/projects/${id}/generate-plan`); fetchData(); toast('Project plan generated from template') }
+    catch (e) { toast(e.response?.data?.error || 'Failed', 'error') }
+    finally { setGeneratingPlan(false) }
   }
 
   const addRemark = async (e) => {
@@ -335,7 +343,7 @@ export default function ProjectsDetailPage() {
   )
   if (!data) return null
 
-  const { project: p, remarks, documents, team, tasks, meetings, notes, queries = [], meeting_requests = [], milestones = [] } = data
+  const { project: p, remarks, documents, team, tasks, meetings, notes, queries = [], meeting_requests = [], milestones = [], phases = [] } = data
   const isTerminal = TERMINAL_STAGES.includes(p.stage)
   const isBlocked = BLOCKED_STAGES.includes(p.stage)
   const openTasks = tasks.filter(t => t.status !== 'Completed').length
@@ -501,6 +509,54 @@ export default function ProjectsDetailPage() {
           <div style={{ background: 'linear-gradient(135deg,#ECFDF5,#D1FAE5)', borderRadius: 12, border: '1.5px solid #A7F3D0', padding: '12px 20px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><CheckIcon size={12} color="#fff" /></div>
             <span style={{ fontSize: 13, fontWeight: 600, color: '#065F46' }}>{p.stage === 'Closed' ? 'Closed' : 'Cancelled'}</span>
+          </div>
+        )}
+
+        {/* ═══ PO IN SECTION ═══ */}
+        {(p.po_number || p.project_type || p.plan_generated) && (
+          <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '16px 20px', marginBottom: 12 }}>
+            <SectionTitle icon={<FileTextIcon />} text={p.plan_generated ? 'Project Plan' : 'Purchase Order (PO In)'} />
+            {!p.plan_generated && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginTop: 12 }}>
+                {p.po_number && <InfoField icon={<HashIcon />} label="PO Number" value={p.po_number} empty={!p.po_number} />}
+                {p.po_date && <InfoField icon={<CalendarIcon />} label="PO Date" value={formatDate(p.po_date)} empty={!p.po_date} />}
+                {p.po_amount && <InfoField icon={<MoneyIcon />} label="PO Amount" value={`₹${p.po_amount.toLocaleString()}`} empty={!p.po_amount} green />}
+                {p.project_type && <InfoField icon={<TagIcon />} label="Project Type" value={p.project_type} empty={!p.project_type} badge />}
+                {p.po_terms && <div style={{ gridColumn: '1 / -1' }}><InfoField icon={<FileTextIcon />} label="Terms & Conditions" value={p.po_terms} empty={!p.po_terms} /></div>}
+              </div>
+            )}
+            {!p.plan_generated && p.project_type && (
+              <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+                <button onClick={generatePlan} disabled={generatingPlan}
+                  style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: C.primary, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: generatingPlan ? 0.6 : 1 }}>
+                  {generatingPlan ? 'Generating...' : `Generate Plan from ${p.project_type} Template`}
+                </button>
+              </div>
+            )}
+            {p.plan_generated && phases.length > 0 && (
+              <div style={{ marginTop: 12 }}>
+                {phases.map((phase, pi) => (
+                  <div key={phase.id} style={{ marginBottom: 12, border: `1px solid ${C.border}`, borderRadius: 10, overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#F9FAFB', borderBottom: `1px solid ${C.border}` }}>
+                      <div style={{ width: 24, height: 24, borderRadius: '50%', background: C.primaryLight, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: C.primary, flexShrink: 0 }}>{pi + 1}</div>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: '#1F2937', flex: 1 }}>{phase.name}</span>
+                      <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6, background: phase.status === 'Completed' ? '#D1FAE5' : phase.status === 'In Progress' ? '#FEF3C7' : '#F3F4F6', color: phase.status === 'Completed' ? '#065F46' : phase.status === 'In Progress' ? '#92400E' : '#6B7280' }}>
+                        {phase.status}
+                      </span>
+                    </div>
+                    <div style={{ padding: '6px 14px' }}>
+                      {phase.tasks.map(task => (
+                        <div key={task.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: '1px solid #F3F4F6' }}>
+                          <div style={{ width: 6, height: 6, borderRadius: '50%', background: task.status === 'Completed' ? '#059669' : task.status === 'In Progress' ? '#D97706' : '#D1D5DB', flexShrink: 0 }} />
+                          <div style={{ fontSize: 13, color: '#374151', flex: 1 }}>{task.title}</div>
+                          <div style={{ fontSize: 11, fontWeight: 500, color: task.assigned_name ? '#6B7280' : '#9CA3AF' }}>{task.assigned_name || 'Unassigned'}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -1545,6 +1601,14 @@ function NoteIcon() {
 
 function EditIcon() {
   return <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /></svg>
+}
+
+function FileTextIcon() {
+  return <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /><path d="M9 12h3.75M9 15h3.75M9 18h3.75" strokeWidth="1.5" /></svg>
+}
+
+function HashIcon() {
+  return <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M5.25 8.25h15m-16.5 7.5h15m-1.8-13.5l-3.9 19.5m-2.1-19.5l-3.9 19.5" /></svg>
 }
 
 
