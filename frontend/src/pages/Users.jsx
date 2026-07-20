@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 
 const DESIGNATIONS = ['Director','CEO','CTO','Project Lead','Senior Consultant','Security Consultant','Senior Auditor','Auditor','Junior Auditor','Security Analyst','BD Manager','BD Executive','Admin Manager','Finance Manager','Other']
-const CERTS = ['CEH','CISSP','CISA','CISM','ISO 27001 LA','DISA','OSCP','CRTP','CompTIA Security+']
+
 const PERMISSION_LABELS = {
   dashboard: 'Dashboard', projects: 'Projects', leads: 'Leads',
   accounts: 'Accounts', opportunities: 'Opportunities', users: 'Users',
@@ -21,11 +21,12 @@ export default function UsersPage() {
   const [depts, setDepts] = useState([])
   const [permissions, setPermissions] = useState([])
   const [search, setSearch] = useState('')
-  const [showForm, setShowForm] = useState(false)
+const [showForm, setShowForm] = useState(false)
   const [editUser, setEditUser] = useState(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [form, setForm] = useState({ first_name:'',last_name:'',email:'',password:'',phone:'',designation:'',department_id:'',manager_id:'',role_ids:[],certifications:[],experience_years:'' })
+  const [userType, setUserType] = useState('employee')
+  const [form, setForm] = useState({ first_name:'',last_name:'',email:'',password:'',phone:'',designation:'',department_id:'',manager_id:'',role_id:5,client_company_name:'' })
   const [expandedUser, setExpandedUser] = useState(null)
   const [permSaving, setPermSaving] = useState({})
   const [allProjects, setAllProjects] = useState([])
@@ -60,8 +61,10 @@ export default function UsersPage() {
     } catch (e) { toast('Failed', 'error') }
   }
 
-  const openCreate = ()=>{setEditUser(null);setError('');setForm({first_name:'',last_name:'',email:'',password:'',phone:'',designation:'',department_id:'',manager_id:'',role_ids:[5],certifications:[],experience_years:''});setShowForm(true)}
-  const openEdit = (u)=>{setEditUser(u);setError('');setForm({first_name:u.first_name,last_name:u.last_name||'',email:u.email,password:'',phone:u.phone||'',designation:u.designation||'',department_id:u.department_id||'',manager_id:u.manager_id||'',role_ids:u.role_ids||[],certifications:u.certifications||[],experience_years:u.experience_years||''});setShowForm(true)}
+  const openCreate = ()=>{setEditUser(null);setError('');setUserType('employee');setForm({first_name:'',last_name:'',email:'',password:'',phone:'',designation:'',department_id:'',manager_id:'',role_id:5,client_company_name:''});setShowForm(true)}
+  const openEdit = (u)=>{setEditUser(u);setError('');setUserType(u.role==='client'?'client':'employee');setForm({first_name:u.first_name,last_name:u.last_name||'',email:u.email,password:'',phone:u.phone||'',designation:u.designation||'',department_id:u.department_id||'',manager_id:u.manager_id||'',role_ids:u.role_ids||[],role_id:(u.role_ids&&u.role_ids[0])||5,client_company_name:u.client_company_name||''});setShowForm(true)}
+
+  const ROLE_CODES = {1:'super_admin',2:'project_manager',3:'team_leader',4:'sales',5:'employee',6:'client'}
 
   const save = async(e)=>{
     e.preventDefault();setSaving(true);setError('')
@@ -69,16 +72,26 @@ export default function UsersPage() {
       const p={...form}
       if(p.department_id)p.department_id=parseInt(p.department_id);else delete p.department_id
       if(p.manager_id)p.manager_id=parseInt(p.manager_id);else delete p.manager_id
-      if(p.experience_years)p.experience_years=parseFloat(p.experience_years);else delete p.experience_years
+
       if(!p.password)delete p.password
-      if(editUser) await api.put(`/api/auth/users/${editUser.id}`,p)
-      else await api.post('/api/auth/users',p)
+      delete p.role_ids; delete p.role_id
+      if(editUser){
+        p.role = userType==='client'?'client':ROLE_CODES[form.role_id]||'employee'
+        await api.put(`/api/auth/users/${editUser.id}`,p)
+      } else {
+        if(userType==='client'){
+          p.role='client'
+        } else {
+          p.role=ROLE_CODES[form.role_id]||'employee'
+        }
+        await api.post('/api/auth/users',p)
+      }
       setShowForm(false);load()
     }catch(e){setError(e.response?.data?.error||'Error')}finally{setSaving(false)}
   }
 
   const toggleRole=(rid)=>setForm(f=>({...f,role_ids:f.role_ids.includes(rid)?f.role_ids.filter(i=>i!==rid):[...f.role_ids,rid]}))
-  const toggleCert=(c)=>setForm(f=>({...f,certifications:f.certifications.includes(c)?f.certifications.filter(i=>i!==c):[...f.certifications,c]}))
+  const setEmployeeRole=(rid)=>setForm(f=>({...f,role_id:rid}))
 
   const toggleUserRole = async (uid, roleId) => {
     const u = users.find(x => x.id === uid)
@@ -120,23 +133,52 @@ export default function UsersPage() {
       </div>
 
       {/* Add/Edit Modal */}
-      {showForm&&(<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={()=>setShowForm(false)}><div className="bg-white   w-full max-w-3xl max-h-[90vh] overflow-y-auto m-4" onClick={e=>e.stopPropagation()}>
-        <div className="flex items-center justify-between p-5 border-b"><h2 className="font-semibold">{editUser?'Edit User':'Add User'}</h2><button onClick={()=>setShowForm(false)}><X className="w-5 h-5"/></button></div>
+      {showForm&&(<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={()=>setShowForm(false)}><div className="bg-white w-full max-w-3xl max-h-[90vh] overflow-y-auto m-4" onClick={e=>e.stopPropagation()}>
+        <div className="flex items-center justify-between p-5 border-b">
+          <h2 className="font-semibold">{editUser?'Edit User':'Add User'}</h2>
+          <button onClick={()=>setShowForm(false)}><X className="w-5 h-5"/></button>
+        </div>
+
+        {/* User Type Tabs */}
+        {!editUser&&<div className="flex border-b mx-5 mt-5">
+          <button type="button" onClick={()=>setUserType('employee')}
+            className={`px-5 py-2.5 text-sm font-medium border-b-2 transition -mb-px ${userType==='employee'?'border-blue-700 text-blue-700':'border-transparent text-gray-500 hover:text-gray-700'}`}>
+            Employee
+          </button>
+          <button type="button" onClick={()=>setUserType('client')}
+            className={`px-5 py-2.5 text-sm font-medium border-b-2 transition -mb-px ${userType==='client'?'border-blue-700 text-blue-700':'border-transparent text-gray-500 hover:text-gray-700'}`}>
+            Client
+          </button>
+        </div>}
+
         <form onSubmit={save} className="p-5 space-y-5">
           {error&&<p className="text-sm text-red-600 bg-red-50 px-3 py-2 ">{error}</p>}
+
+          {/* Common Fields */}
           <div className="grid grid-cols-2 gap-3">
             <div><label className="text-sm font-medium">First Name *</label><input value={form.first_name} onChange={e=>setForm({...form,first_name:e.target.value})} className="mt-1 w-full px-3 py-2 border  text-sm outline-none" required/></div>
             <div><label className="text-sm font-medium">Last Name</label><input value={form.last_name} onChange={e=>setForm({...form,last_name:e.target.value})} className="mt-1 w-full px-3 py-2 border  text-sm outline-none"/></div>
             <div><label className="text-sm font-medium">Email *</label><input type="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} className="mt-1 w-full px-3 py-2 border  text-sm outline-none" required/></div>
             <div><label className="text-sm font-medium">{editUser?'New Password':'Password *'}</label><input type="password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} className="mt-1 w-full px-3 py-2 border  text-sm outline-none" {...(!editUser?{required:true,minLength:6}:{})}/></div>
             <div><label className="text-sm font-medium">Phone</label><input value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} className="mt-1 w-full px-3 py-2 border  text-sm outline-none"/></div>
-            <div><label className="text-sm font-medium">Experience (Years)</label><input type="number" step="0.1" value={form.experience_years} onChange={e=>setForm({...form,experience_years:e.target.value})} className="mt-1 w-full px-3 py-2 border  text-sm outline-none"/></div>
-            <div><label className="text-sm font-medium">Designation</label><select value={form.designation} onChange={e=>setForm({...form,designation:e.target.value})} className="mt-1 w-full px-3 py-2 border  text-sm outline-none"><option value="">Select</option>{DESIGNATIONS.map(d=><option key={d}>{d}</option>)}</select></div>
-            <div><label className="text-sm font-medium">Department</label><select value={form.department_id} onChange={e=>setForm({...form,department_id:e.target.value})} className="mt-1 w-full px-3 py-2 border  text-sm outline-none"><option value="">Select</option>{depts.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></div>
-            <div className="col-span-2"><label className="text-sm font-medium">Reports To</label><select value={form.manager_id} onChange={e=>setForm({...form,manager_id:e.target.value})} className="mt-1 w-full px-3 py-2 border  text-sm outline-none"><option value="">None</option>{users.filter(u=>u.is_active&&u.id!==editUser?.id).map(u=><option key={u.id} value={u.id}>{u.full_name} — {u.designation||''}</option>)}</select></div>
           </div>
-          <div><label className="text-sm font-medium block mb-2">Roles</label><div className="flex flex-wrap gap-2">{roles.map(r=>(<label key={r.id} className={`px-3 py-1.5  text-sm border cursor-pointer ${form.role_ids.includes(r.id)?'bg-blue-50 border-blue-300 text-blue-700':'bg-gray-50 border-gray-200'}`}><input type="checkbox" className="hidden" checked={form.role_ids.includes(r.id)} onChange={()=>toggleRole(r.id)}/>{r.name}</label>))}</div></div>
-          <div><label className="text-sm font-medium block mb-2">Certifications</label><div className="flex flex-wrap gap-2">{CERTS.map(c=>(<button key={c} type="button" onClick={()=>toggleCert(c)} className={`px-3 py-1  text-sm border ${form.certifications.includes(c)?'bg-green-50 border-green-300 text-green-700':'bg-gray-50 border-gray-200'}`}>{form.certifications.includes(c)?'✓ ':''}{c}</button>))}</div></div>
+
+          {/* Employee Fields */}
+          {userType==='employee'&&<>
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className="text-sm font-medium">Designation</label><select value={form.designation} onChange={e=>setForm({...form,designation:e.target.value})} className="mt-1 w-full px-3 py-2 border  text-sm outline-none"><option value="">Select</option>{DESIGNATIONS.map(d=><option key={d}>{d}</option>)}</select></div>
+              <div><label className="text-sm font-medium">Department</label><select value={form.department_id} onChange={e=>setForm({...form,department_id:e.target.value})} className="mt-1 w-full px-3 py-2 border  text-sm outline-none"><option value="">Select</option>{depts.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></div>
+            </div>
+            <div className="col-span-2"><label className="text-sm font-medium">Reports To</label><select value={form.manager_id} onChange={e=>setForm({...form,manager_id:e.target.value})} className="mt-1 w-full px-3 py-2 border  text-sm outline-none"><option value="">None</option>{users.filter(u=>u.is_active&&u.id!==editUser?.id).map(u=><option key={u.id} value={u.id}>{u.full_name} — {u.designation||''}</option>)}</select></div>
+            <div><label className="text-sm font-medium block mb-2">Role *</label><div className="flex flex-wrap gap-2">{roles.filter(r=>r.id!==6).map(r=>(<label key={r.id} className={`px-3 py-1.5 text-sm border cursor-pointer ${form.role_id===r.id?'bg-blue-50 border-blue-300 text-blue-700':'bg-gray-50 border-gray-200'}`}><input type="radio" name="emp-role" className="hidden" checked={form.role_id===r.id} onChange={()=>setEmployeeRole(r.id)}/>{r.name}</label>))}</div></div>
+          </>}
+
+          {/* Client Fields */}
+          {userType==='client'&&<>
+            <div><label className="text-sm font-medium">Company Name</label><input value={form.client_company_name} onChange={e=>setForm({...form,client_company_name:e.target.value})} className="mt-1 w-full px-3 py-2 border  text-sm outline-none"/></div>
+            <p className="text-xs text-gray-400 italic">Client users will have no role assigned and can only access the Client Portal.</p>
+          </>}
+
           <div className="flex justify-end gap-2 pt-3 border-t"><button type="button" onClick={()=>setShowForm(false)} className="px-4 py-2 text-sm bg-gray-100 ">Cancel</button><button type="submit" disabled={saving} className="px-4 py-2 text-sm bg-blue-700 text-white  disabled:opacity-50">{saving?'...':editUser?'Update':'Create'}</button></div>
         </form>
       </div></div>)}
@@ -168,6 +210,7 @@ export default function UsersPage() {
                   </div>
                   <div className="hidden md:flex items-center gap-3 text-xs text-slate-500 shrink-0">
                     <span className="px-2 py-0.5 bg-blue-50 text-blue-700  text-[10px] font-medium">{u.emp_id || '—'}</span>
+                    <span className={`px-2 py-0.5 text-[10px] font-medium ${u.role==='client'?'bg-purple-50 text-purple-700':'bg-emerald-50 text-emerald-700'}`}>{u.role==='client'?'Client':'Employee'}</span>
                     <span>{u.roles?.map(r => r.replace(/_/g,' ')).join(', ') || 'No role'}</span>
                   </div>
                   <span>{u.is_active ? <UserCheck className="w-4 h-4 text-green-500" /> : <UserX className="w-4 h-4 text-red-500" />}</span>
@@ -229,13 +272,13 @@ export default function UsersPage() {
                     )}
                   </div>
 
-                  {/* Roles & Permissions (super admin only) */}
-                  {isSuperAdmin && (
+                  {/* Roles & Permissions (super admin only) — not for client users */}
+                  {isSuperAdmin && u.role!=='client' && (
                     <>
                       <div>
                         <h4 className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-1"><Key className="w-4 h-4" /> Roles</h4>
                         <div className="flex flex-wrap gap-2">
-                          {roles.map(role => (
+                          {roles.filter(r=>r.id!==6).map(role => (
                             <label key={role.id} className={`flex items-center gap-2 px-3 py-2  border cursor-pointer text-xs font-medium transition-all ${
                               u.role_ids?.includes(role.id) ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
                             }`}>
