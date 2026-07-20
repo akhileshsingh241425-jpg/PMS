@@ -18,6 +18,7 @@ MIGRATIONS = {
         ('experience_years', 'FLOAT'),
         ('face_registration_path', 'TEXT'),
         ('face_registered_at', 'DATETIME'),
+        ('permissions_json', 'TEXT'),
     ],
     'leads': [
         ('closed_by', 'INTEGER'), ('approval_status', 'VARCHAR(20)'),

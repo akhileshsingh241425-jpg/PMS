@@ -70,6 +70,10 @@ def update_user_roles(current_user, uid):
 @admin_bp.route('/users/<int:uid>/permissions', methods=['PUT'])
 @role_required('admin')
 def update_user_permissions(current_user, uid):
-    User.query.get_or_404(uid)
+    user = User.query.get_or_404(uid)
     data = request.get_json()
-    return jsonify({'permissions': data.get('permissions', {})})
+    perms = data.get('permissions', {})
+    import json as _json
+    user.permissions_json = _json.dumps(perms)
+    db.session.commit()
+    return jsonify({'permissions': perms})

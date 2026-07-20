@@ -20,6 +20,7 @@ class User(db.Model):
     # Client-specific fields (when role='client')
     account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), index=True)
     client_company_name = db.Column(db.String(255))
+    permissions_json = db.Column(db.Text)
     # Common
     face_registration_path = db.Column(db.String(500))
     face_registered_at = db.Column(db.DateTime)
@@ -63,7 +64,7 @@ class User(db.Model):
             'reporting_manager_id': self.reporting_manager_id,
             'roles': [self.role],
             'role_ids': [role_id],
-            'permissions': {},
+            'permissions': json.loads(self.permissions_json) if self.permissions_json else {},
             'certifications': certs,
             'experience_years': self.experience_years,
             'account_id': self.account_id,

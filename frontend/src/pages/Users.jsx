@@ -38,6 +38,7 @@ const [showForm, setShowForm] = useState(false)
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(()=>{load();loadRoles();loadDepts();if(hasRole('admin'))loadPerms()},[])
+  useEffect(()=>{if(expandedUser&&allProjects.length===0)loadProjects()},[expandedUser])
   const load = async()=>{try{const r=await api.get('/api/auth/users');setUsers(r.data.users)}catch(e){}}
   const loadRoles = async()=>{try{const r=await api.get('/api/auth/roles');setRoles(r.data.roles)}catch(e){}}
   const loadDepts = async()=>{try{const r=await api.get('/api/auth/departments');setDepts(r.data.departments)}catch(e){}}
@@ -112,14 +113,13 @@ const [showForm, setShowForm] = useState(false)
   const toggleRole=(rid)=>setForm(f=>({...f,role_ids:f.role_ids.includes(rid)?f.role_ids.filter(i=>i!==rid):[...f.role_ids,rid]}))
   const setEmployeeRole=(rid)=>setForm(f=>({...f,role_id:rid}))
 
-  const toggleUserRole = async (uid, roleId) => {
-    const u = users.find(x => x.id === uid)
-    const newRoles = u.role_ids.includes(roleId) ? u.role_ids.filter(r => r !== roleId) : [...u.role_ids, roleId]
+  const setUserRole = async (uid, roleId) => {
     setPermSaving(prev => ({ ...prev, [`role-${uid}`]: true }))
     try {
-      const r = await api.put(`/api/admin/users/${uid}/roles`, { role_ids: newRoles })
+      const r = await api.put(`/api/admin/users/${uid}/roles`, { role_ids: [roleId] })
       setUsers(prev => prev.map(e => e.id === uid ? { ...e, roles: r.data.user.roles, role_ids: r.data.user.role_ids } : e))
-    } catch (e) { toast('Failed to update roles', 'error') }
+      toast('Role updated')
+    } catch (e) { toast('Failed to update role', 'error') }
     finally { setPermSaving(prev => ({ ...prev, [`role-${uid}`]: false })) }
   }
 
@@ -316,16 +316,16 @@ const [showForm, setShowForm] = useState(false)
                   {isSuperAdmin && u.role!=='client' && (
                     <>
                       <div>
-                        <h4 className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-1"><Key className="w-4 h-4" /> Roles</h4>
+                        <h4 className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-1"><Key className="w-4 h-4" /> Role</h4>
                         <div className="flex flex-wrap gap-2">
                           {roles.filter(r=>r.id!==6).map(role => (
-                            <label key={role.id} className={`flex items-center gap-2 px-3 py-2  border cursor-pointer text-xs font-medium transition-all ${
-                              u.role_ids?.includes(role.id) ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+                            <label key={role.id} className={`px-3 py-2 border cursor-pointer text-xs font-medium transition-all ${
+                              (u.role_ids?.[0]) === role.id ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
                             }`}>
-                              <input type="checkbox" checked={u.role_ids?.includes(role.id) || false}
-                                onChange={() => toggleUserRole(u.id, role.id)}
+                              <input type="radio" name={`role-${u.id}`} checked={(u.role_ids?.[0]) === role.id}
+                                onChange={() => setUserRole(u.id, role.id)}
                                 disabled={permSaving[`role-${u.id}`]}
-                                className=" text-blue-700 focus:ring-blue-500" />
+                                className="hidden" />
                               {role.name}
                             </label>
                           ))}
