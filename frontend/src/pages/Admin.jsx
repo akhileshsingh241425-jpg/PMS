@@ -10,7 +10,7 @@ const PERMISSION_LABELS = {
   'dashboard': { label: 'Dashboard', icon: '📊' },
   'projects': { label: 'Projects', icon: '📁' },
   'leads': { label: 'Leads', icon: '📞' },
-  'accounts': { label: 'Accounts', icon: '🏢' },
+  'accounts': { label: 'Clients', icon: '🏢' },
   'opportunities': { label: 'Opportunities', icon: '🎯' },
   'users': { label: 'Users', icon: '👥' },
 }

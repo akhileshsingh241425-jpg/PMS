@@ -280,7 +280,7 @@ export default function AccountsDetailPage() {
       await api.put(`/api/accounts/${id}`, editForm)
       setShowEditForm(false)
       loadDetail()
-      toast('Account updated', 'success')
+      toast('Client updated', 'success')
     } catch (e) { toast(e.response?.data?.error || 'Update failed', 'error') }
     finally { setSavingEdit(false) }
   }
@@ -301,7 +301,7 @@ export default function AccountsDetailPage() {
     <div style={{ background: '#F6F8FC', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div className="flex items-center gap-3" style={{ color: '#6B7280' }}>
         <div className="w-5 h-5 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
-        <span style={{ fontSize: '14px' }}>Loading account details...</span>
+        <span style={{ fontSize: '14px' }}>Loading client details...</span>
       </div>
     </div>
   )
@@ -322,7 +322,7 @@ export default function AccountsDetailPage() {
 
         {/* Breadcrumb */}
         <button onClick={() => navigate('/accounts')} className="flex items-center gap-1.5 text-sm" style={{ color: '#6B7280', background: 'none', border: 'none', cursor: 'pointer', marginBottom: '12px', fontWeight: 500, padding: 0 }}>
-          <ChevronLeft className="w-4 h-4" /> Back to Accounts
+          <ChevronLeft className="w-4 h-4" /> Back to Clients
         </button>
 
         {/* ═══ ACTIVITY TICKER ═══ */}
@@ -539,12 +539,12 @@ export default function AccountsDetailPage() {
         {/* ═══ FULL-WIDTH: ACCOUNT INFO & ACTIVITY TIMELINE ═══ */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24, marginBottom: 32 }} className="account-layout">
 
-          {/* Account Information */}
+          {/* Client Information */}
           <div style={{ background: '#fff', borderRadius: '14px', boxShadow: '0 8px 24px rgba(0,0,0,.05)', border: '1px solid #ECECEC' }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid #ECECEC', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Building2 className="w-4 h-4" style={{ color: '#5B3DF5' }} />
-                <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#1F2937', margin: 0 }}>Account Information</h3>
+                <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#1F2937', margin: 0 }}>Client Information</h3>
               </div>
                <button onClick={openEditForm} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 12px', borderRadius: '6px', border: '1px solid #ECECEC', background: '#fff', color: '#5B3DF5', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
                   <Edit3 className="w-3 h-3" /> Edit
@@ -710,7 +710,7 @@ export default function AccountsDetailPage() {
             <div style={{ textAlign: 'center', padding: '32px 16px', color: '#9CA3AF' }}>
               <User className="w-10 h-10 mx-auto mb-2" style={{ opacity: 0.4 }} />
               <p style={{ fontSize: 14, fontWeight: 600, margin: '0 0 4px', color: '#6B7280' }}>No contacts added yet</p>
-              <p style={{ fontSize: 12, margin: '0 0 16px' }}>Add a contact person for this account</p>
+              <p style={{ fontSize: 12, margin: '0 0 16px' }}>Add a contact person for this client</p>
               <button onClick={() => openContactForm(null)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 8, border: 'none', background: '#5B21B6', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
                 <Plus className="w-4 h-4" /> Add Contact
               </button>
@@ -796,7 +796,7 @@ export default function AccountsDetailPage() {
           <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={() => setShowEditForm(false)}>
             <div style={{ background: '#fff', borderRadius: 16, width: 600, maxWidth: '100%', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,.15)' }} onClick={e => e.stopPropagation()}>
               <div style={{ padding: '20px 24px', borderBottom: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 16, fontWeight: 700, color: '#1A1A2E' }}>Edit Account</span>
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#1A1A2E' }}>Edit Client</span>
                 <button onClick={() => setShowEditForm(false)} style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', background: '#F0F2F8', cursor: 'pointer', fontSize: 14, color: '#6B7280' }}>✕</button>
               </div>
               <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1 }}>
@@ -855,7 +855,7 @@ export default function AccountsDetailPage() {
                 <button onClick={() => setShowEditForm(false)} style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: '#F0F2F8', color: '#374151', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
                 <button onClick={saveEdit} disabled={savingEdit || !editForm.company_name}
                   style={{ padding: '8px 24px', borderRadius: 8, border: 'none', background: '#5B21B6', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: (savingEdit || !editForm.company_name) ? 0.6 : 1 }}>
-                  {savingEdit ? 'Saving...' : 'Update Account'}
+                  {savingEdit ? 'Saving...' : 'Update Client'}
                 </button>
               </div>
             </div>
@@ -894,7 +894,7 @@ export default function AccountsDetailPage() {
             </div>
             </div>
           ) : (
-            <EmptyState icon={Briefcase} text="No projects found for this account"
+            <EmptyState icon={Briefcase} text="No projects found for this client"
               action={{ label: 'Create Project', onClick: () => navigate(`/projects?create=1&account_id=${id}`) }} />
           )}
         </SectionCard>
@@ -923,7 +923,7 @@ export default function AccountsDetailPage() {
               </Table>
             </div>
           ) : (
-            <EmptyState icon={TrendingUp} text="No leads found for this account"
+            <EmptyState icon={TrendingUp} text="No leads found for this client"
               action={{ label: 'Create Lead', onClick: () => navigate(`/leads?create=1&account_id=${id}`) }} />
           )}
         </SectionCard>
@@ -972,7 +972,7 @@ export default function AccountsDetailPage() {
                   </div>
                 </div>
               ) : (
-                <EmptyState icon={Target} text="No opportunities found for this account"
+                <EmptyState icon={Target} text="No opportunities found for this client"
                   action={{ label: 'Create Opportunity', onClick: () => { setOppForm({ ...oppForm, company_name: acc.company_name }); setShowOppForm(true) } }} />
               )}
             </SectionCard>
@@ -1035,7 +1035,7 @@ export default function AccountsDetailPage() {
               </Table>
             </div>
           ) : (
-            <EmptyState icon={Calendar} text="No meetings scheduled for this account" />
+            <EmptyState icon={Calendar} text="No meetings scheduled for this client" />
           )}
         </SectionCard>
         {/* ═══ TASKS ═══ */}
@@ -1103,7 +1103,7 @@ export default function AccountsDetailPage() {
               </Table>
             </div>
           ) : (
-            <EmptyState icon={CheckCircle} text="No tasks assigned for this account" />
+            <EmptyState icon={CheckCircle} text="No tasks assigned for this client" />
           )}
         </SectionCard>
 
@@ -1445,7 +1445,7 @@ export default function AccountsDetailPage() {
                 </p>
               ) : (
                 <p style={{ fontSize: 12, color: '#6B7280', margin: '0 0 16px' }}>
-                  Create a client login for <strong>{acc?.company_name || 'this account'}</strong>. The client will use these credentials to access the portal.
+                  Create a client login for <strong>{acc?.company_name || 'this client'}</strong>. The client will use these credentials to access the portal.
                 </p>
               )}
               {client_users.length > 0 ? (

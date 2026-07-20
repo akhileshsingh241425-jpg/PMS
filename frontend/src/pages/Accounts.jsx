@@ -39,13 +39,13 @@ export default function Accounts() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Accounts</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Clients</h1>
           <p className="text-slate-500 text-sm mt-1">Client master records — all projects, leads, and history linked here</p>
         </div>
         {hasRole('admin', 'project_lead') && (
           <button onClick={() => { setEditAccount(null); setShowForm(true) }}
             className="flex items-center gap-2 bg-emerald-700 text-white px-4 py-1.5 text-sm font-medium hover:bg-emerald-800">
-            <Plus className="w-3.5 h-3.5" /> New Account
+            <Plus className="w-3.5 h-3.5" /> New Client
           </button>
         )}
       </div>
@@ -54,7 +54,7 @@ export default function Accounts() {
       <div className="grid grid-cols-4 gap-3 mb-5">
         <div className="border border-slate-300 p-3">
           <p className="text-lg font-bold text-slate-900">{accounts.length}</p>
-          <p className="text-xs text-slate-500">Total Accounts</p>
+          <p className="text-xs text-slate-500">Total Clients</p>
         </div>
         <div className="border border-slate-300 p-3">
           <p className="text-lg font-bold text-slate-900">{accounts.filter(a => a.status === 'Active').length}</p>
@@ -87,7 +87,7 @@ export default function Accounts() {
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-slate-100 text-left">
-                <th className="px-4 py-2 text-xs font-bold text-slate-600 border-b border-slate-300">Account ID</th>
+                <th className="px-4 py-2 text-xs font-bold text-slate-600 border-b border-slate-300">Client ID</th>
                 <th className="px-4 py-2 text-xs font-bold text-slate-600 border-b border-slate-300">Company Name</th>
                 <th className="px-4 py-2 text-xs font-bold text-slate-600 border-b border-slate-300">Contact Person</th>
                 <th className="px-4 py-2 text-xs font-bold text-slate-600 border-b border-slate-300">Phone</th>
@@ -101,7 +101,7 @@ export default function Accounts() {
             </thead>
             <tbody>
               {loading ? <tr><td colSpan={10}><div className="px-4 py-3"><TableSkeleton rows={5} cols={5} /></div></td></tr>
-              : accounts.length === 0 ? <tr><td colSpan={10} className="text-center py-10 text-slate-500 text-sm">No accounts found</td></tr>
+              : accounts.length === 0 ? <tr><td colSpan={10} className="text-center py-10 text-slate-500 text-sm">No clients found</td></tr>
               : accounts.map(a => (
                 <tr key={a.id} className="hover:bg-slate-50 cursor-pointer border-b border-slate-200" onClick={() => navigate(`/accounts/${a.id}`)}>
                   <td className="px-4 py-2.5 text-sm font-semibold text-emerald-700">{a.acc_id}</td>
@@ -155,7 +155,7 @@ function AccountForm({ editData, onClose, onSaved }) {
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 py-8" onClick={onClose}>
       <div className="bg-white border border-slate-300 w-full max-w-2xl mx-auto" onClick={e => e.stopPropagation()}>
         <div className="border-b border-slate-300 px-6 py-3 flex items-center justify-between bg-slate-50">
-          <h2 className="text-lg font-serif font-bold text-slate-800">{editData ? 'Edit Account' : 'Create New Account'}</h2>
+          <h2 className="text-lg font-serif font-bold text-slate-800">{editData ? 'Edit Client' : 'Create New Client'}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-sm">✕</button>
         </div>
         <form onSubmit={save} className="p-6">
@@ -195,7 +195,7 @@ function AccountForm({ editData, onClose, onSaved }) {
 
           <div className="flex justify-between border-t border-slate-200 pt-4">
             <button type="button" onClick={onClose} className="px-4 py-1.5 border border-slate-300 text-sm text-slate-700 bg-white hover:bg-slate-50">Cancel</button>
-            <button type="submit" disabled={saving} className="px-6 py-1.5 bg-emerald-700 text-white text-sm font-medium hover:bg-emerald-800 disabled:opacity-50">{saving ? 'Saving...' : editData ? 'Update Account' : 'Create Account'}</button>
+            <button type="submit" disabled={saving} className="px-6 py-1.5 bg-emerald-700 text-white text-sm font-medium hover:bg-emerald-800 disabled:opacity-50">{saving ? 'Saving...' : editData ? 'Update Client' : 'Create Client'}</button>
           </div>
         </form>
       </div>

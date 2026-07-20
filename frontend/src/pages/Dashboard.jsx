@@ -34,7 +34,7 @@ export default function Dashboard() {
     { label: 'Active Projects', value: stats.projects, icon: Briefcase, color: 'from-orange-500 to-amber-600', to: '/projects' },
     { label: 'Opportunities', value: stats.opps, icon: Target, color: 'from-violet-500 to-indigo-600', to: '/leads' },
     { label: 'Leads', value: stats.leads, icon: FileText, color: 'from-blue-500 to-cyan-600', to: '/leads' },
-    { label: 'Accounts', value: stats.accounts, icon: Building2, color: 'from-emerald-500 to-teal-600', to: '/accounts' },
+    { label: 'Clients', value: stats.accounts, icon: Building2, color: 'from-emerald-500 to-teal-600', to: '/accounts' },
     { label: 'Open Queries', value: stats.open_queries, icon: HelpCircle, color: 'from-red-500 to-pink-600', to: '/projects' },
     { label: 'Pending Meetings', value: stats.pending_meetings, icon: Calendar, color: 'from-purple-500 to-violet-600', to: '/projects' },
   ]

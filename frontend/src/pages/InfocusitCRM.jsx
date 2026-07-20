@@ -231,7 +231,7 @@ const ActivitiesSection = ({ meetings, setMeetings, reminders, setReminders, doc
 // ════════════════════════════════════════════
 function Dashboard({ setTab, counts }) {
   const tiles = [
-    { label: "Accounts", icon: "🏢", key: "accounts", tab: "accounts" },
+    { label: "Clients", icon: "🏢", key: "accounts", tab: "accounts" },
     { label: "Leads", icon: "📋", key: "leads", tab: "leads" },
     { label: "Projects", icon: "📁", key: "projects", tab: "projects" },
     { label: "Opportunities", icon: "💡", key: "opps", tab: "opportunities" },
@@ -310,8 +310,8 @@ function Accounts({ accounts, setAccounts }) {
   if (view === "list") return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <div style={{ fontSize: 18, fontWeight: 800, color: TEXT }}>Accounts / Clients</div>
-        <Btn onClick={openNew}>+ New Account</Btn>
+        <div style={{ fontSize: 18, fontWeight: 800, color: TEXT }}>Clients</div>
+        <Btn onClick={openNew}>+ New Client</Btn>
       </div>
       <DataTable
         cols={["Client ID", "Company Name", "Client Name", "Phone", "Email", "Nature", "Status", "Created On"]}
@@ -324,15 +324,15 @@ function Accounts({ accounts, setAccounts }) {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-        <div style={{ fontSize: 16, fontWeight: 800, color: TEXT }}>{editing ? "Edit Account" : "New Account"}</div>
+        <div style={{ fontSize: 16, fontWeight: 800, color: TEXT }}>{editing ? "Edit Client" : "New Client"}</div>
         <div style={{ display: "flex", gap: 8 }}>
           <Btn onClick={save} color={GREEN}>💾 Save</Btn>
           <Btn onClick={() => setView("list")} color={MUTED}>← Back</Btn>
         </div>
       </div>
 
-      {/* Account Details */}
-      <SectionBar title="Account Details" />
+      {/* Client Details */}
+      <SectionBar title="Client Details" />
       <Row>
         <FieldBox label="Client ID" value={form.clientId} readOnly />
         <FieldBox label="Company Name" value={form.company} onChange={v => F("company", v)} />
@@ -355,9 +355,9 @@ function Accounts({ accounts, setAccounts }) {
         <FieldBox label="Country" value={form.country} onChange={v => F("country", v)} span={3} />
       </Row>
       <Row>
-        <FieldBox label="Account Status" value={form.status} onChange={v => F("status", v)} options={["Active", "Inactive", "Closed"]} span={3} />
-        <FieldBox label="Account Updated" value={form.updatedOn} readOnly span={3} />
-        <FieldBox label="Account Created" value={form.createdOn} readOnly span={3} />
+        <FieldBox label="Status" value={form.status} onChange={v => F("status", v)} options={["Active", "Inactive", "Closed"]} span={3} />
+        <FieldBox label="Updated" value={form.updatedOn} readOnly span={3} />
+        <FieldBox label="Created" value={form.createdOn} readOnly span={3} />
       </Row>
 
       {/* Projects Table */}
@@ -801,7 +801,7 @@ function ComingSoon({ name }) {
 // NAV TABS
 // ════════════════════════════════════════════
 const NAV_ITEMS = [
-  "Dashboard","Accounts","Leads","Projects","Opportunities","Tasks","Meetings","Reminders","Purchase Order","Invoices","Billings","Reports","Attendance","Clients","Employees","Certificates","Expenses"
+  "Dashboard","Clients","Leads","Projects","Opportunities","Tasks","Meetings","Reminders","Purchase Order","Invoices","Billings","Reports","Attendance","Employees","Certificates","Expenses"
 ];
 
 // ════════════════════════════════════════════
@@ -846,13 +846,13 @@ export default function InfocusitCRM() {
       <div style={{ maxWidth: 1400, margin: "0 auto", padding: "24px 20px" }}>
         <div style={{ background: WHITE, borderRadius: 10, padding: "24px 28px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", minHeight: "calc(100vh - 160px)" }}>
           {tab === "Dashboard" && <Dashboard setTab={setTab} counts={counts} />}
-          {tab === "Accounts" && <Accounts accounts={accounts} setAccounts={setAccounts} />}
+          {tab === "Clients" && <Accounts accounts={accounts} setAccounts={setAccounts} />}
           {tab === "Leads" && <Leads leads={leads} setLeads={setLeads} />}
           {tab === "Projects" && <Projects projects={projects} setProjects={setProjects} />}
           {tab === "Opportunities" && <Opportunities opps={opps} setOpps={setOpps} />}
           {tab === "Tasks" && <Tasks tasks={tasks} setTasks={setTasks} />}
           {tab === "Clients" && <Accounts accounts={accounts} setAccounts={setAccounts} />}
-          {!["Dashboard","Accounts","Leads","Projects","Opportunities","Tasks","Clients"].includes(tab) && <ComingSoon name={tab} />}
+          {!["Dashboard","Clients","Leads","Projects","Opportunities","Tasks"].includes(tab) && <ComingSoon name={tab} />}
         </div>
       </div>
     </div>
