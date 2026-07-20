@@ -4,7 +4,7 @@ from sqlalchemy.orm import validates
 from .activity import Task
 
 PROJECT_STAGES = [
-    'Initiated', 'Planning', 'Information Gathering', 'Execution', 'Internal Review', 'Client Review', 'Remediation Support', 'Final Delivery',
+    'Created', 'Initiated', 'Planning', 'Information Gathering', 'Execution', 'Internal Review', 'Client Review', 'Remediation Support', 'Final Delivery',
     'Invoice Raised', 'Payment Pending', 'Partial Payment Received', 'Full Payment Received',
     'Closed',
     'On Hold', 'Delayed', 'Cancelled', 'Escalated',
