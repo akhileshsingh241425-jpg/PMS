@@ -1116,26 +1116,34 @@ export default function ProjectsDetailPage() {
 
             {/* ═══ MILESTONES ═══ */}
             <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '18px 20px', marginBottom: 12 }}>
-              <SectionTitle icon={<TargetIcon />} text={`Milestones (${milestones.length})`} />
-              <button onClick={() => setMstoneForm(mstoneForm ? null : { title: '', due_date: '', description: '' })} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: C.primary, fontSize: 11, fontWeight: 700, padding: 0, marginTop: 10 }}>+ Add Milestone</button>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <SectionTitle icon={<TargetIcon />} text={`Milestones (${milestones.length})`} />
+                <button onClick={() => setMstoneForm(mstoneForm ? null : { title: '', due_date: '', description: '' })} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: C.primary, fontSize: 12, fontWeight: 700, padding: 0 }}>+ Add Milestone</button>
+              </div>
               {mstoneForm && (
-                <div style={{ display: 'flex', gap: 6, marginTop: 10, marginBottom: 10, padding: 10, background: '#F8F9FC', borderRadius: 8 }}>
-                  <input value={mstoneForm.title} onChange={e => setMstoneForm({...mstoneForm, title: e.target.value})} placeholder="Title" style={{ flex:1, padding:'6px 8px', border:`1.5px solid ${C.border}`, borderRadius:6, fontSize:11, outline:'none', fontFamily:'inherit' }} />
-                  <input type="date" value={mstoneForm.due_date} onChange={e => setMstoneForm({...mstoneForm, due_date: e.target.value})} style={{ padding:'6px 8px', border:`1.5px solid ${C.border}`, borderRadius:6, fontSize:11, outline:'none' }} />
-                  <button onClick={async () => { if (!mstoneForm.title) return; await api.post(`/api/projects/${id}/milestones`, mstoneForm); setMstoneForm(null); fetchData() }} style={{ padding:'6px 12px', border:'none', borderRadius:6, background:C.primary, color:'#fff', fontSize:11, fontWeight:700, cursor:'pointer' }}>Add</button>
+                <div style={{ display: 'flex', gap: 8, marginTop: 14, marginBottom: 14, padding: 14, background: '#F8F9FC', borderRadius: 10, flexWrap: 'wrap' }}>
+                  <input value={mstoneForm.title} onChange={e => setMstoneForm({...mstoneForm, title: e.target.value})} placeholder="Milestone title" style={{ flex: '1 1 200px', padding:'8px 10px', border:`1.5px solid ${C.border}`, borderRadius:6, fontSize:12, outline:'none', fontFamily:'inherit' }} />
+                  <input type="date" value={mstoneForm.due_date} onChange={e => setMstoneForm({...mstoneForm, due_date: e.target.value})} style={{ padding:'8px 10px', border:`1.5px solid ${C.border}`, borderRadius:6, fontSize:12, outline:'none', fontFamily:'inherit' }} />
+                  <button onClick={async () => { if (!mstoneForm.title) return; await api.post(`/api/projects/${id}/milestones`, mstoneForm); setMstoneForm(null); fetchData() }} style={{ padding:'8px 16px', border:'none', borderRadius:6, background:C.primary, color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer' }}>Add</button>
+                  <button onClick={() => setMstoneForm(null)} style={{ padding:'8px 12px', border:`1.5px solid ${C.border}`, borderRadius:6, background:'#fff', color:'#6B7280', fontSize:12, cursor:'pointer' }}>Cancel</button>
                 </div>
               )}
-              {milestones.length === 0 ? <EmptyState icon={<TargetIcon />} title="No milestones" /> : (
-                <div style={{ marginTop: 8 }}>{milestones.map(m => (
-                  <div key={m.id} style={{ display:'flex', alignItems:'center', gap:8, padding:'6px 0', borderBottom:`1px solid #F3F4F6` }}>
-                    <div style={{ width:20, height:20, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', background: m.status === 'Completed' ? '#D1FAE5' : '#FEF3C7', flexShrink:0 }}>
-                      <div style={{ width:8, height:8, borderRadius:'50%', background: m.status === 'Completed' ? '#059669' : '#D97706' }} />
-                    </div>
+              {milestones.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '28px 10px', color: C.muted }}>
+                  <div style={{ opacity: 0.3, marginBottom: 8 }}><TargetIcon /></div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#374151' }}>No milestones</div>
+                  <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>Add key milestones to track project progress</div>
+                </div>
+              ) : (
+                <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>{milestones.map(m => (
+                  <div key={m.id} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', borderRadius:8, background:'#F9FAFB', border: `1px solid ${C.border}` }}>
+                    <div style={{ width: 10, height: 10, minWidth: 10, borderRadius: '50%', background: m.status === 'Completed' ? '#059669' : '#D97706' }} />
                     <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontSize:13, fontWeight:600, color:'#374151' }}>{m.title}</div>
-                      <div style={{ fontSize:10, color:C.muted, marginTop:1 }}>{m.due_date ? formatDate(m.due_date) : '—'} · {m.status}</div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: '#1F2937' }}>{m.title}</div>
+                      <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>{m.due_date ? formatDate(m.due_date) : 'No date'} · {m.description || ''}</div>
                     </div>
-                    {m.status !== 'Completed' && <button onClick={async () => { await api.put(`/api/projects/${id}/milestones/${m.id}`, { status: 'Completed' }); fetchData() }} style={{ fontSize:10, padding:'2px 8px', borderRadius:4, border:'none', background:'#D1FAE5', color:'#059669', fontWeight:700, cursor:'pointer' }}>Done</button>}
+                    <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20, background: m.status === 'Completed' ? '#D1FAE5' : '#FEF3C7', color: m.status === 'Completed' ? '#065F46' : '#92400E', whiteSpace: 'nowrap' }}>{m.status}</span>
+                    {m.status !== 'Completed' && <button onClick={async () => { await api.put(`/api/projects/${id}/milestones/${m.id}`, { status: 'Completed' }); fetchData() }} style={{ fontSize: 11, fontWeight: 700, padding:'5px 12px', borderRadius:6, border:'none', background:C.primary, color:'#fff', cursor:'pointer', whiteSpace:'nowrap' }}>Mark Done</button>}
                   </div>
                 ))}</div>
               )}
