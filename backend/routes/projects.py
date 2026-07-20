@@ -49,7 +49,7 @@ def create_project(current_user):
         return jsonify({'error': 'title and account_id required'}), 400
     if not data.get('pm_id'):
         return jsonify({'error': 'Project Manager (pm_id) is required'}), 400
-     try:
+    try:
         account_id = int(data['account_id'])
         pm_id = int(data['pm_id'])
         total_value = float(data['total_value']) if data.get('total_value') else None
