@@ -49,7 +49,7 @@ def create_project(current_user):
         return jsonify({'error': 'title and account_id required'}), 400
     if not data.get('pm_id'):
         return jsonify({'error': 'Project Manager (pm_id) is required'}), 400
-    try:
+     try:
         account_id = int(data['account_id'])
         pm_id = int(data['pm_id'])
         total_value = float(data['total_value']) if data.get('total_value') else None
@@ -57,6 +57,9 @@ def create_project(current_user):
         target_date = datetime.strptime(data['target_date'], '%Y-%m-%d').date() if data.get('target_date') else None
         po_date = datetime.strptime(data['po_date'], '%Y-%m-%d').date() if data.get('po_date') else None
         po_amount = float(data['po_amount']) if data.get('po_amount') else None
+        tds = float(data['tds']) if data.get('tds') else None
+        gst = float(data['gst']) if data.get('gst') else None
+        net_amount = float(data['net_amount']) if data.get('net_amount') else None
     except (ValueError, TypeError):
         return jsonify({'error': 'Invalid format for numeric or date fields'}), 400
     proj = Project(
@@ -76,6 +79,9 @@ def create_project(current_user):
         po_amount=po_amount,
         po_terms=data.get('po_terms'),
         project_type=data.get('project_type'),
+        tds=tds,
+        gst=gst,
+        net_amount=net_amount,
         created_by=current_user.id,
     )
     db.session.add(proj)
@@ -136,6 +142,12 @@ def update_project(current_user, pid):
             proj.po_date = datetime.strptime(data['po_date'], '%Y-%m-%d').date() if data['po_date'] else None
         if 'po_amount' in data:
             proj.po_amount = float(data['po_amount']) if data['po_amount'] else None
+        if 'tds' in data:
+            proj.tds = float(data['tds']) if data['tds'] else None
+        if 'gst' in data:
+            proj.gst = float(data['gst']) if data['gst'] else None
+        if 'net_amount' in data:
+            proj.net_amount = float(data['net_amount']) if data['net_amount'] else None
     except (ValueError, TypeError):
         return jsonify({'error': 'Invalid format for numeric or date fields'}), 400
     db.session.commit()

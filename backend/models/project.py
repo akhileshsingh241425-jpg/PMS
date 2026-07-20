@@ -58,6 +58,9 @@ class Project(db.Model):
     po_document_id = db.Column(db.Integer, db.ForeignKey('project_documents.id'))
     project_type = db.Column(db.String(50))
     plan_generated = db.Column(db.Boolean, default=False)
+    tds = db.Column(db.Float)
+    gst = db.Column(db.Float)
+    net_amount = db.Column(db.Float)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -100,6 +103,9 @@ class Project(db.Model):
             'po_document_id': self.po_document_id,
             'project_type': self.project_type,
             'plan_generated': self.plan_generated,
+            'tds': self.tds,
+            'gst': self.gst,
+            'net_amount': self.net_amount,
             'team_count': len(self.team),
             'team_names': ', '.join(tm.user.full_name for tm in self.team if tm.user) if self.team else '',
             'creator_name': self.creator.full_name if self.creator else None,
