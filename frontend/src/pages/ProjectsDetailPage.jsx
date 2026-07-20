@@ -555,73 +555,75 @@ export default function ProjectsDetailPage() {
             {p.plan_generated && phases.length > 0 && (
               <div style={{ marginTop: 12 }}>
                 {phases.map((phase, pi) => (
-                  <div key={phase.id} style={{ marginBottom: 12, border: `1px solid ${C.border}`, borderRadius: 10, overflow: 'hidden' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#F9FAFB', borderBottom: `1px solid ${C.border}` }}>
-                      <div style={{ width: 24, height: 24, borderRadius: '50%', background: C.primaryLight, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: C.primary, flexShrink: 0 }}>{pi + 1}</div>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: '#1F2937', flex: 1 }}>{phase.name}</span>
-                      <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6, background: phase.status === 'Completed' ? '#D1FAE5' : phase.status === 'In Progress' ? '#FEF3C7' : '#F3F4F6', color: phase.status === 'Completed' ? '#065F46' : phase.status === 'In Progress' ? '#92400E' : '#6B7280' }}>
+                  <div key={phase.id} style={{ marginBottom: 14, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px', background: '#F8FAFC', borderBottom: `1px solid ${C.border}` }}>
+                      <div style={{ width: 28, height: 28, borderRadius: '50%', background: C.primaryLight, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: C.primary, flexShrink: 0 }}>{pi + 1}</div>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: '#1F2937', flex: 1 }}>{phase.name}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: phase.status === 'Completed' ? '#D1FAE5' : phase.status === 'In Progress' ? '#FEF3C7' : '#F3F4F6', color: phase.status === 'Completed' ? '#065F46' : phase.status === 'In Progress' ? '#92400E' : '#6B7280' }}>
                         {phase.status}
                       </span>
                     </div>
-                    <div style={{ padding: '6px 14px' }}>
+                    <div style={{ padding: '4px 18px 10px' }}>
                       {phase.tasks.map(task => (
-                        <div key={task.id}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: task.subtasks?.length ? 'none' : '1px solid #F3F4F6' }}>
-                            <div style={{ width: 6, height: 6, borderRadius: '50%', background: task.status === 'Completed' ? '#059669' : task.status === 'In Progress' ? '#D97706' : '#D1D5DB', flexShrink: 0 }} />
-                            <div style={{ fontSize: 13, color: '#374151', flex: 1 }}>{task.title}</div>
-                            <div style={{ fontSize: 11, fontWeight: 500, color: task.assigned_name ? '#6B7280' : '#9CA3AF' }}>{task.assigned_name || 'Unassigned'}</div>
-                            <div style={{ fontSize: 11, color: '#9CA3AF' }}>{task.due_date ? formatDate(task.due_date) : ''}</div>
-                            <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 4, background: task.status === 'Completed' ? '#D1FAE5' : task.status === 'In Progress' ? '#FEF3C7' : '#F3F4F6', color: task.status === 'Completed' ? '#065F46' : task.status === 'In Progress' ? '#92400E' : '#6B7280' }}>{task.status}</span>
-                            <button onClick={() => { setAddSubtaskOf(task.id); setSubtaskForm({ title: '', assigned_to: '', due_date: '', status: 'Open' }) }} style={{ padding: '2px 8px', borderRadius: 4, border: '1px solid #D1D5DB', background: '#fff', color: '#6B7280', fontSize: 10, cursor: 'pointer', whiteSpace: 'nowrap' }}>+ Subtask</button>
+                        <div key={task.id} style={{ borderBottom: '1px solid #F3F4F6', padding: '8px 0' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div style={{ width: 8, height: 8, minWidth: 8, borderRadius: '50%', background: task.status === 'Completed' ? '#059669' : task.status === 'In Progress' ? '#D97706' : '#D1D5DB' }} />
+                            <span style={{ fontSize: 14, fontWeight: 600, color: '#1F2937', flex: 1 }}>{task.title}</span>
+                            <span style={{ fontSize: 12, color: task.assigned_name ? '#6B7280' : '#9CA3AF', whiteSpace: 'nowrap' }}>{task.assigned_name || 'Unassigned'}</span>
+                            <span style={{ fontSize: 12, color: '#9CA3AF', whiteSpace: 'nowrap' }}>{task.due_date ? formatDate(task.due_date) : ''}</span>
+                            <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20, background: task.status === 'Completed' ? '#D1FAE5' : task.status === 'In Progress' ? '#FEF3C7' : '#F3F4F6', color: task.status === 'Completed' ? '#065F46' : task.status === 'In Progress' ? '#92400E' : '#6B7280', whiteSpace: 'nowrap' }}>
+                              {task.status}
+                            </span>
+                            <button onClick={() => { setAddSubtaskOf(task.id); setSubtaskForm({ title: '', assigned_to: '', due_date: '', status: 'Open' }) }} style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #D1D5DB', background: '#fff', color: '#6B7280', fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>+ Subtask</button>
                           </div>
                           {task.subtasks?.map(st => (
-                            <div key={st.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0 4px 24px', borderBottom: '1px solid #F9FAFB' }}>
-                              <div style={{ width: 4, height: 4, borderRadius: '50%', background: st.status === 'Completed' ? '#059669' : '#D1D5DB', flexShrink: 0 }} />
-                              <div style={{ fontSize: 12, color: '#6B7280', flex: 1 }}>{st.title}</div>
-                              <div style={{ fontSize: 11, color: '#9CA3AF' }}>{st.assigned_name || ''}</div>
-                              <div style={{ fontSize: 11, color: '#9CA3AF' }}>{st.due_date ? formatDate(st.due_date) : ''}</div>
-                              <span style={{ fontSize: 10, fontWeight: 500, padding: '1px 6px', borderRadius: 4, background: st.status === 'Completed' ? '#D1FAE5' : '#F3F4F6', color: st.status === 'Completed' ? '#065F46' : '#6B7280' }}>{st.status}</span>
+                            <div key={st.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0 2px 28px' }}>
+                              <div style={{ width: 6, height: 6, minWidth: 6, borderRadius: '50%', background: st.status === 'Completed' ? '#059669' : '#D1D5DB' }} />
+                              <span style={{ fontSize: 13, color: '#6B7280', flex: 1 }}>{st.title}</span>
+                              <span style={{ fontSize: 11, color: '#9CA3AF' }}>{st.assigned_name || ''}</span>
+                              <span style={{ fontSize: 11, color: '#9CA3AF' }}>{st.due_date ? formatDate(st.due_date) : ''}</span>
+                              <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 8px', borderRadius: 20, background: st.status === 'Completed' ? '#D1FAE5' : '#F3F4F6', color: st.status === 'Completed' ? '#065F46' : '#6B7280' }}>{st.status}</span>
                             </div>
                           ))}
                           {addSubtaskOf === task.id && (
-                            <form onSubmit={addSubtask} style={{ display: 'flex', gap: 6, padding: '6px 0 6px 24px', borderBottom: '1px solid #F3F4F6' }}>
-                              <input value={subtaskForm.title} onChange={e => setSubtaskForm({ ...subtaskForm, title: e.target.value })} placeholder="Subtask title" style={{ flex: 1, padding: '4px 8px', border: '1px solid #D1D5DB', borderRadius: 4, fontSize: 12, outline: 'none' }} />
-                              <select value={subtaskForm.assigned_to} onChange={e => setSubtaskForm({ ...subtaskForm, assigned_to: e.target.value })} style={{ padding: '4px 6px', border: '1px solid #D1D5DB', borderRadius: 4, fontSize: 11, background: '#fff' }}>
+                            <form onSubmit={addSubtask} style={{ display: 'flex', gap: 8, padding: '8px 0 4px 28px', flexWrap: 'wrap' }}>
+                              <input value={subtaskForm.title} onChange={e => setSubtaskForm({ ...subtaskForm, title: e.target.value })} placeholder="Subtask title" required style={{ flex: '1 1 180px', padding: '6px 10px', border: `1.5px solid ${C.border}`, borderRadius: 6, fontSize: 12, outline: 'none', fontFamily: 'inherit' }} />
+                              <select value={subtaskForm.assigned_to} onChange={e => setSubtaskForm({ ...subtaskForm, assigned_to: e.target.value })} style={{ padding: '6px 8px', border: `1.5px solid ${C.border}`, borderRadius: 6, fontSize: 12, background: '#fff', fontFamily: 'inherit' }}>
                                 <option value="">Owner</option>
-                                {users.map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
+                                {team.map(t => <option key={t.user_id} value={t.user_id}>{t.user_name}</option>)}
                               </select>
-                              <input type="date" value={subtaskForm.due_date} onChange={e => setSubtaskForm({ ...subtaskForm, due_date: e.target.value })} style={{ padding: '4px 6px', border: '1px solid #D1D5DB', borderRadius: 4, fontSize: 11 }} />
-                              <select value={subtaskForm.status} onChange={e => setSubtaskForm({ ...subtaskForm, status: e.target.value })} style={{ padding: '4px 6px', border: '1px solid #D1D5DB', borderRadius: 4, fontSize: 11, background: '#fff' }}>
+                              <input type="date" value={subtaskForm.due_date} onChange={e => setSubtaskForm({ ...subtaskForm, due_date: e.target.value })} style={{ padding: '6px 8px', border: `1.5px solid ${C.border}`, borderRadius: 6, fontSize: 12, fontFamily: 'inherit' }} />
+                              <select value={subtaskForm.status} onChange={e => setSubtaskForm({ ...subtaskForm, status: e.target.value })} style={{ padding: '6px 8px', border: `1.5px solid ${C.border}`, borderRadius: 6, fontSize: 12, background: '#fff', fontFamily: 'inherit' }}>
                                 <option value="Open">Open</option>
                                 <option value="In Progress">In Progress</option>
                                 <option value="Completed">Completed</option>
                               </select>
-                              <button type="submit" style={{ padding: '4px 10px', borderRadius: 4, border: 'none', background: C.primary, color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Add</button>
-                              <button type="button" onClick={() => setAddSubtaskOf(null)} style={{ padding: '4px 8px', borderRadius: 4, border: '1px solid #D1D5DB', background: '#fff', color: '#6B7280', fontSize: 11, cursor: 'pointer' }}>Cancel</button>
+                              <button type="submit" style={{ padding: '6px 14px', borderRadius: 6, border: 'none', background: C.primary, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Add</button>
+                              <button type="button" onClick={() => setAddSubtaskOf(null)} style={{ padding: '6px 12px', borderRadius: 6, border: `1.5px solid ${C.border}`, background: '#fff', color: '#6B7280', fontSize: 12, cursor: 'pointer' }}>Cancel</button>
                             </form>
                           )}
                         </div>
                       ))}
                     </div>
-                    <div style={{ padding: '8px 14px', borderTop: `1px solid ${C.border}` }}>
+                    <div style={{ padding: '10px 18px', borderTop: `1px solid ${C.border}`, background: '#FAFAFA' }}>
                       {addTaskPhase === phase.id ? (
-                        <form onSubmit={addTaskToPhase} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                          <input value={phaseTaskForm.title} onChange={e => setPhaseTaskForm({ ...phaseTaskForm, title: e.target.value })} placeholder="Task title" style={{ flex: 1, padding: '4px 8px', border: '1px solid #D1D5DB', borderRadius: 4, fontSize: 12, outline: 'none' }} />
-                          <select value={phaseTaskForm.assigned_to} onChange={e => setPhaseTaskForm({ ...phaseTaskForm, assigned_to: e.target.value })} style={{ padding: '4px 6px', border: '1px solid #D1D5DB', borderRadius: 4, fontSize: 11, background: '#fff' }}>
+                        <form onSubmit={addTaskToPhase} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                          <input value={phaseTaskForm.title} onChange={e => setPhaseTaskForm({ ...phaseTaskForm, title: e.target.value })} placeholder="Task title" required style={{ flex: '1 1 200px', padding: '6px 10px', border: `1.5px solid ${C.border}`, borderRadius: 6, fontSize: 12, outline: 'none', fontFamily: 'inherit' }} />
+                          <select value={phaseTaskForm.assigned_to} onChange={e => setPhaseTaskForm({ ...phaseTaskForm, assigned_to: e.target.value })} style={{ padding: '6px 8px', border: `1.5px solid ${C.border}`, borderRadius: 6, fontSize: 12, background: '#fff', fontFamily: 'inherit' }}>
                             <option value="">Owner</option>
-                            {users.map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
+                            {team.map(t => <option key={t.user_id} value={t.user_id}>{t.user_name}</option>)}
                           </select>
-                          <input type="date" value={phaseTaskForm.due_date} onChange={e => setPhaseTaskForm({ ...phaseTaskForm, due_date: e.target.value })} style={{ padding: '4px 6px', border: '1px solid #D1D5DB', borderRadius: 4, fontSize: 11 }} />
-                          <select value={phaseTaskForm.status} onChange={e => setPhaseTaskForm({ ...phaseTaskForm, status: e.target.value })} style={{ padding: '4px 6px', border: '1px solid #D1D5DB', borderRadius: 4, fontSize: 11, background: '#fff' }}>
+                          <input type="date" value={phaseTaskForm.due_date} onChange={e => setPhaseTaskForm({ ...phaseTaskForm, due_date: e.target.value })} style={{ padding: '6px 8px', border: `1.5px solid ${C.border}`, borderRadius: 6, fontSize: 12, fontFamily: 'inherit' }} />
+                          <select value={phaseTaskForm.status} onChange={e => setPhaseTaskForm({ ...phaseTaskForm, status: e.target.value })} style={{ padding: '6px 8px', border: `1.5px solid ${C.border}`, borderRadius: 6, fontSize: 12, background: '#fff', fontFamily: 'inherit' }}>
                             <option value="Open">Open</option>
                             <option value="In Progress">In Progress</option>
                             <option value="Completed">Completed</option>
                           </select>
-                          <button type="submit" style={{ padding: '4px 10px', borderRadius: 4, border: 'none', background: C.primary, color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Add</button>
-                          <button type="button" onClick={() => setAddTaskPhase(null)} style={{ padding: '4px 8px', borderRadius: 4, border: '1px solid #D1D5DB', background: '#fff', color: '#6B7280', fontSize: 11, cursor: 'pointer' }}>Cancel</button>
+                          <button type="submit" style={{ padding: '6px 14px', borderRadius: 6, border: 'none', background: C.primary, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Add</button>
+                          <button type="button" onClick={() => setAddTaskPhase(null)} style={{ padding: '6px 12px', borderRadius: 6, border: `1.5px solid ${C.border}`, background: '#fff', color: '#6B7280', fontSize: 12, cursor: 'pointer' }}>Cancel</button>
                         </form>
                       ) : (
-                        <button onClick={() => { setAddTaskPhase(phase.id); setPhaseTaskForm({ title: '', assigned_to: '', due_date: '', status: 'Open' }) }} style={{ padding: '4px 12px', borderRadius: 4, border: '1px dashed #D1D5DB', background: 'none', color: C.primary, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>+ Add Task</button>
+                        <button onClick={() => { setAddTaskPhase(phase.id); setPhaseTaskForm({ title: '', assigned_to: '', due_date: '', status: 'Open' }) }} style={{ padding: '6px 14px', borderRadius: 6, border: '1.5px dashed #D1D5DB', background: 'none', color: C.primary, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>+ Add Task</button>
                       )}
                     </div>
                   </div>
@@ -753,8 +755,9 @@ export default function ProjectsDetailPage() {
             </div>
 
             {/* TASKS + DOCUMENTS */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: p.plan_generated ? '1fr' : '1fr 1fr', gap: 12, marginBottom: 12 }}>
               {/* TASKS */}
+              {!p.plan_generated && (
               <div id="section-tasks" style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '18px 20px' }}>
                 <SectionTitle icon={<CheckCircleIcon />} text={`Tasks (${tasks.length})`} />
                 <div style={{ marginTop: 14, marginBottom: 12 }}>
@@ -802,6 +805,7 @@ export default function ProjectsDetailPage() {
                   ))
                 )}
               </div>
+              )}
               {/* ═══ DOCUMENTS & REPORTS (UNIFIED) ═══ */}
             <div id="section-documents" style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '18px 20px' }}>
               <SectionTitle icon={<PaperclipIcon />} text={`Documents & Reports (${totalDocs + reports.length})`} />
