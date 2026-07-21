@@ -62,6 +62,7 @@ def create_app():
     app.register_blueprint(push_bp)
     app.register_blueprint(chat_bp)
     app.register_blueprint(client_bp)
+    app.register_blueprint(email_bp)
 
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')
