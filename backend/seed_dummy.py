@@ -2,7 +2,7 @@
 import sys
 sys.path.insert(0, '.')
 from app import create_app
-from models import db, Client, Project, Lead, User
+from models import db, Client, Account, Project, Lead, User
 from utils import generate_id
 from datetime import datetime, date, timedelta
 import random
@@ -67,6 +67,7 @@ with app.app_context():
     db.session.execute(db.text("DELETE FROM projects"))
     db.session.execute(db.text("DELETE FROM leads"))
     db.session.execute(db.text("DELETE FROM clients"))
+    db.session.execute(db.text("DELETE FROM accounts"))
     db.session.execute(db.text("DELETE FROM users"))
     db.session.commit()
     print("All data cleared.\n")
@@ -140,6 +141,35 @@ with app.app_context():
             sub_ids.append(sc.id)
     print(f"  Created {len(sub_ids)} sub-clients")
 
+    # ── 3b. CREATE ACCOUNT RECORDS (for existing /accounts page) ──
+    print("\n─" * 40)
+    print("Creating Account records for existing pages...")
+    all_clients = Client.query.all()
+    client_to_account = {}
+    for c in all_clients:
+        if c.client_type == 'sub' and c.parent_client_id:
+            parent_acc = client_to_account.get(c.parent_client_id)
+            pa_id = parent_acc.id if parent_acc else None
+        else:
+            pa_id = None
+        a = Account(
+            acc_id=c.client_code,
+            company_name=c.name,
+            contact_name=c.contact_name,
+            contact_email=c.contact_email,
+            contact_phone=c.contact_phone,
+            city=c.location,
+            industry=c.industry,
+            status=c.status,
+            account_type='B2B' if c.client_type == 'sub' else 'B2C',
+            gst_no=c.gst_number,
+            referred_by_account_id=pa_id,
+        )
+        db.session.add(a)
+        db.session.flush()
+        client_to_account[c.id] = a
+    print(f"  Created {len(all_clients)} Account records")
+
     # ── 4. CREATE 25 PROJECTS ──
     print("\n─" * 40)
     print("Creating 25 projects...")
@@ -158,10 +188,12 @@ with app.app_context():
         svc = random.choice(SERVICES)
         stage = random.choice(PROJECT_STAGES)
         days_ago = random.randint(1, 365)
+        acc = client_to_account.get(cid)
         p = Project(
             proj_id=generate_id(Project, 'PRJ', field='proj_id'),
             title=f"{random.choice(proj_titles)} — {random.choice(['Q1','Q2','Q3','Q4'])} 2026",
             service_type=svc, stage=stage, client_id=cid,
+            account_id=acc.id if acc else None,
             created_by=random.choice(emp_ids + [admin.id]),
             created_at=datetime.utcnow() - timedelta(days=days_ago),
         )
