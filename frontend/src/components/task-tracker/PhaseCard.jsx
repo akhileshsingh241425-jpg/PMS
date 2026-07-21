@@ -95,34 +95,34 @@ export default function PhaseCard({ phase, index, team, addTaskPhase, setAddTask
         background: '#FAFAFE'
       }}>
         {addTaskPhase === phase.id ? (
-          <form onSubmit={onAddTaskToPhase} style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <input value={phaseTaskForm.title} onChange={e => setPhaseTaskForm({ ...phaseTaskForm, title: e.target.value })} placeholder="Task title" required
-              style={{ flex: '1 1 200px', padding: '10px 14px', border: '1.5px solid #E5E7EB', borderRadius: 10, fontSize: 13, outline: 'none', fontFamily: 'inherit', background: '#fff', transition: 'border-color 0.15s' }}
-              onFocus={e => e.target.style.borderColor = '#7C3AED'}
-              onBlur={e => e.target.style.borderColor = '#E5E7EB'} />
-            <select value={phaseTaskForm.assigned_to} onChange={e => setPhaseTaskForm({ ...phaseTaskForm, assigned_to: e.target.value })}
-              style={{ padding: '10px 12px', border: '1.5px solid #E5E7EB', borderRadius: 10, fontSize: 13, background: '#fff', fontFamily: 'inherit', outline: 'none' }}>
-              <option value="">Owner</option>
-              {team.map(t => <option key={t.user_id} value={t.user_id}>{t.user_name}</option>)}
-            </select>
-            <input type="date" value={phaseTaskForm.due_date} onChange={e => setPhaseTaskForm({ ...phaseTaskForm, due_date: e.target.value })}
-              style={{ padding: '10px 12px', border: '1.5px solid #E5E7EB', borderRadius: 10, fontSize: 13, fontFamily: 'inherit', outline: 'none' }} />
-            <select value={phaseTaskForm.status} onChange={e => setPhaseTaskForm({ ...phaseTaskForm, status: e.target.value })}
-              style={{ padding: '10px 12px', border: '1.5px solid #E5E7EB', borderRadius: 10, fontSize: 13, background: '#fff', fontFamily: 'inherit', outline: 'none' }}>
-              <option value="Open">Open</option><option value="In Progress">In Progress</option><option value="Completed">Completed</option>
-            </select>
-            <button type="submit" style={{
-              padding: '10px 20px', borderRadius: 10, border: 'none',
-              background: 'linear-gradient(135deg, #7C3AED, #5B21B6)', color: '#fff',
-              fontSize: 13, fontWeight: 700, cursor: 'pointer',
-              boxShadow: '0 2px 6px rgba(91,33,182,0.2)', transition: 'all 0.15s'
-            }}>Add</button>
-            <button type="button" onClick={() => setAddTaskPhase(null)} style={{
-              padding: '10px 16px', borderRadius: 10, border: '1.5px solid #E5E7EB',
-              background: '#fff', color: '#6B7280', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-              transition: 'all 0.15s'
-            }}>Cancel</button>
-          </form>
+            <form onSubmit={onAddTaskToPhase} style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+              <input value={phaseTaskForm.title} onChange={e => setPhaseTaskForm({ ...phaseTaskForm, title: e.target.value })} placeholder="Task title" required
+                style={{ flex: '1 1 180px', padding: '10px 14px', border: '1.5px solid #E5E7EB', borderRadius: 10, fontSize: 13, outline: 'none', fontFamily: 'inherit', background: '#fff', transition: 'border-color 0.15s' }}
+                onFocus={e => e.target.style.borderColor = '#7C3AED'}
+                onBlur={e => e.target.style.borderColor = '#E5E7EB'} />
+              <select value={phaseTaskForm.assigned_to} onChange={e => setPhaseTaskForm({ ...phaseTaskForm, assigned_to: e.target.value })}
+                style={{ padding: '10px 12px', border: '1.5px solid #E5E7EB', borderRadius: 10, fontSize: 13, background: '#fff', fontFamily: 'inherit', outline: 'none', minWidth: 110 }}>
+                <option value="">Assign to</option>
+                {team.map(t => <option key={t.user_id} value={t.user_id}>{t.user_name}</option>)}
+              </select>
+              <input type="date" value={phaseTaskForm.due_date} onChange={e => setPhaseTaskForm({ ...phaseTaskForm, due_date: e.target.value })}
+                style={{ padding: '10px 12px', border: '1.5px solid #E5E7EB', borderRadius: 10, fontSize: 13, fontFamily: 'inherit', outline: 'none', minWidth: 120 }} />
+              <select value={phaseTaskForm.status} onChange={e => setPhaseTaskForm({ ...phaseTaskForm, status: e.target.value })}
+                style={{ padding: '10px 12px', border: '1.5px solid #E5E7EB', borderRadius: 10, fontSize: 13, background: '#fff', fontFamily: 'inherit', outline: 'none' }}>
+                <option value="Open">Open</option><option value="In Progress">In Progress</option><option value="Completed">Completed</option>
+              </select>
+              <button type="submit" style={{
+                padding: '10px 20px', borderRadius: 10, border: 'none',
+                background: 'linear-gradient(135deg, #7C3AED, #5B21B6)', color: '#fff',
+                fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                boxShadow: '0 2px 6px rgba(91,33,182,0.2)', transition: 'all 0.15s'
+              }}>Add</button>
+              <button type="button" onClick={() => setAddTaskPhase(null)} style={{
+                padding: '10px 16px', borderRadius: 10, border: '1.5px solid #E5E7EB',
+                background: '#fff', color: '#6B7280', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                transition: 'all 0.15s'
+              }}>Cancel</button>
+            </form>
         ) : (
           <button onClick={() => { setAddTaskPhase(phase.id); setPhaseTaskForm({ title: '', assigned_to: '', due_date: '', status: 'Open' }) }}
             style={{
