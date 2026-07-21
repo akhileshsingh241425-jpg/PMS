@@ -45,12 +45,17 @@ def list_projects(current_user):
 @login_required
 def create_project(current_user):
     data = request.get_json()
-    if not data.get('title') or not data.get('account_id'):
-        return jsonify({'error': 'title and account_id required'}), 400
+    direction = data.get('direction', 'IN')
+    if not data.get('title'):
+        return jsonify({'error': 'title is required'}), 400
+    if direction == 'IN' and not data.get('account_id'):
+        return jsonify({'error': 'Client account is required for IN projects'}), 400
+    if direction == 'OUT' and not data.get('vendor_name'):
+        return jsonify({'error': 'Vendor name is required for OUT projects'}), 400
     if not data.get('pm_id'):
         return jsonify({'error': 'Project Manager (pm_id) is required'}), 400
     try:
-        account_id = int(data['account_id'])
+        account_id = int(data['account_id']) if data.get('account_id') else None
         pm_id = int(data['pm_id'])
         total_value = float(data['total_value']) if data.get('total_value') else None
         start_date = datetime.strptime(data['start_date'], '%Y-%m-%d').date() if data.get('start_date') else None
@@ -60,6 +65,8 @@ def create_project(current_user):
         tds = float(data['tds']) if data.get('tds') else None
         gst = float(data['gst']) if data.get('gst') else None
         net_amount = float(data['net_amount']) if data.get('net_amount') else None
+        advance_paid = float(data['advance_paid']) if data.get('advance_paid') else None
+        balance_outstanding = float(data['balance_outstanding']) if data.get('balance_outstanding') else None
     except (ValueError, TypeError):
         return jsonify({'error': 'Invalid format for numeric or date fields'}), 400
     proj = Project(
@@ -82,6 +89,13 @@ def create_project(current_user):
         tds=tds,
         gst=gst,
         net_amount=net_amount,
+        direction=direction,
+        vendor_name=data.get('vendor_name'),
+        po_template=data.get('po_template'),
+        approval_status=data.get('approval_status', 'Pending'),
+        send_method=data.get('send_method'),
+        advance_paid=advance_paid,
+        balance_outstanding=balance_outstanding,
         created_by=current_user.id,
     )
     db.session.add(proj)
@@ -126,7 +140,7 @@ def get_project(current_user, pid):
 def update_project(current_user, pid):
     proj = Project.query.get_or_404(pid)
     data = request.get_json()
-    for f in ['title', 'description', 'stage', 'service_type', 'is_client_review_enabled', 'po_number', 'po_terms', 'project_type', 'po_document_id']:
+    for f in ['title', 'description', 'stage', 'service_type', 'is_client_review_enabled', 'po_number', 'po_terms', 'project_type', 'po_document_id', 'direction', 'vendor_name', 'po_template', 'approval_status', 'send_method']:
         if f in data:
             setattr(proj, f, data[f])
     try:
@@ -148,6 +162,10 @@ def update_project(current_user, pid):
             proj.gst = float(data['gst']) if data['gst'] else None
         if 'net_amount' in data:
             proj.net_amount = float(data['net_amount']) if data['net_amount'] else None
+        if 'advance_paid' in data:
+            proj.advance_paid = float(data['advance_paid']) if data['advance_paid'] else 0
+        if 'balance_outstanding' in data:
+            proj.balance_outstanding = float(data['balance_outstanding']) if data['balance_outstanding'] else 0
     except (ValueError, TypeError):
         return jsonify({'error': 'Invalid format for numeric or date fields'}), 400
     db.session.commit()

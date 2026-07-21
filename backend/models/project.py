@@ -61,6 +61,13 @@ class Project(db.Model):
     tds = db.Column(db.Float)
     gst = db.Column(db.Float)
     net_amount = db.Column(db.Float)
+    direction = db.Column(db.String(10), default='IN')
+    vendor_name = db.Column(db.String(255))
+    po_template = db.Column(db.String(100))
+    approval_status = db.Column(db.String(30), default='Pending')
+    send_method = db.Column(db.String(30))
+    advance_paid = db.Column(db.Float, default=0)
+    balance_outstanding = db.Column(db.Float, default=0)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -106,6 +113,13 @@ class Project(db.Model):
             'tds': self.tds,
             'gst': self.gst,
             'net_amount': self.net_amount,
+            'direction': self.direction,
+            'vendor_name': self.vendor_name,
+            'po_template': self.po_template,
+            'approval_status': self.approval_status,
+            'send_method': self.send_method,
+            'advance_paid': self.advance_paid,
+            'balance_outstanding': self.balance_outstanding,
             'team_count': len(self.team),
             'team_names': ', '.join(tm.user.full_name for tm in self.team if tm.user) if self.team else '',
             'creator_name': self.creator.full_name if self.creator else None,

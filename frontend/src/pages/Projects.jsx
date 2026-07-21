@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
-import { Plus, Search, X, Briefcase, Upload } from 'lucide-react'
+import { Plus, Search, X, Briefcase, Upload, Send, CheckCircle, FileText } from 'lucide-react'
 import Pagination from '../components/Pagination'
 import { TableSkeleton } from '../components/LoadingSkeleton'
 import { useToast } from '../contexts/ToastContext'
@@ -154,7 +154,8 @@ export default function Projects() {
 // ═══════════ PROJECT FORM ═══════════
 function ProjectForm({ accounts, users, onClose, onSaved, initialAccountId }) {
   const toast = useToast()
-  const [form, setForm] = useState({ title:'', description:'', account_id: initialAccountId || '', service_type:'', service_type_other:'', project_type:'', pm_id:'', total_value:'', start_date:'', target_date:'', is_client_review_enabled: false, po_number:'', po_date:'', po_amount:'', po_terms:'', tds:'', gst:'', net_amount:'' })
+  const [direction, setDirection] = useState('IN')
+  const [form, setForm] = useState({ title:'', description:'', account_id: initialAccountId || '', service_type:'', service_type_other:'', project_type:'', pm_id:'', total_value:'', start_date:'', target_date:'', is_client_review_enabled: false, po_number:'', po_date:'', po_amount:'', po_terms:'', tds:'', gst:'', net_amount:'', vendor_name:'', po_template:'', approval_status:'Pending', send_method:'', advance_paid:'', balance_outstanding:'' })
   const [poDocument, setPoDocument] = useState(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -185,14 +186,15 @@ function ProjectForm({ accounts, users, onClose, onSaved, initialAccountId }) {
   const save = async (e) => {
     e.preventDefault(); setSaving(true); setError('')
     try {
-      const p = { ...form }
+      const p = { ...form, direction }
       if (p.service_type === 'Other' && p.service_type_other) p.service_type = p.service_type_other
       delete p.service_type_other
-      for (const k of ['total_value','po_amount','tds','gst','net_amount']) {
+      for (const k of ['total_value','po_amount','tds','gst','net_amount','advance_paid','balance_outstanding']) {
         if (p[k]) p[k] = parseFloat(p[k]); else delete p[k]
       }
       if (!p.pm_id) { setError('Project Manager is required'); setSaving(false); return }
       p.pm_id = parseInt(p.pm_id)
+      if (p.account_id) p.account_id = parseInt(p.account_id)
       if (!p.start_date) delete p.start_date
       if (!p.target_date) delete p.target_date
       if (!p.po_date) delete p.po_date
@@ -209,56 +211,106 @@ function ProjectForm({ accounts, users, onClose, onSaved, initialAccountId }) {
     } catch (e) { setError(e.response?.data?.error || 'Error') } finally { setSaving(false) }
   }
 
+  const handleDirectionChange = (dir) => {
+    setDirection(dir)
+    if (dir === 'OUT') {
+      setForm({ ...form, account_id: '' })
+    } else {
+      setForm({ ...form, vendor_name: '', po_template: '', approval_status: 'Pending', send_method: '', advance_paid: '', balance_outstanding: '' })
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 backdrop-blur-sm overflow-y-auto py-8" onClick={onClose}>
-      <div className="bg-white   w-full max-w-4xl mx-4" onClick={e => e.stopPropagation()}>
+      <div className="bg-white w-full max-w-4xl mx-4" onClick={e => e.stopPropagation()}>
+        {/* Header with IN/OUT tabs */}
         <div className="flex items-center justify-between px-8 py-5 border-b border-slate-200">
-          <div><h2 className="text-xl font-bold text-slate-900">Project IN — Create Project</h2><p className="text-sm text-slate-500 mt-0.5">Register a project from client Purchase Order</p></div>
-          <button onClick={onClose} className="p-2  hover:bg-slate-100"><X className="w-5 h-5 text-slate-400" /></button>
+          <div className="flex items-center gap-4">
+            <div className="flex bg-slate-100 rounded-lg p-1">
+              <button type="button" onClick={() => handleDirectionChange('IN')} className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${direction === 'IN' ? 'bg-white text-blue-700 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>
+                <Briefcase className="w-4 h-4 inline mr-1.5 -mt-0.5" />Project IN
+              </button>
+              <button type="button" onClick={() => handleDirectionChange('OUT')} className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${direction === 'OUT' ? 'bg-white text-emerald-700 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>
+                <Send className="w-4 h-4 inline mr-1.5 -mt-0.5" />Project OUT
+              </button>
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">{direction === 'IN' ? 'Project IN — Create Project' : 'Project OUT — Create PO'}</h2>
+              <p className="text-sm text-slate-500 mt-0.5">{direction === 'IN' ? 'Register a project from client Purchase Order' : 'Create a Purchase Order for vendor / supplier'}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100"><X className="w-5 h-5 text-slate-400" /></button>
         </div>
         <form onSubmit={save} className="px-8 py-6">
-          {error && <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200  text-sm text-red-700">{error}</div>}
+          {error && <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 text-sm text-red-700">{error}</div>}
 
-          {/* PO IN Section */}
+          {/* PO Section */}
           <div className="mb-8">
-            <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2"><Briefcase className="w-4 h-4 text-indigo-500" /> Purchase Order (PO In)</h3>
-            <div className="grid grid-cols-3 gap-5">
-              <div className="col-span-3"><label className="block text-sm font-medium text-slate-700 mb-1.5">Project Title <span className="text-red-500">*</span></label><input value={form.title} onChange={e => f('title', e.target.value)} required className="w-full px-4 py-3 border border-slate-300  text-sm outline-none " placeholder="e.g., IFCI Cloud Security Audit 2026" /></div>
-              <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Client Account <span className="text-red-500">*</span></label><select value={form.account_id} onChange={e => f('account_id', e.target.value)} required className="w-full px-4 py-3 border border-slate-300  text-sm outline-none "><option value="">-- Select Client --</option>{accounts.map(a => <option key={a.id} value={a.id}>{a.company_name} ({a.acc_id})</option>)}</select></div>
-              <div><label className="block text-sm font-medium text-slate-700 mb-1.5">PO Number</label><input value={form.po_number} onChange={e => f('po_number', e.target.value)} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none " placeholder="Client PO #" /></div>
-              <div><label className="block text-sm font-medium text-slate-700 mb-1.5">PO Document</label><label className="flex items-center gap-2 px-4 py-3 border border-slate-300  text-sm outline-none  cursor-pointer hover:bg-slate-50"><Upload className="w-4 h-4 text-slate-400" /><span className={`${poDocument ? 'text-slate-900' : 'text-slate-400'}`}>{poDocument ? poDocument.name : 'Upload PO file...'}</span><input type="file" className="hidden" onChange={e => { const f2 = e.target.files?.[0]; if (f2) setPoDocument(f2) }} /></label></div>
-              <div><label className="block text-sm font-medium text-slate-700 mb-1.5">PO Date</label><input type="date" value={form.po_date} onChange={e => f('po_date', e.target.value)} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none " /></div>
-              <div><label className="block text-sm font-medium text-slate-700 mb-1.5">PO Amount / Project Cost (₹)</label><input type="number" value={form.po_amount} onChange={e => onPoAmountChange(e.target.value)} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none " placeholder="e.g., 500000" /></div>
-              <div><label className="block text-sm font-medium text-slate-700 mb-1.5">TDS (₹)</label><input type="number" value={form.tds} onChange={e => onTdsChange(e.target.value)} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none " placeholder="0" /></div>
-              <div><label className="block text-sm font-medium text-slate-700 mb-1.5">GST @18% (₹)</label><input type="number" value={form.gst} onChange={e => onGstChange(e.target.value)} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none " placeholder="Auto-calc or manual" /></div>
-              <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Net Amount (₹)</label><input type="number" value={form.net_amount} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none  font-bold text-emerald-700" readOnly style={{ background: '#F9FAFB' }} /></div>
-              <div className="col-span-3"><label className="block text-sm font-medium text-slate-700 mb-1.5">Terms & Conditions</label><textarea value={form.po_terms} onChange={e => f('po_terms', e.target.value)} rows={2} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none  resize-none" placeholder="Payment terms, delivery conditions..." /></div>
-            </div>
+            <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
+              {direction === 'IN' ? <><Briefcase className="w-4 h-4 text-indigo-500" /> Purchase Order (PO In)</> : <><FileText className="w-4 h-4 text-emerald-500" /> Purchase Order (PO Out)</>}
+            </h3>
+
+            {direction === 'IN' ? (
+              /* ---- PO IN Fields ---- */
+              <div className="grid grid-cols-3 gap-5">
+                <div className="col-span-3"><label className="block text-sm font-medium text-slate-700 mb-1.5">Project Title <span className="text-red-500">*</span></label><input value={form.title} onChange={e => f('title', e.target.value)} required className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" placeholder="e.g., IFCI Cloud Security Audit 2026" /></div>
+                <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Client Account <span className="text-red-500">*</span></label><select value={form.account_id} onChange={e => f('account_id', e.target.value)} required className="w-full px-4 py-3 border border-slate-300 text-sm outline-none"><option value="">-- Select Client --</option>{accounts.map(a => <option key={a.id} value={a.id}>{a.company_name} ({a.acc_id})</option>)}</select></div>
+                <div><label className="block text-sm font-medium text-slate-700 mb-1.5">PO Number</label><input value={form.po_number} onChange={e => f('po_number', e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" placeholder="Client PO #" /></div>
+                <div><label className="block text-sm font-medium text-slate-700 mb-1.5">PO Document</label><label className="flex items-center gap-2 px-4 py-3 border border-slate-300 text-sm outline-none cursor-pointer hover:bg-slate-50"><Upload className="w-4 h-4 text-slate-400" /><span className={`${poDocument ? 'text-slate-900' : 'text-slate-400'}`}>{poDocument ? poDocument.name : 'Upload PO file...'}</span><input type="file" className="hidden" onChange={e => { const f2 = e.target.files?.[0]; if (f2) setPoDocument(f2) }} /></label></div>
+                <div><label className="block text-sm font-medium text-slate-700 mb-1.5">PO Date</label><input type="date" value={form.po_date} onChange={e => f('po_date', e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" /></div>
+                <div><label className="block text-sm font-medium text-slate-700 mb-1.5">PO Amount / Project Cost (₹)</label><input type="number" value={form.po_amount} onChange={e => onPoAmountChange(e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" placeholder="e.g., 500000" /></div>
+                <div><label className="block text-sm font-medium text-slate-700 mb-1.5">TDS (₹)</label><input type="number" value={form.tds} onChange={e => onTdsChange(e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" placeholder="0" /></div>
+                <div><label className="block text-sm font-medium text-slate-700 mb-1.5">GST @18% (₹)</label><input type="number" value={form.gst} onChange={e => onGstChange(e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" placeholder="Auto-calc or manual" /></div>
+                <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Net Amount (₹)</label><input type="number" value={form.net_amount} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none font-bold text-emerald-700" readOnly style={{ background: '#F9FAFB' }} /></div>
+                <div className="col-span-3"><label className="block text-sm font-medium text-slate-700 mb-1.5">Terms & Conditions</label><textarea value={form.po_terms} onChange={e => f('po_terms', e.target.value)} rows={2} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none resize-none" placeholder="Payment terms, delivery conditions..." /></div>
+              </div>
+            ) : (
+              /* ---- PO OUT Fields ---- */
+              <div className="grid grid-cols-3 gap-5">
+                <div className="col-span-3"><label className="block text-sm font-medium text-slate-700 mb-1.5">Project Title <span className="text-red-500">*</span></label><input value={form.title} onChange={e => f('title', e.target.value)} required className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" placeholder="e.g., Network Equipment Supply for Client XYZ" /></div>
+                <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Vendor / Supplier <span className="text-red-500">*</span></label><input value={form.vendor_name} onChange={e => f('vendor_name', e.target.value)} required className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" placeholder="Vendor name" /></div>
+                <div><label className="block text-sm font-medium text-slate-700 mb-1.5">PO Number</label><input value={form.po_number} onChange={e => f('po_number', e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" placeholder="Auto or manual" /></div>
+                <div><label className="block text-sm font-medium text-slate-700 mb-1.5">PO Date</label><input type="date" value={form.po_date} onChange={e => f('po_date', e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" /></div>
+                <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Amount (₹)</label><input type="number" value={form.po_amount} onChange={e => onPoAmountChange(e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" placeholder="e.g., 200000" /></div>
+                <div><label className="block text-sm font-medium text-slate-700 mb-1.5">TDS (₹)</label><input type="number" value={form.tds} onChange={e => onTdsChange(e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" placeholder="0" /></div>
+                <div><label className="block text-sm font-medium text-slate-700 mb-1.5">GST @18% (₹)</label><input type="number" value={form.gst} onChange={e => onGstChange(e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" placeholder="Auto-calc or manual" /></div>
+                <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Net Amount (₹)</label><input type="number" value={form.net_amount} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none font-bold text-emerald-700" readOnly style={{ background: '#F9FAFB' }} /></div>
+                <div><label className="block text-sm font-medium text-slate-700 mb-1.5">PO Template</label><select value={form.po_template} onChange={e => f('po_template', e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none"><option value="">-- Select Template --</option><option value="Standard">Standard</option><option value="Detailed">Detailed</option><option value="Framework Agreement">Framework Agreement</option><option value="Service Contract">Service Contract</option></select></div>
+                <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Internal Approval</label><select value={form.approval_status} onChange={e => f('approval_status', e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none"><option value="Pending">Pending</option><option value="Approved">Approved</option><option value="Rejected">Rejected</option></select></div>
+                <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Send Method</label><select value={form.send_method} onChange={e => f('send_method', e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none"><option value="">-- Select --</option><option value="Mail PO to Vendor">Mail PO to Vendor</option><option value="Download PDF">Download PDF</option></select></div>
+                <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Advance Paid (₹)</label><input type="number" value={form.advance_paid} onChange={e => f('advance_paid', e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" placeholder="0" /></div>
+                <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Balance Outstanding (₹)</label><input type="number" value={form.balance_outstanding} onChange={e => f('balance_outstanding', e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" placeholder="0" /></div>
+                <div className="col-span-3"><label className="block text-sm font-medium text-slate-700 mb-1.5">Terms & Conditions</label><textarea value={form.po_terms} onChange={e => f('po_terms', e.target.value)} rows={2} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none resize-none" placeholder="Payment terms, delivery schedule, warranties..." /></div>
+              </div>
+            )}
           </div>
 
           {/* Project Details Section */}
           <div className="mb-8">
             <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2"><Briefcase className="w-4 h-4 text-indigo-500" /> Project Details</h3>
             <div className="grid grid-cols-2 gap-5">
-              <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Project Type <span className="text-red-500">*</span></label><select value={form.project_type} onChange={e => f('project_type', e.target.value)} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none "><option value="">-- Select Plan Template --</option><option value="VAPT">VAPT</option><option value="IS Audit">IS Audit</option><option value="ISMS Implementation">ISMS Implementation</option></select></div>
-              <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Service Type</label><select value={form.service_type} onChange={e => f('service_type', e.target.value)} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none "><option value="">-- Select --</option>{SERVICES.map(s => <option key={s}>{s}</option>)}</select>{form.service_type === 'Other' && <input type="text" value={form.service_type_other || ''} onChange={e => f('service_type_other', e.target.value)} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none  mt-2" placeholder="Enter service type..." />}</div>
-              <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Project Manager <span className="text-red-500">*</span></label><select value={form.pm_id} onChange={e => f('pm_id', e.target.value)} required className="w-full px-4 py-3 border border-slate-300  text-sm outline-none "><option value="">-- Select PM --</option>{users.filter(u => u.is_active).map(u => <option key={u.id} value={u.id}>{u.full_name} ({u.designation || ''})</option>)}</select></div>
-              <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Total Project Value (₹)</label><input type="number" value={form.total_value} onChange={e => f('total_value', e.target.value)} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none " placeholder="e.g., 350000" /></div>
-              <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Start Date</label><input type="date" value={form.start_date} onChange={e => f('start_date', e.target.value)} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none " /></div>
-              <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Target Completion Date</label><input type="date" value={form.target_date} onChange={e => f('target_date', e.target.value)} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none " /></div>
-              <div className="col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1.5">Project Description / Scope</label><textarea value={form.description} onChange={e => f('description', e.target.value)} rows={3} className="w-full px-4 py-3 border border-slate-300  text-sm outline-none  resize-none" placeholder="Describe the project scope, objectives, deliverables expected..." /></div>
-              <div className="col-span-2">
+              <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Project Type <span className="text-red-500">*</span></label><select value={form.project_type} onChange={e => f('project_type', e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none"><option value="">-- Select Plan Template --</option><option value="VAPT">VAPT</option><option value="IS Audit">IS Audit</option><option value="ISMS Implementation">ISMS Implementation</option></select></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Service Type</label><select value={form.service_type} onChange={e => f('service_type', e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none"><option value="">-- Select --</option>{SERVICES.map(s => <option key={s}>{s}</option>)}</select>{form.service_type === 'Other' && <input type="text" value={form.service_type_other || ''} onChange={e => f('service_type_other', e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none mt-2" placeholder="Enter service type..." />}</div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Project Manager <span className="text-red-500">*</span></label><select value={form.pm_id} onChange={e => f('pm_id', e.target.value)} required className="w-full px-4 py-3 border border-slate-300 text-sm outline-none"><option value="">-- Select PM --</option>{users.filter(u => u.is_active).map(u => <option key={u.id} value={u.id}>{u.full_name} ({u.designation || ''})</option>)}</select></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Total Project Value (₹)</label><input type="number" value={form.total_value} onChange={e => f('total_value', e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" placeholder="e.g., 350000" /></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Start Date</label><input type="date" value={form.start_date} onChange={e => f('start_date', e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" /></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Target Completion Date</label><input type="date" value={form.target_date} onChange={e => f('target_date', e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" /></div>
+              <div className="col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1.5">Project Description / Scope</label><textarea value={form.description} onChange={e => f('description', e.target.value)} rows={3} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none resize-none" placeholder="Describe the project scope, objectives, deliverables expected..." /></div>
+              {direction === 'IN' && <div className="col-span-2">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" checked={form.is_client_review_enabled} onChange={e => f('is_client_review_enabled', e.target.checked)} className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
                   <span className="text-sm text-slate-700">Enable Client Review Portal — client can see approved documents and write notes</span>
                 </label>
-              </div>
+              </div>}
             </div>
           </div>
 
           <div className="flex justify-between pt-5 border-t border-slate-200">
-            <button type="button" onClick={onClose} className="px-5 py-2.5 text-sm bg-slate-100  font-medium">Cancel</button>
-            <button type="submit" disabled={saving} className="px-8 py-2.5 text-sm text-white bg-blue-600  font-medium  disabled:opacity-50">{saving ? 'Creating...' : 'Create Project'}</button>
+            <button type="button" onClick={onClose} className="px-5 py-2.5 text-sm bg-slate-100 font-medium">Cancel</button>
+            <div className="flex items-center gap-3">
+              {direction === 'OUT' && <span className="text-xs text-slate-400"><CheckCircle className="w-3.5 h-3.5 inline mr-1 -mt-0.5" /> PO Out workflow steps after creation</span>}
+              <button type="submit" disabled={saving} className="px-8 py-2.5 text-sm text-white bg-blue-600 font-medium disabled:opacity-50">{saving ? 'Creating...' : `Create ${direction === 'IN' ? 'Project' : 'PO Out'}`}</button>
+            </div>
           </div>
         </form>
       </div>
