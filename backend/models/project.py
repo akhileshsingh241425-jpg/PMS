@@ -308,6 +308,22 @@ class ProjectPhase(db.Model):
     project = db.relationship('Project', back_populates='phases')
     tasks = db.relationship('Task', backref='phase', lazy='dynamic')
 
+    def to_dict(self):
+        parent_tasks = self.tasks.filter_by(parent_task_id=None).order_by(Task.created_at.asc()).all()
+        task_dicts = []
+        for t in parent_tasks:
+            td = t.to_dict()
+            td['subtasks'] = [s.to_dict() for s in t.subtasks.order_by(Task.created_at.asc()).all()]
+            task_dicts.append(td)
+        return {
+            'id': self.id,
+            'project_id': self.project_id,
+            'name': self.name,
+            'order': self.order,
+            'status': self.status,
+            'tasks': task_dicts,
+        }
+
 
 class PoPayment(db.Model):
     __tablename__ = 'po_payments'
@@ -333,20 +349,4 @@ class PoPayment(db.Model):
             'remarks': self.remarks,
             'created_by_name': self.creator.full_name if self.creator else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
-        }
-
-    def to_dict(self):
-        parent_tasks = self.tasks.filter_by(parent_task_id=None).order_by(Task.created_at.asc()).all()
-        task_dicts = []
-        for t in parent_tasks:
-            td = t.to_dict()
-            td['subtasks'] = [s.to_dict() for s in t.subtasks.order_by(Task.created_at.asc()).all()]
-            task_dicts.append(td)
-        return {
-            'id': self.id,
-            'project_id': self.project_id,
-            'name': self.name,
-            'order': self.order,
-            'status': self.status,
-            'tasks': task_dicts,
         }
