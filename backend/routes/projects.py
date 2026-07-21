@@ -274,6 +274,42 @@ def list_phase_tasks(current_user, pid, phase_id):
     return jsonify({'tasks': [t.to_dict() for t in tasks]})
 
 
+@project_bp.route('/<int:pid>/phases/<int:phase_id>/apply-template', methods=['POST'])
+@login_required
+def apply_phase_template(current_user, pid, phase_id):
+    Project.query.get_or_404(pid)
+    phase = ProjectPhase.query.filter_by(id=phase_id, project_id=pid).first_or_404()
+    data = request.get_json()
+    tasks_data = data.get('tasks', [])
+    if not tasks_data:
+        return jsonify({'error': 'No tasks provided'}), 400
+    created = []
+    for td in tasks_data:
+        if not td.get('title'):
+            continue
+        due_date = None
+        if td.get('due_date'):
+            try:
+                due_date = datetime.strptime(td['due_date'], '%Y-%m-%d').date()
+            except (ValueError, TypeError):
+                pass
+        task = Task(
+            title=td['title'],
+            description=td.get('description'),
+            project_id=pid,
+            phase_id=phase_id,
+            status=td.get('status', 'Open'),
+            priority=td.get('priority', 'Normal'),
+            due_date=due_date,
+            assigned_to=int(td['assigned_to']) if td.get('assigned_to') else None,
+            created_by=current_user.id,
+        )
+        db.session.add(task)
+        created.append(task)
+    db.session.commit()
+    return jsonify({'tasks': [t.to_dict() for t in created]}), 201
+
+
 @project_bp.route('/<int:pid>/tasks/<int:task_id>/subtasks', methods=['GET'])
 @login_required
 def list_subtasks(current_user, pid, task_id):

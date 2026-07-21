@@ -4,11 +4,121 @@ const C = {
   success: '#059669', warning: '#D97706'
 }
 import TaskRow from './TaskRow'
+import api from '../../services/api'
+import { useState } from 'react'
+
+const TASK_TEMPLATES = {
+  'Development': [
+    { title: 'Requirement Analysis', priority: 'High' },
+    { title: 'Technical Design / Architecture', priority: 'High' },
+    { title: 'Environment Setup', priority: 'Normal' },
+    { title: 'Code Implementation', priority: 'High' },
+    { title: 'Code Review', priority: 'Normal' },
+    { title: 'Unit Testing', priority: 'Normal' },
+    { title: 'Integration Testing', priority: 'Normal' },
+  ],
+  'Testing / QA': [
+    { title: 'Test Plan Creation', priority: 'High' },
+    { title: 'Test Case Development', priority: 'High' },
+    { title: 'Test Environment Setup', priority: 'Normal' },
+    { title: 'Test Execution', priority: 'High' },
+    { title: 'Bug Tracking & Reporting', priority: 'Normal' },
+    { title: 'Regression Testing', priority: 'Normal' },
+    { title: 'Test Closure Report', priority: 'Normal' },
+  ],
+  'Documentation': [
+    { title: 'Project Documentation Plan', priority: 'Normal' },
+    { title: 'Technical Documentation', priority: 'High' },
+    { title: 'User Manual / Guide', priority: 'Normal' },
+    { title: 'API Documentation', priority: 'Normal' },
+    { title: 'Deployment Guide', priority: 'Normal' },
+    { title: 'Training Materials', priority: 'Low' },
+  ],
+  'Deployment': [
+    { title: 'Release Plan Preparation', priority: 'High' },
+    { title: 'Staging Deployment', priority: 'High' },
+    { title: 'Staging Testing & Sign-off', priority: 'High' },
+    { title: 'Production Deployment', priority: 'Urgent' },
+    { title: 'Post-Deployment Verification', priority: 'High' },
+    { title: 'Rollback Plan Validation', priority: 'Normal' },
+  ],
+  'Security Assessment': [
+    { title: 'Scope Definition & Planning', priority: 'High' },
+    { title: 'Reconnaissance & Information Gathering', priority: 'High' },
+    { title: 'Vulnerability Scanning & Analysis', priority: 'Urgent' },
+    { title: 'Exploitation & Penetration Testing', priority: 'Urgent' },
+    { title: 'Reporting & Remediation Plan', priority: 'High' },
+    { title: 'Re-testing & Closure', priority: 'Normal' },
+  ],
+  'VAPT': [
+    { title: 'Pre-Engagement Activities', priority: 'High' },
+    { title: 'Information Gathering', priority: 'High' },
+    { title: 'Threat Modeling', priority: 'Normal' },
+    { title: 'Vulnerability Analysis', priority: 'Urgent' },
+    { title: 'Exploitation', priority: 'Urgent' },
+    { title: 'Post-Exploitation', priority: 'High' },
+    { title: 'Reporting', priority: 'High' },
+  ],
+  'Audit': [
+    { title: 'Audit Scope Definition', priority: 'High' },
+    { title: 'Evidence Collection', priority: 'High' },
+    { title: 'Control Testing & Evaluation', priority: 'High' },
+    { title: 'Findings Identification', priority: 'Normal' },
+    { title: 'Draft Audit Report', priority: 'High' },
+    { title: 'Management Review', priority: 'Normal' },
+    { title: 'Final Audit Report', priority: 'High' },
+  ],
+  'Consulting / Advisory': [
+    { title: 'Client Requirement Gathering', priority: 'High' },
+    { title: 'Current State Assessment', priority: 'High' },
+    { title: 'Gap Analysis', priority: 'Normal' },
+    { title: 'Recommendations & Roadmap', priority: 'High' },
+    { title: 'Implementation Support', priority: 'Normal' },
+    { title: 'Review & Feedback', priority: 'Normal' },
+  ],
+  'Data Analytics': [
+    { title: 'Data Requirement Gathering', priority: 'High' },
+    { title: 'Data Collection & Extraction', priority: 'High' },
+    { title: 'Data Cleaning & Preprocessing', priority: 'High' },
+    { title: 'Exploratory Data Analysis', priority: 'Normal' },
+    { title: 'Model Building & Validation', priority: 'Urgent' },
+    { title: 'Visualization & Dashboarding', priority: 'Normal' },
+    { title: 'Insights & Reporting', priority: 'High' },
+  ],
+  'General / Standard': [
+    { title: 'Kick-off Meeting', priority: 'High' },
+    { title: 'Requirement Finalization', priority: 'High' },
+    { title: 'Work Allocation', priority: 'Normal' },
+    { title: 'Execution & Tracking', priority: 'High' },
+    { title: 'Review & Quality Check', priority: 'High' },
+    { title: 'Client Feedback Incorporation', priority: 'Normal' },
+    { title: 'Final Submission', priority: 'High' },
+  ],
+}
 
 export default function PhaseCard({ phase, index, team, addTaskPhase, setAddTaskPhase, phaseTaskForm, setPhaseTaskForm, addSubtaskOf, setAddSubtaskOf, subtaskForm, setSubtaskForm, onAddTaskToPhase, onAddSubtaskSubmit, onTaskStatusToggle, onUpdateTask, onTaskClick }) {
   const total = phase.tasks?.length || 0
   const completed = phase.tasks?.filter(t => t.status === 'Completed').length || 0
   const pct = total > 0 ? Math.round((completed / total) * 100) : 0
+  const [applyingTemplate, setApplyingTemplate] = useState('')
+  const [applying, setApplying] = useState(false)
+
+  const applyTemplate = async (templateName) => {
+    if (!templateName || applying) return
+    setApplying(true)
+    const template = TASK_TEMPLATES[templateName]
+    if (!template) { setApplying(false); return }
+    try {
+      await api.post(`/api/projects/${phase.project_id}/phases/${phase.id}/apply-template`, {
+        tasks: template.map(t => ({ ...t, status: 'Open' }))
+      })
+      window.location.reload()
+    } catch (e) {
+      alert('Failed to apply template')
+    }
+    setApplying(false)
+    setApplyingTemplate('')
+  }
 
   const statusColors = {
     'Completed': { bg: '#D1FAE5', color: '#065F46', dot: '#059669' },
@@ -49,7 +159,19 @@ export default function PhaseCard({ phase, index, team, addTaskPhase, setAddTask
           boxShadow: '0 2px 6px rgba(91,33,182,0.2)'
         }}>{index + 1}</div>
         <span style={{ fontSize: 18, fontWeight: 700, color: C.text, flex: 1, letterSpacing: '-0.01em' }}>{phase.name}</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <select value={applyingTemplate} onChange={e => applyTemplate(e.target.value)}
+            disabled={applying}
+            style={{
+              padding: '5px 10px', borderRadius: 8, border: '1px solid #D1D5DB',
+              fontSize: 11, fontWeight: 500, color: '#6B7280', background: '#fff',
+              outline: 'none', fontFamily: 'inherit', cursor: 'pointer', maxWidth: 130,
+            }}>
+            <option value="">{applying ? 'Loading...' : '+ Template'}</option>
+            {Object.keys(TASK_TEMPLATES).map(t => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 80, height: 8, borderRadius: 4, background: '#E5E7EB', overflow: 'hidden', boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.04)' }}>
               <div style={{
