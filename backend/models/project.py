@@ -44,7 +44,7 @@ class Project(db.Model):
     description = db.Column(db.Text)
     stage = db.Column(db.String(50), default='Created', index=True)
     service_type = db.Column(db.String(100))
-    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False, index=True)
+    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=True, index=True)
     pm_id = db.Column(db.Integer, db.ForeignKey('users.id'), index=True)
     total_value = db.Column(db.Float)
     start_date = db.Column(db.Date)
