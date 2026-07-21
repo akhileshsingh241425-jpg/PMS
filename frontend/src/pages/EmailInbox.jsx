@@ -51,8 +51,13 @@ export default function EmailInbox() {
     setConnecting(true)
     try {
       const res = await connectEmail()
-      if (res.auth_url) window.location.href = res.auth_url
+      if (res.auth_url) {
+        window.location.href = res.auth_url
+      } else if (res.error) {
+        alert(res.error)
+      }
     } catch (e) {
+      alert(e.response?.data?.error || e.message || 'Connection failed')
     } finally {
       setConnecting(false)
     }
