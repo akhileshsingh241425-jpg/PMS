@@ -20,3 +20,9 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 .animate-slide-up { animation: slide-up 0.3s ease-out; }
+
+/* Task tracker spinner */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
