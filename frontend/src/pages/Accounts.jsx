@@ -4,15 +4,15 @@ import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
 import Pagination from '../components/Pagination'
 import { TableSkeleton } from '../components/LoadingSkeleton'
-import { Plus, Search, Building2, DollarSign, ChevronDown, ChevronRight, Users, Phone, MapPin, Briefcase } from 'lucide-react'
+import { Plus, Search, Building2, ChevronDown, ChevronRight, Users, Phone, MapPin, Briefcase, Filter, ArrowUpDown } from 'lucide-react'
 
 const C = {
-  bg: '#F1F5F9', card: '#fff', border: '#E2E8F0',
-  primary: '#0052CC', primaryLight: '#DEEBFF',
-  text: '#0F172A', muted: '#94A3B8', secondary: '#64748B',
-  success: '#10B981', danger: '#EF4444', warning: '#F59E0B',
-  shadow: '0 1px 3px 0 rgba(0,0,0,0.06), 0 1px 2px -1px rgba(0,0,0,0.06)',
-  shadowMd: '0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05)',
+  bg: '#F4F5F7', card: '#fff', border: '#DFE1E6',
+  blue: '#0052CC', blueLight: '#DEEBFF',
+  text: '#172B4D', muted: '#5E6C84', secondary: '#7A869A',
+  green: '#36B37E', orange: '#FF8B00', navy: '#0C2340',
+  shadow: '0 1px 1px rgba(9,30,66,0.08), 0 0 1px rgba(9,30,66,0.12)',
+  shadowMd: '0 4px 8px rgba(9,30,66,0.1), 0 0 1px rgba(9,30,66,0.12)',
   font: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
 }
 
@@ -31,11 +31,8 @@ export default function Accounts() {
   const [expanded, setExpanded] = useState({})
   const { hasRole } = useAuth()
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load() }, [])
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { setPage(1); load() }, [statusFilter])
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load() }, [page])
 
   const load = async () => {
@@ -43,97 +40,102 @@ export default function Accounts() {
     catch (e) {} finally { setLoading(false) }
   }
 
-  // Group accounts: main clients first with sub-clients nested
   const mainClients = accounts.filter(a => !a.referred_by_account_id)
   const subClients = accounts.filter(a => a.referred_by_account_id)
   const tree = mainClients.map(main => ({
     ...main,
     children: subClients.filter(sub => sub.referred_by_account_id === main.id),
   }))
-  // Also include orphans (sub-clients whose parent isn't in this page)
   const orphans = subClients.filter(sub => !mainClients.find(m => m.id === sub.referred_by_account_id))
-
   const totalProjects = accounts.reduce((s, a) => s + (a.projects_count || 0), 0)
 
   return (
-    <div style={{ background: C.bg, minHeight: '100vh', fontFamily: C.font, color: C.text, WebkitFontSmoothing: 'antialiased' }}>
-      <div style={{ padding: '4px 0' }}>
+    <div style={{ minHeight: '100vh', fontFamily: C.font, color: C.text, WebkitFontSmoothing: 'antialiased', background: C.bg }}>
+      <div style={{ padding: 0 }}>
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
+        <div style={{ padding: '16px 24px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <h1 style={{ fontSize: 24, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.3px' }}>Clients</h1>
-            <p style={{ fontSize: 14, color: '#64748B', marginTop: 2 }}>Client master records — all projects, leads, and history linked here</p>
+            <h1 style={{ fontSize: 20, fontWeight: 600, color: C.text, margin: 0 }}>Clients</h1>
+            <p style={{ fontSize: 12, color: C.secondary, margin: '2px 0 0' }}>{accounts.length} clients · {totalProjects} projects</p>
           </div>
           {hasRole('admin', 'project_lead') && (
             <button onClick={() => { setEditAccount(null); setShowForm(true) }}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 22px', borderRadius: 10, border: 'none', background: '#0052CC', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: '0 3px 8px rgba(0,82,204,0.25)', transition: 'all 0.15s' }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 4, border: 'none', background: C.blue, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: C.font }}>
               <Plus className="w-4 h-4" /> New Client
             </button>
           )}
         </div>
 
         {/* Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 14, marginBottom: 20 }}>
+        <div style={{ padding: '14px 24px 8px', display: 'flex', gap: 8 }}>
           {[
-            { label: 'Total Clients', value: accounts.length, color: C.primary },
-            { label: 'Active', value: accounts.filter(a => a.status === 'Active').length, color: C.success },
-            { label: 'Main Clients', value: mainClients.length, color: '#4F46E5' },
-            { label: 'Sub-Clients', value: subClients.length, color: '#D97706' },
-            { label: 'Total Projects', value: totalProjects, color: '#0284C7' },
+            { label: 'All clients', value: accounts.length, color: C.text, active: !statusFilter, onClick: () => setStatusFilter('') },
+            { label: 'Active', value: accounts.filter(a => a.status === 'Active').length, color: C.green, active: statusFilter === 'Active', onClick: () => setStatusFilter('Active') },
+            { label: 'Main', value: mainClients.length, color: C.blue, active: false, onClick: () => {} },
+            { label: 'Sub', value: subClients.length, color: C.orange, active: false, onClick: () => {} },
           ].map(s => (
-            <div key={s.label} style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '16px 20px', boxShadow: C.shadow }}>
-              <div style={{ fontSize: 28, fontWeight: 800, color: s.color, letterSpacing: '-0.5px', lineHeight: 1 }}>{s.value}</div>
-              <div style={{ fontSize: 12, fontWeight: 500, color: '#94A3B8', marginTop: 4 }}>{s.label}</div>
-            </div>
+            <button key={s.label} onClick={s.onClick}
+              style={{
+                padding: '6px 12px', borderRadius: 4, border: s.active ? `1px solid ${C.blue}` : '1px solid transparent',
+                background: s.active ? C.blueLight : 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+                fontFamily: C.font, fontSize: 12, color: s.active ? C.blue : C.secondary, fontWeight: s.active ? 600 : 400,
+                transition: 'all 0.1s',
+              }}>
+              <span style={{ fontWeight: 700 }}>{s.value}</span>
+              <span>{s.label}</span>
+            </button>
           ))}
         </div>
 
-        {/* Search + Filter */}
-        <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, marginBottom: 20, boxShadow: C.shadow, overflow: 'hidden' }}>
-          <div style={{ padding: '14px 20px', borderBottom: `1px solid ${C.border}`, display: 'flex', gap: 12, alignItems: 'center' }}>
-            <div style={{ flex: '1 1 280px', position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <Search className="w-4 h-4" style={{ position: 'absolute', left: 12, color: '#94A3B8' }} />
-              <input value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && load()}
-                style={{ width: '100%', padding: '9px 12px 9px 34px', border: '1.5px solid #E2E8F0', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: C.font, background: '#fff' }}
-                placeholder="Search by company, ID, GST..." />
-            </div>
-            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-              style={{ padding: '9px 12px', border: '1.5px solid #E2E8F0', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: C.font, background: '#fff', cursor: 'pointer' }}>
-              <option value="">All Status</option>
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-            </select>
-            <button onClick={load} style={{ padding: '9px 18px', borderRadius: 8, border: '1.5px solid #E2E8F0', background: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#475569', fontFamily: C.font }}>Search</button>
+        {/* Search + Filter bar */}
+        <div style={{ padding: '4px 24px 12px', display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div style={{ position: 'relative', flex: '1 1 280px' }}>
+            <Search className="w-3.5 h-3.5" style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: C.secondary }} />
+            <input value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && load()}
+              style={{ width: '100%', padding: '6px 8px 6px 28px', border: `1px solid ${C.border}`, borderRadius: 4, fontSize: 13, outline: 'none', fontFamily: C.font, background: '#FAFBFC', boxSizing: 'border-box' }}
+              placeholder="Search by company, ID, GST..." />
           </div>
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+            style={{ padding: '6px 8px', border: `1px solid ${C.border}`, borderRadius: 4, fontSize: 13, outline: 'none', fontFamily: C.font, background: '#FAFBFC', cursor: 'pointer', color: C.text }}>
+            <option value="">All Status</option>
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+          <button onClick={load} style={{ padding: '6px 12px', borderRadius: 4, border: `1px solid ${C.border}`, background: '#FAFBFC', fontSize: 13, cursor: 'pointer', color: C.text, fontFamily: C.font }}>
+            <Search className="w-3.5 h-3.5" />
+          </button>
+        </div>
 
-          {/* Tree content */}
+        {/* Table / List */}
+        <div style={{ padding: '0 24px 24px' }}>
           {loading ? (
-            <div style={{ padding: 20 }}><TableSkeleton rows={5} cols={5} /></div>
+            <div style={{ background: C.card, borderRadius: 4, border: `1px solid ${C.border}`, padding: 20 }}><TableSkeleton rows={5} cols={5} /></div>
           ) : accounts.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '48px 20px', color: '#94A3B8' }}>
-              <Building2 className="w-10 h-10" style={{ margin: '0 auto 10px', opacity: 0.3 }} />
-              <div style={{ fontSize: 15, fontWeight: 600, color: '#64748B' }}>No clients found</div>
-              <div style={{ fontSize: 13, marginTop: 4 }}>Try adjusting your search or filters.</div>
+            <div style={{ background: C.card, borderRadius: 4, border: `1px solid ${C.border}`, textAlign: 'center', padding: '48px 20px' }}>
+              <Building2 className="w-10 h-10" style={{ margin: '0 auto 10px', color: C.secondary, opacity: 0.3 }} />
+              <div style={{ fontSize: 14, fontWeight: 500, color: C.text }}>No clients found</div>
+              <div style={{ fontSize: 12, color: C.secondary, marginTop: 4 }}>Try adjusting your search or filters.</div>
             </div>
           ) : (
-            <div style={{ padding: '12px 16px' }}>
-              {/* Main clients with children */}
+            <div style={{ background: C.card, borderRadius: 4, border: `1px solid ${C.border}`, boxShadow: C.shadow }}>
+              {/* Column headers */}
+              <div style={{ display: 'flex', alignItems: 'center', padding: '8px 16px', borderBottom: `1px solid ${C.border}`, background: '#FAFBFC', fontSize: 11, fontWeight: 600, color: C.secondary, textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                <div style={{ width: 44 }} />
+                <div style={{ flex: 1 }}>Client</div>
+                <div style={{ width: 100, textAlign: 'center' }}>Contact</div>
+                <div style={{ width: 100, textAlign: 'center' }}>Industry</div>
+                <div style={{ width: 80, textAlign: 'center' }}>Projects</div>
+                <div style={{ width: 80, textAlign: 'center' }} />
+              </div>
               {tree.map(main => (
-                <ClientNode key={main.id} client={main} isMain expanded={expanded[main.id]} onToggle={() => setExpanded({ ...expanded, [main.id]: !expanded[main.id] })} navigate={navigate} />
+                <ClientNode key={main.id} client={main} expanded={expanded[main.id]} onToggle={() => setExpanded({ ...expanded, [main.id]: !expanded[main.id] })} navigate={navigate} />
               ))}
-              {/* Orphan sub-clients */}
               {orphans.map(orphan => (
-                <div key={orphan.id} onClick={() => navigate(`/accounts/${orphan.id}`)} style={{ padding: '12px 16px', marginBottom: 6, borderRadius: 10, background: C.card, border: `1px solid ${C.border}`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, boxShadow: C.shadow, transition: 'all 0.15s' }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = '#C4B5FD'; e.currentTarget.style.boxShadow = C.shadowMd }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.boxShadow = C.shadow }}>
-                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#D1D5DB', flexShrink: 0 }} />
-                  <span style={{ fontSize: 13, fontWeight: 500, color: '#475569', flex: 1 }}>{orphan.company_name}</span>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: '#D97706', background: '#FFFBEB', padding: '2px 10px', borderRadius: 6 }}>Sub-Client</span>
-                </div>
+                <OrphanRow key={orphan.id} orphan={orphan} navigate={navigate} />
               ))}
+              {pagination && <div style={{ padding: '8px 16px', borderTop: `1px solid ${C.border}` }}><Pagination page={pagination.page} pages={pagination.pages} total={pagination.total} onPageChange={setPage} /></div>}
             </div>
           )}
-          {pagination && <div style={{ padding: '12px 20px', borderTop: `1px solid ${C.border}` }}><Pagination page={pagination.page} pages={pagination.pages} total={pagination.total} onPageChange={setPage} /></div>}
         </div>
 
         {showForm && <AccountForm editData={editAccount} onClose={() => { setShowForm(false); setEditAccount(null) }} onSaved={() => { setShowForm(false); setEditAccount(null); load() }} />}
@@ -142,42 +144,51 @@ export default function Accounts() {
   )
 }
 
-function ClientNode({ client, isMain, expanded, onToggle, navigate }) {
+function ClientNode({ client, expanded, onToggle, navigate }) {
   const children = client.children || []
   const hasChildren = children.length > 0
+  const statusColor = client.status === 'Active' ? '#36B37E' : client.status === 'Inactive' ? '#E34935' : '#FF8B00'
 
   return (
-    <div style={{ marginBottom: 10, borderRadius: 12, background: C.card, border: `1px solid ${C.border}`, boxShadow: C.shadow, overflow: 'hidden', transition: 'all 0.15s' }}>
-      {/* Main client header */}
-      <div onClick={() => navigate(`/accounts/${client.id}`)} style={{ padding: '16px 20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14, transition: 'background 0.1s' }}
-        onMouseEnter={e => e.currentTarget.style.background = '#FAFAFE'}
-        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+    <div>
+      <div onClick={() => navigate(`/accounts/${client.id}`)}
+        style={{ display: 'flex', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid #F0F0F0', cursor: 'pointer', transition: 'background 0.1s' }}
+        onMouseEnter={e => { e.currentTarget.style.background = '#F4F5F7' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}>
         {/* Avatar */}
-        <div style={{ width: 44, height: 44, borderRadius: 12, background: '#0052CC', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 800, color: '#fff', flexShrink: 0, boxShadow: '0 2px 6px rgba(0,82,204,0.2)' }}>
+        <div style={{ width: 36, height: 36, borderRadius: 4, background: C.blue, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#fff', flexShrink: 0, marginRight: 10 }}>
           {(client.company_name || '?')[0].toUpperCase()}
         </div>
         {/* Details */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', letterSpacing: '-0.2px' }}>{client.company_name}</span>
-            <span style={{ fontSize: 11, fontWeight: 600, color: '#0052CC', background: '#DEEBFF', padding: '2px 10px', borderRadius: 6 }}>{client.acc_id}</span>
-            {client.status !== 'Active' && <span style={{ fontSize: 10, fontWeight: 600, color: '#DC2626', background: '#FEF2F2', padding: '1px 8px', borderRadius: 6 }}>{client.status}</span>}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{client.company_name}</span>
+            <span style={{ fontSize: 11, fontWeight: 500, color: C.blue, background: C.blueLight, padding: '1px 6px', borderRadius: 4 }}>{client.acc_id}</span>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: statusColor }} />
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 4, flexWrap: 'wrap' }}>
-            {client.contact_name && <span style={{ fontSize: 12, color: '#64748B', display: 'flex', alignItems: 'center', gap: 4 }}><Phone className="w-3 h-3" /> {client.contact_name}</span>}
-            {client.industry && <span style={{ fontSize: 12, color: '#64748B', display: 'flex', alignItems: 'center', gap: 4 }}><Briefcase className="w-3 h-3" /> {client.industry}</span>}
-            {client.city && <span style={{ fontSize: 12, color: '#64748B', display: 'flex', alignItems: 'center', gap: 4 }}><MapPin className="w-3 h-3" /> {client.city}</span>}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 2 }}>
+            {client.city && <span style={{ fontSize: 12, color: C.secondary, display: 'flex', alignItems: 'center', gap: 3 }}><MapPin className="w-3 h-3" /> {client.city}</span>}
+            {client.gst_no && <span style={{ fontSize: 11, color: C.secondary }}>GST: {client.gst_no}</span>}
           </div>
         </div>
-        {/* Meta */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 18, fontWeight: 700, color: C.primary }}>{client.projects_count || 0}</div>
-            <div style={{ fontSize: 10, fontWeight: 500, color: '#94A3B8' }}>Projects</div>
-          </div>
+        {/* Contact */}
+        <div style={{ width: 100, textAlign: 'center' }}>
+          {client.contact_name && <span style={{ fontSize: 12, color: C.text }}>{client.contact_name}</span>}
+        </div>
+        {/* Industry */}
+        <div style={{ width: 100, textAlign: 'center' }}>
+          {client.industry && <span style={{ fontSize: 11, color: C.secondary, background: '#F0F0F0', padding: '1px 8px', borderRadius: 4 }}>{client.industry}</span>}
+        </div>
+        {/* Projects */}
+        <div style={{ width: 80, textAlign: 'center' }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{client.projects_count || 0}</span>
+        </div>
+        {/* Expand */}
+        <div style={{ width: 80, textAlign: 'center' }}>
           {hasChildren && (
-            <button onClick={e => { e.stopPropagation(); onToggle() }} style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', cursor: 'pointer', color: '#64748B', display: 'flex', alignItems: 'center' }}>
-              {expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+            <button onClick={e => { e.stopPropagation(); onToggle() }} style={{ padding: '2px 6px', borderRadius: 4, border: '1px solid #DFE1E6', background: '#fff', cursor: 'pointer', color: C.secondary, display: 'inline-flex', alignItems: 'center', fontFamily: C.font, fontSize: 11, gap: 4 }}>
+              {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+              {children.length} sub
             </button>
           )}
         </div>
@@ -185,28 +196,44 @@ function ClientNode({ client, isMain, expanded, onToggle, navigate }) {
 
       {/* Sub-client children */}
       {hasChildren && expanded && (
-        <div style={{ borderTop: `1px solid ${C.border}`, background: '#F8FAFC' }}>
+        <div style={{ background: '#FAFBFC' }}>
           {children.map(child => (
-            <div key={child.id} onClick={() => navigate(`/accounts/${child.id}`)} style={{ padding: '12px 20px 12px 78px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, borderBottom: `1px solid #F0F0F5`, transition: 'background 0.1s' }}
-              onMouseEnter={e => e.currentTarget.style.background = '#fff'}
-              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-              <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#D1D5DB', flexShrink: 0 }} />
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: '#DEEBFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#0052CC', flexShrink: 0 }}>
+            <div key={child.id} onClick={() => navigate(`/accounts/${child.id}`)}
+              style={{ display: 'flex', alignItems: 'center', padding: '8px 16px 8px 62px', borderBottom: '1px solid #F0F0F0', cursor: 'pointer', transition: 'background 0.1s' }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#fff' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}>
+              <div style={{ width: 28, height: 28, borderRadius: 4, background: C.blueLight, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: C.blue, flexShrink: 0, marginRight: 10 }}>
                 {(child.company_name || '?')[0].toUpperCase()}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ fontSize: 14, fontWeight: 600, color: '#0F172A' }}>{child.company_name}</span>
-                <span style={{ fontSize: 11, fontWeight: 500, color: '#94A3B8', marginLeft: 8 }}>{child.acc_id}</span>
+                <span style={{ fontSize: 13, fontWeight: 500, color: C.text }}>{child.company_name}</span>
+                <span style={{ fontSize: 11, color: C.secondary, marginLeft: 8 }}>{child.acc_id}</span>
               </div>
-              <span style={{ fontSize: 11, fontWeight: 600, color: '#D97706', background: '#FFFBEB', padding: '2px 10px', borderRadius: 6, whiteSpace: 'nowrap' }}>Sub-Client</span>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#6B7280' }}>{child.projects_count || 0}</div>
-                <div style={{ fontSize: 9, fontWeight: 500, color: '#94A3B8' }}>proj</div>
-              </div>
+              <span style={{ fontSize: 10, fontWeight: 600, color: C.orange, background: '#FFF0E0', padding: '1px 8px', borderRadius: 4, whiteSpace: 'nowrap' }}>Sub-Client</span>
+              <div style={{ width: 80, textAlign: 'center', fontSize: 13, fontWeight: 600, color: C.text }}>{child.projects_count || 0}</div>
             </div>
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+function OrphanRow({ orphan, navigate }) {
+  return (
+    <div onClick={() => navigate(`/accounts/${orphan.id}`)}
+      style={{ display: 'flex', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid #F0F0F0', cursor: 'pointer', transition: 'background 0.1s' }}
+      onMouseEnter={e => { e.currentTarget.style.background = '#F4F5F7' }}
+      onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}>
+      <div style={{ width: 36, height: 36, borderRadius: 4, background: '#F0F0F0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: C.secondary, flexShrink: 0, marginRight: 10 }}>
+        {(orphan.company_name || '?')[0].toUpperCase()}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ fontSize: 14, fontWeight: 500, color: C.text }}>{orphan.company_name}</span>
+        <span style={{ fontSize: 11, color: C.secondary, marginLeft: 8 }}>{orphan.acc_id}</span>
+      </div>
+      <span style={{ fontSize: 10, fontWeight: 600, color: C.orange, background: '#FFF0E0', padding: '1px 8px', borderRadius: 4 }}>Sub-Client</span>
+      <div style={{ width: 80, textAlign: 'center', fontSize: 13, fontWeight: 600, color: C.text }}>{orphan.projects_count || 0}</div>
     </div>
   )
 }
@@ -246,51 +273,51 @@ function AccountForm({ editData, onClose, onSaved }) {
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(15,23,42,0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={onClose}>
-      <div style={{ background: '#fff', borderRadius: 16, width: 640, maxWidth: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px rgba(0,0,0,0.25)' }} onClick={e => e.stopPropagation()}>
-        <div style={{ padding: '20px 24px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0F172A' }}>{editData ? 'Edit Client' : 'Create New Client'}</h2>
-          <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', background: '#F1F5F9', cursor: 'pointer', fontSize: 14, color: '#64748B', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={onClose}>
+      <div style={{ background: '#fff', borderRadius: 4, width: 640, maxWidth: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }} onClick={e => e.stopPropagation()}>
+        <div style={{ padding: '16px 20px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h2 style={{ fontSize: 15, fontWeight: 600, color: C.text, margin: 0 }}>{editData ? 'Edit Client' : 'Create client'}</h2>
+          <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 4, border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 16, color: C.secondary, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
         </div>
-        <form onSubmit={save} style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
-          {error && <div style={{ marginBottom: 16, padding: '10px 14px', borderRadius: 8, background: '#FEF2F2', border: '1px solid #FECACA', fontSize: 13, fontWeight: 500, color: '#991B1B' }}>{error}</div>}
+        <form onSubmit={save} style={{ padding: '20px', overflowY: 'auto', flex: 1 }}>
+          {error && <div style={{ marginBottom: 16, padding: '8px 12px', borderRadius: 4, background: '#FFEDED', border: '1px solid #FFC7C7', fontSize: 12, fontWeight: 500, color: '#BF2600' }}>{error}</div>}
 
-          <div style={{ marginBottom: 20 }}>
-            <h3 style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', borderBottom: `1px solid ${C.border}`, paddingBottom: 6, marginBottom: 14 }}>Company Information</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 20px' }}>
-              <div style={{ gridColumn: 'span 2' }}><label style={{ fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 4, display: 'block' }}>Company Name <span style={{ color: '#DC2626' }}>*</span></label><input value={form.company_name} onChange={e => f('company_name', e.target.value)} required style={{ width: '100%', padding: '9px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: C.font, boxSizing: 'border-box' }} /></div>
-              <div><label style={{ fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 4, display: 'block' }}>Industry / Sector</label><select value={form.industry} onChange={e => f('industry', e.target.value)} style={{ width: '100%', padding: '9px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: C.font, background: '#fff' }}><option value="">-- Select --</option>{INDUSTRIES.map(i => <option key={i}>{i}</option>)}</select></div>
-              <div><label style={{ fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 4, display: 'block' }}>Account Type</label><select value={form.account_type} onChange={e => f('account_type', e.target.value)} style={{ width: '100%', padding: '9px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: C.font, background: '#fff' }}><option value="B2B">B2B (Business)</option><option value="B2C">B2C (Individual)</option></select></div>
-              <div><label style={{ fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 4, display: 'block' }}>Website</label><input value={form.website} onChange={e => f('website', e.target.value)} style={{ width: '100%', padding: '9px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: C.font, boxSizing: 'border-box' }} /></div>
-              {form.account_type === 'B2B' && <div style={{ gridColumn: 'span 2' }}><label style={{ fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 4, display: 'block' }}>Parent Client <span style={{ color: '#DC2626' }}>*</span></label><select value={form.referred_by_account_id} onChange={e => f('referred_by_account_id', e.target.value)} style={{ width: '100%', padding: '9px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: C.font, background: '#fff' }}><option value="">-- Select Parent Client --</option>{parentClients.filter(c => c.id !== editData?.id).map(c => <option key={c.id} value={c.id}>{c.company_name} ({c.acc_id})</option>)}</select></div>}
+          <div style={{ marginBottom: 16 }}>
+            <h3 style={{ fontSize: 12, fontWeight: 600, color: C.text, borderBottom: `1px solid ${C.border}`, paddingBottom: 6, marginBottom: 12, margin: '0 0 12px' }}>Company Information</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 16px' }}>
+              <div style={{ gridColumn: 'span 2' }}><label style={{ fontSize: 11, fontWeight: 600, color: C.secondary, marginBottom: 3, display: 'block' }}>Company Name <span style={{ color: '#E34935' }}>*</span></label><input value={form.company_name} onChange={e => f('company_name', e.target.value)} required style={{ width: '100%', padding: '7px 10px', border: `1px solid ${C.border}`, borderRadius: 4, fontSize: 13, outline: 'none', fontFamily: C.font, boxSizing: 'border-box' }} /></div>
+              <div><label style={{ fontSize: 11, fontWeight: 600, color: C.secondary, marginBottom: 3, display: 'block' }}>Industry</label><select value={form.industry} onChange={e => f('industry', e.target.value)} style={{ width: '100%', padding: '7px 10px', border: `1px solid ${C.border}`, borderRadius: 4, fontSize: 13, outline: 'none', fontFamily: C.font, background: '#fff' }}><option value="">-- Select --</option>{INDUSTRIES.map(i => <option key={i}>{i}</option>)}</select></div>
+              <div><label style={{ fontSize: 11, fontWeight: 600, color: C.secondary, marginBottom: 3, display: 'block' }}>Type</label><select value={form.account_type} onChange={e => f('account_type', e.target.value)} style={{ width: '100%', padding: '7px 10px', border: `1px solid ${C.border}`, borderRadius: 4, fontSize: 13, outline: 'none', fontFamily: C.font, background: '#fff' }}><option value="B2B">B2B</option><option value="B2C">B2C</option></select></div>
+              <div><label style={{ fontSize: 11, fontWeight: 600, color: C.secondary, marginBottom: 3, display: 'block' }}>Website</label><input value={form.website} onChange={e => f('website', e.target.value)} style={{ width: '100%', padding: '7px 10px', border: `1px solid ${C.border}`, borderRadius: 4, fontSize: 13, outline: 'none', fontFamily: C.font, boxSizing: 'border-box' }} /></div>
+              {form.account_type === 'B2B' && <div style={{ gridColumn: 'span 2' }}><label style={{ fontSize: 11, fontWeight: 600, color: C.secondary, marginBottom: 3, display: 'block' }}>Parent Client <span style={{ color: '#E34935' }}>*</span></label><select value={form.referred_by_account_id} onChange={e => f('referred_by_account_id', e.target.value)} style={{ width: '100%', padding: '7px 10px', border: `1px solid ${C.border}`, borderRadius: 4, fontSize: 13, outline: 'none', fontFamily: C.font, background: '#fff' }}><option value="">-- Select --</option>{parentClients.filter(c => c.id !== editData?.id).map(c => <option key={c.id} value={c.id}>{c.company_name} ({c.acc_id})</option>)}</select></div>}
             </div>
           </div>
 
-          <div style={{ marginBottom: 20 }}>
-            <h3 style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', borderBottom: `1px solid ${C.border}`, paddingBottom: 6, marginBottom: 14 }}>Primary Contact</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 20px' }}>
-              <div><label style={{ fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 4, display: 'block' }}>Contact Person</label><input value={form.contact_name} onChange={e => f('contact_name', e.target.value)} style={{ width: '100%', padding: '9px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: C.font, boxSizing: 'border-box' }} /></div>
-              <div><label style={{ fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 4, display: 'block' }}>Email</label><input type="email" value={form.contact_email} onChange={e => f('contact_email', e.target.value)} style={{ width: '100%', padding: '9px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: C.font, boxSizing: 'border-box' }} /></div>
-              <div><label style={{ fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 4, display: 'block' }}>Phone</label><input value={form.contact_phone} onChange={e => f('contact_phone', e.target.value)} style={{ width: '100%', padding: '9px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: C.font, boxSizing: 'border-box' }} /></div>
+          <div style={{ marginBottom: 16 }}>
+            <h3 style={{ fontSize: 12, fontWeight: 600, color: C.text, borderBottom: `1px solid ${C.border}`, paddingBottom: 6, marginBottom: 12 }}>Primary Contact</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 16px' }}>
+              <div><label style={{ fontSize: 11, fontWeight: 600, color: C.secondary, marginBottom: 3, display: 'block' }}>Contact Person</label><input value={form.contact_name} onChange={e => f('contact_name', e.target.value)} style={{ width: '100%', padding: '7px 10px', border: `1px solid ${C.border}`, borderRadius: 4, fontSize: 13, outline: 'none', fontFamily: C.font, boxSizing: 'border-box' }} /></div>
+              <div><label style={{ fontSize: 11, fontWeight: 600, color: C.secondary, marginBottom: 3, display: 'block' }}>Email</label><input type="email" value={form.contact_email} onChange={e => f('contact_email', e.target.value)} style={{ width: '100%', padding: '7px 10px', border: `1px solid ${C.border}`, borderRadius: 4, fontSize: 13, outline: 'none', fontFamily: C.font, boxSizing: 'border-box' }} /></div>
+              <div><label style={{ fontSize: 11, fontWeight: 600, color: C.secondary, marginBottom: 3, display: 'block' }}>Phone</label><input value={form.contact_phone} onChange={e => f('contact_phone', e.target.value)} style={{ width: '100%', padding: '7px 10px', border: `1px solid ${C.border}`, borderRadius: 4, fontSize: 13, outline: 'none', fontFamily: C.font, boxSizing: 'border-box' }} /></div>
             </div>
           </div>
 
-          <div style={{ marginBottom: 20 }}>
-            <h3 style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', borderBottom: `1px solid ${C.border}`, paddingBottom: 6, marginBottom: 14 }}>Address & Tax</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 20px' }}>
-              <div style={{ gridColumn: 'span 2' }}><label style={{ fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 4, display: 'block' }}>Address</label><input value={form.address} onChange={e => f('address', e.target.value)} style={{ width: '100%', padding: '9px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: C.font, boxSizing: 'border-box' }} /></div>
-              <div><label style={{ fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 4, display: 'block' }}>City</label><input value={form.city} onChange={e => f('city', e.target.value)} style={{ width: '100%', padding: '9px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: C.font, boxSizing: 'border-box' }} /></div>
-              <div><label style={{ fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 4, display: 'block' }}>State</label><input value={form.state} onChange={e => f('state', e.target.value)} style={{ width: '100%', padding: '9px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: C.font, boxSizing: 'border-box' }} /></div>
-              <div><label style={{ fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 4, display: 'block' }}>Country</label><input value={form.country} onChange={e => f('country', e.target.value)} style={{ width: '100%', padding: '9px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: C.font, boxSizing: 'border-box' }} /></div>
-              <div><label style={{ fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 4, display: 'block' }}>Pincode</label><input value={form.pincode} onChange={e => f('pincode', e.target.value)} style={{ width: '100%', padding: '9px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: C.font, boxSizing: 'border-box' }} /></div>
-              <div><label style={{ fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 4, display: 'block' }}>GST No</label><input value={form.gst_no} onChange={e => f('gst_no', e.target.value)} style={{ width: '100%', padding: '9px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: C.font, boxSizing: 'border-box' }} /></div>
-              <div><label style={{ fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 4, display: 'block' }}>PAN No</label><input value={form.pan_no} onChange={e => f('pan_no', e.target.value)} style={{ width: '100%', padding: '9px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: C.font, boxSizing: 'border-box' }} /></div>
+          <div style={{ marginBottom: 16 }}>
+            <h3 style={{ fontSize: 12, fontWeight: 600, color: C.text, borderBottom: `1px solid ${C.border}`, paddingBottom: 6, marginBottom: 12 }}>Address & Tax</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 16px' }}>
+              <div style={{ gridColumn: 'span 2' }}><label style={{ fontSize: 11, fontWeight: 600, color: C.secondary, marginBottom: 3, display: 'block' }}>Address</label><input value={form.address} onChange={e => f('address', e.target.value)} style={{ width: '100%', padding: '7px 10px', border: `1px solid ${C.border}`, borderRadius: 4, fontSize: 13, outline: 'none', fontFamily: C.font, boxSizing: 'border-box' }} /></div>
+              <div><label style={{ fontSize: 11, fontWeight: 600, color: C.secondary, marginBottom: 3, display: 'block' }}>City</label><input value={form.city} onChange={e => f('city', e.target.value)} style={{ width: '100%', padding: '7px 10px', border: `1px solid ${C.border}`, borderRadius: 4, fontSize: 13, outline: 'none', fontFamily: C.font, boxSizing: 'border-box' }} /></div>
+              <div><label style={{ fontSize: 11, fontWeight: 600, color: C.secondary, marginBottom: 3, display: 'block' }}>State</label><input value={form.state} onChange={e => f('state', e.target.value)} style={{ width: '100%', padding: '7px 10px', border: `1px solid ${C.border}`, borderRadius: 4, fontSize: 13, outline: 'none', fontFamily: C.font, boxSizing: 'border-box' }} /></div>
+              <div><label style={{ fontSize: 11, fontWeight: 600, color: C.secondary, marginBottom: 3, display: 'block' }}>Country</label><input value={form.country} onChange={e => f('country', e.target.value)} style={{ width: '100%', padding: '7px 10px', border: `1px solid ${C.border}`, borderRadius: 4, fontSize: 13, outline: 'none', fontFamily: C.font, boxSizing: 'border-box' }} /></div>
+              <div><label style={{ fontSize: 11, fontWeight: 600, color: C.secondary, marginBottom: 3, display: 'block' }}>Pincode</label><input value={form.pincode} onChange={e => f('pincode', e.target.value)} style={{ width: '100%', padding: '7px 10px', border: `1px solid ${C.border}`, borderRadius: 4, fontSize: 13, outline: 'none', fontFamily: C.font, boxSizing: 'border-box' }} /></div>
+              <div><label style={{ fontSize: 11, fontWeight: 600, color: C.secondary, marginBottom: 3, display: 'block' }}>GST No</label><input value={form.gst_no} onChange={e => f('gst_no', e.target.value)} style={{ width: '100%', padding: '7px 10px', border: `1px solid ${C.border}`, borderRadius: 4, fontSize: 13, outline: 'none', fontFamily: C.font, boxSizing: 'border-box' }} /></div>
+              <div><label style={{ fontSize: 11, fontWeight: 600, color: C.secondary, marginBottom: 3, display: 'block' }}>PAN No</label><input value={form.pan_no} onChange={e => f('pan_no', e.target.value)} style={{ width: '100%', padding: '7px 10px', border: `1px solid ${C.border}`, borderRadius: 4, fontSize: 13, outline: 'none', fontFamily: C.font, boxSizing: 'border-box' }} /></div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: `1px solid ${C.border}`, paddingTop: 16 }}>
-            <button type="button" onClick={onClose} style={{ padding: '9px 20px', borderRadius: 8, border: `1.5px solid ${C.border}`, background: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: C.font }}>Cancel</button>
-            <button type="submit" disabled={saving} style={{ padding: '9px 24px', borderRadius: 8, border: 'none', background: '#0052CC', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.6 : 1, fontFamily: C.font, boxShadow: '0 2px 6px rgba(0,82,204,0.2)' }}>{saving ? 'Saving...' : editData ? 'Update Client' : 'Create Client'}</button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
+            <button type="button" onClick={onClose} style={{ padding: '7px 14px', borderRadius: 4, border: `1px solid ${C.border}`, background: '#fff', fontSize: 13, cursor: 'pointer', fontFamily: C.font, color: C.text }}>Cancel</button>
+            <button type="submit" disabled={saving} style={{ padding: '7px 16px', borderRadius: 4, border: 'none', background: C.blue, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: saving ? 0.6 : 1, fontFamily: C.font }}>{saving ? 'Saving...' : editData ? 'Update' : 'Create'}</button>
           </div>
         </form>
       </div>
