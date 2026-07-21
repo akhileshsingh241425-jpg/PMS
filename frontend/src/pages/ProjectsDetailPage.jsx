@@ -420,12 +420,14 @@ export default function ProjectsDetailPage() {
 
   return (
     <div style={{ background: C.bg, minHeight: '100vh', fontFamily: C.font, color: C.text, fontSize: 14, WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}>
+      {/* Pulse animation keyframes */}
+      <style>{`@keyframes pulse-dot { 0%,100% { box-shadow:0 0 0 0 rgba(109,40,217,0.4); } 50% { box-shadow:0 0 0 8px rgba(109,40,217,0); } } @keyframes pulse-dot-blocked { 0%,100% { box-shadow:0 0 0 0 rgba(239,68,68,0.4); } 50% { box-shadow:0 0 0 8px rgba(239,68,68,0); } } @keyframes pulse-dot-done { 0%,100% { box-shadow:0 0 0 0 rgba(16,185,129,0.4); } 50% { box-shadow:0 0 0 8px rgba(16,185,129,0); } }`}</style>
       <div style={{ padding: '0 0 40px', width: '100%', maxWidth: '100%' }}>
         {/* ═══ HEADER CARD ═══ */}
         <div style={{ background: C.card, borderRadius: C.radius + 2, border: `1px solid ${C.border}`, padding: '28px 32px', marginBottom: 20, boxShadow: C.shadowMd }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 20, flex: 1 }}>
-              <div style={{ width: 64, height: 64, borderRadius: 16, background: 'linear-gradient(135deg,#6D28D9,#8B5CF6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 800, color: '#fff', flexShrink: 0, boxShadow: '0 4px 12px rgba(109,40,217,0.25)' }}>
+              <div style={{ width: 68, height: 68, borderRadius: 18, background: 'linear-gradient(135deg,#6D28D9,#8B5CF6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, fontWeight: 800, color: '#fff', flexShrink: 0, boxShadow: '0 4px 14px rgba(109,40,217,0.3)', border: '2px solid rgba(139,92,246,0.3)' }}>
                 {(p.title || 'P')[0].toUpperCase()}
               </div>
               <div style={{ flex: 1 }}>
@@ -440,26 +442,29 @@ export default function ProjectsDetailPage() {
                     </div>
                   ) : (
                     <>
-                      <span style={{ fontSize: 22, fontWeight: 700, color: '#0F172A', letterSpacing: '-0.3px', lineHeight: 1.3 }}>{p.title}</span>
+                      <span style={{ fontSize: 28, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.4px', lineHeight: 1.2 }}>{p.title}</span>
                       {hasRole('super_admin', 'admin', 'project_lead') && (
                         <button onClick={() => { setTitleVal(p.title); setEditingTitle(true) }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#94A3B8', display: 'flex', borderRadius: 6, transition: 'all 0.15s' }} title="Edit title" onMouseEnter={e => e.target.style.background = '#F1F5F9'} onMouseLeave={e => e.target.style.background = 'transparent'}>
                           <EditIcon size={14} />
                         </button>
                       )}
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, border: 'none', color: '#fff', background: isBlocked ? '#EF4444' : isTerminal ? '#10B981' : '#6D28D9' }}>
-                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(255,255,255,0.6)' }} />
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, border: 'none', color: '#fff', background: isBlocked ? '#EF4444' : isTerminal ? '#10B981' : '#6D28D9', position: 'relative' }}>
+                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'rgba(255,255,255,0.7)', animation: `pulse-dot${isBlocked ? '-blocked' : isTerminal ? '-done' : ''} 2s infinite` }} />
                         {p.stage}
                       </span>
                     </>
                   )}
                 </div>
-                <div style={{ display: 'flex', gap: 12, marginTop: 12, flexWrap: 'wrap' }}>
-                  <InfoChip icon={<BriefcaseIcon />} value={p.proj_id} />
-                  {p.account_name && <><InfoChipSeperator /><InfoChip icon={<BuildingIcon />} value={p.account_name} /></>}
-                  {p.pm_name && <><InfoChipSeperator /><InfoChip icon={<PersonIcon />} value={p.pm_name} label="PM" /></>}
-                  <InfoChipSeperator /><InfoChip icon={<CalendarIcon />} value={`Start ${formatDate(p.start_date)}`} />
-                  <InfoChipSeperator /><InfoChip icon={<TargetIcon />} value={`Target ${formatDate(p.target_date)}`} />
-                  {p.total_value && <><InfoChipSeperator /><InfoChip icon={<MoneyIcon />} value={`₹${(p.total_value / 100000).toFixed(1)}L`} highlight /></>}
+                <div style={{ fontSize: 13, color: '#94A3B8', marginTop: 4, fontWeight: 500 }}>
+                  {p.account_name && <>Client: {p.account_name}</>}{p.account_name && p.created_at ? ' · ' : ''}{p.created_at && <>Since {new Date(p.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'short' })}</>}
+                </div>
+                <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
+                  <InfoChip icon={<BriefcaseIcon color="#6D28D9" />} value={p.proj_id} />
+                  {p.account_name && <InfoChip icon={<BuildingIcon color="#64748B" />} value={p.account_name} />}
+                  {p.pm_name && <InfoChip icon={<PersonIcon color="#6D28D9" />} value={p.pm_name} label="PM" />}
+                  <InfoChip icon={<CalendarIcon color="#64748B" />} value={`Start ${formatDate(p.start_date)}`} />
+                  <InfoChip icon={<TargetIcon color="#D97706" />} value={`Target ${formatDate(p.target_date)}`} />
+                  {p.total_value && <InfoChip icon={<MoneyIcon color="#059669" />} value={`₹${(p.total_value / 100000).toFixed(1)}L`} highlight />}
                 </div>
               </div>
             </div>
@@ -472,15 +477,13 @@ export default function ProjectsDetailPage() {
         </div>
 
         {/* ═══ KPI CARDS ═══ */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 14, marginBottom: 20 }}>
-          <KPICard icon={<MoneyIcon />} bg="#ECFDF5" color="#10B981" label="Total Value" value={p.total_value ? `₹${(p.total_value / 100000).toFixed(1)}L` : '—'} trend="up" />
-          <KPICard icon={<CheckCircleIcon />} bg="#F5F3FF" color={C.primary} label="Open Tasks" value={`${openTasks}/${tasks.length}`} onClick={() => setActiveTab('tasks')} />
-          <KPICard icon={<TargetIcon />} bg="#F0F9FF" color="#0284C7" label="Plan & Tasks" value={`${phases.length}P / ${milestones.length}M`} onClick={() => setActiveTab('tasks')} />
-          <KPICard icon={<UsersIcon />} bg="#EEF2FF" color="#4F46E5" label="Team" value={(team || []).length} onClick={() => document.getElementById('section-team')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />
-          <KPICard icon={<PaperclipIcon />} bg="#FDF2F8" color="#DB2777" label="Documents" value={totalDocs} onClick={() => document.getElementById('section-documents')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />
-          <KPICard icon={<CalendarIcon />} bg="#FFF7ED" color="#D97706" label="Meetings" value={totalMeetings} onClick={() => document.getElementById('section-meetings')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />
-          <KPICard icon={<ShieldExclamationIcon />} bg={vulnOverdueCount > 0 ? '#FEF2F2' : '#F5F3FF'} color={vulnOverdueCount > 0 ? '#EF4444' : C.primary} label="Vulnerabilities" value={vulnerabilities.length} onClick={() => document.getElementById('section-vulnerabilities')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />
-          <KPICard icon={<TagIcon />} bg="#F1F5F9" color="#64748B" label="Stage" value={getStageGroup(p.stage)} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 14, marginBottom: 20 }}>
+          <KPICard icon={<MoneyIcon />} accent="#10B981" label="Total Value" value={p.total_value ? `₹${(p.total_value / 100000).toFixed(1)}L` : '—'} progress={p.total_value ? 1 : 0} />
+          <KPICard icon={<CheckCircleIcon color={C.primary} />} accent={C.primary} label="Open Tasks" value={`${openTasks}/${tasks.length}`} onClick={() => setActiveTab('tasks')} progress={tasks.length > 0 ? completedTasks / tasks.length : 0} />
+          <KPICard icon={<UsersIcon />} accent="#4F46E5" label="Team" value={(team || []).length} onClick={() => document.getElementById('section-team')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} progress={0} />
+          <KPICard icon={<CalendarIcon />} accent="#D97706" label="Activity" value={`${totalDocs}D / ${totalMeetings}M`} onClick={() => document.getElementById('section-documents')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} progress={0} />
+          <KPICard icon={<ShieldExclamationIcon />} accent={vulnOverdueCount > 0 ? '#EF4444' : C.primary} label="Vulnerabilities" value={vulnerabilities.length} onClick={() => document.getElementById('section-vulnerabilities')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} progress={0} />
+          <KPICard icon={<TargetIcon />} accent="#0284C7" label="Stage" value={getStageGroup(p.stage)} progress={currentDeliveryIdx >= 0 ? (currentDeliveryIdx + 1) / DELIVERY_STAGES.length : 0} />
         </div>
 
         {/* ═══ STAGE TIMELINE ═══ */}
@@ -497,9 +500,9 @@ export default function ProjectsDetailPage() {
               </select>
             )}
           </div>
-          <div style={{ position: 'relative', padding: '4px 0' }}>
-            <div style={{ position: 'absolute', top: 22, left: 0, right: 0, height: 2, background: '#E2E8F0', zIndex: 0 }} />
-            <div style={{ position: 'absolute', top: 22, left: 0, height: 2, background: 'linear-gradient(90deg,#6D28D9,#8B5CF6)', zIndex: 1, transition: 'width 0.4s ease', borderRadius: 2, width: `${Math.min((DELIVERY_STAGES.indexOf(p.stage) + 1) / DELIVERY_STAGES.length * 100, 100)}%` }} />
+          <div style={{ position: 'relative', padding: '8px 0', minHeight: 72 }}>
+            <div style={{ position: 'absolute', top: 26, left: 0, right: 0, height: 3, background: '#E2E8F0', zIndex: 0, borderRadius: 2 }} />
+            <div style={{ position: 'absolute', top: 26, left: 0, height: 3, background: 'linear-gradient(90deg,#6D28D9,#8B5CF6)', zIndex: 1, transition: 'width 0.4s ease', borderRadius: 2, width: `${Math.min((DELIVERY_STAGES.indexOf(p.stage) + 1) / DELIVERY_STAGES.length * 100, 100)}%` }} />
             <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative', zIndex: 2 }}>
               {DELIVERY_STAGES.map((s, i) => {
                 const idx = DELIVERY_STAGES.indexOf(p.stage);
@@ -507,18 +510,29 @@ export default function ProjectsDetailPage() {
                 const isCurrent = i === idx;
                 const isFuture = i > idx;
                 const isBlockedStage = BLOCKED_STAGES.includes(p.stage);
+                const dotSize = isCurrent ? 18 : 14;
                 return (
-                  <div key={s} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, cursor: 'pointer', flex: 1 }} onClick={() => { if (!isTerminal) changeStage(s) }}>
+                  <div key={s} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, cursor: 'pointer', flex: 1, padding: '0 2px' }} onClick={() => { if (!isTerminal) changeStage(s) }}>
+                    {/* Dot */}
                     <div style={{
-                      width: 12, height: 12, borderRadius: '50%',
+                      width: dotSize, height: dotSize, borderRadius: '50%', position: 'relative',
                       background: isPast || isCurrent ? '#6D28D9' : '#E2E8F0',
-                      border: isCurrent ? '3px solid #8B5CF6' : 'none',
-                      outline: isCurrent ? '3px solid rgba(109,40,217,0.15)' : 'none',
                       transition: 'all 0.3s ease',
-                    }} />
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      {/* Completed checkmark */}
+                      {isPast && (
+                        <svg width="8" height="8" fill="none" stroke="#fff" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
+                      )}
+                      {/* Glowing halo for current */}
+                      {isCurrent && <div style={{ position: 'absolute', inset: -6, borderRadius: '50%', border: '2px solid rgba(109,40,217,0.25)', animation: 'pulse-dot 2s infinite' }} />}
+                    </div>
+                    {/* Dashed connector for future */}
+                    {isFuture && <div style={{ position: 'absolute', bottom: 30, left: '50%', transform: 'translateX(-50%)', width: 14, height: 14, borderRadius: '50%', border: '2px dashed #D1D5DB', background: 'transparent', pointerEvents: 'none' }} />}
+                    {/* Label */}
                     <span style={{
-                      fontSize: 10, fontWeight: isCurrent ? 700 : 500, color: isCurrent ? '#6D28D9' : isPast ? '#475569' : '#94A3B8',
-                      textAlign: 'center', lineHeight: 1.2, maxWidth: 80, whiteSpace: 'nowrap',
+                      fontSize: 10, fontWeight: isCurrent ? 700 : isPast ? 600 : 400, color: isCurrent ? '#6D28D9' : isPast ? '#334155' : '#CBD5E1',
+                      textAlign: 'center', lineHeight: 1.2, maxWidth: 90, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                       transition: 'all 0.2s',
                     }}>{s}</span>
                   </div>
@@ -531,19 +545,34 @@ export default function ProjectsDetailPage() {
         {/* ═══ PROJECT INFO (TWO-COLUMN GRID) ═══ */}
         <div style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 20, boxShadow: C.shadow }}>
           <SectionTitle icon={<BriefcaseIcon />} text="Project Information" />
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12, marginTop: 16 }}>
-            <InfoField icon={<BuildingIcon />} label="Account" value={p.account_name || '—'} empty={!p.account_name} />
-            <InfoField icon={<PersonIcon />} label="Project Manager" value={p.pm_name || '—'} empty={!p.pm_name} />
-            <InfoField icon={<TagIcon />} label="Service" value={p.service_type || '—'} empty={!p.service_type} />
-            <InfoField icon={<CalendarIcon />} label="Start Date" value={formatDate(p.start_date)} empty={!p.start_date} />
-            <InfoField icon={<TargetIcon />} label="Target Date" value={formatDate(p.target_date)} empty={!p.target_date} />
-            <InfoField icon={<CalendarIcon />} label="End Date" value={formatDate(p.actual_end_date)} empty={!p.actual_end_date} />
-            <InfoField icon={<MoneyIcon />} label="Total Value" value={p.total_value ? `₹${p.total_value.toLocaleString()}` : '—'} empty={!p.total_value} green />
-            <InfoField icon={<ShieldIcon />} label="Stage Group" value={getStageGroup(p.stage)} badge />
-            <InfoField icon={<CheckCircleIcon />} label="Client Review" value={p.is_client_review_enabled ? 'Enabled' : 'Off'} />
-            <InfoField icon={<UsersIcon />} label="Team Size" value={p.team_count || '0'} />
-            <InfoField icon={<PersonIcon />} label="Created By" value={p.creator_name || '—'} empty={!p.creator_name} />
-            <InfoField icon={<CalendarIcon />} label="Last Updated" value={formatDate(p.updated_at)} empty={!p.updated_at} />
+          {/* Timeline group */}
+          <div style={{ marginTop: 16, marginBottom: 12 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 8 }}>Timeline</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+              <InfoField icon={<CalendarIcon />} label="Start Date" value={formatDate(p.start_date)} empty={!p.start_date} />
+              <InfoField icon={<TargetIcon />} label="Target Date" value={formatDate(p.target_date)} empty={!p.target_date} highlight={!!p.target_date} />
+              <InfoField icon={<CalendarIcon />} label="End Date" value={formatDate(p.actual_end_date)} empty={!p.actual_end_date} />
+            </div>
+          </div>
+          {/* Ownership & Value group */}
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 8 }}>Ownership &amp; Value</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+              <InfoField icon={<BuildingIcon />} label="Account" value={p.account_name} empty={!p.account_name} />
+              <InfoField icon={<PersonIcon />} label="Project Manager" value={p.pm_name} empty={!p.pm_name} />
+              <InfoField icon={<TagIcon />} label="Service" value={p.service_type} empty={!p.service_type} />
+              <InfoField icon={<MoneyIcon />} label="Total Value" value={p.total_value ? `₹${p.total_value.toLocaleString()}` : null} empty={!p.total_value} highlight />
+            </div>
+          </div>
+          {/* Status group */}
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 8 }}>Status</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+              <InfoField icon={<ShieldIcon />} label="Stage Group" value={getStageGroup(p.stage)} badge />
+              <InfoField icon={<CheckCircleIcon />} label="Client Review" value={p.is_client_review_enabled ? 'Enabled' : 'Off'} />
+              <InfoField icon={<UsersIcon />} label="Team Size" value={p.team_count || '0'} />
+              <InfoField icon={<CalendarIcon />} label="Last Updated" value={formatDate(p.updated_at)} empty={!p.updated_at} />
+            </div>
           </div>
         </div>
 
@@ -1650,16 +1679,26 @@ function DocStatusBadge({ status }) {
   return <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 4, background: s.bg, color: s.color }}>{status}</span>
 }
 
-function KPICard({ icon, bg, color, label, value, onClick, trend }) {
+function KPICard({ icon, accent, label, value, onClick, progress }) {
   return (
-    <div onClick={onClick} style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 14, cursor: onClick ? 'pointer' : 'default', transition: 'all 0.2s ease', boxShadow: C.shadow }}
-      onMouseEnter={e => { if (onClick) { e.currentTarget.style.boxShadow = C.shadowMd; e.currentTarget.style.borderColor = '#C4B5FD' } }}
-      onMouseLeave={e => { if (onClick) { e.currentTarget.style.boxShadow = C.shadow; e.currentTarget.style.borderColor = C.border } }}>
-      <div style={{ width: 44, height: 44, borderRadius: 12, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 16 }}>{icon}</div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 22, fontWeight: 700, color, letterSpacing: '-0.4px', lineHeight: 1.1 }}>{value}</div>
-        <div style={{ fontSize: 11, fontWeight: 500, color: '#94A3B8', marginTop: 3 }}>{label}</div>
+    <div onClick={onClick} style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '16px 18px 0', cursor: onClick ? 'pointer' : 'default', transition: 'all 0.2s ease', boxShadow: C.shadow, overflow: 'hidden', position: 'relative', transform: 'translateY(0)' }}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = C.shadowMd; e.currentTarget.style.borderColor = '#C4B5FD'; e.currentTarget.style.transform = 'translateY(-2px)' }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = C.shadow; e.currentTarget.style.borderColor = C.border; e.currentTarget.style.transform = 'translateY(0)' }}>
+      {/* Bottom accent line */}
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, background: accent, borderRadius: '0 0 10px 10px' }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, paddingBottom: 14 }}>
+        <div style={{ width: 44, height: 44, borderRadius: 12, background: `${accent}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 16, color: accent }}>{icon}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 22, fontWeight: 700, color: accent, letterSpacing: '-0.4px', lineHeight: 1.1 }}>{value}</div>
+          <div style={{ fontSize: 11, fontWeight: 500, color: '#94A3B8', marginTop: 3 }}>{label}</div>
+        </div>
       </div>
+      {/* Micro progress bar */}
+      {progress > 0 && (
+        <div style={{ height: 2, background: '#F1F5F9' }}>
+          <div style={{ width: `${Math.min(progress * 100, 100)}%`, height: '100%', background: accent, transition: 'width 0.4s ease', borderRadius: '0 1px 1px 0' }} />
+        </div>
+      )}
     </div>
   )
 }
@@ -1668,16 +1707,19 @@ function SectionTitle({ icon, text }) {
   return <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, fontWeight: 700, color: '#0F172A', letterSpacing: '-0.2px' }}>{icon}{text}</div>
 }
 
-function InfoField({ icon, label, value, empty, green, badge }) {
+function InfoField({ icon, label, value, empty, badge, highlight }) {
+  const displayValue = value ?? (empty ? null : value)
   return (
-    <div style={{ borderRadius: 10, padding: '10px 12px', border: '1px solid #F1F5F9', background: '#FAFBFC' }}>
+    <div style={{ borderRadius: 10, padding: '10px 12px', border: '1px solid #F1F5F9', background: '#FAFBFC', borderLeft: highlight ? '3px solid #6D28D9' : '1px solid #F1F5F9', paddingLeft: highlight ? 10 : 12 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 600, color: '#94A3B8', letterSpacing: '0.4px', textTransform: 'uppercase', marginBottom: 3 }}>
         <span style={{ color: '#64748B' }}>{icon}</span> {label}
       </div>
       {badge ? (
         <span style={{ color: C.primary, background: '#F0EBFF', display: 'inline-block', padding: '2px 10px', borderRadius: 6, fontSize: 12, fontWeight: 600 }}>{value}</span>
+      ) : empty ? (
+        <div style={{ fontSize: 13, fontWeight: 500, color: '#CBD5E1', fontStyle: 'italic', lineHeight: 1.3 }}>Not set</div>
       ) : (
-        <div style={{ fontSize: 14, fontWeight: 600, color: empty ? '#CBD5E1' : green ? '#059669' : '#0F172A', lineHeight: 1.3 }}>{value}</div>
+        <div style={{ fontSize: 14, fontWeight: highlight ? 700 : 600, color: highlight ? '#6D28D9' : '#0F172A', lineHeight: 1.3 }}>{value}</div>
       )}
     </div>
   )
@@ -1731,32 +1773,32 @@ function CheckIcon({ size = 16, color = 'currentColor' }) {
   return <svg width={size} height={size} fill="none" stroke={color} strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
 }
 
-function MoneyIcon() {
-  return <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+function MoneyIcon({ color }) {
+  return <svg width="18" height="18" fill="none" stroke={color || 'currentColor'} strokeWidth="2" viewBox="0 0 24 24"><path d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 }
 
-function BriefcaseIcon() {
-  return <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2zM16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2" /></svg>
+function BriefcaseIcon({ color }) {
+  return <svg width="16" height="16" fill="none" stroke={color || 'currentColor'} strokeWidth="2" viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2zM16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2" /></svg>
 }
 
-function BuildingIcon() {
-  return <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 21h18M3 7v14M21 7v14M6 11h4M10 11h4M14 11h4M6 15h4M10 15h4M14 15h4M6 19h4M10 19h4M14 19h4M6 3h12v4H6z" /></svg>
+function BuildingIcon({ color }) {
+  return <svg width="16" height="16" fill="none" stroke={color || 'currentColor'} strokeWidth="2" viewBox="0 0 24 24"><path d="M3 21h18M3 7v14M21 7v14M6 11h4M10 11h4M14 11h4M6 15h4M10 15h4M14 15h4M6 19h4M10 19h4M14 19h4M6 3h12v4H6z" /></svg>
 }
 
-function PersonIcon() {
-  return <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" /></svg>
+function PersonIcon({ color }) {
+  return <svg width="16" height="16" fill="none" stroke={color || 'currentColor'} strokeWidth="2" viewBox="0 0 24 24"><path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" /></svg>
 }
 
-function CalendarIcon() {
-  return <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>
+function CalendarIcon({ color }) {
+  return <svg width="16" height="16" fill="none" stroke={color || 'currentColor'} strokeWidth="2" viewBox="0 0 24 24"><path d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>
 }
 
 function CheckCircleIcon({ size = 16, color = 'currentColor' }) {
   return <svg width={size} height={size} fill="none" stroke={color} strokeWidth="2" viewBox="0 0 24 24"><path d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 }
 
-function TargetIcon() {
-  return <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+function TargetIcon({ color }) {
+  return <svg width="18" height="18" fill="none" stroke={color || 'currentColor'} strokeWidth="2" viewBox="0 0 24 24"><path d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 }
 
 function UsersIcon() {
