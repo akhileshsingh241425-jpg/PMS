@@ -68,6 +68,18 @@ class Project(db.Model):
     send_method = db.Column(db.String(30))
     advance_paid = db.Column(db.Float, default=0)
     balance_outstanding = db.Column(db.Float, default=0)
+    po_out_status = db.Column(db.String(30), default='Draft')
+    po_approver_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
+    po_approved_at = db.Column(db.DateTime)
+    po_rejected_reason = db.Column(db.Text)
+    po_resubmitted_at = db.Column(db.DateTime)
+    po_sent_via = db.Column(db.String(30))
+    po_sent_date = db.Column(db.DateTime)
+    po_work_started = db.Column(db.Boolean, default=False)
+    po_work_started_at = db.Column(db.DateTime)
+    po_work_completed = db.Column(db.Boolean, default=False)
+    po_work_completed_at = db.Column(db.DateTime)
+    po_next_due_date = db.Column(db.Date)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -75,6 +87,8 @@ class Project(db.Model):
     account = db.relationship('Account', foreign_keys=[account_id], back_populates='projects')
     pm = db.relationship('User', foreign_keys=[pm_id])
     creator = db.relationship('User', foreign_keys=[created_by])
+    po_approver = db.relationship('User', foreign_keys=[po_approver_id])
+    po_payments = db.relationship('PoPayment', back_populates='project', order_by='PoPayment.date.desc()', cascade='all, delete-orphan')
     remarks = db.relationship('ProjectRemark', back_populates='project', order_by='ProjectRemark.created_at.desc()', cascade='all, delete-orphan')
     documents = db.relationship('ProjectDocument', foreign_keys='ProjectDocument.project_id', back_populates='project', order_by='ProjectDocument.uploaded_at.desc()', cascade='all, delete-orphan')
     team = db.relationship('ProjectTeam', back_populates='project', cascade='all, delete-orphan')
@@ -120,6 +134,19 @@ class Project(db.Model):
             'send_method': self.send_method,
             'advance_paid': self.advance_paid,
             'balance_outstanding': self.balance_outstanding,
+            'po_out_status': self.po_out_status,
+            'po_approver_id': self.po_approver_id,
+            'po_approver_name': self.po_approver.full_name if self.po_approver else None,
+            'po_approved_at': self.po_approved_at.isoformat() if self.po_approved_at else None,
+            'po_rejected_reason': self.po_rejected_reason,
+            'po_resubmitted_at': self.po_resubmitted_at.isoformat() if self.po_resubmitted_at else None,
+            'po_sent_via': self.po_sent_via,
+            'po_sent_date': self.po_sent_date.isoformat() if self.po_sent_date else None,
+            'po_work_started': self.po_work_started,
+            'po_work_started_at': self.po_work_started_at.isoformat() if self.po_work_started_at else None,
+            'po_work_completed': self.po_work_completed,
+            'po_work_completed_at': self.po_work_completed_at.isoformat() if self.po_work_completed_at else None,
+            'po_next_due_date': self.po_next_due_date.isoformat() if self.po_next_due_date else None,
             'team_count': len(self.team),
             'team_names': ', '.join(tm.user.full_name for tm in self.team if tm.user) if self.team else '',
             'creator_name': self.creator.full_name if self.creator else None,
@@ -173,9 +200,13 @@ class ProjectDocument(db.Model):
     reviewed_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
     uploaded_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_verified = db.Column(db.Boolean, default=False)
+    verified_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
+    verified_at = db.Column(db.DateTime)
 
     uploader = db.relationship('User', foreign_keys=[uploaded_by])
     reviewer = db.relationship('User', foreign_keys=[reviewed_by])
+    verifier = db.relationship('User', foreign_keys=[verified_by])
     project = db.relationship('Project', foreign_keys=[project_id], back_populates='documents')
 
     def to_dict(self):
@@ -190,6 +221,9 @@ class ProjectDocument(db.Model):
             'reviewed_by_name': self.reviewer.full_name if self.reviewer else None,
             'uploaded_by_name': self.uploader.full_name if self.uploader else None,
             'uploaded_at': self.uploaded_at.isoformat() if self.uploaded_at else None,
+            'is_verified': self.is_verified,
+            'verified_by_name': self.verifier.full_name if self.verifier else None,
+            'verified_at': self.verified_at.isoformat() if self.verified_at else None,
             'file_url': f'/api/projects/documents/{self.id}' if self.file_path else None,
         }
 
@@ -273,6 +307,33 @@ class ProjectPhase(db.Model):
 
     project = db.relationship('Project', back_populates='phases')
     tasks = db.relationship('Task', backref='phase', lazy='dynamic')
+
+
+class PoPayment(db.Model):
+    __tablename__ = 'po_payments'
+    id = db.Column(db.Integer, primary_key=True)
+    po_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete='CASCADE'), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    mode = db.Column(db.String(50))
+    remarks = db.Column(db.Text)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    project = db.relationship('Project', foreign_keys=[po_id], back_populates='po_payments')
+    creator = db.relationship('User', foreign_keys=[created_by])
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'po_id': self.po_id,
+            'amount': self.amount,
+            'date': self.date.isoformat() if self.date else None,
+            'mode': self.mode,
+            'remarks': self.remarks,
+            'created_by_name': self.creator.full_name if self.creator else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
 
     def to_dict(self):
         parent_tasks = self.tasks.filter_by(parent_task_id=None).order_by(Task.created_at.asc()).all()
