@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import PhaseCard from './PhaseCard'
 import TaskRow from './TaskRow'
+import api from '../../services/api'
 
 const C = {
   primary: '#5B21B6', primaryLight: '#F5F3FF', primaryDark: '#4C1D95',
@@ -42,6 +43,8 @@ export default function TaskTrackerPanel({
   const [sortBy, setSortBy] = useState('title')
   const [showPO, setShowPO] = useState(false)
   const [assigningFlat, setAssigningFlat] = useState(null)
+  const [showPhaseForm, setShowPhaseForm] = useState(false)
+  const [phaseName, setPhaseName] = useState('')
 
   const filteredTasks = useMemo(() => {
     let list = [...tasks]
@@ -222,6 +225,23 @@ export default function TaskTrackerPanel({
           </button>
         )}
 
+        {/* Add Phase button */}
+        {view === 'grouped' && (
+          <button onClick={() => setShowPhaseForm(!showPhaseForm)}
+            style={{
+              border: showPhaseForm ? '1.5px solid #E5E7EB' : '1.5px dashed #A78BFA',
+              background: showPhaseForm ? '#fff' : 'transparent',
+              cursor: 'pointer',
+              color: showPhaseForm ? '#6B7280' : '#7C3AED',
+              fontSize: 14, fontWeight: 700, padding: '10px 22px',
+              borderRadius: 10, transition: 'all 0.15s',
+              display: 'inline-flex', alignItems: 'center', gap: 6
+            }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            {showPhaseForm ? 'Cancel' : '+ Phase'}
+          </button>
+        )}
+
         {/* Add Milestone button (for milestones view) */}
         {view === 'milestones' && (
           <button onClick={() => setMstoneForm(mstoneForm ? null : { title: '', due_date: '', description: '' })}
@@ -278,6 +298,32 @@ export default function TaskTrackerPanel({
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
             Add Task
           </button>
+        </form>
+      )}
+
+      {/* ═══ Add Phase form ═══ */}
+      {showPhaseForm && view === 'grouped' && (
+        <form onSubmit={async (e) => {
+          e.preventDefault()
+          if (!phaseName.trim()) return
+          try {
+            const r = await api.post(`/api/projects/${projectId}/phases`, { name: phaseName })
+            setPhaseName('')
+            setShowPhaseForm(false)
+            window.location.reload()
+          } catch (err) { alert('Failed to create phase') }
+        }} style={{
+          display: 'flex', gap: 12, padding: '16px 28px',
+          background: '#FAFAFE', borderBottom: '1px solid #E0E7FF', flexWrap: 'wrap', alignItems: 'center'
+        }}>
+          <input value={phaseName} onChange={e => setPhaseName(e.target.value)} placeholder="Phase name..." required autoFocus
+            style={{ flex: '1 1 220px', padding: '10px 14px', border: '1.5px solid #C7D2FE', borderRadius: 10, fontSize: 14, outline: 'none', fontFamily: 'inherit' }} />
+          <button type="submit"
+            style={{
+              background: 'linear-gradient(135deg, #7C3AED, #5B21B6)', color: '#fff',
+              border: 'none', borderRadius: 10, padding: '10px 24px', fontSize: 14,
+              fontWeight: 700, cursor: 'pointer', boxShadow: '0 3px 8px rgba(91,33,182,0.25)'
+            }}>Create Phase</button>
         </form>
       )}
 
@@ -356,7 +402,12 @@ export default function TaskTrackerPanel({
             <div style={{ textAlign: 'center', padding: '48px 0', color: C.muted }}>
               <div style={{ fontSize: 48, marginBottom: 10 }}>📋</div>
               <div style={{ fontWeight: 600, color: C.secondary, fontSize: 16 }}>No phases yet</div>
-              <div style={{ marginTop: 6, fontSize: 14 }}>Generate a plan to get started.</div>
+              <div style={{ marginTop: 6, fontSize: 14, marginBottom: 16 }}>Add a phase manually or generate a plan.</div>
+              <button onClick={() => setShowPhaseForm(true)}
+                style={{ padding: '10px 24px', borderRadius: 10, border: '1.5px dashed #A78BFA', background: 'transparent', color: '#7C3AED', fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
+                Add Phase
+              </button>
             </div>
           ) : (
             phases.map((phase, pi) => (

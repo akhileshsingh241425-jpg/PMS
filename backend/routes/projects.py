@@ -208,6 +208,24 @@ def generate_plan(current_user, pid):
     return jsonify({'message': 'Plan generated', 'phases': [p.to_dict() for p in phases]}), 201
 
 
+@project_bp.route('/<int:pid>/phases', methods=['POST'])
+@login_required
+def create_phase(current_user, pid):
+    Project.query.get_or_404(pid)
+    data = request.get_json()
+    name = data.get('name', '').strip()
+    if not name:
+        return jsonify({'error': 'Phase name required'}), 400
+    max_order = db.session.query(db.func.max(ProjectPhase.order)).filter_by(project_id=pid).scalar() or -1
+    phase = ProjectPhase(project_id=pid, name=name, order=max_order + 1, status='Pending')
+    db.session.add(phase)
+    proj = Project.query.get(pid)
+    if not proj.plan_generated:
+        proj.plan_generated = True
+    db.session.commit()
+    return jsonify({'phase': phase.to_dict()}), 201
+
+
 @project_bp.route('/<int:pid>/phases/<int:phase_id>/tasks', methods=['POST'])
 @login_required
 def add_task_to_phase(current_user, pid, phase_id):
