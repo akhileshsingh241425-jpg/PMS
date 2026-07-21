@@ -17,7 +17,18 @@ export default function Clients() {
   const [statusFilter, setStatusFilter] = useState('')
   const [activeFilter, setActiveFilter] = useState('')
   const [showModal, setShowModal] = useState(false)
+  const [industryFilter, setIndustryFilter] = useState('')
+  const [locationFilter, setLocationFilter] = useState('')
   const debounceRef = useRef(null)
+
+  const filteredClients = clients.filter(c => {
+    if (industryFilter && c.industry !== industryFilter) return false
+    if (locationFilter && c.location !== locationFilter) return false
+    return true
+  })
+
+  const industries = [...new Set(clients.map(c => c.industry).filter(Boolean))].sort()
+  const locations = [...new Set(clients.map(c => c.location).filter(Boolean))].sort()
 
   const load = useCallback(async (f, s, st) => {
     setLoading(true)
@@ -52,7 +63,7 @@ export default function Clients() {
     load(activeFilter, search, statusFilter)
   }
 
-  const totalProjects = clients.reduce((s, c) => s + (c.project_count || 0), 0)
+  const totalProjects = filteredClients.reduce((s, c) => s + (c.project_count || 0), 0)
 
   const columnHeader = {
     fontSize: 11,
@@ -141,6 +152,14 @@ export default function Clients() {
             <option value="Inactive">Inactive</option>
             <option value="Pending">Pending</option>
           </select>
+          <select value={industryFilter} onChange={e => setIndustryFilter(e.target.value)} style={{ padding: '8px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: C.font, background: '#fff', cursor: 'pointer', color: C.text, minWidth: 120 }}>
+            <option value="">All Industries</option>
+            {industries.map(i => <option key={i} value={i}>{i}</option>)}
+          </select>
+          <select value={locationFilter} onChange={e => setLocationFilter(e.target.value)} style={{ padding: '8px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: C.font, background: '#fff', cursor: 'pointer', color: C.text, minWidth: 120 }}>
+            <option value="">All Locations</option>
+            {locations.map(l => <option key={l} value={l}>{l}</option>)}
+          </select>
           <button
             onClick={handleSearchClick}
             style={{
@@ -167,7 +186,7 @@ export default function Clients() {
             <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, boxShadow: C.shadow, padding: 20 }}>
               <TableSkeleton rows={6} cols={5} />
             </div>
-          ) : clients.length === 0 ? (
+          ) : filteredClients.length === 0 ? (
             <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, boxShadow: C.shadow, textAlign: 'center', padding: '56px 20px' }}>
               <Building2 className="w-12 h-12" style={{ margin: '0 auto 12px', color: C.secondary, opacity: 0.25 }} />
               <div style={{ fontSize: 15, fontWeight: 600, color: C.text }}>No clients found</div>
@@ -191,7 +210,7 @@ export default function Clients() {
               </div>
 
               {/* Rows */}
-              {clients.map(client => (
+              {filteredClients.map(client => (
                 <ClientRow key={client.id} client={client} onNavigate={id => navigate(`/accounts/${id}`)} />
               ))}
             </div>

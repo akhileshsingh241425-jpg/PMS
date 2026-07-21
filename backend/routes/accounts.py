@@ -11,8 +11,15 @@ account_bp = Blueprint('accounts', __name__, url_prefix='/api/accounts')
 @login_required
 def list_accounts(current_user):
     query = Account.query
+    filter_param = request.args.get('filter', 'all')
+    if filter_param == 'active':
+        query = query.filter_by(status='Active')
+    elif filter_param == 'main':
+        query = query.filter(Account.referred_by_account_id.is_(None))
+    elif filter_param == 'sub':
+        query = query.filter(Account.referred_by_account_id.isnot(None))
     if s := request.args.get('search'):
-        query = query.filter(db.or_(Account.company_name.ilike(f'%{s}%'), Account.acc_id.ilike(f'%{s}%')))
+        query = query.filter(db.or_(Account.company_name.ilike(f'%{s}%'), Account.acc_id.ilike(f'%{s}%'), Account.gst_no.ilike(f'%{s}%')))
     if st := request.args.get('status'):
         query = query.filter_by(status=st)
     query = query.order_by(Account.created_at.desc())
@@ -23,7 +30,27 @@ def list_accounts(current_user):
     opp_counts = dict(db.session.query(Opportunity.account_id, db.func.count(Opportunity.id)).filter(Opportunity.account_id.in_(ids)).group_by(Opportunity.account_id).all()) if ids else {}
     contact_counts = dict(db.session.query(Contact.account_id, db.func.count(Contact.id)).filter(Contact.account_id.in_(ids)).group_by(Contact.account_id).all()) if ids else {}
     sub_account_counts = dict(db.session.query(Account.referred_by_account_id, db.func.count(Account.id)).filter(Account.referred_by_account_id.in_(ids)).group_by(Account.referred_by_account_id).all()) if ids else {}
-    return jsonify({'accounts': [a.to_dict(counts={'projects': proj_counts.get(a.id, 0), 'leads': lead_counts.get(a.id, 0), 'opportunities': opp_counts.get(a.id, 0), 'contacts': contact_counts.get(a.id, 0), 'sub_accounts': sub_account_counts.get(a.id, 0)}) for a in result['items']], 'pagination': {'page': result['page'], 'per_page': result['per_page'], 'total': result['total'], 'pages': result['pages']}})
+    sub_accounts_map = {}
+    if ids:
+        sub_accs = Account.query.filter(Account.referred_by_account_id.in_(ids)).all()
+        for sa in sub_accs:
+            sub_accounts_map.setdefault(sa.referred_by_account_id, []).append(sa.to_dict(minimal=True))
+    accounts_data = []
+    for a in result['items']:
+        data = a.to_dict(counts={'projects': proj_counts.get(a.id, 0), 'leads': lead_counts.get(a.id, 0), 'opportunities': opp_counts.get(a.id, 0), 'contacts': contact_counts.get(a.id, 0), 'sub_accounts': sub_account_counts.get(a.id, 0)})
+        data['sub_clients'] = sub_accounts_map.get(a.id, [])
+        accounts_data.append(data)
+    return jsonify({'accounts': accounts_data, 'pagination': {'page': result['page'], 'per_page': result['per_page'], 'total': result['total'], 'pages': result['pages']}})
+
+
+@account_bp.route('/summary', methods=['GET'])
+@login_required
+def accounts_summary(current_user):
+    total = Account.query.count()
+    active = Account.query.filter_by(status='Active').count()
+    main = Account.query.filter(Account.referred_by_account_id.is_(None)).count()
+    sub = Account.query.filter(Account.referred_by_account_id.isnot(None)).count()
+    return jsonify({'total': total, 'active': active, 'main': main, 'sub': sub})
 
 
 @account_bp.route('', methods=['POST'])
