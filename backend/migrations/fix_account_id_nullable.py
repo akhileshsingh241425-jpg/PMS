@@ -6,7 +6,7 @@ app = create_app()
 db_uri = app.config.get('SQLALCHEMY_DATABASE_URI', 'sqlite:///instance/pms.db')
 db_path = db_uri.replace('sqlite:///', '')
 if not os.path.isabs(db_path):
-    db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), db_path)
+    db_path = os.path.join(app.instance_path, db_path)
 db_path = os.path.normpath(db_path)
 
 print(f'Database: {db_path}')
