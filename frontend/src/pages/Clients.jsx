@@ -192,7 +192,7 @@ export default function Clients() {
 
               {/* Rows */}
               {clients.map(client => (
-                <ClientRow key={client.id} client={client} onNavigate={id => navigate(`/clients/${id}`)} />
+                <ClientRow key={client.id} client={client} onNavigate={id => navigate(`/accounts/${id}`)} />
               ))}
             </div>
           )}
