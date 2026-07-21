@@ -377,6 +377,7 @@ export default function ProjectsDetailPage() {
   const isTerminal = TERMINAL_STAGES.includes(p.stage)
   const isBlocked = BLOCKED_STAGES.includes(p.stage)
   const openTasks = tasks.filter(t => t.status !== 'Completed').length
+  const completedTasks = tasks.filter(t => t.status === 'Completed').length
   const totalDocs = (documents || []).length
   const allMeetings = [
     ...(meetings || []).map(m => ({ ...m, _type: 'meeting' })),
