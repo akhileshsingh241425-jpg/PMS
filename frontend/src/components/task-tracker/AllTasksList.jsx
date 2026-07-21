@@ -21,11 +21,12 @@ const PRIORITY_STYLE = {
   'Low': { bg: '#F0FDF4', color: '#059669' },
 }
 
-export default function AllTasksList({ tasks, team, showTaskForm, setShowTaskForm, taskForm, setTaskForm, onAddTask, onTaskClick, onStatusToggle }) {
+export default function AllTasksList({ tasks, team, showTaskForm, setShowTaskForm, taskForm, setTaskForm, onAddTask, onTaskClick, onStatusToggle, onUpdateTask }) {
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [filterPriority, setFilterPriority] = useState('')
   const [sortBy, setSortBy] = useState('title')
+  const [assigningId, setAssigningId] = useState(null)
 
   const filtered = useMemo(() => {
     let list = [...tasks]
@@ -236,17 +237,37 @@ export default function AllTasksList({ tasks, team, showTaskForm, setShowTaskFor
                       background: ps.bg, color: ps.color, lineHeight: '18px'
                     }}>{t.priority}</span>
                   )}
-                  {t.assigned_name && (
-                    <span style={{
-                      fontSize: 12, color: C.secondary,
-                      display: 'inline-flex', alignItems: 'center', gap: 4
-                    }}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                      </svg>
-                      {t.assigned_name}
-                    </span>
-                  )}
+                  <span onClick={e => { e.stopPropagation(); setAssigningId(assigningId === t.id ? null : t.id) }} style={{
+                    fontSize: 12, color: t.assigned_name ? C.secondary : C.muted,
+                    display: 'inline-flex', alignItems: 'center', gap: 4, cursor: 'pointer',
+                    padding: '2px 6px', borderRadius: 6,
+                    border: assigningId === t.id ? '1.5px solid #7C3AED' : '1px solid transparent',
+                    transition: 'all 0.15s', position: 'relative'
+                  }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    {assigningId === t.id ? (
+                      <select
+                        value={t.assigned_to || ''}
+                        onClick={e => e.stopPropagation()}
+                        onChange={e => {
+                          const val = e.target.value
+                          setAssigningId(null)
+                          if (val !== (t.assigned_to || '')) onUpdateTask?.(t.id, { assigned_to: val || null })
+                        }}
+                        onBlur={() => setAssigningId(null)}
+                        autoFocus
+                        style={{
+                          padding: '2px 4px', border: 'none', fontSize: 12, fontWeight: 600,
+                          outline: 'none', fontFamily: 'inherit', background: 'transparent',
+                          cursor: 'pointer', color: C.secondary
+                        }}>
+                        <option value="">Unassigned</option>
+                        {team.map(m => <option key={m.user_id} value={m.user_id}>{m.user_name}</option>)}
+                      </select>
+                    ) : (t.assigned_name || 'Assign')}
+                  </span>
                   {t.due_date && (
                     <span style={{
                       fontSize: 12, color: C.muted,

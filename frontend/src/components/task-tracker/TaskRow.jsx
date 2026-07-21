@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 const C = {
   primary: '#5B21B6', primaryLight: '#F5F3FF', border: '#E5E7EB',
   card: '#fff', muted: '#9CA3AF', secondary: '#6B7280', text: '#1F2937',
@@ -12,9 +14,10 @@ const BADGE = {
   'Blocked': { bg: '#FEE2E2', color: '#DC2626', dot: '#EF4444' },
 }
 
-export default function TaskRow({ task, onStatusToggle, onAddSubtask, team, addSubtaskOf, setAddSubtaskOf, subtaskForm, setSubtaskForm, onAddSubtaskSubmit, onTaskClick }) {
+export default function TaskRow({ task, onStatusToggle, onUpdateTask, onAddSubtask, team, addSubtaskOf, setAddSubtaskOf, subtaskForm, setSubtaskForm, onAddSubtaskSubmit, onTaskClick }) {
   const badge = BADGE[task.status] || BADGE['Pending']
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'Completed'
+  const [assigning, setAssigning] = useState(false)
 
   return (
     <div style={{
@@ -55,17 +58,40 @@ export default function TaskRow({ task, onStatusToggle, onAddSubtask, team, addS
           {task.title}
         </span>
 
-        {/* Assignee */}
-        {task.assigned_name && (
-          <div style={{
+        {/* Assignee dropdown */}
+        {assigning ? (
+          <select
+            value={task.assigned_to || ''}
+            onChange={e => {
+              const val = e.target.value
+              setAssigning(false)
+              if (val !== (task.assigned_to || '')) onUpdateTask?.(task.id, { assigned_to: val || null })
+            }}
+            onBlur={() => setAssigning(false)}
+            autoFocus
+            style={{
+              padding: '4px 8px', borderRadius: 8, border: '1.5px solid #7C3AED',
+              fontSize: 12, fontWeight: 600, outline: 'none', fontFamily: 'inherit',
+              background: '#fff', cursor: 'pointer', minWidth: 100
+            }}>
+            <option value="">Unassigned</option>
+            {team.map(t => <option key={t.user_id} value={t.user_id}>{t.user_name}</option>)}
+          </select>
+        ) : (
+          <div onClick={() => setAssigning(true)} style={{
             display: 'flex', alignItems: 'center', gap: 6,
-            fontSize: 12, fontWeight: 600, color: C.secondary, whiteSpace: 'nowrap',
-            padding: '4px 10px', borderRadius: 8, background: '#F0F2F8'
-          }}>
+            fontSize: 12, fontWeight: 600, color: task.assigned_name ? C.secondary : C.muted,
+            whiteSpace: 'nowrap', padding: '4px 10px', borderRadius: 8,
+            background: task.assigned_name ? '#F0F2F8' : 'transparent',
+            cursor: 'pointer', transition: 'all 0.15s',
+            border: '1px dashed transparent'
+          }}
+            onMouseEnter={e => { if (!task.assigned_name) { e.currentTarget.style.borderColor = '#D1D5DB'; e.currentTarget.style.background = '#FAFAFE' } }}
+            onMouseLeave={e => { if (!task.assigned_name) { e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.background = 'transparent' } }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
             </svg>
-            {task.assigned_name}
+            {task.assigned_name || 'Assign'}
           </div>
         )}
 

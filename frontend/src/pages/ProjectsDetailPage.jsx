@@ -291,6 +291,9 @@ export default function ProjectsDetailPage() {
     try { await api.put(`/api/tasks/${taskId}`, { status }); fetchData() } catch (e) {}
   }
 
+  const updateTask = async (taskId, fields) => {
+    try { await api.put(`/api/tasks/${taskId}`, fields); fetchData() } catch (e) { toast('Failed to update task', 'error') }
+  }
 
   const saveTaskDesc = async () => {
     if (!editTask) return
@@ -1079,6 +1082,7 @@ export default function ProjectsDetailPage() {
             onAddSubtaskSubmit={addSubtask}
             onAddTask={addTask}
             onUpdateTaskStatus={updateTaskStatus}
+            onUpdateTask={updateTask}
             onGeneratePlan={generatePlan}
             generatingPlan={generatingPlan}
             onTaskClick={openTaskEditor}

@@ -5,7 +5,7 @@ const C = {
 }
 import TaskRow from './TaskRow'
 
-export default function PhaseCard({ phase, index, team, addTaskPhase, setAddTaskPhase, phaseTaskForm, setPhaseTaskForm, addSubtaskOf, setAddSubtaskOf, subtaskForm, setSubtaskForm, onAddTaskToPhase, onAddSubtaskSubmit, onTaskStatusToggle, onTaskClick }) {
+export default function PhaseCard({ phase, index, team, addTaskPhase, setAddTaskPhase, phaseTaskForm, setPhaseTaskForm, addSubtaskOf, setAddSubtaskOf, subtaskForm, setSubtaskForm, onAddTaskToPhase, onAddSubtaskSubmit, onTaskStatusToggle, onUpdateTask, onTaskClick }) {
   const total = phase.tasks?.length || 0
   const completed = phase.tasks?.filter(t => t.status === 'Completed').length || 0
   const pct = total > 0 ? Math.round((completed / total) * 100) : 0
@@ -77,7 +77,7 @@ export default function PhaseCard({ phase, index, team, addTaskPhase, setAddTask
       {/* Task list */}
       <div style={{ padding: '8px 24px 12px 28px' }}>
         {phase.tasks?.map(task => (
-          <TaskRow key={task.id} task={task} team={team} onStatusToggle={onTaskStatusToggle}
+          <TaskRow key={task.id} task={task} team={team} onStatusToggle={onTaskStatusToggle} onUpdateTask={onUpdateTask}
             onAddSubtask={setAddSubtaskOf} addSubtaskOf={addSubtaskOf} setAddSubtaskOf={setAddSubtaskOf}
             subtaskForm={subtaskForm} setSubtaskForm={setSubtaskForm} onAddSubtaskSubmit={onAddSubtaskSubmit}
             onTaskClick={onTaskClick} />

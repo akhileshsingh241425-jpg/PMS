@@ -12,7 +12,7 @@ export default function TaskTrackerPanel({
   addTaskPhase, setAddTaskPhase, phaseTaskForm, setPhaseTaskForm,
   addSubtaskOf, setAddSubtaskOf, subtaskForm, setSubtaskForm,
   showTaskForm, setShowTaskForm, taskForm, setTaskForm, mstoneForm, setMstoneForm,
-  onAddTaskToPhase, onAddSubtaskSubmit, onAddTask, onUpdateTaskStatus, onAddMilestone, onMarkMilestoneDone,
+  onAddTaskToPhase, onAddSubtaskSubmit, onAddTask, onUpdateTaskStatus, onUpdateTask, onAddMilestone, onMarkMilestoneDone,
   onGeneratePlan, generatingPlan, onTaskClick
 }) {
   const formatDate = (d) => { if (!d) return '—'; return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) }
@@ -164,7 +164,7 @@ export default function TaskTrackerPanel({
               addSubtaskOf={addSubtaskOf} setAddSubtaskOf={setAddSubtaskOf}
               subtaskForm={subtaskForm} setSubtaskForm={setSubtaskForm}
               onAddTaskToPhase={onAddTaskToPhase} onAddSubtaskSubmit={onAddSubtaskSubmit}
-              onTaskStatusToggle={onUpdateTaskStatus} onTaskClick={onTaskClick} />
+              onTaskStatusToggle={onUpdateTaskStatus} onUpdateTask={onUpdateTask} onTaskClick={onTaskClick} />
           ))}
         </div>
       )}
@@ -188,7 +188,7 @@ export default function TaskTrackerPanel({
         <AllTasksList tasks={tasks} team={team}
           showTaskForm={showTaskForm} setShowTaskForm={setShowTaskForm}
           taskForm={taskForm} setTaskForm={setTaskForm}
-          onAddTask={onAddTask} onTaskClick={onTaskClick} onStatusToggle={onUpdateTaskStatus} />
+          onAddTask={onAddTask} onTaskClick={onTaskClick} onStatusToggle={onUpdateTaskStatus} onUpdateTask={onUpdateTask} />
       </div>
 
       {/* Milestones */}
