@@ -416,7 +416,7 @@ export default function ProjectsDetailPage() {
 
   return (
     <div style={{ background: C.bg, minHeight: '100vh', fontFamily: C.font, color: C.text, fontSize: 14, WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}>
-      <div style={{ padding: '0 0 40px', width: '100%', maxWidth: '1280px', margin: '0 auto' }}>
+      <div style={{ padding: '0 0 40px', width: '100%', maxWidth: '100%' }}>
         {/* ═══ HEADER CARD ═══ */}
         <div style={{ background: C.card, borderRadius: C.radius + 2, border: `1px solid ${C.border}`, padding: '28px 32px', marginBottom: 20, boxShadow: C.shadowMd }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24 }}>
