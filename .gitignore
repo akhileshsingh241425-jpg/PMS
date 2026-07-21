@@ -25,6 +25,8 @@ attendance-app/__tests__/
 attendance-app/package-lock.json
 attendance-app/.watchmanconfig
 
+.deploy-state
+
 # Log files
 backend_err.log
 backend_out.log

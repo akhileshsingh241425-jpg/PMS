@@ -57,7 +57,7 @@ export default function Accounts() {
 
   return (
     <div style={{ background: C.bg, minHeight: '100vh', fontFamily: C.font, color: C.text, WebkitFontSmoothing: 'antialiased' }}>
-      <div style={{ padding: '24px 32px 40px', maxWidth: 1400, margin: '0 auto' }}>
+      <div style={{ padding: '4px 0' }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
           <div>
