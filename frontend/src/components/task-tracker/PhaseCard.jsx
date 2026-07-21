@@ -96,7 +96,7 @@ const TASK_TEMPLATES = {
   ],
 }
 
-export default function PhaseCard({ phase, index, team, addTaskPhase, setAddTaskPhase, phaseTaskForm, setPhaseTaskForm, addSubtaskOf, setAddSubtaskOf, subtaskForm, setSubtaskForm, onAddTaskToPhase, onAddSubtaskSubmit, onTaskStatusToggle, onUpdateTask, onTaskClick }) {
+export default function PhaseCard({ phase, index, team, addTaskPhase, setAddTaskPhase, phaseTaskForm, setPhaseTaskForm, addSubtaskOf, setAddSubtaskOf, subtaskForm, setSubtaskForm, onAddTaskToPhase, onAddSubtaskSubmit, onTaskStatusToggle, onUpdateTask, onTaskClick, onDeleteTask, onDeletePhase }) {
   const total = phase.tasks?.length || 0
   const completed = phase.tasks?.filter(t => t.status === 'Completed').length || 0
   const pct = total > 0 ? Math.round((completed / total) * 100) : 0
@@ -185,6 +185,19 @@ export default function PhaseCard({ phase, index, team, addTaskPhase, setAddTask
               {completed}/{total}
             </span>
           </div>
+          <button onClick={async () => { if (!confirm('Delete this phase and all its tasks?')) return; try { await api.delete(`/api/projects/${phase.project_id}/phases/${phase.id}`); window.location.reload() } catch (e) { alert('Failed to delete phase') } }}
+            title="Delete phase"
+            style={{
+              padding: '5px 8px', borderRadius: 6, border: '1px solid #FECACA', background: '#FFF',
+              color: '#DC2626', fontSize: 11, fontWeight: 600, cursor: 'pointer', lineHeight: 1,
+              display: 'inline-flex', alignItems: 'center', gap: 3, transition: 'all 0.15s'
+            }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+            Delete
+          </button>
           <span style={{
             fontSize: 12, fontWeight: 700, padding: '4px 14px', borderRadius: 20,
             background: sc.bg, color: sc.color, whiteSpace: 'nowrap',
@@ -202,7 +215,7 @@ export default function PhaseCard({ phase, index, team, addTaskPhase, setAddTask
           <TaskRow key={task.id} task={task} team={team} onStatusToggle={onTaskStatusToggle} onUpdateTask={onUpdateTask}
             onAddSubtask={setAddSubtaskOf} addSubtaskOf={addSubtaskOf} setAddSubtaskOf={setAddSubtaskOf}
             subtaskForm={subtaskForm} setSubtaskForm={setSubtaskForm} onAddSubtaskSubmit={onAddSubtaskSubmit}
-            onTaskClick={onTaskClick} />
+            onTaskClick={onTaskClick} onDeleteTask={onDeleteTask} />
         ))}
         {(!phase.tasks || phase.tasks.length === 0) && (
           <div style={{ fontSize: 14, color: C.muted, padding: '20px 0', textAlign: 'center', fontStyle: 'italic' }}>

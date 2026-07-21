@@ -14,10 +14,50 @@ const BADGE = {
   'Blocked': { bg: '#FEE2E2', color: '#DC2626', dot: '#EF4444' },
 }
 
-export default function TaskRow({ task, onStatusToggle, onUpdateTask, onAddSubtask, team, addSubtaskOf, setAddSubtaskOf, subtaskForm, setSubtaskForm, onAddSubtaskSubmit, onTaskClick }) {
+export default function TaskRow({ task, onStatusToggle, onUpdateTask, onDeleteTask, onAddSubtask, team, addSubtaskOf, setAddSubtaskOf, subtaskForm, setSubtaskForm, onAddSubtaskSubmit, onTaskClick }) {
   const badge = BADGE[task.status] || BADGE['Pending']
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'Completed'
   const [assigning, setAssigning] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [editForm, setEditForm] = useState({
+    title: task.title, status: task.status, priority: task.priority,
+    assigned_to: task.assigned_to || '', due_date: task.due_date || ''
+  })
+
+  if (editing) {
+    return (
+      <div style={{ borderBottom: '1px solid #F3F4F6', padding: '12px 0' }}>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          <input value={editForm.title} onChange={e => setEditForm({ ...editForm, title: e.target.value })}
+            style={{ flex: '1 1 180px', padding: '9px 14px', border: '1.5px solid #7C3AED', borderRadius: 8, fontSize: 14, outline: 'none', fontFamily: 'inherit' }}
+            autoFocus />
+          <select value={editForm.status} onChange={e => setEditForm({ ...editForm, status: e.target.value })}
+            style={{ padding: '9px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 12, background: '#fff', fontFamily: 'inherit', outline: 'none' }}>
+            <option>Open</option><option>In Progress</option><option>Completed</option><option>Pending</option><option>Blocked</option>
+          </select>
+          <select value={editForm.priority} onChange={e => setEditForm({ ...editForm, priority: e.target.value })}
+            style={{ padding: '9px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 12, background: '#fff', fontFamily: 'inherit', outline: 'none' }}>
+            <option>Low</option><option>Normal</option><option>High</option><option>Urgent</option>
+          </select>
+          <select value={editForm.assigned_to} onChange={e => setEditForm({ ...editForm, assigned_to: e.target.value })}
+            style={{ padding: '9px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 12, background: '#fff', fontFamily: 'inherit', outline: 'none', minWidth: 90 }}>
+            <option value="">Unassigned</option>
+            {team.map(t => <option key={t.user_id} value={t.user_id}>{t.user_name}</option>)}
+          </select>
+          <input type="date" value={editForm.due_date} onChange={e => setEditForm({ ...editForm, due_date: e.target.value })}
+            style={{ padding: '9px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 12, fontFamily: 'inherit', outline: 'none' }} />
+          <button onClick={() => { onUpdateTask?.(task.id, editForm); setEditing(false) }}
+            style={{ padding: '9px 18px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg, #7C3AED, #5B21B6)', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 6px rgba(91,33,182,0.2)' }}>
+            Save
+          </button>
+          <button onClick={() => setEditing(false)}
+            style={{ padding: '9px 16px', borderRadius: 8, border: '1.5px solid #E5E7EB', background: '#fff', color: '#6B7280', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={{
@@ -118,6 +158,34 @@ export default function TaskRow({ task, onStatusToggle, onUpdateTask, onAddSubta
           <span style={{ width: 5, height: 5, borderRadius: '50%', background: badge.dot }} />
           {task.status}
         </span>
+
+        {/* Edit button */}
+        <button onClick={() => setEditing(true)}
+          style={{
+            padding: '6px 10px', borderRadius: 8, border: '1px solid #E5E7EB', background: '#fff',
+            color: '#6B7280', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+            transition: 'all 0.15s', display: 'inline-flex', alignItems: 'center', gap: 4, lineHeight: 1
+          }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+          Edit
+        </button>
+
+        {/* Delete button */}
+        <button onClick={() => { if (confirm('Delete this task?')) onDeleteTask?.(task.id) }}
+          style={{
+            padding: '6px 10px', borderRadius: 8, border: '1px solid #FECACA', background: '#FFF',
+            color: '#DC2626', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+            transition: 'all 0.15s', display: 'inline-flex', alignItems: 'center', gap: 4, lineHeight: 1
+          }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          </svg>
+          Delete
+        </button>
 
         {/* Subtask button */}
         <button onClick={() => { setAddSubtaskOf(task.id); setSubtaskForm({ title: '', assigned_to: '', due_date: '', status: 'Open' }) }}

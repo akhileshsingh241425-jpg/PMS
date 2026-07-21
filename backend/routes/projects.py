@@ -328,6 +328,17 @@ def apply_phase_template(current_user, pid, phase_id):
     return jsonify({'tasks': [t.to_dict() for t in created]}), 201
 
 
+@project_bp.route('/<int:pid>/phases/<int:phase_id>', methods=['DELETE'])
+@login_required
+def delete_phase(current_user, pid, phase_id):
+    Project.query.get_or_404(pid)
+    phase = ProjectPhase.query.filter_by(id=phase_id, project_id=pid).first_or_404()
+    Task.query.filter_by(phase_id=phase_id).delete()
+    db.session.delete(phase)
+    db.session.commit()
+    return jsonify({'message': 'Phase deleted'})
+
+
 @project_bp.route('/<int:pid>/tasks/<int:task_id>/subtasks', methods=['GET'])
 @login_required
 def list_subtasks(current_user, pid, task_id):

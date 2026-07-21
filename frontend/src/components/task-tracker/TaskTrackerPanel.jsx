@@ -23,7 +23,7 @@ export default function TaskTrackerPanel({
   addSubtaskOf, setAddSubtaskOf, subtaskForm, setSubtaskForm,
   showTaskForm, setShowTaskForm, taskForm, setTaskForm, mstoneForm, setMstoneForm,
   onAddTaskToPhase, onAddSubtaskSubmit, onAddTask, onUpdateTaskStatus, onUpdateTask, onAddMilestone, onMarkMilestoneDone,
-  onGeneratePlan, generatingPlan, onTaskClick
+  onGeneratePlan, generatingPlan, onTaskClick, onDeleteTask
 }) {
   const formatDate = (d) => { if (!d) return '—'; return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) }
   const p = project || {}
@@ -417,7 +417,8 @@ export default function TaskTrackerPanel({
                 addSubtaskOf={addSubtaskOf} setAddSubtaskOf={setAddSubtaskOf}
                 subtaskForm={subtaskForm} setSubtaskForm={setSubtaskForm}
                 onAddTaskToPhase={onAddTaskToPhase} onAddSubtaskSubmit={onAddSubtaskSubmit}
-                onTaskStatusToggle={onUpdateTaskStatus} onUpdateTask={onUpdateTask} onTaskClick={onTaskClick} />
+                onTaskStatusToggle={onUpdateTaskStatus} onUpdateTask={onUpdateTask} onTaskClick={onTaskClick}
+                onDeleteTask={onDeleteTask} />
             ))
           )
         )}
@@ -444,7 +445,7 @@ export default function TaskTrackerPanel({
                 <TaskRow key={t.id} task={t} team={team} onStatusToggle={onUpdateTaskStatus} onUpdateTask={onUpdateTask}
                   onAddSubtask={setAddSubtaskOf} addSubtaskOf={addSubtaskOf} setAddSubtaskOf={setAddSubtaskOf}
                   subtaskForm={subtaskForm} setSubtaskForm={setSubtaskForm} onAddSubtaskSubmit={onAddSubtaskSubmit}
-                  onTaskClick={onTaskClick} />
+                  onTaskClick={onTaskClick} onDeleteTask={onDeleteTask} />
               )
             })
           )

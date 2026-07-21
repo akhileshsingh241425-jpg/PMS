@@ -300,6 +300,10 @@ export default function ProjectsDetailPage() {
     try { await api.put(`/api/tasks/${taskId}`, fields); fetchData() } catch (e) { toast('Failed to update task', 'error') }
   }
 
+  const deleteTask = async (taskId) => {
+    try { await api.delete(`/api/tasks/${taskId}`); fetchData(); toast('Task deleted') } catch (e) { toast('Failed to delete task', 'error') }
+  }
+
   const saveTaskDesc = async () => {
     if (!editTask) return
     const html = taskEditorRef.current?.innerHTML || editTaskDesc
@@ -1295,6 +1299,7 @@ export default function ProjectsDetailPage() {
             onGeneratePlan={generatePlan}
             generatingPlan={generatingPlan}
             onTaskClick={openTaskEditor}
+            onDeleteTask={deleteTask}
             onAddMilestone={async () => {
               if (!mstoneForm.title) return
               await api.post(`/api/projects/${id}/milestones`, mstoneForm)
