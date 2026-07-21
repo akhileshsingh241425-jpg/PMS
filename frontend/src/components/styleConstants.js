@@ -1,0 +1,18 @@
+export const C = {
+  bg: '#F7F8FA',
+  card: '#fff',
+  border: '#E2E8F0',
+  blue: '#0052CC',
+  blueLight: '#DBEAFE',
+  blueDark: '#1E3A8A',
+  text: '#172B4D',
+  muted: '#5E6C84',
+  secondary: '#64748B',
+  green: '#22C55E',
+  orange: '#D97706',
+  orangeLight: '#FEF3C7',
+  orangeText: '#92400E',
+  shadow: '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)',
+  shadowMd: '0 4px 12px rgba(0,0,0,0.08)',
+  font: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+}

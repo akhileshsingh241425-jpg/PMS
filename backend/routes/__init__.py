@@ -20,3 +20,4 @@ from .pm import pm_bp
 from .vulnerabilities import vuln_bp
 from .attendance import attendance_bp
 from .backlog import backlog_bp
+from .clients import client_bp

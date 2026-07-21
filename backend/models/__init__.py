@@ -22,3 +22,4 @@ from .device_token import DeviceToken
 from .location_log import LocationLog
 from .chat_message import ChatMessage
 from .backlog import Epic, Sprint, Issue
+from .client import Client

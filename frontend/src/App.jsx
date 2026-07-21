@@ -30,6 +30,7 @@ import PMTeam from './pages/PMTeam'
 import PMMeetings from './pages/PMMeetings'
 import PMReports from './pages/PMReports'
 import VulnerabilityDashboard from './pages/VulnerabilityDashboard'
+import Clients from './pages/Clients'
 
 function Protected({ children }) {
   const { user } = useAuth()
@@ -92,6 +93,7 @@ export default function App() {
                 <Route path="leads/:id" element={<LeadsDetailPage />} />
                 <Route path="accounts" element={<Accounts />} />
                 <Route path="accounts/:id" element={<AccountsDetailPage />} />
+                <Route path="clients" element={<Clients />} />
                 <Route path="projects" element={<Projects />} />
                 <Route path="projects/:id" element={<ProjectsDetailPage />} />
                 <Route path="projects/:id/backlog" element={<Backlog />} />

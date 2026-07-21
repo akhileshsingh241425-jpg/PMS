@@ -45,6 +45,7 @@ class Project(db.Model):
     stage = db.Column(db.String(50), default='Created', index=True)
     service_type = db.Column(db.String(100))
     account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=True, index=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=True, index=True)
     pm_id = db.Column(db.Integer, db.ForeignKey('users.id'), index=True)
     total_value = db.Column(db.Float)
     start_date = db.Column(db.Date)
@@ -85,6 +86,7 @@ class Project(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     account = db.relationship('Account', foreign_keys=[account_id], back_populates='projects')
+    client = db.relationship('Client', foreign_keys=[client_id], backref='projects')
     pm = db.relationship('User', foreign_keys=[pm_id])
     creator = db.relationship('User', foreign_keys=[created_by])
     po_approver = db.relationship('User', foreign_keys=[po_approver_id])
@@ -110,6 +112,8 @@ class Project(db.Model):
             'service_type': self.service_type,
             'account_id': self.account_id,
             'account_name': self.account.company_name if self.account else None,
+            'client_id': self.client_id,
+            'client_name': self.client.name if self.client else None,
             'pm_id': self.pm_id,
             'pm_name': self.pm.full_name if self.pm else None,
             'total_value': self.total_value,
