@@ -1,7 +1,6 @@
-import sys, os, sqlite3
+import sys, os, sqlite3, re
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-# Find the database file path
 from app import create_app
 app = create_app()
 db_uri = app.config.get('SQLALCHEMY_DATABASE_URI', 'sqlite:///instance/pms.db')
@@ -15,41 +14,60 @@ if not os.path.exists(db_path):
     print(f'Database file not found at {db_path}')
     sys.exit(1)
 
-# Connect directly to SQLite (bypass SQLAlchemy transactions)
 conn = sqlite3.connect(db_path)
 cur = conn.cursor()
 
-# Check current schema
+# Get current DDL
+cur.execute("SELECT sql FROM sqlite_master WHERE name='projects' AND type='table'")
+ddl = cur.fetchone()[0]
+print(f'Current DDL:\n{ddl}\n')
+
+# Check if NOT NULL is on account_id
 cur.execute('PRAGMA table_info(projects)')
-columns = cur.fetchall()
-account_id_col = None
-for col in columns:
+for col in cur.fetchall():
     if col[1] == 'account_id':
-        account_id_col = col
+        print(f'account_id notnull={col[3]} (1=NOT NULL, 0=NULLABLE)')
+        if col[3] == 0:
+            print('Already NULLABLE — nothing to do')
+            conn.close()
+            sys.exit(0)
         break
 
-if account_id_col and account_id_col[3] == 1:  # 1 = NOT NULL
-    print('account_id is NOT NULL — fixing...')
-    cur.execute('PRAGMA writable_schema=ON')
-    cur.execute("""
-        UPDATE sqlite_master 
-        SET sql = replace(sql, 'account_id INTEGER NOT NULL', 'account_id INTEGER')
-        WHERE name = 'projects' AND type = 'table'
-    """)
-    cur.execute('PRAGMA writable_schema=OFF')
-    # Commit and force schema reload by closing connection
-    conn.commit()
-    conn.close()
-    # Reconnect to verify
-    conn2 = sqlite3.connect(db_path)
-    cur2 = conn2.cursor()
-    cur2.execute('PRAGMA table_info(projects)')
-    for col in cur2.fetchall():
-        if col[1] == 'account_id':
-            print(f'account_id nullable={col[3] == 0} (0=NULLABLE)')
-    conn2.close()
-    print('account_id is now NULLABLE')
-else:
-    print('account_id already NULLABLE — no change needed')
+print('Fixing account_id NOT NULL constraint...')
 
-print('Migration complete')
+# Create backup
+cur.execute("PRAGMA foreign_keys=OFF")
+
+# Get all indexes/triggers first
+cur.execute("SELECT sql FROM sqlite_master WHERE type='index' AND tbl_name='projects' AND sql IS NOT NULL")
+indexes = [r[0] for r in cur.fetchall()]
+
+# New DDL with NOT NULL removed
+new_ddl = re.sub(r'account_id\s+INTEGER\s+NOT\s+NULL', 'account_id INTEGER', ddl, flags=re.IGNORECASE)
+print(f'New DDL:\n{new_ddl}\n')
+
+# Recreate table
+cur.execute("ALTER TABLE projects RENAME TO projects_old")
+cur.execute(new_ddl)
+cur.execute("INSERT INTO projects SELECT * FROM projects_old")
+cur.execute("DROP TABLE projects_old")
+
+# Recreate indexes
+for idx_sql in indexes:
+    try:
+        cur.execute(idx_sql)
+    except Exception as e:
+        print(f'  index recreate: {e}')
+
+# Re-enable foreign keys
+cur.execute("PRAGMA foreign_keys=ON")
+conn.commit()
+
+# Verify
+cur.execute('PRAGMA table_info(projects)')
+for col in cur.fetchall():
+    if col[1] == 'account_id':
+        print(f'account_id now notnull={col[3]}')
+
+conn.close()
+print('Migration complete — account_id is now NULLABLE')
