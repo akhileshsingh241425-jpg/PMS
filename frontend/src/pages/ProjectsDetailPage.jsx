@@ -28,6 +28,21 @@ const ALL_STAGES = [...DELIVERY_STAGES, ...FINANCE_STAGES, ...BLOCKED_STAGES, ..
 
 const TERMINAL_STAGES = ['Closed', ...BLOCKED_STAGES, ...SUPPORT_STAGES]
 
+const SECTIONS = [
+  { id: 'section-info', label: 'Info', icon: '📋', tab: 'overview' },
+  { id: 'section-plan', label: 'Plan & Tasks', icon: '📊', tab: 'overview' },
+  { id: 'section-po-out', label: 'PO Out', icon: '📄', tab: 'overview', condition: (p) => p.direction === 'OUT' },
+  { id: 'section-description', label: 'Description', icon: '📝', tab: 'overview', condition: (p) => !!(p.description || true) },
+  { id: 'section-remarks', label: 'Remarks', icon: '💬', tab: 'overview' },
+  { id: 'section-documents', label: 'Documents', icon: '📎', tab: 'overview' },
+  { id: 'section-meetings', label: 'Meetings', icon: '📅', tab: 'overview' },
+  { id: 'section-notes', label: 'Notes', icon: '📌', tab: 'overview' },
+  { id: 'section-vulnerabilities', label: 'Vulnerabilities', icon: '🛡️', tab: 'overview' },
+  { id: 'section-queries', label: 'Queries', icon: '❓', tab: 'overview' },
+  { id: 'section-team', label: 'Team', icon: '👥', tab: 'overview' },
+  { id: 'section-tasks', label: 'Tasks', icon: '✓', tab: 'tasks', onClick: (setTab) => setTab('tasks') },
+]
+
 const STAGE_ICONS = {
   'Initiated': 'M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z',
   'Planning': 'M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z',
@@ -544,7 +559,7 @@ export default function ProjectsDetailPage() {
         </div>
 
         {/* ═══ PROJECT INFO (TWO-COLUMN GRID) ═══ */}
-        <div style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 20, boxShadow: C.shadow }}>
+        <div id="section-info" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 20, boxShadow: C.shadow }}>
           <SectionTitle icon={<BriefcaseIcon />} text="Project Information" />
           {/* Timeline group */}
           <div style={{ marginTop: 16, marginBottom: 12 }}>
@@ -592,7 +607,7 @@ export default function ProjectsDetailPage() {
         )}
 
         {/* ═══ PLAN & TASKS (COMPACT) ═══ */}
-        <div style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 20, boxShadow: C.shadow }}>
+        <div id="section-plan" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 20, boxShadow: C.shadow }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <SectionTitle icon={<FileTextIcon />} text="Plan & Tasks" />
             <button onClick={() => setActiveTab('tasks')} style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: C.primary, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
@@ -629,7 +644,7 @@ export default function ProjectsDetailPage() {
 
         {/* ═══ PO OUT WORKFLOW ═══ */}
         {p.direction === 'OUT' && (
-          <div style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '24px 28px', marginBottom: 20, boxShadow: C.shadow }}>
+          <div id="section-po-out" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '24px 28px', marginBottom: 20, boxShadow: C.shadow }}>
             <SectionTitle icon={<span style={{ fontSize: 18 }}>📋</span>} text={`PO Out Workflow`} />
             {p.po_next_due_date && p.balance_outstanding > 0 && new Date(p.po_next_due_date) <= new Date() && (
               <div style={{ marginTop: 12, padding: '12px 18px', background: '#FEF3C7', borderRadius: 10, fontSize: 14, fontWeight: 600, color: '#92400E', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -812,7 +827,7 @@ export default function ProjectsDetailPage() {
         )}
 
         {/* ═══ TAB NAVIGATION ═══ */}
-        <div style={{ display: 'flex', gap: 4, background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '4px', marginBottom: 20, boxShadow: C.shadow }}>
+        <div style={{ display: 'flex', gap: 4, background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '4px', marginBottom: 8, boxShadow: C.shadow }}>
           {[
             { key: 'overview', label: 'Overview', icon: '▶' },
             { key: 'tasks', label: 'Tasks', icon: '✓' },
@@ -827,11 +842,30 @@ export default function ProjectsDetailPage() {
           ))}
         </div>
 
+        {/* ═══ SECTION NAV ═══ */}
+        {(activeTab === 'overview') && (
+          <div style={{ overflowX: 'auto', whiteSpace: 'nowrap', marginBottom: 16, padding: '0 4px', scrollbarWidth: 'thin' }}>
+            <div style={{ display: 'inline-flex', gap: 6, padding: '2px 0' }}>
+              {SECTIONS.filter(s => s.tab === 'overview' && (s.condition ? s.condition(p) : true)).map(s => (
+                <button key={s.id} onClick={() => { document.getElementById(s.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); s.onClick?.(setActiveTab) }}
+                  style={{
+                    padding: '6px 14px', borderRadius: 20, border: '1px solid #E2E8F0', background: '#fff', color: '#64748B',
+                    fontSize: 12, fontWeight: 500, cursor: 'pointer', transition: 'all 0.15s', fontFamily: C.font, display: 'inline-flex', alignItems: 'center', gap: 5
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = '#F5F3FF'; e.currentTarget.style.borderColor = '#C4B5FD'; e.currentTarget.style.color = '#6D28D9' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.color = '#64748B' }}>
+                  <span style={{ fontSize: 12 }}>{s.icon}</span> {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* ═══ OVERVIEW TAB ═══ */}
         {activeTab === 'overview' && <div>
           {/* DESCRIPTION */}
           {(p.description || editingDesc || hasRole('super_admin', 'admin', 'project_lead')) && (
-            <div style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 20, boxShadow: C.shadow }}>
+            <div id="section-description" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 20, boxShadow: C.shadow }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                 <SectionTitle icon={<FileIcon />} text="Description" />
                 {!editingDesc && p.description && hasRole('super_admin', 'admin', 'project_lead') && (
@@ -857,7 +891,7 @@ export default function ProjectsDetailPage() {
           )}
 
             {/* REMARKS */}
-            <div style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '24px 28px', marginBottom: 20, boxShadow: C.shadow }}>
+            <div id="section-remarks" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '24px 28px', marginBottom: 20, boxShadow: C.shadow }}>
               <SectionTitle icon={<ChatIcon />} text={`Remarks (${(remarks || []).length})`} />
               <div style={{ marginTop: 16, marginBottom: 24 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
@@ -1114,7 +1148,7 @@ export default function ProjectsDetailPage() {
                 )}
               </div>
               {/* NOTES */}
-              <div style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '20px 24px', boxShadow: C.shadow }}>
+              <div id="section-notes" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '20px 24px', boxShadow: C.shadow }}>
                 <SectionTitle icon={<NoteIcon />} text={`Notes (${(notes || []).length})`} />
                 <form onSubmit={addNote} style={{ display: 'flex', gap: 8, marginTop: 16, marginBottom: 16 }}>
                   <input value={noteText} onChange={e => setNoteText(e.target.value)} placeholder="Add a note..."
@@ -1236,7 +1270,7 @@ export default function ProjectsDetailPage() {
 
             {/* FINDING QUERIES */}
             {queries.length > 0 && (
-              <div style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 20, boxShadow: C.shadow }}>
+              <div id="section-queries" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 20, boxShadow: C.shadow }}>
                 <SectionTitle icon={<ChatIcon />} text={`Finding Queries (${queries.length})`} />
                 <div style={{ marginTop: 16 }}>
                   {queries.map(q => (
