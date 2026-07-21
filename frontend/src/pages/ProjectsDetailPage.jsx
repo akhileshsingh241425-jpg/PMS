@@ -1267,6 +1267,7 @@ export default function ProjectsDetailPage() {
         }
         {activeTab === 'tasks' && (
           <TaskTrackerPanel
+            projectId={id}
             project={p}
             phases={phases}
             tasks={tasks}
