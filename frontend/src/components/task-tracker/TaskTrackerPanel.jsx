@@ -106,25 +106,25 @@ export default function TaskTrackerPanel({
       <div style={{
         display: 'flex', alignItems: 'center', gap: 0,
         background: 'linear-gradient(135deg, #F8F6FF 0%, #F0F2F8 100%)',
-        borderBottom: '1px solid #E8E4F4', padding: '14px 24px', flexWrap: 'wrap'
+        borderBottom: '1px solid #E8E4F4', padding: '18px 28px', flexWrap: 'wrap'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 20, flex: '1 1 auto', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 24, flex: '1 1 auto', flexWrap: 'wrap' }}>
           <StatItem value={totalPhases} label="Phases" color={C.primary} sub={totalPhases > 0 ? `${completedPhases}/${totalPhases}` : null} />
-          <div style={{ width: 1, height: 24, background: '#E0DCF0' }} />
+          <div style={{ width: 1, height: 28, background: '#E0DCF0' }} />
           <StatItem value={totalTasks} label="Tasks" color={C.text} sub={openTasks > 0 ? `${openTasks} open` : null} />
-          <div style={{ width: 1, height: 24, background: '#E0DCF0' }} />
+          <div style={{ width: 1, height: 28, background: '#E0DCF0' }} />
           <StatItem value={milestones.length} label="Milestones" color={C.warning} sub={doneMilestones > 0 ? `${doneMilestones} done` : null} />
-          <div style={{ width: 1, height: 24, background: '#E0DCF0' }} />
+          <div style={{ width: 1, height: 28, background: '#E0DCF0' }} />
           <StatItem value={completedTasks} label="Done" color={C.success} sub={pct > 0 ? `${pct}%` : null} />
           {totalTasks > 0 && (
-            <div style={{ flex: 1, minWidth: 120, maxWidth: 200 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: C.muted, marginBottom: 3 }}>
+            <div style={{ flex: 1, minWidth: 140, maxWidth: 220 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: C.muted, marginBottom: 4 }}>
                 <span>Progress</span>
                 <span style={{ fontWeight: 700, color: C.primary }}>{pct}%</span>
               </div>
-              <div style={{ width: '100%', height: 6, borderRadius: 3, background: '#E5E7EB', overflow: 'hidden' }}>
+              <div style={{ width: '100%', height: 8, borderRadius: 4, background: '#E5E7EB', overflow: 'hidden' }}>
                 <div style={{
-                  width: `${pct}%`, height: '100%', borderRadius: 3,
+                  width: `${pct}%`, height: '100%', borderRadius: 4,
                   background: pct === 100 ? 'linear-gradient(90deg, #059669, #34D399)' : 'linear-gradient(90deg, #7C3AED, #A78BFA)',
                   transition: 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
                 }} />
@@ -136,17 +136,17 @@ export default function TaskTrackerPanel({
         {/* PO toggle */}
         {poFields.length > 0 && (
           <div onClick={() => setShowPO(!showPO)} style={{
-            display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer',
-            fontSize: 11, fontWeight: 600, color: C.muted, padding: '4px 8px',
-            borderRadius: 6, transition: 'background 0.15s', whiteSpace: 'nowrap'
+            display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer',
+            fontSize: 13, fontWeight: 600, color: C.muted, padding: '6px 12px',
+            borderRadius: 8, transition: 'background 0.15s', whiteSpace: 'nowrap'
           }}
             onMouseEnter={e => e.currentTarget.style.background = '#F0EBFF'}
             onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
             </svg>
             PO Details
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
               style={{ transform: showPO ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.15s' }}>
               <path d="M6 9l6 6 6-6"/>
             </svg>
@@ -157,13 +157,13 @@ export default function TaskTrackerPanel({
       {/* ═══ Collapsible PO strip ═══ */}
       {showPO && poFields.length > 0 && (
         <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12,
-          padding: '14px 24px', background: '#FAFAFE', borderBottom: '1px solid #E8E4F4', fontSize: 12
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 14,
+          padding: '16px 28px', background: '#FAFAFE', borderBottom: '1px solid #E8E4F4', fontSize: 14
         }}>
           {poFields.map(f => (
             <div key={f.key}>
-              <span style={{ fontSize: 9, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{f.label}</span>
-              <div style={{ fontSize: 13, fontWeight: 600, color: f.green ? C.success : C.text, marginTop: 2 }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{f.label}</span>
+              <div style={{ fontSize: 15, fontWeight: 600, color: f.green ? C.success : C.text, marginTop: 3 }}>
                 {f.fmt ? f.fmt(p[f.key]) : p[f.key]}
               </div>
             </div>
@@ -173,12 +173,12 @@ export default function TaskTrackerPanel({
 
       {/* ═══ View tabs + Add Task button ═══ */}
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 8,
-        padding: '14px 24px', borderBottom: '1px solid #F0F0F5',
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '16px 28px', borderBottom: '1px solid #F0F0F5',
         background: '#fff', flexWrap: 'wrap'
       }}>
         {/* View tabs */}
-        <div style={{ display: 'flex', gap: 2, background: '#F0F2F8', borderRadius: 10, padding: 2 }}>
+        <div style={{ display: 'flex', gap: 3, background: '#F0F2F8', borderRadius: 12, padding: 3 }}>
           {[
             { id: 'grouped', label: 'Group by Phase', icon: 'M4 6h16M4 12h16M4 18h16' },
             { id: 'flat', label: 'Flat List', icon: 'M4 6h16M4 10h16M4 14h16M4 18h16' },
@@ -186,15 +186,15 @@ export default function TaskTrackerPanel({
           ].map(tab => (
             <button key={tab.id} onClick={() => setView(tab.id)}
               style={{
-                display: 'inline-flex', alignItems: 'center', gap: 5,
-                padding: '7px 14px', borderRadius: 8, border: 'none',
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '9px 18px', borderRadius: 10, border: 'none',
                 background: view === tab.id ? C.card : 'transparent',
                 color: view === tab.id ? C.primary : '#6B7280',
-                fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                fontSize: 14, fontWeight: 700, cursor: 'pointer',
                 boxShadow: view === tab.id ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
                 transition: 'all 0.15s'
               }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d={tab.icon}/>
               </svg>
               {tab.label}
@@ -212,12 +212,12 @@ export default function TaskTrackerPanel({
               background: showTaskForm ? '#fff' : 'linear-gradient(135deg, #7C3AED, #5B21B6)',
               cursor: 'pointer',
               color: showTaskForm ? '#6B7280' : '#fff',
-              fontSize: 12, fontWeight: 700, padding: '8px 16px',
-              borderRadius: 8, transition: 'all 0.15s',
-              boxShadow: showTaskForm ? 'none' : '0 2px 6px rgba(91,33,182,0.2)',
-              display: 'inline-flex', alignItems: 'center', gap: 5
+              fontSize: 14, fontWeight: 700, padding: '10px 22px',
+              borderRadius: 10, transition: 'all 0.15s',
+              boxShadow: showTaskForm ? 'none' : '0 3px 8px rgba(91,33,182,0.25)',
+              display: 'inline-flex', alignItems: 'center', gap: 6
             }}>
-            {!showTaskForm && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>}
+            {!showTaskForm && <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>}
             {showTaskForm ? 'Cancel' : '+ Task'}
           </button>
         )}
@@ -230,12 +230,12 @@ export default function TaskTrackerPanel({
               background: mstoneForm ? '#fff' : 'linear-gradient(135deg, #D97706, #B45309)',
               cursor: 'pointer',
               color: mstoneForm ? '#6B7280' : '#fff',
-              fontSize: 12, fontWeight: 700, padding: '8px 16px',
-              borderRadius: 8, transition: 'all 0.15s',
-              boxShadow: mstoneForm ? 'none' : '0 2px 6px rgba(217,119,6,0.25)',
-              display: 'inline-flex', alignItems: 'center', gap: 5
+              fontSize: 14, fontWeight: 700, padding: '10px 22px',
+              borderRadius: 10, transition: 'all 0.15s',
+              boxShadow: mstoneForm ? 'none' : '0 3px 8px rgba(217,119,6,0.25)',
+              display: 'inline-flex', alignItems: 'center', gap: 6
             }}>
-            {!mstoneForm && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>}
+            {!mstoneForm && <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>}
             {mstoneForm ? 'Cancel' : '+ Milestone'}
           </button>
         )}
@@ -244,23 +244,23 @@ export default function TaskTrackerPanel({
       {/* ═══ Add Task form (for grouped/flat views) ═══ */}
       {showTaskForm && view !== 'milestones' && (
         <form onSubmit={onAddTask} style={{
-          display: 'flex', flexDirection: 'column', gap: 12,
-          padding: '18px 24px', background: '#FAFAFE',
+          display: 'flex', flexDirection: 'column', gap: 14,
+          padding: '22px 28px', background: '#FAFAFE',
           borderBottom: '1px solid #F0F0F5'
         }}>
           <input value={taskForm.title} onChange={e => setTaskForm({ ...taskForm, title: e.target.value })} placeholder="Task title..." required
-            style={{ padding: '10px 14px', border: '1.5px solid #E5E7EB', borderRadius: 10, fontSize: 13, outline: 'none', fontFamily: 'inherit', background: '#fff' }}
+            style={{ padding: '12px 16px', border: '1.5px solid #E5E7EB', borderRadius: 12, fontSize: 14, outline: 'none', fontFamily: 'inherit', background: '#fff' }}
             onFocus={e => e.target.style.borderColor = '#7C3AED'}
             onBlur={e => e.target.style.borderColor = '#E5E7EB'} />
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <select value={taskForm.priority} onChange={e => setTaskForm({ ...taskForm, priority: e.target.value })}
-              style={{ flex: 1, padding: '10px 14px', border: '1.5px solid #E5E7EB', borderRadius: 10, fontSize: 13, outline: 'none', fontFamily: 'inherit', background: '#fff', minWidth: 100 }}>
+              style={{ flex: 1, padding: '12px 16px', border: '1.5px solid #E5E7EB', borderRadius: 12, fontSize: 14, outline: 'none', fontFamily: 'inherit', background: '#fff', minWidth: 110 }}>
               <option>Low</option><option>Normal</option><option>High</option><option>Urgent</option>
             </select>
             <input type="date" value={taskForm.due_date} onChange={e => setTaskForm({ ...taskForm, due_date: e.target.value })}
-              style={{ flex: 1, padding: '10px 14px', border: '1.5px solid #E5E7EB', borderRadius: 10, fontSize: 13, outline: 'none', fontFamily: 'inherit', minWidth: 120 }} />
+              style={{ flex: 1, padding: '12px 16px', border: '1.5px solid #E5E7EB', borderRadius: 12, fontSize: 14, outline: 'none', fontFamily: 'inherit', minWidth: 130 }} />
             <select value={taskForm.assigned_to} onChange={e => setTaskForm({ ...taskForm, assigned_to: e.target.value })}
-              style={{ flex: 1, padding: '10px 14px', border: '1.5px solid #E5E7EB', borderRadius: 10, fontSize: 13, outline: 'none', fontFamily: 'inherit', background: '#fff', minWidth: 120 }}>
+              style={{ flex: 1, padding: '12px 16px', border: '1.5px solid #E5E7EB', borderRadius: 12, fontSize: 14, outline: 'none', fontFamily: 'inherit', background: '#fff', minWidth: 130 }}>
               <option value="">Assign to...</option>
               {team.map(t => <option key={t.user_id} value={t.user_id}>{t.user_name}</option>)}
             </select>
@@ -268,14 +268,14 @@ export default function TaskTrackerPanel({
           <button type="submit" disabled={!taskForm.title.trim()}
             style={{
               background: taskForm.title.trim() ? 'linear-gradient(135deg, #7C3AED, #5B21B6)' : '#D1D5DB',
-              color: '#fff', border: 'none', borderRadius: 10,
-              padding: '10px 22px', fontSize: 13, fontWeight: 700,
+              color: '#fff', border: 'none', borderRadius: 12,
+              padding: '12px 28px', fontSize: 14, fontWeight: 700,
               cursor: taskForm.title.trim() ? 'pointer' : 'not-allowed',
               alignSelf: 'flex-start', transition: 'all 0.15s',
-              boxShadow: taskForm.title.trim() ? '0 2px 6px rgba(91,33,182,0.2)' : 'none',
-              display: 'inline-flex', alignItems: 'center', gap: 5
+              boxShadow: taskForm.title.trim() ? '0 3px 8px rgba(91,33,182,0.25)' : 'none',
+              display: 'inline-flex', alignItems: 'center', gap: 6
             }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
             Add Task
           </button>
         </form>
@@ -284,20 +284,20 @@ export default function TaskTrackerPanel({
       {/* ═══ Add Milestone form ═══ */}
       {mstoneForm && view === 'milestones' && (
         <div style={{
-          display: 'flex', gap: 10, padding: '18px 24px',
+          display: 'flex', gap: 12, padding: '20px 28px',
           background: '#FFFBEB', borderBottom: '1px solid #FDE68A', flexWrap: 'wrap', alignItems: 'center'
         }}>
           <input value={mstoneForm.title} onChange={e => setMstoneForm({...mstoneForm, title: e.target.value})} placeholder="Milestone title"
-            style={{ flex: '1 1 220px', padding: '10px 14px', border: '1.5px solid #FDE68A', borderRadius: 10, fontSize: 13, outline: 'none', fontFamily: 'inherit', background: '#fff' }}
+            style={{ flex: '1 1 240px', padding: '12px 16px', border: '1.5px solid #FDE68A', borderRadius: 12, fontSize: 14, outline: 'none', fontFamily: 'inherit', background: '#fff' }}
             onFocus={e => e.target.style.borderColor = '#D97706'}
             onBlur={e => e.target.style.borderColor = '#FDE68A'} />
           <input type="date" value={mstoneForm.due_date} onChange={e => setMstoneForm({...mstoneForm, due_date: e.target.value})}
-            style={{ padding: '10px 14px', border: '1.5px solid #FDE68A', borderRadius: 10, fontSize: 13, outline: 'none', fontFamily: 'inherit', background: '#fff' }} />
+            style={{ padding: '12px 16px', border: '1.5px solid #FDE68A', borderRadius: 12, fontSize: 14, outline: 'none', fontFamily: 'inherit', background: '#fff' }} />
           <button onClick={onAddMilestone} style={{
-            padding: '10px 22px', border: 'none', borderRadius: 10,
+            padding: '12px 28px', border: 'none', borderRadius: 12,
             background: 'linear-gradient(135deg, #D97706, #B45309)', color: '#fff',
-            fontSize: 13, fontWeight: 700, cursor: 'pointer',
-            boxShadow: '0 2px 6px rgba(217,119,6,0.25)'
+            fontSize: 14, fontWeight: 700, cursor: 'pointer',
+            boxShadow: '0 3px 8px rgba(217,119,6,0.25)'
           }}>Add</button>
         </div>
       )}
@@ -305,42 +305,42 @@ export default function TaskTrackerPanel({
       {/* ═══ Search & Filters (for grouped/flat views) ═══ */}
       {view !== 'milestones' && (
         <div style={{
-          display: 'flex', gap: 8, padding: '12px 24px',
+          display: 'flex', gap: 10, padding: '14px 28px',
           borderBottom: '1px solid #F0F0F5', flexWrap: 'wrap', alignItems: 'center',
           background: '#FAFAFE'
         }}>
-          <div style={{ flex: '1 1 160px', position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-              style={{ position: 'absolute', left: 10, pointerEvents: 'none' }}>
+          <div style={{ flex: '1 1 180px', position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              style={{ position: 'absolute', left: 12, pointerEvents: 'none' }}>
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
             </svg>
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search..."
               style={{
-                width: '100%', padding: '7px 10px 7px 30px',
-                border: '1.5px solid #E5E7EB', borderRadius: 8,
-                fontSize: 12, outline: 'none', fontFamily: 'inherit', background: '#fff'
+                width: '100%', padding: '9px 12px 9px 34px',
+                border: '1.5px solid #E5E7EB', borderRadius: 10,
+                fontSize: 13, outline: 'none', fontFamily: 'inherit', background: '#fff'
               }}
               onFocus={e => e.target.style.borderColor = '#7C3AED'}
               onBlur={e => e.target.style.borderColor = '#E5E7EB'} />
           </div>
           <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-            style={{ padding: '7px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 12, outline: 'none', background: '#fff', fontFamily: 'inherit', cursor: 'pointer' }}>
+            style={{ padding: '9px 12px', border: '1.5px solid #E5E7EB', borderRadius: 10, fontSize: 13, outline: 'none', background: '#fff', fontFamily: 'inherit', cursor: 'pointer' }}>
             <option value="">Status</option>
             <option>Open</option><option>In Progress</option><option>Completed</option><option>Pending</option>
           </select>
           <select value={filterPriority} onChange={e => setFilterPriority(e.target.value)}
-            style={{ padding: '7px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 12, outline: 'none', background: '#fff', fontFamily: 'inherit', cursor: 'pointer' }}>
+            style={{ padding: '9px 12px', border: '1.5px solid #E5E7EB', borderRadius: 10, fontSize: 13, outline: 'none', background: '#fff', fontFamily: 'inherit', cursor: 'pointer' }}>
             <option value="">Priority</option>
             <option>Urgent</option><option>High</option><option>Normal</option><option>Low</option>
           </select>
           <select value={sortBy} onChange={e => setSortBy(e.target.value)}
-            style={{ padding: '7px 10px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 12, outline: 'none', background: '#fff', fontFamily: 'inherit', cursor: 'pointer' }}>
+            style={{ padding: '9px 12px', border: '1.5px solid #E5E7EB', borderRadius: 10, fontSize: 13, outline: 'none', background: '#fff', fontFamily: 'inherit', cursor: 'pointer' }}>
             <option value="title">Sort: Title</option>
             <option value="due_date">Sort: Due Date</option>
             <option value="priority">Sort: Priority</option>
           </select>
           {search || filterStatus || filterPriority ? (
-            <span style={{ fontSize: 11, color: C.muted, whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: 12, color: C.muted, whiteSpace: 'nowrap' }}>
               {filteredTasks.length} / {tasks.length}
             </span>
           ) : null}
@@ -348,15 +348,15 @@ export default function TaskTrackerPanel({
       )}
 
       {/* ═══ Content area ═══ */}
-      <div style={{ padding: view === 'milestones' ? '20px 24px' : '8px 24px 20px' }}>
+      <div style={{ padding: view === 'milestones' ? '24px 28px' : '12px 28px 24px' }}>
 
         {/* --- Group by Phase view --- */}
         {view === 'grouped' && (
           phases.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px 0', color: C.muted }}>
-              <div style={{ fontSize: 40, marginBottom: 8 }}>📋</div>
-              <div style={{ fontWeight: 600, color: C.secondary, fontSize: 14 }}>No phases yet</div>
-              <div style={{ marginTop: 4, fontSize: 13 }}>Generate a plan to get started.</div>
+            <div style={{ textAlign: 'center', padding: '48px 0', color: C.muted }}>
+              <div style={{ fontSize: 48, marginBottom: 10 }}>📋</div>
+              <div style={{ fontWeight: 600, color: C.secondary, fontSize: 16 }}>No phases yet</div>
+              <div style={{ marginTop: 6, fontSize: 14 }}>Generate a plan to get started.</div>
             </div>
           ) : (
             phases.map((phase, pi) => (
@@ -374,14 +374,14 @@ export default function TaskTrackerPanel({
         {/* --- Flat List view --- */}
         {view === 'flat' && (
           filteredTasks.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px 0', color: C.muted }}>
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="1.5" style={{ margin: '0 auto 10px', display: 'block' }}>
+            <div style={{ textAlign: 'center', padding: '48px 0', color: C.muted }}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="1.5" style={{ margin: '0 auto 12px', display: 'block' }}>
                 <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/>
               </svg>
-              <div style={{ fontSize: 14, fontWeight: 600, color: C.secondary, marginBottom: 4 }}>
+              <div style={{ fontSize: 16, fontWeight: 600, color: C.secondary, marginBottom: 6 }}>
                 {tasks.length === 0 ? 'No tasks yet' : 'No tasks match filters'}
               </div>
-              <div style={{ fontSize: 13 }}>
+              <div style={{ fontSize: 14 }}>
                 {tasks.length === 0 ? 'Add a task using the button above.' : 'Try adjusting your search or filters.'}
               </div>
             </div>
@@ -480,11 +480,11 @@ export default function TaskTrackerPanel({
 /* ═══ Stat item inline ═══ */
 function StatItem({ value, label, color, sub }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      <span style={{ fontSize: 18, fontWeight: 900, color, lineHeight: 1 }}>{value}</span>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <span style={{ fontSize: 24, fontWeight: 900, color, lineHeight: 1 }}>{value}</span>
       <div>
-        <div style={{ fontSize: 10, fontWeight: 600, color: C.muted, lineHeight: 1.2, letterSpacing: '0.2px' }}>{label}</div>
-        {sub && <div style={{ fontSize: 9, color: C.secondary, lineHeight: 1.2, marginTop: 1 }}>{sub}</div>}
+        <div style={{ fontSize: 12, fontWeight: 600, color: C.muted, lineHeight: 1.2, letterSpacing: '0.2px' }}>{label}</div>
+        {sub && <div style={{ fontSize: 10, color: C.secondary, lineHeight: 1.2, marginTop: 2 }}>{sub}</div>}
       </div>
     </div>
   )
