@@ -31,16 +31,9 @@ const TERMINAL_STAGES = ['Closed', ...BLOCKED_STAGES, ...SUPPORT_STAGES]
 const SECTIONS = [
   { id: 'section-info', label: 'Info', icon: '📋', tab: 'overview' },
   { id: 'section-plan', label: 'Plan & Tasks', icon: '📊', tab: 'overview' },
-  { id: 'section-po-out', label: 'PO Out', icon: '📄', tab: 'overview', condition: (p) => p.direction === 'OUT' },
-  { id: 'section-description', label: 'Description', icon: '📝', tab: 'overview', condition: (p) => !!(p.description || true) },
   { id: 'section-remarks', label: 'Remarks', icon: '💬', tab: 'overview' },
-  { id: 'section-documents', label: 'Documents', icon: '📎', tab: 'overview' },
-  { id: 'section-meetings', label: 'Meetings', icon: '📅', tab: 'overview' },
-  { id: 'section-notes', label: 'Notes', icon: '📌', tab: 'overview' },
-  { id: 'section-vulnerabilities', label: 'Vulnerabilities', icon: '🛡️', tab: 'overview' },
-  { id: 'section-queries', label: 'Queries', icon: '❓', tab: 'overview' },
+  { id: 'section-documents', label: 'Docs & Meetings', icon: '📎', tab: 'overview' },
   { id: 'section-team', label: 'Team', icon: '👥', tab: 'overview' },
-  { id: 'section-tasks', label: 'Tasks', icon: '✓', tab: 'tasks', onClick: (setTab) => setTab('tasks') },
 ]
 
 const STAGE_ICONS = {
