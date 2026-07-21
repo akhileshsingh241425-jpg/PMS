@@ -108,7 +108,7 @@ with app.app_context():
     main_ids = []
     for name, city, contact, industry, status in MAIN_CLIENTS:
         c = Client(
-            name=name, client_code=generate_id(Client, 'ACC'),
+            name=name,             client_code=generate_id(Client, 'ACC', field='client_code'),
             gst_number=f'07{random.choice(["AAAA","AAAB","AAAC"])}{name[:3].upper():3s}1234A1Z{random.randint(1,9)}' if random.random() > 0.3 else '',
             location=city, contact_name=contact, contact_email=contact.lower().replace(' ','.') + '@' + name.lower().replace(' ','')[:10] + '.com',
             contact_phone=f'+91 98{random.randint(100,999)} {random.randint(10000,99999)}',
@@ -128,7 +128,7 @@ with app.app_context():
         if not parent: continue
         for sub_name in subs:
             sc = Client(
-                name=sub_name, client_code=generate_id(Client, 'ACC'),
+                name=sub_name,             client_code=generate_id(Client, 'ACC', field='client_code'),
                 location=parent.location, contact_name=f'{sub_name} Contact',
                 contact_email=sub_name.lower().replace(' ','.')[:15] + '@email.com',
                 contact_phone=f'+91 98{random.randint(100,999)} {random.randint(10000,99999)}',
@@ -159,7 +159,7 @@ with app.app_context():
         stage = random.choice(PROJECT_STAGES)
         days_ago = random.randint(1, 365)
         p = Project(
-            proj_id=generate_id(Project, 'PRJ'),
+            proj_id=generate_id(Project, 'PRJ', field='proj_id'),
             title=f"{random.choice(proj_titles)} — {random.choice(['Q1','Q2','Q3','Q4'])} 2026",
             service_type=svc, stage=stage, client_id=cid,
             created_by=random.choice(emp_ids + [admin.id]),
@@ -181,7 +181,7 @@ with app.app_context():
     for i, company in enumerate(lead_companies):
         assigned = random.choice(emp_ids)
         l = Lead(
-            lead_id=generate_id(Lead, 'LD'),
+            lead_id=generate_id(Lead, 'LD', field='lead_id'),
             company_name=company,
             contact_name=f"{random.choice(['Raj','Anjali','Suresh','Meera','Vivek','Deepa'])} {random.choice(['Malhotra','Kapoor','Joshi','Iyer','Rao','Saxena'])}",
             contact_email=company.lower().replace(' ','')[:12] + '@email.com',
