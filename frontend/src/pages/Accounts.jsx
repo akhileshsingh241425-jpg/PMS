@@ -8,7 +8,7 @@ import { Plus, Search, Building2, DollarSign, ChevronDown, ChevronRight, Users, 
 
 const C = {
   bg: '#F1F5F9', card: '#fff', border: '#E2E8F0',
-  primary: '#6D28D9', primaryLight: '#F5F3FF',
+  primary: '#0052CC', primaryLight: '#DEEBFF',
   text: '#0F172A', muted: '#94A3B8', secondary: '#64748B',
   success: '#10B981', danger: '#EF4444', warning: '#F59E0B',
   shadow: '0 1px 3px 0 rgba(0,0,0,0.06), 0 1px 2px -1px rgba(0,0,0,0.06)',
@@ -66,7 +66,7 @@ export default function Accounts() {
           </div>
           {hasRole('admin', 'project_lead') && (
             <button onClick={() => { setEditAccount(null); setShowForm(true) }}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 22px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#6D28D9,#8B5CF6)', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: '0 3px 8px rgba(109,40,217,0.25)', transition: 'all 0.15s' }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 22px', borderRadius: 10, border: 'none', background: '#0052CC', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: '0 3px 8px rgba(0,82,204,0.25)', transition: 'all 0.15s' }}>
               <Plus className="w-4 h-4" /> New Client
             </button>
           )}
@@ -153,14 +153,14 @@ function ClientNode({ client, isMain, expanded, onToggle, navigate }) {
         onMouseEnter={e => e.currentTarget.style.background = '#FAFAFE'}
         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
         {/* Avatar */}
-        <div style={{ width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(135deg,#6D28D9,#8B5CF6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 800, color: '#fff', flexShrink: 0, boxShadow: '0 2px 6px rgba(109,40,217,0.2)' }}>
+        <div style={{ width: 44, height: 44, borderRadius: 12, background: '#0052CC', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 800, color: '#fff', flexShrink: 0, boxShadow: '0 2px 6px rgba(0,82,204,0.2)' }}>
           {(client.company_name || '?')[0].toUpperCase()}
         </div>
         {/* Details */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', letterSpacing: '-0.2px' }}>{client.company_name}</span>
-            <span style={{ fontSize: 11, fontWeight: 600, color: C.primary, background: C.primaryLight, padding: '2px 10px', borderRadius: 6 }}>{client.acc_id}</span>
+            <span style={{ fontSize: 11, fontWeight: 600, color: '#0052CC', background: '#DEEBFF', padding: '2px 10px', borderRadius: 6 }}>{client.acc_id}</span>
             {client.status !== 'Active' && <span style={{ fontSize: 10, fontWeight: 600, color: '#DC2626', background: '#FEF2F2', padding: '1px 8px', borderRadius: 6 }}>{client.status}</span>}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 4, flexWrap: 'wrap' }}>
@@ -191,7 +191,7 @@ function ClientNode({ client, isMain, expanded, onToggle, navigate }) {
               onMouseEnter={e => e.currentTarget.style.background = '#fff'}
               onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
               <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#D1D5DB', flexShrink: 0 }} />
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: '#E8E4F4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#6D28D9', flexShrink: 0 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: '#DEEBFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#0052CC', flexShrink: 0 }}>
                 {(child.company_name || '?')[0].toUpperCase()}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -290,7 +290,7 @@ function AccountForm({ editData, onClose, onSaved }) {
 
           <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: `1px solid ${C.border}`, paddingTop: 16 }}>
             <button type="button" onClick={onClose} style={{ padding: '9px 20px', borderRadius: 8, border: `1.5px solid ${C.border}`, background: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: C.font }}>Cancel</button>
-            <button type="submit" disabled={saving} style={{ padding: '9px 24px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg,#6D28D9,#8B5CF6)', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.6 : 1, fontFamily: C.font, boxShadow: '0 2px 6px rgba(109,40,217,0.2)' }}>{saving ? 'Saving...' : editData ? 'Update Client' : 'Create Client'}</button>
+            <button type="submit" disabled={saving} style={{ padding: '9px 24px', borderRadius: 8, border: 'none', background: '#0052CC', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.6 : 1, fontFamily: C.font, boxShadow: '0 2px 6px rgba(0,82,204,0.2)' }}>{saving ? 'Saving...' : editData ? 'Update Client' : 'Create Client'}</button>
           </div>
         </form>
       </div>

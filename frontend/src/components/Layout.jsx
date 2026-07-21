@@ -141,7 +141,7 @@ export default function Layout({ children }) {
         }}>
           <div style={{
             width: 32, height: 32, borderRadius: 8,
-            background: 'linear-gradient(135deg,#6D28D9,#8B5CF6)',
+            background: '#0052CC',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: '#fff', fontSize: 14, fontWeight: 900, flexShrink: 0,
           }}>P</div>
@@ -158,8 +158,8 @@ export default function Layout({ children }) {
                 display: 'flex', alignItems: 'center', gap: 10,
                 padding: collapsed ? '10px 10px' : '10px 12px',
                 borderRadius: 8, textDecoration: 'none',
-                background: active ? '#F5F3FF' : 'transparent',
-                color: active ? '#6D28D9' : '#64748B',
+            background: active ? '#DEEBFF' : 'transparent',
+            color: active ? '#0052CC' : '#64748B',
                 fontWeight: active ? 600 : 500,
                 fontSize: 14, position: 'relative',
                 transition: 'all 0.12s',
@@ -168,7 +168,7 @@ export default function Layout({ children }) {
                 onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}>
                 {active && <div style={{
                   position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)',
-                  width: 3, height: 20, borderRadius: '0 3px 3px 0', background: '#6D28D9',
+                  width: 3, height: 20, borderRadius: '0 3px 3px 0', background: '#0052CC',
                 }} />}
                 <Icon className="w-4 h-4 shrink-0" />
                 {!collapsed && <span>{item.label}</span>}
@@ -195,8 +195,8 @@ export default function Layout({ children }) {
         }}>
           <div style={{
             width: 32, height: 32, borderRadius: 8,
-            background: '#F5F3FF', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#6D28D9', fontSize: 13, fontWeight: 800, flexShrink: 0,
+            background: '#DEEBFF', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#0052CC', fontSize: 13, fontWeight: 800, flexShrink: 0,
           }}>{user?.first_name?.[0] || '?'}</div>
           {!collapsed && (
             <>

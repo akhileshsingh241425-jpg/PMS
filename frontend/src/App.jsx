@@ -14,6 +14,7 @@ import InfocusitCRM from './pages/InfocusitCRM'
 import AccountsDetailPage from './pages/AccountsDetailPage'
 import LeadsDetailPage from './pages/LeadsDetailPage'
 import ProjectsDetailPage from './pages/ProjectsDetailPage'
+import Backlog from './pages/Backlog'
 import TeamsPage from './pages/TeamsPage'
 import MyWorkspacePage from './pages/MyWorkspacePage'
 import MeetingDetailPage from './pages/MeetingDetailPage'
@@ -93,6 +94,14 @@ export default function App() {
                 <Route path="accounts/:id" element={<AccountsDetailPage />} />
                 <Route path="projects" element={<Projects />} />
                 <Route path="projects/:id" element={<ProjectsDetailPage />} />
+                <Route path="projects/:id/backlog" element={<Backlog />} />
+                <Route path="projects/:id/board" element={<ProjectsDetailPage />} />
+                <Route path="projects/:id/roadmap" element={<ProjectsDetailPage />} />
+                <Route path="projects/:id/code" element={<ProjectsDetailPage />} />
+                <Route path="projects/:id/on-call" element={<ProjectsDetailPage />} />
+                <Route path="projects/:id/project-pages" element={<ProjectsDetailPage />} />
+                <Route path="projects/:id/team" element={<ProjectsDetailPage />} />
+                <Route path="projects/:id/calendar" element={<ProjectsDetailPage />} />
                 <Route path="teams" element={<TeamsPage />} />
                 <Route path="my-workspace" element={<MyWorkspacePage />} />
                 <Route path="meetings" element={<MeetingDetailPage />} />
