@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { LayoutDashboard, Target, FileText, Building2, Briefcase, Users, LogOut, Bell, Search, ChevronLeft, ChevronRight, UserCircle, AlertTriangle, Clock } from 'lucide-react'
+import { LayoutDashboard, Target, FileText, Building2, Briefcase, Users, LogOut, Bell, Search, ChevronLeft, ChevronRight, UserCircle, AlertTriangle, Clock, Mail } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import api from '../services/api'
 
@@ -9,6 +9,7 @@ const nav = [
   { to: '/my-workspace', icon: UserCircle, label: 'My Workspace' },
   { to: '/leads', icon: FileText, label: 'Leads' },
   { to: '/clients', icon: Building2, label: 'Clients' },
+  { to: '/email', icon: Mail, label: 'Email' },
   { to: '/projects', icon: Briefcase, label: 'Projects' },
   { to: '/teams', icon: Users, label: 'Teams' },
   { to: '/attendance', icon: Clock, label: 'Attendance' },
@@ -86,6 +87,7 @@ const pageTitles = {
   '/my-workspace': 'My Workspace',
   '/leads': 'Leads',
   '/clients': 'Clients',
+  '/email': 'Email Inbox',
   '/projects': 'Projects',
   '/teams': 'Teams',
   '/attendance': 'Attendance',
