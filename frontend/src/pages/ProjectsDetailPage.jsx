@@ -431,12 +431,12 @@ export default function ProjectsDetailPage() {
     <div style={{ background: C.bg, minHeight: '100vh', fontFamily: C.font, color: C.text, fontSize: 14, WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}>
       {/* Pulse animation keyframes */}
       <style>{`@keyframes pulse-dot { 0%,100% { box-shadow:0 0 0 0 rgba(109,40,217,0.4); } 50% { box-shadow:0 0 0 8px rgba(109,40,217,0); } } @keyframes pulse-dot-blocked { 0%,100% { box-shadow:0 0 0 0 rgba(239,68,68,0.4); } 50% { box-shadow:0 0 0 8px rgba(239,68,68,0); } } @keyframes pulse-dot-done { 0%,100% { box-shadow:0 0 0 0 rgba(16,185,129,0.4); } 50% { box-shadow:0 0 0 8px rgba(16,185,129,0); } }`}</style>
-      <div style={{ padding: '0 0 40px', width: '100%', maxWidth: '100%' }}>
+      <div style={{ padding: '0 0 16px', width: '100%', maxWidth: '100%' }}>
         {/* ═══ HEADER CARD ═══ */}
-        <div style={{ background: C.card, borderRadius: C.radius + 2, border: `1px solid ${C.border}`, padding: '28px 32px', marginBottom: 20, boxShadow: C.shadowMd }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24 }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 20, flex: 1 }}>
-              <div style={{ width: 68, height: 68, borderRadius: 18, background: 'linear-gradient(135deg,#6D28D9,#8B5CF6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, fontWeight: 800, color: '#fff', flexShrink: 0, boxShadow: '0 4px 14px rgba(109,40,217,0.3)', border: '2px solid rgba(139,92,246,0.3)' }}>
+        <div style={{ background: C.card, borderRadius: C.radius + 2, border: `1px solid ${C.border}`, padding: '14px 20px', marginBottom: 10, boxShadow: C.shadowMd }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, flex: 1 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(135deg,#6D28D9,#8B5CF6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 800, color: '#fff', flexShrink: 0, boxShadow: '0 4px 14px rgba(109,40,217,0.3)', border: '2px solid rgba(139,92,246,0.3)' }}>
                 {(p.title || 'P')[0].toUpperCase()}
               </div>
               <div style={{ flex: 1 }}>
@@ -451,33 +451,33 @@ export default function ProjectsDetailPage() {
                     </div>
                   ) : (
                     <>
-                      <span style={{ fontSize: 28, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.4px', lineHeight: 1.2 }}>{p.title}</span>
+                      <span style={{ fontSize: 20, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.3px', lineHeight: 1.2 }}>{p.title}</span>
                       {hasRole('super_admin', 'admin', 'project_lead') && (
-                        <button onClick={() => { setTitleVal(p.title); setEditingTitle(true) }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#94A3B8', display: 'flex', borderRadius: 6, transition: 'all 0.15s' }} title="Edit title" onMouseEnter={e => e.target.style.background = '#F1F5F9'} onMouseLeave={e => e.target.style.background = 'transparent'}>
-                          <EditIcon size={14} />
+                        <button onClick={() => { setTitleVal(p.title); setEditingTitle(true) }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: '#94A3B8', display: 'flex', borderRadius: 4, transition: 'all 0.15s' }} title="Edit title" onMouseEnter={e => e.target.style.background = '#F1F5F9'} onMouseLeave={e => e.target.style.background = 'transparent'}>
+                          <EditIcon size={12} />
                         </button>
                       )}
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, border: 'none', color: '#fff', background: isBlocked ? '#EF4444' : isTerminal ? '#10B981' : '#6D28D9', position: 'relative' }}>
-                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'rgba(255,255,255,0.7)', animation: `pulse-dot${isBlocked ? '-blocked' : isTerminal ? '-done' : ''} 2s infinite` }} />
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 16, fontSize: 11, fontWeight: 700, border: 'none', color: '#fff', background: isBlocked ? '#EF4444' : isTerminal ? '#10B981' : '#6D28D9' }}>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(255,255,255,0.7)', animation: `pulse-dot${isBlocked ? '-blocked' : isTerminal ? '-done' : ''} 2s infinite` }} />
                         {p.stage}
                       </span>
                     </>
                   )}
                 </div>
-                <div style={{ fontSize: 13, color: '#94A3B8', marginTop: 4, fontWeight: 500 }}>
-                  {p.account_name && <>Client: {p.account_name}</>}{p.account_name && p.created_at ? ' · ' : ''}{p.created_at && <>Since {new Date(p.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'short' })}</>}
+                <div style={{ fontSize: 12, color: '#94A3B8', marginTop: 2, fontWeight: 500 }}>
+                  {p.account_name && <>{p.account_name}</>}{p.account_name && p.created_at ? ' · ' : ''}{p.created_at && <>{new Date(p.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'short' })}</>}
                 </div>
-                <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
                   <InfoChip icon={<BriefcaseIcon color="#6D28D9" />} value={p.proj_id} />
                   {p.account_name && <InfoChip icon={<BuildingIcon color="#64748B" />} value={p.account_name} />}
                   {p.pm_name && <InfoChip icon={<PersonIcon color="#6D28D9" />} value={p.pm_name} label="PM" />}
-                  <InfoChip icon={<CalendarIcon color="#64748B" />} value={`Start ${formatDate(p.start_date)}`} />
-                  <InfoChip icon={<TargetIcon color="#D97706" />} value={`Target ${formatDate(p.target_date)}`} />
+                  <InfoChip icon={<CalendarIcon color="#64748B" />} value={`S ${formatDate(p.start_date)}`} />
+                  <InfoChip icon={<TargetIcon color="#D97706" />} value={`T ${formatDate(p.target_date)}`} />
                   {p.total_value && <InfoChip icon={<MoneyIcon color="#059669" />} value={`₹${(p.total_value / 100000).toFixed(1)}L`} highlight />}
                 </div>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 10, flexShrink: 0, paddingTop: 4 }}>
+            <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
               {hasRole('super_admin', 'admin', 'project_lead') && (
                 <ActionBtn icon={<EditIcon />} label="Edit" onClick={() => setShowEditForm(true)} primary />
               )}
@@ -486,7 +486,7 @@ export default function ProjectsDetailPage() {
         </div>
 
         {/* ═══ KPI CARDS ═══ */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 14, marginBottom: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8, marginBottom: 10 }}>
           <KPICard icon={<MoneyIcon />} accent="#10B981" label="Total Value" value={p.total_value ? `₹${(p.total_value / 100000).toFixed(1)}L` : '—'} progress={p.total_value ? 1 : 0} />
           <KPICard icon={<CheckCircleIcon color={C.primary} />} accent={C.primary} label="Open Tasks" value={`${openTasks}/${tasks.length}`} onClick={() => setActiveTab('tasks')} progress={tasks.length > 0 ? completedTasks / tasks.length : 0} />
           <KPICard icon={<UsersIcon />} accent="#4F46E5" label="Team" value={(team || []).length} onClick={() => document.getElementById('section-team')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} progress={0} />
@@ -496,11 +496,11 @@ export default function ProjectsDetailPage() {
         </div>
 
         {/* ═══ STAGE TIMELINE ═══ */}
-        <div style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 20, boxShadow: C.shadow }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '10px 16px', marginBottom: 10, boxShadow: C.shadow }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <TagIcon />
-              <span style={{ fontSize: 13, fontWeight: 600, color: '#64748B' }}>Project Lifecycle</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#64748B' }}>Project Lifecycle</span>
             </div>
             {hasRole('super_admin', 'admin', 'project_lead') && !isTerminal && (
               <select value={p.stage} onChange={e => changeStage(e.target.value)}
@@ -509,9 +509,9 @@ export default function ProjectsDetailPage() {
               </select>
             )}
           </div>
-          <div style={{ position: 'relative', padding: '8px 0', minHeight: 72 }}>
-            <div style={{ position: 'absolute', top: 26, left: 0, right: 0, height: 3, background: '#E2E8F0', zIndex: 0, borderRadius: 2 }} />
-            <div style={{ position: 'absolute', top: 26, left: 0, height: 3, background: 'linear-gradient(90deg,#6D28D9,#8B5CF6)', zIndex: 1, transition: 'width 0.4s ease', borderRadius: 2, width: `${Math.min((DELIVERY_STAGES.indexOf(p.stage) + 1) / DELIVERY_STAGES.length * 100, 100)}%` }} />
+          <div style={{ position: 'relative', padding: '6px 0', minHeight: 48 }}>
+            <div style={{ position: 'absolute', top: 16, left: 0, right: 0, height: 2, background: '#E2E8F0', zIndex: 0, borderRadius: 2 }} />
+            <div style={{ position: 'absolute', top: 16, left: 0, height: 2, background: 'linear-gradient(90deg,#6D28D9,#8B5CF6)', zIndex: 1, transition: 'width 0.4s ease', borderRadius: 2, width: `${Math.min((DELIVERY_STAGES.indexOf(p.stage) + 1) / DELIVERY_STAGES.length * 100, 100)}%` }} />
             <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative', zIndex: 2 }}>
               {DELIVERY_STAGES.map((s, i) => {
                 const idx = DELIVERY_STAGES.indexOf(p.stage);
@@ -519,29 +519,23 @@ export default function ProjectsDetailPage() {
                 const isCurrent = i === idx;
                 const isFuture = i > idx;
                 const isBlockedStage = BLOCKED_STAGES.includes(p.stage);
-                const dotSize = isCurrent ? 18 : 14;
+                const dotSize = isCurrent ? 14 : 10;
                 return (
-                  <div key={s} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, cursor: 'pointer', flex: 1, padding: '0 2px' }} onClick={() => { if (!isTerminal) changeStage(s) }}>
-                    {/* Dot */}
+                  <div key={s} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer', flex: 1, padding: '0 1px' }} onClick={() => { if (!isTerminal) changeStage(s) }}>
                     <div style={{
                       width: dotSize, height: dotSize, borderRadius: '50%', position: 'relative',
                       background: isPast || isCurrent ? '#6D28D9' : '#E2E8F0',
                       transition: 'all 0.3s ease',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
-                      {/* Completed checkmark */}
                       {isPast && (
-                        <svg width="8" height="8" fill="none" stroke="#fff" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
+                        <svg width="6" height="6" fill="none" stroke="#fff" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
                       )}
-                      {/* Glowing halo for current */}
-                      {isCurrent && <div style={{ position: 'absolute', inset: -6, borderRadius: '50%', border: '2px solid rgba(109,40,217,0.25)', animation: 'pulse-dot 2s infinite' }} />}
+                      {isCurrent && <div style={{ position: 'absolute', inset: -4, borderRadius: '50%', border: '2px solid rgba(109,40,217,0.25)', animation: 'pulse-dot 2s infinite' }} />}
                     </div>
-                    {/* Dashed connector for future */}
-                    {isFuture && <div style={{ position: 'absolute', bottom: 30, left: '50%', transform: 'translateX(-50%)', width: 14, height: 14, borderRadius: '50%', border: '2px dashed #D1D5DB', background: 'transparent', pointerEvents: 'none' }} />}
-                    {/* Label */}
                     <span style={{
-                      fontSize: 10, fontWeight: isCurrent ? 700 : isPast ? 600 : 400, color: isCurrent ? '#6D28D9' : isPast ? '#334155' : '#CBD5E1',
-                      textAlign: 'center', lineHeight: 1.2, maxWidth: 90, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                      fontSize: 9, fontWeight: isCurrent ? 700 : isPast ? 600 : 400, color: isCurrent ? '#6D28D9' : isPast ? '#334155' : '#CBD5E1',
+                      textAlign: 'center', lineHeight: 1.1, maxWidth: 80, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                       transition: 'all 0.2s',
                     }}>{s}</span>
                   </div>
@@ -552,31 +546,28 @@ export default function ProjectsDetailPage() {
         </div>
 
         {/* ═══ PROJECT INFO (TWO-COLUMN GRID) ═══ */}
-        <div id="section-info" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 20, boxShadow: C.shadow }}>
+        <div id="section-info" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '10px 16px', marginBottom: 10, boxShadow: C.shadow }}>
           <SectionTitle icon={<BriefcaseIcon />} text="Project Information" />
-          {/* Timeline group */}
-          <div style={{ marginTop: 16, marginBottom: 12 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 8 }}>Timeline</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+          <div style={{ marginTop: 10, marginBottom: 8 }}>
+            <div style={{ fontSize: 10, fontWeight: 600, color: '#94A3B8', letterSpacing: '0.4px', textTransform: 'uppercase', marginBottom: 5 }}>Timeline</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
               <InfoField icon={<CalendarIcon />} label="Start Date" value={formatDate(p.start_date)} empty={!p.start_date} />
               <InfoField icon={<TargetIcon />} label="Target Date" value={formatDate(p.target_date)} empty={!p.target_date} highlight={!!p.target_date} />
               <InfoField icon={<CalendarIcon />} label="End Date" value={formatDate(p.actual_end_date)} empty={!p.actual_end_date} />
             </div>
           </div>
-          {/* Ownership & Value group */}
-          <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 8 }}>Ownership &amp; Value</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+          <div style={{ marginBottom: 8 }}>
+            <div style={{ fontSize: 10, fontWeight: 600, color: '#94A3B8', letterSpacing: '0.4px', textTransform: 'uppercase', marginBottom: 5 }}>Ownership &amp; Value</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
               <InfoField icon={<BuildingIcon />} label="Account" value={p.account_name} empty={!p.account_name} />
               <InfoField icon={<PersonIcon />} label="Project Manager" value={p.pm_name} empty={!p.pm_name} />
               <InfoField icon={<TagIcon />} label="Service" value={p.service_type} empty={!p.service_type} />
               <InfoField icon={<MoneyIcon />} label="Total Value" value={p.total_value ? `₹${p.total_value.toLocaleString()}` : null} empty={!p.total_value} highlight />
             </div>
           </div>
-          {/* Status group */}
           <div>
-            <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 8 }}>Status</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+            <div style={{ fontSize: 10, fontWeight: 600, color: '#94A3B8', letterSpacing: '0.4px', textTransform: 'uppercase', marginBottom: 5 }}>Status</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
               <InfoField icon={<ShieldIcon />} label="Stage Group" value={getStageGroup(p.stage)} badge />
               <InfoField icon={<CheckCircleIcon />} label="Client Review" value={p.is_client_review_enabled ? 'Enabled' : 'Off'} />
               <InfoField icon={<UsersIcon />} label="Team Size" value={p.team_count || '0'} />
@@ -587,42 +578,42 @@ export default function ProjectsDetailPage() {
 
         {/* ═══ STAGE STATUS BANNER ═══ */}
         {isBlocked && (
-          <div style={{ background: 'linear-gradient(135deg,#FEF2F2,#FEE2E2)', borderRadius: C.radius, border: '1.5px solid #FECACA', padding: '14px 24px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 28, height: 28, borderRadius: 8, background: '#DC2626', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 13, fontWeight: 700, flexShrink: 0 }}>!</div>
-            <span style={{ fontSize: 14, fontWeight: 600, color: '#991B1B' }}>Blocked — Project is in <strong>{p.stage}</strong> status</span>
+          <div style={{ background: 'linear-gradient(135deg,#FEF2F2,#FEE2E2)', borderRadius: C.radius, border: '1.5px solid #FECACA', padding: '8px 16px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ width: 22, height: 22, borderRadius: 6, background: '#DC2626', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>!</div>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#991B1B' }}>Blocked — <strong>{p.stage}</strong></span>
           </div>
         )}
         {isTerminal && !isBlocked && (
-          <div style={{ background: 'linear-gradient(135deg,#ECFDF5,#D1FAE5)', borderRadius: C.radius, border: '1.5px solid #A7F3D0', padding: '14px 24px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 28, height: 28, borderRadius: 8, background: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><CheckIcon size={14} color="#fff" /></div>
-            <span style={{ fontSize: 14, fontWeight: 600, color: '#065F46' }}>{p.stage === 'Closed' ? 'Closed' : 'Cancelled'}</span>
+          <div style={{ background: 'linear-gradient(135deg,#ECFDF5,#D1FAE5)', borderRadius: C.radius, border: '1.5px solid #A7F3D0', padding: '8px 16px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ width: 22, height: 22, borderRadius: 6, background: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><CheckIcon size={12} color="#fff" /></div>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#065F46' }}>{p.stage === 'Closed' ? 'Closed' : 'Cancelled'}</span>
           </div>
         )}
 
         {/* ═══ PLAN & TASKS (COMPACT) ═══ */}
-        <div id="section-plan" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 20, boxShadow: C.shadow }}>
+        <div id="section-plan" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '10px 16px', marginBottom: 10, boxShadow: C.shadow }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <SectionTitle icon={<FileTextIcon />} text="Plan & Tasks" />
-            <button onClick={() => setActiveTab('tasks')} style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: C.primary, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-              View Full Plan
+            <button onClick={() => setActiveTab('tasks')} style={{ padding: '5px 14px', borderRadius: 6, border: 'none', background: C.primary, color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+              Full Plan
             </button>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: p.po_amount ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)', gap: 12, marginTop: 16 }}>
-            <div style={{ background: '#F8FAFC', borderRadius: 10, padding: '14px 16px', border: '1px solid #F1F5F9' }}>
-              <div style={{ fontSize: 11, fontWeight: 500, color: '#94A3B8', letterSpacing: '0.3px', textTransform: 'uppercase' }}>Phases</div>
-              <div style={{ fontSize: 28, fontWeight: 700, color: '#0F172A', marginTop: 4, letterSpacing: '-0.5px' }}>{phases.length}</div>
+          <div style={{ display: 'grid', gridTemplateColumns: p.po_amount ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)', gap: 8, marginTop: 10 }}>
+            <div style={{ background: '#F8FAFC', borderRadius: 8, padding: '8px 12px', border: '1px solid #F1F5F9' }}>
+              <div style={{ fontSize: 10, fontWeight: 500, color: '#94A3B8', letterSpacing: '0.3px', textTransform: 'uppercase' }}>Phases</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', marginTop: 2, letterSpacing: '-0.3px' }}>{phases.length}</div>
             </div>
-            <div style={{ background: '#F8FAFC', borderRadius: 10, padding: '14px 16px', border: '1px solid #F1F5F9' }}>
-              <div style={{ fontSize: 11, fontWeight: 500, color: '#94A3B8', letterSpacing: '0.3px', textTransform: 'uppercase' }}>Tasks</div>
-              <div style={{ fontSize: 28, fontWeight: 700, color: '#0F172A', marginTop: 4, letterSpacing: '-0.5px' }}>{tasks.length}</div>
+            <div style={{ background: '#F8FAFC', borderRadius: 8, padding: '8px 12px', border: '1px solid #F1F5F9' }}>
+              <div style={{ fontSize: 10, fontWeight: 500, color: '#94A3B8', letterSpacing: '0.3px', textTransform: 'uppercase' }}>Tasks</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', marginTop: 2, letterSpacing: '-0.3px' }}>{tasks.length}</div>
             </div>
-            <div style={{ background: '#F8FAFC', borderRadius: 10, padding: '14px 16px', border: '1px solid #F1F5F9' }}>
-              <div style={{ fontSize: 11, fontWeight: 500, color: '#94A3B8', letterSpacing: '0.3px', textTransform: 'uppercase' }}>Milestones</div>
-              <div style={{ fontSize: 28, fontWeight: 700, color: '#0F172A', marginTop: 4, letterSpacing: '-0.5px' }}>{milestones.length}</div>
+            <div style={{ background: '#F8FAFC', borderRadius: 8, padding: '8px 12px', border: '1px solid #F1F5F9' }}>
+              <div style={{ fontSize: 10, fontWeight: 500, color: '#94A3B8', letterSpacing: '0.3px', textTransform: 'uppercase' }}>Milestones</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', marginTop: 2, letterSpacing: '-0.3px' }}>{milestones.length}</div>
             </div>
-            {p.po_amount && <div style={{ background: '#F8FAFC', borderRadius: 10, padding: '14px 16px', border: '1px solid #F1F5F9' }}>
-              <div style={{ fontSize: 11, fontWeight: 500, color: '#94A3B8', letterSpacing: '0.3px', textTransform: 'uppercase' }}>PO Amount</div>
-              <div style={{ fontSize: 28, fontWeight: 700, color: '#0F172A', marginTop: 4, letterSpacing: '-0.5px' }}>₹{(p.po_amount || 0).toLocaleString()}</div>
+            {p.po_amount && <div style={{ background: '#F8FAFC', borderRadius: 8, padding: '8px 12px', border: '1px solid #F1F5F9' }}>
+              <div style={{ fontSize: 10, fontWeight: 500, color: '#94A3B8', letterSpacing: '0.3px', textTransform: 'uppercase' }}>PO Amount</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', marginTop: 2, letterSpacing: '-0.3px' }}>₹{(p.po_amount || 0).toLocaleString()}</div>
             </div>}
           </div>
           {!p.plan_generated && p.project_type && (
@@ -820,17 +811,17 @@ export default function ProjectsDetailPage() {
         )}
 
         {/* ═══ TAB NAVIGATION ═══ */}
-        <div style={{ display: 'flex', gap: 4, background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '4px', marginBottom: 8, boxShadow: C.shadow }}>
+        <div style={{ display: 'flex', gap: 3, background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '3px', marginBottom: 6, boxShadow: C.shadow }}>
           {[
             { key: 'overview', label: 'Overview', icon: '▶' },
             { key: 'tasks', label: 'Tasks', icon: '✓' },
           ].map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)}
               style={{
-                flex: 1, padding: '10px 16px', border: 'none', borderRadius: 8, cursor: 'pointer',
+                flex: 1, padding: '6px 12px', border: 'none', borderRadius: 6, cursor: 'pointer',
                 background: activeTab === tab.key ? C.primary : 'transparent',
                 color: activeTab === tab.key ? '#fff' : '#64748B',
-                fontSize: 13, fontWeight: 600, transition: 'all 0.15s', fontFamily: C.font,
+                fontSize: 12, fontWeight: 600, transition: 'all 0.15s', fontFamily: C.font,
               }}>{tab.icon} {tab.label}</button>
           ))}
         </div>
@@ -858,8 +849,8 @@ export default function ProjectsDetailPage() {
         {activeTab === 'overview' && <div>
           {/* DESCRIPTION */}
           {(p.description || editingDesc || hasRole('super_admin', 'admin', 'project_lead')) && (
-            <div id="section-description" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 20, boxShadow: C.shadow }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+            <div id="section-description" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '10px 16px', marginBottom: 10, boxShadow: C.shadow }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <SectionTitle icon={<FileIcon />} text="Description" />
                 {!editingDesc && p.description && hasRole('super_admin', 'admin', 'project_lead') && (
                   <button onClick={() => { setDescVal(p.description); setEditingDesc(true) }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: '#94A3B8', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, borderRadius: 6, padding: '4px 8px' }}
@@ -884,16 +875,16 @@ export default function ProjectsDetailPage() {
           )}
 
             {/* REMARKS */}
-            <div id="section-remarks" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '24px 28px', marginBottom: 20, boxShadow: C.shadow }}>
+            <div id="section-remarks" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '10px 16px', marginBottom: 10, boxShadow: C.shadow }}>
               <SectionTitle icon={<ChatIcon />} text={`Remarks (${(remarks || []).length})`} />
-              <div style={{ marginTop: 16, marginBottom: 24 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: 8, background: C.primaryLight, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ marginTop: 10, marginBottom: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                  <div style={{ width: 22, height: 22, borderRadius: 6, background: C.primaryLight, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <ChatIcon />
                   </div>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: '#0F172A' }}>Add a remark</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: '#0F172A' }}>Add a remark</span>
                 </div>
-                <textarea ref={remarkInputRef} rows={3} value={remarkText} onChange={e => { if (e.target.value.length <= 1000) setRemarkText(e.target.value) }}
+                <textarea ref={remarkInputRef} rows={2} value={remarkText} onChange={e => { if (e.target.value.length <= 1000) setRemarkText(e.target.value) }}
                   style={{
                     width: '100%', padding: '12px 16px', border: `1.5px solid ${remarkText.trim() ? C.primary : C.border}`, borderRadius: 10,
                     fontSize: 14, outline: 'none', fontFamily: C.font, resize: 'vertical',
@@ -976,22 +967,22 @@ export default function ProjectsDetailPage() {
             </div>
 
             {/* DOCUMENTS */}
-            <div id="section-documents" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 20, boxShadow: C.shadow }}>
+            <div id="section-documents" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '10px 16px', marginBottom: 10, boxShadow: C.shadow }}>
               <SectionTitle icon={<PaperclipIcon />} text={`Documents & Reports (${totalDocs + reports.length})`} />
-              <div style={{ display: 'flex', gap: 10, marginTop: 16, marginBottom: 16, alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: 8, marginTop: 10, marginBottom: 10, alignItems: 'center' }}>
                 <select value={uploadCategory} onChange={e => setUploadCategory(e.target.value)}
-                  style={{ padding: '8px 14px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 12, fontWeight: 500, outline: 'none', background: C.card, fontFamily: C.font }}>
-                  <option value="document">General Document</option>
-                  <option value="working">Working Report</option>
-                  <option value="final">Final Report</option>
+                  style={{ padding: '5px 10px', border: `1.5px solid ${C.border}`, borderRadius: 6, fontSize: 11, fontWeight: 500, outline: 'none', background: C.card, fontFamily: C.font }}>
+                  <option value="document">General</option>
+                  <option value="working">Working</option>
+                  <option value="final">Final</option>
                 </select>
                 <input ref={fileRef} type="file" onChange={e => { if (!e.target.files?.[0]) return; if (uploadCategory === 'document') { setUploading(true); const fd = new FormData(); fd.append('file', e.target.files[0]); api.post(`/api/projects/${id}/documents`, fd).then(fetchData).catch(() => toast('Upload failed', 'error')).finally(() => { setUploading(false); e.target.value = '' }) } else { uploadReport(e, uploadCategory) } }} style={{ display: 'none' }} />
                 <button onClick={() => fileRef.current?.click()} disabled={uploading || reportUploading}
-                  style={{ padding: '8px 18px', border: 'none', borderRadius: 8, background: C.primary, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, opacity: uploading || reportUploading ? 0.5 : 1 }}>
+                  style={{ padding: '5px 14px', border: 'none', borderRadius: 6, background: C.primary, color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, opacity: uploading || reportUploading ? 0.5 : 1 }}>
                   <UploadIcon /> {uploading || reportUploading ? 'Uploading...' : 'Upload'}
                 </button>
               </div>
-              {(uploading || reportUploading) && <div style={{ fontSize: 12, color: C.primary, marginBottom: 10 }}>Uploading...</div>}
+              {(uploading || reportUploading) && <div style={{ fontSize: 11, color: C.primary, marginBottom: 6 }}>Uploading...</div>}
 
               {(!documents || documents.length === 0) && reports.length === 0 ? (
                 <EmptyState icon={<PaperclipIcon />} title="No documents or reports uploaded." />
@@ -1048,12 +1039,12 @@ export default function ProjectsDetailPage() {
             </div>
 
             {/* ═══ MEETINGS + NOTES ═══ */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20, alignItems: 'start' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10, alignItems: 'start' }}>
               {/* MEETINGS */}
-              <div id="section-meetings" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '20px 24px', boxShadow: C.shadow }}>
+              <div id="section-meetings" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '10px 16px', boxShadow: C.shadow }}>
                 <SectionTitle icon={<CalendarIcon />} text={`Meetings (${totalMeetings})`} />
-                <div style={{ marginTop: 16, marginBottom: 12 }}>
-                  <button onClick={() => setShowMeetingForm(!showMeetingForm)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: C.primary, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                <div style={{ marginTop: 10, marginBottom: 8 }}>
+                  <button onClick={() => setShowMeetingForm(!showMeetingForm)} style={{ display: 'flex', alignItems: 'center', gap: 4, background: C.primary, color: '#fff', border: 'none', borderRadius: 6, padding: '5px 14px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
                     <PlusIcon /> Add Meeting
                   </button>
                 </div>
@@ -1141,9 +1132,9 @@ export default function ProjectsDetailPage() {
                 )}
               </div>
               {/* NOTES */}
-              <div id="section-notes" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '20px 24px', boxShadow: C.shadow }}>
+              <div id="section-notes" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '10px 16px', boxShadow: C.shadow }}>
                 <SectionTitle icon={<NoteIcon />} text={`Notes (${(notes || []).length})`} />
-                <form onSubmit={addNote} style={{ display: 'flex', gap: 8, marginTop: 16, marginBottom: 16 }}>
+                <form onSubmit={addNote} style={{ display: 'flex', gap: 6, marginTop: 10, marginBottom: 10 }}>
                   <input value={noteText} onChange={e => setNoteText(e.target.value)} placeholder="Add a note..."
                     onKeyDown={e => { if ((e.key === 'Enter' && !e.shiftKey) || (e.key === 'Enter' && e.ctrlKey)) { e.preventDefault(); addNote(e) } }}
                     style={{ flex: 1, padding: '10px 14px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: C.font, background: '#FAFAFA' }} />
@@ -1165,14 +1156,13 @@ export default function ProjectsDetailPage() {
             </div>
 
             {/* ═══ VULNERABILITIES ═══ */}
-            <div id="section-vulnerabilities" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 20, boxShadow: C.shadow }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                <SectionTitle icon={<ShieldExclamationIcon size={16} />} text={`Vulnerabilities (${vulnerabilities.length})`} />
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  {vulnOverdueCount > 0 && <span style={{ fontSize: 11, fontWeight: 600, color: '#EF4444', background: '#FEE2E2', padding: '3px 10px', borderRadius: 6 }}>{vulnOverdueCount} overdue</span>}
-                  <a href="/vulnerabilities" style={{ fontSize: 11, color: C.primary, fontWeight: 600, textDecoration: 'none' }}>View in Vulnerability Dashboard →</a>
-                  <button onClick={() => setShowVulnForm(!showVulnForm)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: C.primary, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-                    <PlusIcon /> Add Vulnerability
+            <div id="section-vulnerabilities" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '10px 16px', marginBottom: 10, boxShadow: C.shadow }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <SectionTitle icon={<ShieldExclamationIcon size={14} />} text={`Vulnerabilities (${vulnerabilities.length})`} />
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  {vulnOverdueCount > 0 && <span style={{ fontSize: 10, fontWeight: 600, color: '#EF4444', background: '#FEE2E2', padding: '2px 8px', borderRadius: 4 }}>{vulnOverdueCount} overdue</span>}
+                  <button onClick={() => setShowVulnForm(!showVulnForm)} style={{ display: 'flex', alignItems: 'center', gap: 4, background: C.primary, color: '#fff', border: 'none', borderRadius: 6, padding: '5px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                    <PlusIcon /> Add
                   </button>
                 </div>
               </div>
@@ -1709,19 +1699,17 @@ function DocStatusBadge({ status }) {
 
 function KPICard({ icon, accent, label, value, onClick, progress }) {
   return (
-    <div onClick={onClick} style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '16px 18px 0', cursor: onClick ? 'pointer' : 'default', transition: 'all 0.2s ease', boxShadow: C.shadow, overflow: 'hidden', position: 'relative', transform: 'translateY(0)' }}
-      onMouseEnter={e => { e.currentTarget.style.boxShadow = C.shadowMd; e.currentTarget.style.borderColor = '#C4B5FD'; e.currentTarget.style.transform = 'translateY(-2px)' }}
+    <div onClick={onClick} style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '10px 12px 0', cursor: onClick ? 'pointer' : 'default', transition: 'all 0.2s ease', boxShadow: C.shadow, overflow: 'hidden', position: 'relative', transform: 'translateY(0)' }}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = C.shadowMd; e.currentTarget.style.borderColor = '#C4B5FD'; e.currentTarget.style.transform = 'translateY(-1px)' }}
       onMouseLeave={e => { e.currentTarget.style.boxShadow = C.shadow; e.currentTarget.style.borderColor = C.border; e.currentTarget.style.transform = 'translateY(0)' }}>
-      {/* Bottom accent line */}
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, background: accent, borderRadius: '0 0 10px 10px' }} />
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, paddingBottom: 14 }}>
-        <div style={{ width: 44, height: 44, borderRadius: 12, background: `${accent}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 16, color: accent }}>{icon}</div>
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, background: accent, borderRadius: '0 0 10px 10px' }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingBottom: 10 }}>
+        <div style={{ width: 32, height: 32, borderRadius: 8, background: `${accent}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 14, color: accent }}>{icon}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 22, fontWeight: 700, color: accent, letterSpacing: '-0.4px', lineHeight: 1.1 }}>{value}</div>
-          <div style={{ fontSize: 11, fontWeight: 500, color: '#94A3B8', marginTop: 3 }}>{label}</div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: accent, letterSpacing: '-0.3px', lineHeight: 1.1 }}>{value}</div>
+          <div style={{ fontSize: 10, fontWeight: 500, color: '#94A3B8', marginTop: 1 }}>{label}</div>
         </div>
       </div>
-      {/* Micro progress bar */}
       {progress > 0 && (
         <div style={{ height: 2, background: '#F1F5F9' }}>
           <div style={{ width: `${Math.min(progress * 100, 100)}%`, height: '100%', background: accent, transition: 'width 0.4s ease', borderRadius: '0 1px 1px 0' }} />
@@ -1732,22 +1720,22 @@ function KPICard({ icon, accent, label, value, onClick, progress }) {
 }
 
 function SectionTitle({ icon, text }) {
-  return <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, fontWeight: 700, color: '#0F172A', letterSpacing: '-0.2px' }}>{icon}{text}</div>
+  return <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: '#0F172A' }}>{icon}{text}</div>
 }
 
 function InfoField({ icon, label, value, empty, badge, highlight }) {
   const displayValue = value ?? (empty ? null : value)
   return (
-    <div style={{ borderRadius: 10, padding: '10px 12px', border: '1px solid #F1F5F9', background: '#FAFBFC', borderLeft: highlight ? '3px solid #6D28D9' : '1px solid #F1F5F9', paddingLeft: highlight ? 10 : 12 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 600, color: '#94A3B8', letterSpacing: '0.4px', textTransform: 'uppercase', marginBottom: 3 }}>
+    <div style={{ borderRadius: 6, padding: '6px 8px', border: '1px solid #F1F5F9', background: '#FAFBFC', borderLeft: highlight ? '3px solid #6D28D9' : '1px solid #F1F5F9', paddingLeft: highlight ? 6 : 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 9, fontWeight: 600, color: '#94A3B8', letterSpacing: '0.3px', textTransform: 'uppercase', marginBottom: 2 }}>
         <span style={{ color: '#64748B' }}>{icon}</span> {label}
       </div>
       {badge ? (
-        <span style={{ color: C.primary, background: '#F0EBFF', display: 'inline-block', padding: '2px 10px', borderRadius: 6, fontSize: 12, fontWeight: 600 }}>{value}</span>
+        <span style={{ color: C.primary, background: '#F0EBFF', display: 'inline-block', padding: '1px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }}>{value}</span>
       ) : empty ? (
-        <div style={{ fontSize: 13, fontWeight: 500, color: '#CBD5E1', fontStyle: 'italic', lineHeight: 1.3 }}>Not set</div>
+        <div style={{ fontSize: 12, fontWeight: 500, color: '#CBD5E1', fontStyle: 'italic', lineHeight: 1.2 }}>Not set</div>
       ) : (
-        <div style={{ fontSize: 14, fontWeight: highlight ? 700 : 600, color: highlight ? '#6D28D9' : '#0F172A', lineHeight: 1.3 }}>{value}</div>
+        <div style={{ fontSize: 12, fontWeight: highlight ? 700 : 600, color: highlight ? '#6D28D9' : '#0F172A', lineHeight: 1.2 }}>{value}</div>
       )}
     </div>
   )
@@ -1755,7 +1743,7 @@ function InfoField({ icon, label, value, empty, badge, highlight }) {
 
 function InfoChip({ icon, value, label, highlight }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 8, background: highlight ? '#F5F3FF' : '#F1F5F9', fontSize: 12, fontWeight: 500, color: highlight ? C.primary : '#475569' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 6, background: highlight ? '#F5F3FF' : '#F1F5F9', fontSize: 11, fontWeight: 500, color: highlight ? C.primary : '#475569' }}>
       {icon}
       {label && <span style={{ color: '#94A3B8', fontWeight: 500 }}>{label}:</span>}
       <span>{value || '—'}</span>
@@ -1771,7 +1759,7 @@ function ActionBtn({ icon, label, onClick, primary, success, danger }) {
   const bg = success ? '#059669' : danger ? '#DC2626' : primary ? C.primary : '#F1F5F9'
   const color = primary || success || danger ? '#fff' : '#475569'
   return (
-    <button onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 8, border: 'none', background: bg, color, fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap', boxShadow: primary || success || danger ? '0 1px 3px rgba(0,0,0,0.15)' : 'none' }}>
+    <button onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px', borderRadius: 6, border: 'none', background: bg, color, fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap', boxShadow: primary || success || danger ? '0 1px 3px rgba(0,0,0,0.15)' : 'none' }}>
       {icon} {label}
     </button>
   )
@@ -1779,10 +1767,10 @@ function ActionBtn({ icon, label, onClick, primary, success, danger }) {
 
 function EmptyState({ icon, title, sub }) {
   return (
-    <div style={{ textAlign: 'center', padding: '28px 10px', color: '#94A3B8' }}>
-      <div style={{ margin: '0 auto 10px', opacity: 0.25, fontSize: 20 }}>{icon}</div>
-      <div style={{ fontSize: 14, fontWeight: 600, color: '#64748B' }}>{title}</div>
-      {sub && <div style={{ fontSize: 12, color: '#94A3B8', marginTop: 3 }}>{sub}</div>}
+    <div style={{ textAlign: 'center', padding: '14px 10px', color: '#94A3B8' }}>
+      <div style={{ margin: '0 auto 6px', opacity: 0.2, fontSize: 16 }}>{icon}</div>
+      <div style={{ fontSize: 12, fontWeight: 600, color: '#64748B' }}>{title}</div>
+      {sub && <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>{sub}</div>}
     </div>
   )
 }
