@@ -202,7 +202,7 @@ export default function Clients() {
                 background: '#F8FAFC',
               }}>
                 <div style={{ flex: '1 1 0', ...columnHeader }}>Client</div>
-                <div style={{ width: 100, textAlign: 'center', ...columnHeader }}>Contact</div>
+                <div style={{ width: 110, textAlign: 'center', ...columnHeader }}>Contact</div>
                 <div style={{ width: 80, textAlign: 'center', ...columnHeader }}>Industry</div>
                 <div style={{ width: 40, textAlign: 'center', ...columnHeader }}>Proj</div>
                 <div style={{ width: 50, textAlign: 'center', ...columnHeader }} />

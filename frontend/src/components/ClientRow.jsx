@@ -53,14 +53,15 @@ const idBadge = {
   whiteSpace: 'nowrap',
 }
 
-const industryTag = {
-  fontSize: 11,
-  color: '#475569',
-  background: '#F1F5F9',
-  padding: '1px 8px',
+const statusBadge = (status) => ({
+  fontSize: 10,
+  fontWeight: 600,
+  color: status === 'Active' ? '#059669' : status === 'Inactive' ? '#DC2626' : '#D97706',
+  background: status === 'Active' ? '#D1FAE5' : status === 'Inactive' ? '#FEE2E2' : '#FEF3C7',
+  padding: '1px 6px',
   borderRadius: 999,
   whiteSpace: 'nowrap',
-}
+})
 
 export default function ClientRow({ client, onNavigate }) {
   const [expanded, setExpanded] = useState(false)
@@ -79,29 +80,36 @@ export default function ClientRow({ client, onNavigate }) {
           <div style={avatarMain}>
             {(client.name || '?')[0].toUpperCase()}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0, flexWrap: 'wrap' }}>
-            <span style={{ fontWeight: 600, fontSize: 12, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 140 }}>
-              {client.name}
-            </span>
-            <span style={idBadge}>{client.client_code}</span>
-            {client.location && <span style={{ fontSize: 10, color: C.secondary }}>{client.location}</span>}
+          <div style={{ minWidth: 0, lineHeight: 1.3 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+              <span style={{ fontWeight: 600, fontSize: 12, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 160 }}>
+                {client.name}
+              </span>
+              <span style={idBadge}>{client.client_code}</span>
+              <span style={statusBadge(client.status)}>{client.status}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap' }}>
+              {client.location && <span style={{ fontSize: 10, color: C.secondary }}>{client.location}</span>}
+              {client.gst_number && <span style={{ fontSize: 10, color: '#6B7280' }}>GST: {client.gst_number}</span>}
+            </div>
           </div>
         </div>
 
-        <div style={{ width: 100, textAlign: 'center', flexShrink: 0 }}>
+        <div style={{ width: 110, textAlign: 'center', flexShrink: 0, lineHeight: 1.3 }}>
           {client.contact_name && (
-            <span
-              style={{ fontSize: 11, color: C.blue, cursor: 'pointer' }}
-              onClick={e => { e.stopPropagation(); window.location.href = `mailto:${client.contact_email || ''}` }}
-            >
+            <div style={{ fontSize: 11, color: C.blue, cursor: 'pointer' }}
+              onClick={e => { e.stopPropagation(); window.location.href = `mailto:${client.contact_email || ''}` }}>
               {client.contact_name}
-            </span>
+            </div>
+          )}
+          {client.contact_phone && (
+            <div style={{ fontSize: 10, color: C.secondary }}>{client.contact_phone}</div>
           )}
         </div>
 
         <div style={{ width: 80, textAlign: 'center', flexShrink: 0 }}>
           {client.industry && (
-            <span style={industryTag}>{client.industry}</span>
+            <span style={{ fontSize: 11, color: '#475569', background: '#F1F5F9', padding: '1px 8px', borderRadius: 999, whiteSpace: 'nowrap' }}>{client.industry}</span>
           )}
         </div>
 
@@ -142,15 +150,18 @@ export default function ClientRow({ client, onNavigate }) {
                 <div style={avatarSub}>
                   {(sub.name || '?')[0].toUpperCase()}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
-                  <span style={{ fontWeight: 500, fontSize: 11, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 140 }}>
-                    {sub.name}
-                  </span>
-                  <span style={{ fontSize: 10, color: C.secondary }}>{sub.client_code}</span>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+                    <span style={{ fontWeight: 500, fontSize: 11, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 140 }}>
+                      {sub.name}
+                    </span>
+                    <span style={{ fontSize: 10, color: C.secondary }}>{sub.client_code}</span>
+                  </div>
+                  {sub.location && <div style={{ fontSize: 10, color: C.secondary }}>{sub.location}</div>}
                 </div>
               </div>
 
-              <div style={{ width: 100, textAlign: 'center', flexShrink: 0 }}>
+              <div style={{ width: 110, textAlign: 'center', flexShrink: 0 }}>
                 <span style={{ fontSize: 10, color: C.orangeText }}>Sub</span>
               </div>
 
