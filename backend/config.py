@@ -6,7 +6,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     JWT_EXPIRY_HOURS = int(os.environ.get('JWT_EXPIRY_HOURS', 24))
     MAX_CONTENT_LENGTH = int(os.environ.get('MAX_UPLOAD_MB', 16)) * 1024 * 1024
-    FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5174')
+    FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://93.127.194.235:9443')
 
     # Email (SMTP) config - set via env vars or defaults
     MAIL_SERVER = os.environ.get('MAIL_SERVER', '')
