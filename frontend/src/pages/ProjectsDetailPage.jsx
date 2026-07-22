@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { Info, ClipboardList, MessageSquare, Paperclip, Users, Search, Bell } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../contexts/ToastContext'
 import api from '../services/api'
@@ -7,7 +8,7 @@ import TaskTrackerPanel from '../components/task-tracker/TaskTrackerPanel'
 
 const C = {
   bg: '#F8FAFC', card: '#fff', border: '#E5E7EB',
-  primary: '#6D28D9', primaryLight: '#F5F3FF',
+  primary: '#6c3ef4', primaryLight: '#F5F3FF',
   text: '#0F172A', muted: '#94A3B8', secondary: '#64748B',
   success: '#10B981', danger: '#EF4444', warning: '#F59E0B', info: '#3B82F6',
   shadow: '0 1px 2px rgba(0,0,0,0.04), 0 1px 3px -1px rgba(0,0,0,0.06)',
@@ -28,14 +29,6 @@ const SUPPORT_STAGES = ['Awaiting Client Response','Awaiting Documents','Awaitin
 const ALL_STAGES = [...DELIVERY_STAGES, ...FINANCE_STAGES, ...BLOCKED_STAGES, ...SUPPORT_STAGES]
 
 const TERMINAL_STAGES = ['Closed', ...BLOCKED_STAGES, ...SUPPORT_STAGES]
-
-const SECTIONS = [
-  { id: 'section-info', label: 'Info', icon: '📋', tab: 'overview' },
-  { id: 'section-plan', label: 'Plan & Tasks', icon: '📊', tab: 'overview' },
-  { id: 'section-remarks', label: 'Remarks', icon: '💬', tab: 'overview' },
-  { id: 'section-documents', label: 'Docs & Meetings', icon: '📎', tab: 'overview' },
-  { id: 'section-team', label: 'Team', icon: '👥', tab: 'overview' },
-]
 
 const STAGE_ICONS = {
   'Initiated': 'M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z',
@@ -175,7 +168,7 @@ export default function ProjectsDetailPage() {
   const [teamForm, setTeamForm] = useState({ userId: '', role: 'Member' })
   const [selectedMember, setSelectedMember] = useState(null)
   const [showEditForm, setShowEditForm] = useState(false)
-  const [activeTab, setActiveTab] = useState('overview')
+  const [activeTab, setActiveTab] = useState('info')
   const [editForm, setEditForm] = useState({})
   useEffect(() => { if (data?.project) setEditForm({ title: data.project.title, description: data.project.description, service_type: data.project.service_type, pm_id: data.project.pm_id || '', total_value: data.project.total_value || '', start_date: data.project.start_date || '', target_date: data.project.target_date || '' }) }, [data?.project])
   const [mstoneForm, setMstoneForm] = useState(null)
@@ -430,119 +423,105 @@ export default function ProjectsDetailPage() {
 
   return (
     <div style={{ background: C.bg, minHeight: '100vh', fontFamily: C.font, color: C.text, fontSize: 14, WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}>
-      {/* Pulse animation keyframes */}
-      <style>{`@keyframes pulse-dot { 0%,100% { box-shadow:0 0 0 0 rgba(109,40,217,0.4); } 50% { box-shadow:0 0 0 8px rgba(109,40,217,0); } } @keyframes pulse-dot-blocked { 0%,100% { box-shadow:0 0 0 0 rgba(239,68,68,0.4); } 50% { box-shadow:0 0 0 8px rgba(239,68,68,0); } } @keyframes pulse-dot-done { 0%,100% { box-shadow:0 0 0 0 rgba(16,185,129,0.4); } 50% { box-shadow:0 0 0 8px rgba(16,185,129,0); } }`}</style>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg) } }
+      `}</style>
       <div style={{ padding: '0 0 16px', width: '100%', maxWidth: '100%' }}>
-        {/* ═══ HEADER ═══ */}
-        <div style={{ background: '#fff', borderRadius: 8, border: '1px solid #E5E7EB', padding: '12px 16px', marginBottom: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
-              {editingTitle ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
-                  <input value={titleVal} onChange={e => setTitleVal(e.target.value)} autoFocus
-                    onKeyDown={e => { if (e.key === 'Enter') saveTitle(); if (e.key === 'Escape') setEditingTitle(false) }}
-                    style={{ fontSize: 18, fontWeight: 700, color: '#0F172A', border: `2px solid ${C.primary}`, borderRadius: 6, padding: '4px 10px', outline: 'none', fontFamily: C.font, width: 280 }} />
-                  <button onClick={saveTitle} disabled={savingField} style={{ padding: '5px 12px', borderRadius: 6, border: 'none', background: '#10B981', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>{savingField ? '...' : 'Save'}</button>
-                  <button onClick={() => setEditingTitle(false)} style={{ padding: '5px 12px', borderRadius: 6, border: '1px solid #D1D5DB', background: '#fff', color: '#6B7280', fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>Cancel</button>
-                </div>
-              ) : (
-                <>
-                  <div style={{ width: 28, height: 28, borderRadius: 6, background: '#6D28D9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, color: '#fff', flexShrink: 0 }}>
-                    {(p.title || 'P')[0].toUpperCase()}
+
+        {/* ═══ DARK HEADER ═══ */}
+        <div style={{ minHeight: 46, background: '#1c1f2b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 16px', gap: 16, marginBottom: 10, borderRadius: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+            <div style={{ width: 26, height: 26, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#c9cdf0', cursor: 'pointer', fontSize: 15, flexShrink: 0, background: '#2a2d3d' }} onClick={() => navigate(-1)}>‹</div>
+            <div style={{ width: 26, height: 26, borderRadius: 7, background: `linear-gradient(135deg,${C.primary},#9b7bff)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12.5, flexShrink: 0, color: '#fff' }}>{(p.title || 'P')[0].toUpperCase()}</div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#fff', display: 'flex', alignItems: 'center', gap: 6 }}>
+                {editingTitle ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <input value={titleVal} onChange={e => setTitleVal(e.target.value)} autoFocus
+                      onKeyDown={e => { if (e.key === 'Enter') saveTitle(); if (e.key === 'Escape') setEditingTitle(false) }}
+                      style={{ fontSize: 13, fontWeight: 600, color: '#fff', border: '1px solid ${C.primary}', borderRadius: 4, padding: '3px 8px', outline: 'none', background: '#2a2d3d', fontFamily: C.font, width: 200 }} />
+                    <button onClick={saveTitle} disabled={savingField} style={{ padding: '4px 10px', borderRadius: 4, border: 'none', background: '#10B981', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>{savingField ? '...' : 'Save'}</button>
+                    <button onClick={() => setEditingTitle(false)} style={{ padding: '4px 10px', borderRadius: 4, border: '1px solid #5a5f77', background: 'transparent', color: '#c9cdf0', fontSize: 11, fontWeight: 500, cursor: 'pointer' }}>Cancel</button>
                   </div>
-                  <span style={{ fontSize: 18, fontWeight: 700, color: '#0F172A', lineHeight: 1.2 }}>{p.title}</span>
-                  {hasRole('super_admin', 'admin', 'project_lead') && (
-                    <button onClick={() => { setTitleVal(p.title); setEditingTitle(true) }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: '#94A3B8', display: 'flex' }} title="Edit title">
-                      <EditIcon size={11} />
-                    </button>
-                  )}
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 6, fontSize: 10, fontWeight: 700, color: '#fff', background: isBlocked ? '#EF4444' : isTerminal ? '#10B981' : '#6D28D9' }}>
-                    <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'rgba(255,255,255,0.7)' }} />
-                    {p.stage}
-                  </span>
-                </>
-              )}
-            </div>
-            <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-              {hasRole('super_admin', 'admin', 'project_lead') && (
-                <ActionBtn icon={<EditIcon />} label="Edit" onClick={() => setShowEditForm(true)} primary />
-              )}
+                ) : (
+                  <>
+                    {p.title}
+                    {hasRole('super_admin', 'admin', 'project_lead') && (
+                      <button onClick={() => { setTitleVal(p.title); setEditingTitle(true) }} style={{ width: 16, height: 16, borderRadius: 4, background: '#2a2d3d', border: 'none', color: '#c9cdf0', cursor: 'pointer', fontSize: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><EditIcon /></button>
+                    )}
+                  </>
+                )}
+              </div>
+              <div style={{ fontSize: 10, color: '#9aa0b4', display: 'flex', gap: 6, alignItems: 'center', marginTop: 1 }}>
+                <span>{p.created_at ? new Date(p.created_at).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) : ''}</span>
+                <span style={{ width: 3, height: 3, borderRadius: '50%', background: '#5a5f77' }} />
+                <b style={{ color: '#c9cdf0', fontWeight: 600 }}>{(p.proj_id || '').toUpperCase()}</b>
+                {p.pm_name && <><span style={{ width: 3, height: 3, borderRadius: '50%', background: '#5a5f77' }} /><span>PM: {p.pm_name}</span></>}
+              </div>
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, flexWrap: 'wrap', fontSize: 11, color: '#64748B' }}>
-            {p.account_name && <span>{p.account_name}</span>}
-            {p.account_name && p.created_at && <span style={{ color: '#D1D5DB' }}>|</span>}
-            {p.created_at && <span>{new Date(p.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'short' })}</span>}
-            {p.proj_id && <><span style={{ color: '#D1D5DB' }}>|</span><span style={{ color: '#6D28D9', fontWeight: 600 }}>{p.proj_id}</span></>}
-            {p.pm_name && <><span style={{ color: '#D1D5DB' }}>|</span><span>PM: {p.pm_name}</span></>}
-            {p.start_date && <><span style={{ color: '#D1D5DB' }}>|</span><span>Start: {formatDate(p.start_date)}</span></>}
-            {p.target_date && <><span style={{ color: '#D1D5DB' }}>|</span><span>Target: {formatDate(p.target_date)}</span></>}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, background: '#2a2d3d', border: '1px solid #3a3d54', borderRadius: 7, padding: '6px 10px', color: '#9aa0b4', fontSize: 11.5, width: 220, flexShrink: 1, minWidth: 100 }}>
+            <Search size={14} />
+            <input placeholder="Search anything..." style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: 11.5, width: '100%', color: '#fff', fontFamily: C.font }} />
           </div>
-        </div>
-
-        {/* ═══ KPI CARDS ═══ */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8, marginBottom: 10 }}>
-          <KPICard icon={<MoneyIcon />} accent="#10B981" label="Total Value" value={p.total_value ? `₹${(p.total_value / 100000).toFixed(1)}L` : '—'} />
-          <KPICard icon={<CheckCircleIcon color={C.primary} />} accent="#6D28D9" label="Open Tasks" value={`${openTasks}/${tasks.length}`} onClick={() => setActiveTab('tasks')} />
-          <KPICard icon={<UsersIcon />} accent="#4F46E5" label="Team" value={(team || []).length} onClick={() => document.getElementById('section-team')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />
-          <KPICard icon={<CalendarIcon />} accent="#D97706" label="Activity" value={`${totalDocs}D / ${totalMeetings}M`} onClick={() => document.getElementById('section-documents')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />
-          <KPICard icon={<ShieldExclamationIcon />} accent={vulnOverdueCount > 0 ? '#EF4444' : '#6D28D9'} label="Vulnerabilities" value={vulnerabilities.length} onClick={() => document.getElementById('section-vulnerabilities')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />
-          <KPICard icon={<TargetIcon />} accent="#0284C7" label="Stage" value={getStageGroup(p.stage)} />
-        </div>
-
-        {/* ═══ STAGE TIMELINE ═══ */}
-        <div style={{ background: '#fff', borderRadius: 8, border: '1px solid #E5E7EB', padding: '10px 16px', marginBottom: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <TagIcon />
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#64748B' }}>Project Lifecycle</span>
-            </div>
-            {hasRole('super_admin', 'admin', 'project_lead') && !isTerminal && (
-              <select value={p.stage} onChange={e => changeStage(e.target.value)}
-                style={{ padding: '4px 10px', border: `1px solid ${C.border}`, borderRadius: 6, fontSize: 11, fontWeight: 500, color: '#0F172A', background: '#fff', outline: 'none', fontFamily: C.font, cursor: 'pointer' }}>
-                {ALL_STAGES.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            {!isBlocked && !isTerminal && (
+              <span style={{ padding: '4px 11px', borderRadius: 20, fontSize: 10.5, fontWeight: 600, background: C.primary, color: '#fff', whiteSpace: 'nowrap' }}>+ {getStageGroup(p.stage)}</span>
             )}
+            {hasRole('super_admin', 'admin', 'project_lead') && (
+              <button onClick={() => setShowEditForm(true)} style={{ border: 'none', borderRadius: 6, padding: '6px 13px', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', background: C.primary, color: '#fff', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5 }}><EditIcon /> Edit</button>
+            )}
+            <div style={{ width: 26, height: 26, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#c9cdf0', cursor: 'pointer', flexShrink: 0, background: '#2a2d3d', position: 'relative' }}><Bell size={14} /></div>
           </div>
-          <div style={{ position: 'relative', padding: '4px 0' }}>
-            <div style={{ position: 'absolute', top: 10, left: 0, right: 0, height: 2, background: '#E2E8F0', zIndex: 0, borderRadius: 2 }} />
-            <div style={{ position: 'absolute', top: 10, left: 0, height: 2, background: '#6D28D9', zIndex: 1, transition: 'width 0.4s ease', borderRadius: 2, width: `${Math.min((DELIVERY_STAGES.indexOf(p.stage) + 1) / DELIVERY_STAGES.length * 100, 100)}%` }} />
-            <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative', zIndex: 2 }}>
+        </div>
+
+        {/* ═══ STAT STRIP ═══ */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8, marginBottom: 10 }}>
+          {[
+            { icon: <MoneyIcon />, accent: '#16a34a', label: 'Total Value', value: p.total_value ? `₹${(p.total_value / 100000).toFixed(1)}L` : '—' },
+            { icon: <CheckCircleIcon color={C.primary} />, accent: C.primary, label: 'Open Tasks', value: `${openTasks}/${tasks.length}`, onClick: () => setActiveTab('plan') },
+            { icon: <UsersIcon />, accent: C.primary, label: 'Team', value: (team || []).length, onClick: () => setActiveTab('team') },
+            { icon: <CalendarIcon />, accent: '#e8930c', label: 'Activity', value: `${totalDocs}D / ${totalMeetings}M`, onClick: () => setActiveTab('docs') },
+            { icon: <ShieldExclamationIcon />, accent: vulnOverdueCount > 0 ? '#EF4444' : C.primary, label: 'Vulnerabilities', value: vulnerabilities.length },
+            { icon: <TargetIcon />, accent: C.primary, label: 'Stage', value: getStageGroup(p.stage) },
+          ].map((s, i) => (
+            <div key={i} onClick={s.onClick} style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 9, padding: '7px 11px', cursor: s.onClick ? 'pointer' : 'default', boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ width: 18, height: 18, borderRadius: 5, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, flexShrink: 0, background: `${s.accent}12`, color: s.accent }}>{s.icon}</div>
+              </div>
+              <div style={{ fontSize: 14.5, fontWeight: 700, lineHeight: 1.1, color: s.accent }}>{s.value}</div>
+              <div style={{ fontSize: 9, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.03em' }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* ═══ LIFECYCLE ═══ */}
+        <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 9, padding: '10px 20px 8px', marginBottom: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.03em', display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>Lifecycle</div>
+          <div style={{ flex: 1, position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            {(() => {
+              const idx = DELIVERY_STAGES.indexOf(p.stage);
+              return <>{/* progress bar bg */}<div style={{ position: 'absolute', left: 0, right: 0, top: 5, height: 2, background: '#E5E7EB', zIndex: 0, borderRadius: 2 }} />
+              {/* progress bar fill */}
+              <div style={{ position: 'absolute', left: 0, width: `${Math.min((idx + 1) / DELIVERY_STAGES.length * 100, 100)}%`, top: 5, height: 2, background: C.primary, zIndex: 1, borderRadius: 2, transition: 'width 0.4s ease' }} />
               {DELIVERY_STAGES.map((s, i) => {
-                const idx = DELIVERY_STAGES.indexOf(p.stage);
                 const isPast = i < idx;
                 const isCurrent = i === idx;
-                const dotSize = isCurrent ? 12 : 8;
                 return (
-                  <div key={s} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, cursor: 'pointer', flex: 1 }} onClick={() => { if (!isTerminal) changeStage(s) }}>
-                    <div style={{ width: dotSize, height: dotSize, borderRadius: '50%', background: isPast || isCurrent ? '#6D28D9' : '#E2E8F0', transition: 'all 0.3s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {isPast && <svg width="5" height="5" fill="none" stroke="#fff" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>}
-                    </div>
-                    <span style={{ fontSize: 9, fontWeight: isCurrent ? 700 : isPast ? 600 : 400, color: isCurrent ? '#6D28D9' : isPast ? '#334155' : '#CBD5E1', textAlign: 'center', lineHeight: 1.1, maxWidth: 72, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s}</span>
+                  <div key={s} style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, flex: 1, cursor: isTerminal ? 'default' : 'pointer' }} onClick={() => { if (!isTerminal) changeStage(s) }}>
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: isPast || isCurrent ? C.primary : '#fff', border: isPast || isCurrent ? 'none' : '2px solid #E5E7EB', transition: 'all 0.3s' }} />
+                    <span style={{ fontSize: 9, color: isCurrent ? C.primary : isPast ? '#374151' : '#9ca3af', textAlign: 'center', whiteSpace: 'nowrap', fontWeight: isCurrent ? 700 : 400 }}>{s}</span>
                   </div>
                 )
-              })}
-            </div>
+              })}</>
+            })()}
           </div>
-        </div>
-
-        {/* ═══ PROJECT INFO ═══ */}
-        <div id="section-info" style={{ background: '#fff', borderRadius: 8, border: '1px solid #E5E7EB', padding: '12px 16px', marginBottom: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
-          <SectionTitle icon={<BriefcaseIcon />} text="Project Information" />
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginTop: 10 }}>
-            <InfoField icon={<CalendarIcon />} label="Start Date" value={formatDate(p.start_date)} empty={!p.start_date} />
-            <InfoField icon={<TargetIcon />} label="Target Date" value={formatDate(p.target_date)} empty={!p.target_date} highlight={!!p.target_date} />
-            <InfoField icon={<CalendarIcon />} label="End Date" value={formatDate(p.actual_end_date)} empty={!p.actual_end_date} />
-            <InfoField icon={<CalendarIcon />} label="Last Updated" value={formatDate(p.updated_at)} empty={!p.updated_at} />
-            <InfoField icon={<BuildingIcon />} label="Account" value={p.account_name} empty={!p.account_name} />
-            <InfoField icon={<PersonIcon />} label="Project Manager" value={p.pm_name} empty={!p.pm_name} />
-            <InfoField icon={<TagIcon />} label="Service" value={p.service_type} empty={!p.service_type} />
-            <InfoField icon={<MoneyIcon />} label="Total Value" value={p.total_value ? `₹${p.total_value.toLocaleString()}` : null} empty={!p.total_value} highlight />
-            <InfoField icon={<ShieldIcon />} label="Stage Group" value={getStageGroup(p.stage)} badge />
-            <InfoField icon={<CheckCircleIcon />} label="Client Review" value={p.is_client_review_enabled ? 'Enabled' : 'Off'} />
-            <InfoField icon={<UsersIcon />} label="Team Size" value={p.team_count || '0'} />
-            <InfoField icon={<TargetIcon />} label="Stage" value={p.stage} />
-          </div>
+          {hasRole('super_admin', 'admin', 'project_lead') && !isTerminal && (
+            <select value={p.stage} onChange={e => changeStage(e.target.value)}
+              style={{ border: '1px solid #E5E7EB', borderRadius: 6, padding: '5px 9px', fontSize: 11, fontWeight: 600, color: '#1c1f2b', background: '#fafafe', flexShrink: 0, fontFamily: C.font }}>
+              {ALL_STAGES.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          )}
         </div>
 
         {/* ═══ STAGE STATUS BANNER ═══ */}
@@ -559,155 +538,102 @@ export default function ProjectsDetailPage() {
           </div>
         )}
 
-        {/* ═══ PLAN & TASKS ═══ */}
-        <div id="section-plan" style={{ background: '#fff', borderRadius: 8, border: '1px solid #E5E7EB', padding: '12px 16px', marginBottom: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <SectionTitle icon={<FileTextIcon />} text="Plan & Tasks" />
-            <button onClick={() => setActiveTab('tasks')} style={{ padding: '5px 14px', borderRadius: 6, border: 'none', background: '#6D28D9', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
-              Full Plan
-            </button>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: p.po_amount ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)', gap: 8, marginTop: 10 }}>
-            {[
-              { label: 'Phases', value: phases.length },
-              { label: 'Tasks', value: tasks.length },
-              { label: 'Milestones', value: milestones.length },
-              ...(p.po_amount ? [{ label: 'PO Amount', value: `₹${(p.po_amount || 0).toLocaleString()}`, highlight: true }] : []),
-            ].map(stat => (
-              <div key={stat.label} style={{ background: '#F8FAFC', borderRadius: 6, padding: '8px 12px', border: '1px solid #F1F5F9' }}>
-                <div style={{ fontSize: 10, fontWeight: 500, color: '#94A3B8', letterSpacing: '0.3px', textTransform: 'uppercase' }}>{stat.label}</div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: stat.highlight ? '#10B981' : '#0F172A', marginTop: 1 }}>{stat.value}</div>
-              </div>
-            ))}
-          </div>
-          {!p.plan_generated && p.project_type && (
-            <div style={{ marginTop: 10 }}>
-              <ActionBtn icon={<FileTextIcon />} label={generatingPlan ? 'Generating...' : `Generate from ${p.project_type} Template`} onClick={generatePlan} disabled={generatingPlan} primary />
-            </div>
-          )}
-        </div>
-
         {/* ═══ PO OUT WORKFLOW ═══ */}
         {p.direction === 'OUT' && (
-          <div id="section-po-out" style={{ borderBottom: `1px solid ${C.border}`, padding: '6px 12px' }}>
-            <SectionTitle icon={<span style={{ fontSize: 18 }}>📋</span>} text={`PO Out Workflow`} />
+          <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 9, padding: '12px 16px', marginBottom: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, marginBottom: 10 }}>📋 PO Out Workflow</div>
             {p.po_next_due_date && p.balance_outstanding > 0 && new Date(p.po_next_due_date) <= new Date() && (
-              <div style={{ marginTop: 12, padding: '12px 18px', background: '#FEF3C7', borderRadius: 10, fontSize: 14, fontWeight: 600, color: '#92400E', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ padding: '10px 16px', background: '#FEF3C7', borderRadius: 8, fontSize: 13, fontWeight: 600, color: '#92400E', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span>⏰</span> Payment due: {new Date(p.po_next_due_date).toLocaleDateString()} — Balance: ₹{(p.balance_outstanding || 0).toLocaleString()}
               </div>
             )}
-
-            {/* Header Strip */}
-            <div style={{ display: 'flex', gap: 20, marginTop: 16, flexWrap: 'wrap', alignItems: 'center', background: '#F8FAFC', borderRadius: 12, padding: '18px 24px', border: '1px solid #F1F5F9' }}>
-              <div><span style={{ fontSize: 12, color: '#94A3B8', fontWeight: 500, letterSpacing: '0.3px', textTransform: 'uppercase' }}>PO #</span><div style={{ fontSize: 18, fontWeight: 700, color: '#0F172A', marginTop: 2 }}>{p.po_number || '—'}</div></div>
-              <div style={{ width: 1, height: 38, background: '#E2E8F0' }} />
-              <div><span style={{ fontSize: 12, color: '#94A3B8', fontWeight: 500, letterSpacing: '0.3px', textTransform: 'uppercase' }}>Vendor</span><div style={{ fontSize: 18, fontWeight: 600, color: '#0F172A', marginTop: 2 }}>{p.vendor_name || '—'}</div></div>
-              <div style={{ width: 1, height: 38, background: '#E2E8F0' }} />
-              <div><span style={{ fontSize: 12, color: '#94A3B8', fontWeight: 500, letterSpacing: '0.3px', textTransform: 'uppercase' }}>Amount</span><div style={{ fontSize: 18, fontWeight: 700, color: '#10B981', marginTop: 2 }}>₹{(p.net_amount || p.po_amount || 0).toLocaleString()}</div></div>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center', background: '#F8FAFC', borderRadius: 9, padding: '14px 18px', border: '1px solid #F1F5F9', marginBottom: 10 }}>
+              <div><span style={{ fontSize: 10, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em' }}>PO #</span><div style={{ fontSize: 15, fontWeight: 700, color: '#1c1f2b', marginTop: 1 }}>{p.po_number || '—'}</div></div>
+              <div style={{ width: 1, height: 30, background: '#E5E7EB' }} />
+              <div><span style={{ fontSize: 10, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em' }}>Vendor</span><div style={{ fontSize: 15, fontWeight: 600, color: '#1c1f2b', marginTop: 1 }}>{p.vendor_name || '—'}</div></div>
+              <div style={{ width: 1, height: 30, background: '#E5E7EB' }} />
+              <div><span style={{ fontSize: 10, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em' }}>Amount</span><div style={{ fontSize: 15, fontWeight: 700, color: '#16a34a', marginTop: 1 }}>₹{(p.net_amount || p.po_amount || 0).toLocaleString()}</div></div>
               <div style={{ flex: 1 }} />
-              <span style={{
-                padding: '5px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600, letterSpacing: '0.3px',
+              <span style={{ padding: '4px 12px', borderRadius: 20, fontSize: 11, fontWeight: 600,
                 background: p.po_out_status === 'Draft' ? '#F3F4F6' : p.po_out_status === 'Pending Approval' ? '#FEF3C7' : p.po_out_status === 'Rejected' ? '#FEE2E2' : p.po_out_status === 'Approved' ? '#D1FAE5' : p.po_out_status === 'Sent' ? '#DBEAFE' : p.po_out_status === 'In Progress' ? '#EDE9FE' : p.po_out_status === 'Payment Pending' ? '#FFEDD5' : p.po_out_status === 'Closed' ? '#D1FAE5' : '#F3F4F6',
                 color: p.po_out_status === 'Draft' ? '#6B7280' : p.po_out_status === 'Pending Approval' ? '#92400E' : p.po_out_status === 'Rejected' ? '#991B1B' : p.po_out_status === 'Approved' ? '#065F46' : p.po_out_status === 'Sent' ? '#1E40AF' : p.po_out_status === 'In Progress' ? '#6D28D9' : p.po_out_status === 'Payment Pending' ? '#9A3412' : p.po_out_status === 'Closed' ? '#065F46' : '#6B7280',
               }}>{p.po_out_status || 'Draft'}</span>
             </div>
-
-            {/* Submit for Approval — always show in Draft */}
             {p.po_out_status === 'Draft' && (
-              <div style={{ marginTop: 14 }}>
-                <button onClick={async () => { try { await api.put(`/api/projects/${p.id}`, { po_out_status: 'Pending Approval' }); toast('Submitted for approval'); fetchData() } catch (e) { toast(e.response?.data?.error || 'Error', 'error') } }}
-                  style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: '#6D28D9', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: '0 1px 3px rgba(109,40,217,0.3)' }}>📤 Submit for Approval</button>
-              </div>
+              <button onClick={async () => { try { await api.put(`/api/projects/${p.id}`, { po_out_status: 'Pending Approval' }); toast('Submitted for approval'); fetchData() } catch (e) { toast(e.response?.data?.error || 'Error', 'error') } }}
+                  style={{ padding: '8px 20px', borderRadius: 6, border: 'none', background: C.primary, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Submit for Approval</button>
             )}
-
-            {/* Approval Block */}
             {p.po_out_status === 'Pending Approval' && (
-              <div style={{ marginTop: 16, display: 'flex', gap: 12, alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
                 <button onClick={async () => { try { await api.post(`/api/projects/${p.id}/po-out/approve`); toast('Approved'); fetchData() } catch (e) { toast(e.response?.data?.error || 'Error', 'error') } }}
-                  style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: '#10B981', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: '0 1px 3px rgba(16,185,129,0.3)' }}>✓ Approve</button>
+                  style={{ padding: '8px 20px', borderRadius: 6, border: 'none', background: '#16a34a', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>✓ Approve</button>
                 <button onClick={async () => { const reason = prompt('Rejection reason:'); if (!reason) return; try { await api.post(`/api/projects/${p.id}/po-out/reject`, { reason }); toast('Rejected'); fetchData() } catch (e) { toast(e.response?.data?.error || 'Error', 'error') } }}
-                  style={{ padding: '10px 24px', borderRadius: 8, border: '1px solid #FCA5A5', background: '#FEF2F2', color: '#991B1B', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>✕ Reject</button>
+                  style={{ padding: '8px 20px', borderRadius: 6, border: '1px solid #FCA5A5', background: '#FEF2F2', color: '#991B1B', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>✕ Reject</button>
               </div>
             )}
             {p.po_out_status === 'Approved' && p.po_approver_name && (
-              <div style={{ marginTop: 12, padding: '10px 16px', background: '#F0FDF4', borderRadius: 8, fontSize: 13, color: '#065F46', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ padding: '8px 14px', background: '#F0FDF4', borderRadius: 6, fontSize: 12, color: '#065F46', fontWeight: 500, marginTop: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span>✓</span> Approved by {p.po_approver_name}{p.po_approved_at ? ` on ${new Date(p.po_approved_at).toLocaleDateString()}` : ''}
               </div>
             )}
             {p.po_out_status === 'Rejected' && (
-              <div style={{ marginTop: 12, padding: '12px 18px', background: '#FEF2F2', borderRadius: 8, fontSize: 13, color: '#991B1B' }}>
+              <div style={{ padding: '10px 16px', background: '#FEF2F2', borderRadius: 6, fontSize: 12, color: '#991B1B', marginTop: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
                 <strong>Rejected:</strong> {p.po_rejected_reason || 'No reason given'}
                 <button onClick={async () => { try { await api.post(`/api/projects/${p.id}/po-out/resubmit`); toast('Resubmitted for approval'); fetchData() } catch (e) { toast(e.response?.data?.error || 'Error', 'error') } }}
-                  style={{ marginLeft: 14, padding: '6px 16px', borderRadius: 6, border: '1px solid #D1D5DB', background: '#fff', color: '#374151', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Resubmit</button>
+                  style={{ padding: '5px 14px', borderRadius: 5, border: '1px solid #D1D5DB', background: '#fff', color: '#374151', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Resubmit</button>
               </div>
             )}
-
-            {/* Send Block */}
             {p.po_out_status === 'Approved' && (
-              <div style={{ marginTop: 16, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#94A3B8' }}>Send PO:</span>
+              <div style={{ display: 'flex', gap: 10, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#6b7280' }}>Send PO:</span>
                 <button onClick={async () => { try { await api.post(`/api/projects/${p.id}/po-out/send`, { send_via: 'Mail' }); toast('PO sent via Email'); fetchData() } catch (e) { toast(e.response?.data?.error || 'Error', 'error') } }}
-                  style={{ padding: '9px 20px', borderRadius: 8, border: 'none', background: '#3B82F6', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: '0 1px 3px rgba(59,130,246,0.3)' }}>✉ Mail to Vendor</button>
+                  style={{ padding: '7px 18px', borderRadius: 6, border: 'none', background: '#3B82F6', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>✉ Mail</button>
                 <button onClick={async () => { try { await api.post(`/api/projects/${p.id}/po-out/send`, { send_via: 'Download PDF' }); toast('PO ready for download'); fetchData() } catch (e) { toast(e.response?.data?.error || 'Error', 'error') } }}
-                  style={{ padding: '9px 20px', borderRadius: 8, border: '1px solid #D1D5DB', background: '#fff', color: '#374151', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>⬇ Download PDF</button>
+                  style={{ padding: '7px 18px', borderRadius: 6, border: '1px solid #D1D5DB', background: '#fff', color: '#374151', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>⬇ PDF</button>
               </div>
             )}
             {p.po_sent_via && p.po_sent_date && (
-              <div style={{ marginTop: 8, padding: '8px 14px', background: '#EFF6FF', borderRadius: 8, fontSize: 13, color: '#1E40AF', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ padding: '7px 12px', background: '#EFF6FF', borderRadius: 6, fontSize: 12, color: '#1E40AF', fontWeight: 500, marginTop: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span>✉</span> Sent via {p.po_sent_via} on {new Date(p.po_sent_date).toLocaleDateString()}
               </div>
             )}
-
-            {/* Work Tracking */}
             {(p.po_out_status === 'Sent' || p.po_out_status === 'In Progress' || p.po_out_status === 'Payment Pending' || p.po_out_status === 'Closed') && (
-              <div style={{ marginTop: 16, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: 10, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}>
                 {!p.po_work_started ? (
                   <button onClick={async () => { try { await api.post(`/api/projects/${p.id}/po-out/work-start`); toast('Work started'); fetchData() } catch (e) { toast(e.response?.data?.error || 'Error', 'error') } }}
-                    style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: '#6D28D9', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: '0 1px 3px rgba(109,40,217,0.3)' }}>▶ Mark Work Started</button>
+                    style={{ padding: '7px 18px', borderRadius: 6, border: 'none', background: C.primary, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Start Work</button>
                 ) : (
-                  <span style={{ fontSize: 13, color: '#6D28D9', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: '#F5F3FF', borderRadius: 8 }}>▶ Work started{p.po_work_started_at ? ` ${new Date(p.po_work_started_at).toLocaleDateString()}` : ''}</span>
+                  <span style={{ fontSize: 12, color: C.primary, fontWeight: 600, padding: '6px 14px', background: '#F5F3FF', borderRadius: 6 }}>Started{p.po_work_started_at ? ` ${new Date(p.po_work_started_at).toLocaleDateString()}` : ''}</span>
                 )}
                 {p.po_work_started && !p.po_work_completed && (
                   <button onClick={async () => { try { await api.post(`/api/projects/${p.id}/po-out/work-complete`); toast('Work completed'); fetchData() } catch (e) { toast(e.response?.data?.error || 'Error', 'error') } }}
-                    style={{ padding: '10px 24px', borderRadius: 8, border: '1px solid #10B981', background: '#F0FDF4', color: '#065F46', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>✓ Mark Work Completed</button>
+                    style={{ padding: '7px 18px', borderRadius: 6, border: '1px solid #16a34a', background: '#F0FDF4', color: '#065F46', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>✓ Complete</button>
                 )}
                 {p.po_work_completed && (
-                  <span style={{ fontSize: 13, color: '#065F46', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: '#F0FDF4', borderRadius: 8 }}>✓ Work completed{p.po_work_completed_at ? ` ${new Date(p.po_work_completed_at).toLocaleDateString()}` : ''}</span>
+                  <span style={{ fontSize: 12, color: '#065F46', fontWeight: 600, padding: '6px 14px', background: '#F0FDF4', borderRadius: 6 }}>✓ Done{p.po_work_completed_at ? ` ${new Date(p.po_work_completed_at).toLocaleDateString()}` : ''}</span>
                 )}
               </div>
             )}
-
-            {/* Deliverables Verification */}
-            <div style={{ marginTop: 20 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span>📄</span> Deliverables ({documents.filter(d => d.category === 'Deliverable').length})
-              </div>
-              <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 10 }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 18px', borderRadius: 8, border: `1px solid ${C.border}`, background: '#FAFBFC', cursor: 'pointer', fontSize: 13, fontWeight: 500, color: '#475569' }}>
-                  <span>📎</span> Upload Deliverable
-                  <input type="file" style={{ display: 'none' }} onChange={async (e) => {
-                    const file = e.target.files?.[0]; if (!file) return;
-                    const fd = new FormData(); fd.append('file', file); fd.append('category', 'Deliverable');
-                    try { await api.post(`/api/projects/${id}/documents`, fd); toast('Deliverable uploaded'); fetchData() }
-                    catch (err) { toast('Upload failed', 'error') }
-                    e.target.value = ''
-                  }} />
-                </label>
-              </div>
+            <div style={{ marginTop: 14 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>📄 Deliverables ({documents.filter(d => d.category === 'Deliverable').length})</div>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 6, border: `1px solid #E5E7EB`, background: '#FAFBFC', cursor: 'pointer', fontSize: 12, fontWeight: 500, color: '#475569' }}>
+                📎 Upload
+                <input type="file" style={{ display: 'none' }} onChange={async (e) => {
+                  const file = e.target.files?.[0]; if (!file) return;
+                  const fd = new FormData(); fd.append('file', file); fd.append('category', 'Deliverable');
+                  try { await api.post(`/api/projects/${id}/documents`, fd); toast('Uploaded'); fetchData() } catch (err) { toast('Upload failed', 'error') }
+                  e.target.value = ''
+                }} />
+              </label>
               {documents.filter(d => d.category === 'Deliverable').length === 0 ? (
-                <div style={{ fontSize: 13, color: '#94A3B8', padding: '10px 0' }}>No deliverables uploaded yet.</div>
+                <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 8 }}>No deliverables uploaded yet.</div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ marginTop: 8 }}>
                   {documents.filter(d => d.category === 'Deliverable').map(d => (
-                    <div key={`del-${d.id}`} style={{ display: 'flex', gap: 14, alignItems: 'center', padding: '12px 18px', background: '#FAFBFC', borderRadius: 10, border: '1px solid #F1F5F9' }}>
-                      <div style={{ width: 40, height: 40, borderRadius: 10, background: '#EDE9FE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>📄</div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: '#0F172A' }}>{d.file_name}</div>
-                        <div style={{ fontSize: 12, color: '#94A3B8' }}>{d.uploaded_at ? new Date(d.uploaded_at).toLocaleDateString() : ''}</div>
-                      </div>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', color: d.is_verified ? '#10B981' : '#94A3B8', padding: '6px 14px', borderRadius: 6, background: d.is_verified ? '#F0FDF4' : '#F8FAFC', border: `1px solid ${d.is_verified ? '#A7F3D0' : '#E2E8F0'}` }}>
-                        <input type="checkbox" checked={!!d.is_verified} onChange={async () => { try { await api.post(`/api/projects/documents/${d.id}/verify`, { is_verified: !d.is_verified }); fetchData() } catch (e) { toast('Error', 'error') } }}
-                          style={{ width: 16, height: 16, accentColor: '#10B981' }} />
+                    <div key={`del-${d.id}`} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '8px 14px', background: '#FAFBFC', borderRadius: 8, marginBottom: 4, border: '1px solid #F1F5F9', fontSize: 12 }}>
+                      <span style={{ flex: 1, fontWeight: 600 }}>{d.file_name}</span>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', color: d.is_verified ? '#16a34a' : '#6b7280', fontWeight: 600 }}>
+                        <input type="checkbox" checked={!!d.is_verified} onChange={async () => { try { await api.post(`/api/projects/documents/${d.id}/verify`, { is_verified: !d.is_verified }); fetchData() } catch (e) { toast('Error', 'error') } }} style={{ width: 14, height: 14 }} />
                         {d.is_verified ? 'Verified' : 'Verify'}
                       </label>
                     </div>
@@ -715,569 +641,258 @@ export default function ProjectsDetailPage() {
                 </div>
               )}
             </div>
-
-            {/* Payment Tracking */}
-            <div style={{ marginTop: 20 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span>💰</span> Payment Tracking
-              </div>
-              <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', marginBottom: 16 }}>
-                <div style={{ background: '#F0FDF4', borderRadius: 12, padding: '14px 22px', flex: 1, minWidth: 180, border: '1px solid #D1FAE5' }}>
-                  <div style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', letterSpacing: '0.3px', textTransform: 'uppercase' }}>Advance Paid</div>
-                  <div style={{ fontSize: 26, fontWeight: 700, color: '#10B981', marginTop: 2, letterSpacing: '-0.5px' }}>₹{(p.advance_paid || 0).toLocaleString()}</div>
+            <div style={{ marginTop: 14 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>💰 Payment Tracking</div>
+              <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 10 }}>
+                <div style={{ background: '#F0FDF4', borderRadius: 8, padding: '10px 18px', flex: 1, minWidth: 140, border: '1px solid #D1FAE5' }}>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase' }}>Advance Paid</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: '#16a34a', marginTop: 1 }}>₹{(p.advance_paid || 0).toLocaleString()}</div>
                 </div>
-                <div style={{ background: '#FEF2F2', borderRadius: 12, padding: '14px 22px', flex: 1, minWidth: 180, border: '1px solid #FECACA' }}>
-                  <div style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', letterSpacing: '0.3px', textTransform: 'uppercase' }}>Balance Outstanding</div>
-                  <div style={{ fontSize: 26, fontWeight: 700, color: p.balance_outstanding > 0 ? '#EF4444' : '#10B981', marginTop: 2, letterSpacing: '-0.5px' }}>₹{(p.balance_outstanding || 0).toLocaleString()}</div>
+                <div style={{ background: '#FEF2F2', borderRadius: 8, padding: '10px 18px', flex: 1, minWidth: 140, border: '1px solid #FECACA' }}>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase' }}>Balance Out.</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: p.balance_outstanding > 0 ? '#EF4444' : '#16a34a', marginTop: 1 }}>₹{(p.balance_outstanding || 0).toLocaleString()}</div>
                 </div>
               </div>
-
-              {/* Payments Table */}
-              {poPayments.length > 0 && (
-                <div style={{ marginBottom: 12 }}>
-                  {poPayments.map(pay => (
-                    <div key={`pay-${pay.id}`} style={{ display: 'flex', gap: 14, alignItems: 'center', padding: '12px 18px', background: '#FAFBFC', borderRadius: 10, marginBottom: 6, fontSize: 13, border: '1px solid #F1F5F9' }}>
-                      <span style={{ fontWeight: 600, flex: 1, color: '#0F172A' }}>{pay.date ? new Date(pay.date).toLocaleDateString() : '—'}</span>
-                      <span style={{ fontWeight: 700, color: '#10B981', fontSize: 15 }}>₹{pay.amount.toLocaleString()}</span>
-                      <span style={{ color: '#64748B' }}>{pay.mode || '—'}</span>
-                      <span style={{ color: '#94A3B8', flex: 1 }}>{pay.remarks || ''}</span>
-                      <button onClick={async () => { if (!confirm('Delete this payment?')) return; try { await api.delete(`/api/projects/po-out/payments/${pay.id}`); toast('Deleted'); fetchData() } catch (e) { toast('Error', 'error') } }}
-                        style={{ border: 'none', background: 'none', color: '#EF4444', cursor: 'pointer', fontSize: 16, padding: 4, opacity: 0.7 }}>✕</button>
-                    </div>
-                  ))}
+              {poPayments.length > 0 && poPayments.map(pay => (
+                <div key={`pay-${pay.id}`} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '8px 14px', background: '#FAFBFC', borderRadius: 6, marginBottom: 4, fontSize: 12, border: '1px solid #F1F5F9' }}>
+                  <span style={{ fontWeight: 600, flex: 1 }}>{pay.date ? new Date(pay.date).toLocaleDateString() : '—'}</span>
+                  <span style={{ fontWeight: 700, color: '#16a34a' }}>₹{pay.amount.toLocaleString()}</span>
+                  <span style={{ color: '#6b7280' }}>{pay.mode || '—'}</span>
+                  <button onClick={async () => { if (!confirm('Delete?')) return; try { await api.delete(`/api/projects/po-out/payments/${pay.id}`); toast('Deleted'); fetchData() } catch (e) { toast('Error', 'error') } }}
+                    style={{ border: 'none', background: 'none', color: '#EF4444', cursor: 'pointer', fontSize: 14, padding: 2 }}>✕</button>
                 </div>
-              )}
-
-              {/* Record Payment Form */}
+              ))}
               {p.po_out_status !== 'Closed' && (
-                <details style={{ marginTop: 8 }}>
-                  <summary style={{ fontSize: 14, fontWeight: 600, color: C.primary, cursor: 'pointer', padding: '8px 0', display: 'flex', alignItems: 'center', gap: 6 }}>+ Record Payment</summary>
-                  <form onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); try { await api.post(`/api/projects/${p.id}/po-out/payments`, { amount: parseFloat(fd.get('pay_amount')), date: fd.get('pay_date'), mode: fd.get('pay_mode'), remarks: fd.get('pay_remarks') }); toast('Payment recorded'); fetchData(); e.target.reset() } catch (err) { toast('Error', 'error') } }}
-                    style={{ display: 'flex', gap: 12, marginTop: 12, flexWrap: 'wrap', alignItems: 'end' }}>
-                    <div><label style={{ fontSize: 12, fontWeight: 600, color: '#64748B', display: 'block', marginBottom: 4 }}>Amount</label><input name="pay_amount" type="number" step="0.01" required style={{ padding: '8px 12px', borderRadius: 6, border: `1px solid ${C.border}`, fontSize: 13, width: 120, fontFamily: C.font }} /></div>
-                    <div><label style={{ fontSize: 12, fontWeight: 600, color: '#64748B', display: 'block', marginBottom: 4 }}>Date</label><input name="pay_date" type="date" required style={{ padding: '8px 12px', borderRadius: 6, border: `1px solid ${C.border}`, fontSize: 13, fontFamily: C.font }} /></div>
-                    <div><label style={{ fontSize: 12, fontWeight: 600, color: '#64748B', display: 'block', marginBottom: 4 }}>Mode</label><select name="pay_mode" style={{ padding: '8px 12px', borderRadius: 6, border: `1px solid ${C.border}`, fontSize: 13, fontFamily: C.font }}><option value="">Select</option><option value="Bank Transfer">Bank Transfer</option><option value="Cheque">Cheque</option><option value="Cash">Cash</option><option value="UPI">UPI</option></select></div>
-                    <div><label style={{ fontSize: 12, fontWeight: 600, color: '#64748B', display: 'block', marginBottom: 4 }}>Remarks</label><input name="pay_remarks" style={{ padding: '8px 12px', borderRadius: 6, border: `1px solid ${C.border}`, fontSize: 13, fontFamily: C.font }} /></div>
-                    <button type="submit" style={{ padding: '8px 20px', borderRadius: 6, border: 'none', background: C.primary, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Add</button>
+                <details style={{ marginTop: 6 }}>
+                  <summary style={{ fontSize: 12, fontWeight: 600, color: C.primary, cursor: 'pointer', padding: '4px 0', display: 'flex', alignItems: 'center', gap: 4 }}>+ Record Payment</summary>
+                  <form onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); try { await api.post(`/api/projects/${p.id}/po-out/payments`, { amount: parseFloat(fd.get('pay_amount')), date: fd.get('pay_date'), mode: fd.get('pay_mode'), remarks: fd.get('pay_remarks') }); toast('Recorded'); fetchData(); e.target.reset() } catch (err) { toast('Error', 'error') } }}
+                    style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap', alignItems: 'end' }}>
+                    <div><label style={{ fontSize: 10, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 2 }}>Amount</label><input name="pay_amount" type="number" step="0.01" required style={{ padding: '6px 10px', borderRadius: 5, border: `1px solid #E5E7EB`, fontSize: 12, width: 100, fontFamily: C.font }} /></div>
+                    <div><label style={{ fontSize: 10, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 2 }}>Date</label><input name="pay_date" type="date" required style={{ padding: '6px 10px', borderRadius: 5, border: `1px solid #E5E7EB`, fontSize: 12, fontFamily: C.font }} /></div>
+                    <div><label style={{ fontSize: 10, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 2 }}>Mode</label><select name="pay_mode" style={{ padding: '6px 10px', borderRadius: 5, border: `1px solid #E5E7EB`, fontSize: 12, fontFamily: C.font }}><option>Bank Transfer</option><option>Cheque</option><option>Cash</option><option>UPI</option></select></div>
+                    <div><label style={{ fontSize: 10, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 2 }}>Remarks</label><input name="pay_remarks" style={{ padding: '6px 10px', borderRadius: 5, border: `1px solid #E5E7EB`, fontSize: 12, fontFamily: C.font }} /></div>
+                    <button type="submit" style={{ padding: '6px 16px', borderRadius: 5, border: 'none', background: C.primary, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Add</button>
                   </form>
                 </details>
               )}
               {p.po_out_status === 'Closed' && (
-                <div style={{ marginTop: 12, padding: '14px 20px', background: '#D1FAE5', borderRadius: 10, fontSize: 14, fontWeight: 700, color: '#065F46', textAlign: 'center', border: '1px solid #A7F3D0' }}>
-                  ✅ PO Out Closed — All payments settled
+                <div style={{ padding: '10px 16px', background: '#D1FAE5', borderRadius: 8, fontSize: 13, fontWeight: 700, color: '#065F46', textAlign: 'center', border: '1px solid #A7F3D0', marginTop: 8 }}>
+                  ✅ PO Out Closed
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {/* ═══ TAB NAVIGATION ═══ */}
-        <div style={{ display: 'flex', gap: 3, background: '#fff', borderRadius: 8, border: '1px solid #E5E7EB', padding: '3px', marginBottom: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
+        {/* ═══ TAB BAR ═══ */}
+        <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
           {[
-            { key: 'overview', label: 'Overview', icon: '▶' },
-            { key: 'tasks', label: 'Tasks', icon: '✓' },
-          ].map(tab => (
-            <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-              style={{
-                flex: 1, padding: '6px 12px', border: 'none', borderRadius: 6, cursor: 'pointer',
-                background: activeTab === tab.key ? C.primary : 'transparent',
-                color: activeTab === tab.key ? '#fff' : '#64748B',
-                fontSize: 12, fontWeight: 600, transition: 'all 0.15s', fontFamily: C.font,
-              }}>{tab.icon} {tab.label}</button>
-          ))}
+            { key: 'info', label: 'Info', icon: Info },
+            { key: 'plan', label: 'Plan & Tasks', icon: ClipboardList },
+            { key: 'remarks', label: `Remarks (${(remarks || []).length})`, icon: MessageSquare },
+            { key: 'docs', label: 'Docs & Meetings', icon: Paperclip },
+            { key: 'team', label: 'Team', icon: Users },
+          ].map(tab => {
+            const Icon = tab.icon
+            return (
+              <div key={tab.key} onClick={() => setActiveTab(tab.key)}
+                style={{ padding: '7px 14px', fontSize: 11.5, fontWeight: 600, color: activeTab === tab.key ? '#fff' : '#6b7280', background: activeTab === tab.key ? C.primary : '#fff', border: activeTab === tab.key ? `1px solid ${C.primary}` : '1px solid #E5E7EB', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap', transition: 'all 0.12s' }}>
+                <Icon size={14} />
+                {tab.label}
+              </div>
+            )
+          })}
         </div>
 
-        {/* ═══ SECTION NAV ═══ */}
-        {(activeTab === 'overview') && (
-          <div style={{ overflowX: 'auto', whiteSpace: 'nowrap', marginBottom: 16, padding: '0 4px', scrollbarWidth: 'thin' }}>
-            <div style={{ display: 'inline-flex', gap: 6, padding: '2px 0' }}>
-              {SECTIONS.filter(s => s.tab === 'overview' && (s.condition ? s.condition(p) : true)).map(s => (
-                <button key={s.id} onClick={() => { document.getElementById(s.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); s.onClick?.(setActiveTab) }}
-                  style={{
-                    padding: '6px 14px', borderRadius: 20, border: '1px solid #E2E8F0', background: '#fff', color: '#64748B',
-                    fontSize: 12, fontWeight: 500, cursor: 'pointer', transition: 'all 0.15s', fontFamily: C.font, display: 'inline-flex', alignItems: 'center', gap: 5
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = '#F5F3FF'; e.currentTarget.style.borderColor = '#C4B5FD'; e.currentTarget.style.color = '#6D28D9' }}
-                  onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.color = '#64748B' }}>
-                  <span style={{ fontSize: 12 }}>{s.icon}</span> {s.label}
-                </button>
-              ))}
+        {/* ═══──────────────────────────────────────────────────╗ */}
+        {/* ═══  INFO PANE                                        ║ */}
+        {/* ═══──────────────────────────────────────────────────╝ */}
+        {activeTab === 'info' && <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minHeight: 0 }}>
+
+          {/* Project Info Card */}
+          <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 9, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
+            <div style={{ padding: '9px 14px', borderBottom: '1px solid #E5E7EB', fontSize: 11.5, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>Project Information</div>
+            <div style={{ padding: '9px 14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px 14px' }}>
+                {[
+                  { label: 'Start Date', value: formatDate(p.start_date), empty: !p.start_date },
+                  { label: 'Target Date', value: formatDate(p.target_date), empty: !p.target_date },
+                  { label: 'End Date', value: formatDate(p.actual_end_date), empty: !p.actual_end_date },
+                  { label: 'Last Updated', value: formatDate(p.updated_at), empty: !p.updated_at },
+                  { label: 'Account', value: p.account_name, empty: !p.account_name },
+                  { label: 'PM', value: p.pm_name, empty: !p.pm_name },
+                  { label: 'Service', value: p.service_type, empty: !p.service_type },
+                  { label: 'Total Value', value: p.total_value ? `₹${p.total_value.toLocaleString()}` : null, empty: !p.total_value, accent: true },
+                  { label: 'Stage Group', value: getStageGroup(p.stage), badge: true },
+                  { label: 'Client Review', value: p.is_client_review_enabled ? 'Enabled' : 'Off' },
+                  { label: 'Team Size', value: p.team_count || '0' },
+                  { label: 'Stage', value: p.stage, violet: true },
+                ].map((f, i) => (
+                  <div key={i}>
+                    <div style={{ fontSize: 9, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.03em', marginBottom: 1 }}>{f.label}</div>
+                    {f.badge ? (
+                      <span style={{ display: 'inline-block', background: '#f1ecff', color: C.primary, fontSize: 10.5, fontWeight: 700, padding: '2px 8px', borderRadius: 5 }}>{f.value}</span>
+                    ) : f.empty ? (
+                      <div style={{ fontSize: 12, fontWeight: 500, color: '#c3c6d4', fontStyle: 'italic' }}>Not set</div>
+                    ) : (
+                      <div style={{ fontSize: 12, fontWeight: f.accent ? 700 : 600, color: f.violet ? C.primary : f.accent ? '#16a34a' : '#1c1f2b' }}>{f.value}</div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        )}
 
-        {/* ═══ OVERVIEW TAB ═══ */}
-        {activeTab === 'overview' && <div>
-          {/* DESCRIPTION */}
-          {(p.description || editingDesc || hasRole('super_admin', 'admin', 'project_lead')) && (
-            <div id="section-description" style={{ background: '#fff', borderRadius: 8, border: '1px solid #E5E7EB', padding: '12px 16px', marginBottom: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <SectionTitle icon={<FileIcon />} text="Description" />
+          {/* Description + Remarks side by side */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 8, flex: 1, minHeight: 0 }}>
+            <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 9, display: 'flex', flexDirection: 'column', minHeight: 0, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
+              <div style={{ padding: '9px 14px', borderBottom: '1px solid #E5E7EB', fontSize: 11.5, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span>Description</span>
                 {!editingDesc && p.description && hasRole('super_admin', 'admin', 'project_lead') && (
-                  <button onClick={() => { setDescVal(p.description); setEditingDesc(true) }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: '#94A3B8', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, borderRadius: 6, padding: '4px 8px' }}
-                    onMouseEnter={e => e.target.style.background = '#F1F5F9'} onMouseLeave={e => e.target.style.background = 'transparent'}>
-                    <EditIcon size={13} /> Edit
-                  </button>
+                  <button onClick={() => { setDescVal(p.description); setEditingDesc(true) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', fontSize: 10.5, fontWeight: 600, padding: '3px 7px', borderRadius: 5 }}>✎ Edit</button>
                 )}
               </div>
-              {editingDesc ? (
-                <div>
-                  <textarea rows={4} value={descVal} onChange={e => setDescVal(e.target.value)} autoFocus
-                    style={{ width: '100%', padding: '12px 14px', border: `1.5px solid ${C.border}`, borderRadius: 10, fontSize: 14, outline: 'none', fontFamily: C.font, resize: 'vertical', lineHeight: 1.8, boxSizing: 'border-box' }} />
-                  <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                    <button onClick={saveDesc} disabled={savingField} style={{ padding: '8px 20px', borderRadius: 8, border: 'none', background: C.primary, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: savingField ? 0.5 : 1 }}>{savingField ? 'Saving...' : 'Save'}</button>
-                    <button onClick={() => setEditingDesc(false)} style={{ padding: '8px 20px', borderRadius: 8, border: `1px solid ${C.border}`, background: '#fff', color: '#64748B', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>Cancel</button>
+              <div style={{ padding: '9px 14px', overflowY: 'auto', flex: 1 }}>
+                {editingDesc ? (
+                  <div>
+                    <textarea rows={4} value={descVal} onChange={e => setDescVal(e.target.value)} autoFocus
+                      style={{ width: '100%', padding: '8px 12px', border: '1.5px solid #E5E7EB', borderRadius: 7, fontSize: 12, outline: 'none', fontFamily: C.font, resize: 'vertical', boxSizing: 'border-box' }} />
+                    <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                      <button onClick={saveDesc} disabled={savingField} style={{ padding: '6px 14px', borderRadius: 6, border: 'none', background: C.primary, color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', opacity: savingField ? 0.5 : 1 }}>{savingField ? '...' : 'Save'}</button>
+                      <button onClick={() => setEditingDesc(false)} style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid #E5E7EB', background: '#fff', color: '#6b7280', fontSize: 11, fontWeight: 500, cursor: 'pointer' }}>Cancel</button>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div style={{ fontSize: 14, color: '#475569', lineHeight: 1.8, marginTop: 6 }}>{p.description || <span style={{ color: '#94A3B8', fontStyle: 'italic' }}>No description added yet.</span>}</div>
-              )}
-            </div>
-          )}
-
-            {/* REMARKS */}
-            <div id="section-remarks" style={{ background: '#fff', borderRadius: 8, border: '1px solid #E5E7EB', padding: '12px 16px', marginBottom: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
-              <SectionTitle icon={<ChatIcon />} text={`Remarks (${(remarks || []).length})`} />
-              <div style={{ marginTop: 10, marginBottom: 14 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                  <div style={{ width: 22, height: 22, borderRadius: 6, background: C.primaryLight, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <ChatIcon />
-                  </div>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: '#0F172A' }}>Add a remark</span>
-                </div>
-                <textarea ref={remarkInputRef} rows={2} value={remarkText} onChange={e => { if (e.target.value.length <= 1000) setRemarkText(e.target.value) }}
-                  style={{
-                    width: '100%', padding: '12px 16px', border: `1.5px solid ${remarkText.trim() ? C.primary : C.border}`, borderRadius: 10,
-                    fontSize: 14, outline: 'none', fontFamily: C.font, resize: 'vertical',
-                    lineHeight: 1.6, background: '#fff', color: '#0F172A', boxSizing: 'border-box', transition: 'border-color 0.15s',
-                  }}
-                  placeholder="Write your remark here..." />
-                <div style={{ display: 'flex', gap: 8, marginTop: 10, alignItems: 'center' }}>
-                  <button onClick={addRemark} disabled={sending || !remarkText.trim()} style={{ display: 'flex', alignItems: 'center', gap: 6, background: C.primary, color: '#fff', border: 'none', borderRadius: 8, padding: '9px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: sending || !remarkText.trim() ? 0.5 : 1, transition: 'opacity 0.15s' }}>
-                    <SendIcon /> Add Remark
-                  </button>
-                  {remarkText.trim() && <span style={{ fontSize: 11, color: '#94A3B8' }}>{remarkText.length} characters</span>}
-                </div>
-              </div>
-              {(!remarks || remarks.length === 0) ? (
-                <EmptyState icon={<ChatIcon />} title="No remarks yet." />
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  {remarks.map((r, i) => {
-                    const d = new Date(r.created_at)
-                    const now = new Date()
-                    const diffMs = now - d
-                    const diffMins = Math.floor(diffMs / 60000)
-                    const diffHrs = Math.floor(diffMs / 3600000)
-                    const diffDays = Math.floor(diffMs / 86400000)
-                    let timeAgo
-                    if (diffMins < 1) timeAgo = 'just now'
-                    else if (diffMins < 60) timeAgo = `${diffMins}m ago`
-                    else if (diffHrs < 24) timeAgo = `${diffHrs}h ago`
-                    else if (diffDays < 7) timeAgo = `${diffDays}d ago`
-                    else timeAgo = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-                    const author = r.author || 'User'
-                    const initial = author.charAt(0).toUpperCase()
-                    const avatarColors = ['#6D28D9', '#10B981', '#DB2777', '#D97706', '#3B82F6', '#EF4444', '#0891B2', '#7C3AED']
-                    const avatarColor = avatarColors[author.length % avatarColors.length]
-                    const reactionEntries = r.reactions ? Object.entries(r.reactions) : []
-                    const isLong = r.text && r.text.replace(/<[^>]*>/g, '').length > 180
-                    const isExpanded = expandedRemark === r.id
-                    const shortText = isLong ? r.text.replace(/<[^>]*>/g, '').slice(0, 180) + '...' : r.text
-                    const isLast = i === remarks.length - 1
-                    return (
-                      <div key={r.id} style={{ padding: '18px 0', borderBottom: isLast ? 'none' : `1px solid ${C.border}` }}>
-                        <div style={{ display: 'flex', gap: 12 }}>
-                          <div style={{ width: 36, height: 36, borderRadius: '50%', background: avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <span style={{ fontSize: 14, fontWeight: 800, color: '#fff' }}>{initial}</span>
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                              <span style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>{author}</span>
-                              <span style={{ fontSize: 11, color: '#94A3B8' }}>{timeAgo}</span>
-                            </div>
-                            <div onClick={() => openRemarkEditor(r)} style={{ fontSize: 14, color: '#475569', lineHeight: 1.6, cursor: 'pointer', wordBreak: 'break-word' }}>
-                              {isLong ? (
-                                <>
-                                  {isExpanded ? <span dangerouslySetInnerHTML={{ __html: r.text }} /> : <span>{shortText}</span>}
-                                  <span onClick={e => { e.stopPropagation(); setExpandedRemark(isExpanded ? null : r.id) }} style={{ color: C.primary, fontSize: 12, fontWeight: 600, cursor: 'pointer', marginLeft: 4 }}>
-                                    {isExpanded ? 'Show less' : 'Show more'}
-                                  </span>
-                                </>
-                              ) : (
-                                <span dangerouslySetInnerHTML={{ __html: r.text }} />
-                              )}
-                            </div>
-                            <div style={{ display: 'flex', gap: 4, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-                              {reactionEntries.map(([emoji, reactors]) => (
-                                <button key={emoji} onClick={() => toggleReaction(r.id, emoji)}
-                                  style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '3px 10px', borderRadius: 99, border: `1.5px solid ${C.border}`, background: '#fff', fontSize: 13, cursor: 'pointer' }}>
-                                  <span>{emoji}</span>
-                                  <span style={{ fontSize: 10, fontWeight: 700, color: '#64748B' }}>{reactors.length}</span>
-                                </button>
-                              ))}
-                              <AddReactionBtn r={r} showEmojiPicker={showEmojiPicker} setShowEmojiPicker={setShowEmojiPicker} toggleReaction={toggleReaction} EMOJIS={EMOJIS} />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* DOCUMENTS */}
-            <div id="section-documents" style={{ background: '#fff', borderRadius: 8, border: '1px solid #E5E7EB', padding: '12px 16px', marginBottom: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
-              <SectionTitle icon={<PaperclipIcon />} text={`Documents & Reports (${totalDocs + reports.length})`} />
-              <div style={{ display: 'flex', gap: 8, marginTop: 10, marginBottom: 10, alignItems: 'center' }}>
-                <select value={uploadCategory} onChange={e => setUploadCategory(e.target.value)}
-                  style={{ padding: '5px 10px', border: `1.5px solid ${C.border}`, borderRadius: 6, fontSize: 11, fontWeight: 500, outline: 'none', background: C.card, fontFamily: C.font }}>
-                  <option value="document">General</option>
-                  <option value="working">Working</option>
-                  <option value="final">Final</option>
-                </select>
-                <input ref={fileRef} type="file" onChange={e => { if (!e.target.files?.[0]) return; if (uploadCategory === 'document') { setUploading(true); const fd = new FormData(); fd.append('file', e.target.files[0]); api.post(`/api/projects/${id}/documents`, fd).then(fetchData).catch(() => toast('Upload failed', 'error')).finally(() => { setUploading(false); e.target.value = '' }) } else { uploadReport(e, uploadCategory) } }} style={{ display: 'none' }} />
-                <button onClick={() => fileRef.current?.click()} disabled={uploading || reportUploading}
-                  style={{ padding: '5px 14px', border: 'none', borderRadius: 6, background: C.primary, color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, opacity: uploading || reportUploading ? 0.5 : 1 }}>
-                  <UploadIcon /> {uploading || reportUploading ? 'Uploading...' : 'Upload'}
-                </button>
-              </div>
-              {(uploading || reportUploading) && <div style={{ fontSize: 11, color: C.primary, marginBottom: 6 }}>Uploading...</div>}
-
-              {(!documents || documents.length === 0) && reports.length === 0 ? (
-                <EmptyState icon={<PaperclipIcon />} title="No documents or reports uploaded." />
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {documents.map(d => {
-                    const isImage = /\.(jpg|jpeg|png|gif|webp|svg|bmp)$/i.test(d.file_name)
-                    const isPdf = /\.pdf$/i.test(d.file_name)
-                    return (
-                      <div key={`doc-${d.id}`} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '10px 14px', background: '#FAFBFC', borderRadius: 10, border: '1px solid #F1F5F9' }}>
-                        <div style={{ width: 36, height: 36, borderRadius: 8, background: isImage ? '#F1F5F9' : isPdf ? '#FEE2E2' : '#EDE9FE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
-                          {isImage ? <img src={imgUrls[d.id] || ''} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : isPdf ? <PdfIcon /> : <FileIcon />}
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: '#0F172A' }}>{d.file_name}</div>
-                          <div style={{ display: 'flex', gap: 4, alignItems: 'center', marginTop: 2 }}>
-                            <span style={{ fontSize: 9, fontWeight: 600, padding: '2px 8px', borderRadius: 4, background: '#EDE9FE', color: C.primary }}>Document</span>
-                            <DocStatusBadge status={d.review_status} />
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                          {d.file_url && <span onClick={() => openBlob(d.file_url)} style={{ fontSize: 11, color: C.primary, fontWeight: 600, cursor: 'pointer', padding: '3px 8px', borderRadius: 4, background: '#F5F3FF' }}>Open</span>}
-                          {user?.role === 'admin' && d.review_status !== 'Approved' && (
-                            <><button onClick={() => reviewDoc(d.id, 'Approved')} style={{ fontSize: 10, padding: '3px 8px', border: 'none', borderRadius: 4, background: '#D1FAE5', color: '#10B981', fontWeight: 700, cursor: 'pointer' }}>✓</button>
-                              <button onClick={() => reviewDoc(d.id, 'Revision Required')} style={{ fontSize: 10, padding: '3px 8px', border: 'none', borderRadius: 4, background: '#FEE2E2', color: '#EF4444', fontWeight: 700, cursor: 'pointer' }}>✕</button></>
-                          )}
-                        </div>
-                      </div>
-                    )
-                  })}
-                  {reports.map(r => {
-                    const isWorking = r.report_type === 'working'
-                    return (
-                      <div key={`rpt-${r.id}`} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '10px 14px', background: '#FAFBFC', borderRadius: 10, border: '1px solid #F1F5F9' }}>
-                        <div style={{ width: 36, height: 36, borderRadius: 8, background: isWorking ? '#EDE9FE' : '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <FileIcon />
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: '#0F172A' }}>{r.file_name}</div>
-                          <div style={{ display: 'flex', gap: 4, alignItems: 'center', marginTop: 2 }}>
-                            <span style={{ fontSize: 9, fontWeight: 600, padding: '2px 8px', borderRadius: 4, background: isWorking ? '#EDE9FE' : '#D1FAE5', color: isWorking ? C.primary : '#10B981' }}>{isWorking ? 'Working Report' : 'Final Report'}</span>
-                            <span style={{ fontSize: 10, color: '#94A3B8' }}>v{r.version}</span>
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                          <span onClick={() => openBlob(r.file_url)} style={{ fontSize: 11, color: C.primary, fontWeight: 600, cursor: 'pointer', padding: '3px 8px', borderRadius: 4, background: '#F5F3FF' }}>View</span>
-                          <button onClick={() => deleteReport(r.id)} style={{ fontSize: 11, color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, padding: '3px 8px' }}>Del</button>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* ═══ MEETINGS + NOTES ═══ */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10, alignItems: 'start' }}>
-              {/* MEETINGS */}
-              <div id="section-meetings" style={{ background: '#fff', borderRadius: 8, border: '1px solid #E5E7EB', padding: '12px 16px', boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
-                <SectionTitle icon={<CalendarIcon />} text={`Meetings (${totalMeetings})`} />
-                <div style={{ marginTop: 10, marginBottom: 8 }}>
-                  <button onClick={() => setShowMeetingForm(!showMeetingForm)} style={{ display: 'flex', alignItems: 'center', gap: 4, background: C.primary, color: '#fff', border: 'none', borderRadius: 6, padding: '5px 14px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
-                    <PlusIcon /> Add Meeting
-                  </button>
-                </div>
-                {showMeetingForm && (
-                  <form onSubmit={addMeeting} style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16, padding: '16px', background: '#FAFBFC', borderRadius: 10, border: '1px solid #F1F5F9' }}>
-                    <input value={meetingForm.title} onChange={e => setMeetingForm({ ...meetingForm, title: e.target.value })} placeholder="Meeting title *"
-                      style={{ padding: '8px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: C.font }} />
-                    <input type="datetime-local" value={meetingForm.meeting_date} onChange={e => setMeetingForm({ ...meetingForm, meeting_date: e.target.value })}
-                      style={{ padding: '8px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: C.font }} />
-                    <input value={meetingForm.meeting_link} onChange={e => setMeetingForm({ ...meetingForm, meeting_link: e.target.value })} placeholder="Meeting link (Google Meet / Zoom) *"
-                      style={{ padding: '8px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: C.font }} />
-                    <button type="submit" disabled={!meetingForm.title.trim() || !meetingForm.meeting_date || !meetingForm.meeting_link.trim()} style={{ background: C.primary, color: '#fff', border: 'none', borderRadius: 8, padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: meetingForm.title.trim() && meetingForm.meeting_date && meetingForm.meeting_link.trim() ? 1 : 0.5 }}>
-                      <PlusIcon /> Add
-                    </button>
-                  </form>
-                )}
-                {allMeetings.length === 0 ? (
-                  <EmptyState icon={<CalendarIcon />} title="No meetings or requests" />
                 ) : (
-                  <>
-                    <style>{`
-                      #section-meetings .scroll-area::-webkit-scrollbar { width: 4px }
-                      #section-meetings .scroll-area::-webkit-scrollbar-track { background: transparent }
-                      #section-meetings .scroll-area::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 4px; opacity: 0 }
-                      #section-meetings .scroll-area:hover::-webkit-scrollbar-thumb { opacity: 1 }
-                    `}</style>
-                    <div className="scroll-area" style={{ maxHeight: 480, overflowY: 'auto', paddingRight: 6 }}>
-                    {allMeetings.map(m => {
-                      const isReq = m._type === 'request'
-                      const status = (m.status || '').toLowerCase()
-                      const isCancelled = status === 'cancelled'
-                      const isConfirmed = status === 'confirmed'
-                      const isScheduled = status === 'scheduled'
-                      const isPending = status === 'pending'
-                      const statusColor = isConfirmed ? '#059669' : isCancelled ? '#DC2626' : isScheduled ? '#2563EB' : isPending ? '#D97706' : '#6B7280'
-                      const statusBg = isConfirmed ? '#D1FAE5' : isCancelled ? '#FEE2E2' : isScheduled ? '#DBEAFE' : isPending ? '#FEF3C7' : '#F3F4F6'
-                      const iconBg = isCancelled ? '#FEE2E2' : isReq ? '#FEF3C7' : '#DBEAFE'
-                      const iconColor = isCancelled ? '#DC2626' : isReq ? '#D97706' : '#2563EB'
+                  <div style={{ fontSize: 12, color: '#475569', lineHeight: 1.6 }}>{p.description || <span style={{ color: '#b5b8c6', fontStyle: 'italic' }}>No description added yet.</span>}</div>
+                )}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minHeight: 0 }}>
+              <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 9, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
+                <div style={{ padding: '9px 14px', borderBottom: '1px solid #E5E7EB', fontSize: 11.5, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>💬 Remarks <span style={{ fontWeight: 500, color: '#6b7280', fontSize: 11 }}>({(remarks || []).length})</span></div>
+                <div style={{ padding: '9px 14px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                  <textarea ref={remarkInputRef} rows={2} value={remarkText} onChange={e => { if (e.target.value.length <= 1000) setRemarkText(e.target.value) }}
+                    style={{ width: '100%', border: '1px solid #E5E7EB', borderRadius: 7, padding: '7px 9px', fontSize: 11.5, fontFamily: C.font, resize: 'none', marginBottom: 7, boxSizing: 'border-box' }}
+                    placeholder="Write your remark here..." />
+                  <button onClick={addRemark} disabled={sending || !remarkText.trim()} style={{ alignSelf: 'flex-start', background: '#f1ecff', color: C.primary, border: 'none', fontWeight: 700, fontSize: 11, padding: '6px 11px', borderRadius: 7, cursor: 'pointer', opacity: sending || !remarkText.trim() ? 0.5 : 1 }}>Add Remark</button>
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#b5b8c6', fontSize: 11 }}>No remarks yet.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Vulnerabilities */}
+          <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 9, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
+            <div style={{ padding: '9px 14px', borderBottom: '1px solid #E5E7EB', fontSize: 11.5, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span>◈ Vulnerabilities ({vulnerabilities.length})</span>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                {vulnOverdueCount > 0 && <span style={{ fontSize: 10, fontWeight: 600, color: '#EF4444', background: '#FEE2E2', padding: '2px 8px', borderRadius: 4 }}>{vulnOverdueCount} overdue</span>}
+                <button onClick={() => setShowVulnForm(!showVulnForm)} style={{ background: '#f1ecff', color: C.primary, border: 'none', fontWeight: 700, fontSize: 10.5, padding: '5px 11px', borderRadius: 6, cursor: 'pointer' }}>+ Add</button>
+              </div>
+            </div>
+            {showVulnForm && (
+              <form onSubmit={addVuln} style={{ padding: '12px 14px', borderBottom: '1px solid #E5E7EB', background: '#FAFBFC' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                  <input value={vulnForm.title} onChange={e => setVulnForm({ ...vulnForm, title: e.target.value })} placeholder="Vulnerability title *" style={{ padding: '6px 10px', border: '1px solid #E5E7EB', borderRadius: 5, fontSize: 11, outline: 'none', fontFamily: C.font }} />
+                  <select value={vulnForm.severity} onChange={e => setVulnForm({ ...vulnForm, severity: e.target.value })} style={{ padding: '6px 10px', border: '1px solid #E5E7EB', borderRadius: 5, fontSize: 11, fontWeight: 500, fontFamily: C.font }}><option>Critical</option><option>High</option><option>Medium</option><option>Low</option></select>
+                  <select value={vulnForm.status} onChange={e => setVulnForm({ ...vulnForm, status: e.target.value })} style={{ padding: '6px 10px', border: '1px solid #E5E7EB', borderRadius: 5, fontSize: 11, fontWeight: 500, fontFamily: C.font }}><option>Open</option><option>In Progress</option><option>Patched</option></select>
+                  <input type="date" value={vulnForm.date_found} onChange={e => setVulnForm({ ...vulnForm, date_found: e.target.value })} style={{ padding: '6px 10px', border: '1px solid #E5E7EB', borderRadius: 5, fontSize: 11, fontFamily: C.font }} />
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <input type="date" value={vulnForm.fix_deadline} onChange={e => setVulnForm({ ...vulnForm, fix_deadline: e.target.value })} style={{ flex: 1, padding: '6px 10px', border: '1px solid #E5E7EB', borderRadius: 5, fontSize: 11, fontFamily: C.font }} />
+                    <input type="number" value={vulnForm.sla_days} onChange={e => setVulnForm({ ...vulnForm, sla_days: e.target.value })} placeholder="SLA" style={{ width: 60, padding: '6px 10px', border: '1px solid #E5E7EB', borderRadius: 5, fontSize: 11, fontFamily: C.font }} />
+                  </div>
+                  <button type="submit" disabled={vulnSaving || !vulnForm.title.trim()} style={{ background: C.primary, color: '#fff', border: 'none', borderRadius: 6, padding: '6px 14px', fontSize: 11, fontWeight: 600, cursor: 'pointer', opacity: vulnSaving || !vulnForm.title.trim() ? 0.5 : 1 }}>{vulnSaving ? '...' : 'Add'}</button>
+                </div>
+              </form>
+            )}
+            <div style={{ display: 'flex', gap: 8, padding: '8px 14px', borderBottom: '1px solid #E5E7EB' }}>
+              <select value={vulnFilterSev} onChange={e => setVulnFilterSev(e.target.value)} style={{ padding: '5px 10px', border: '1px solid #E5E7EB', borderRadius: 5, fontSize: 10.5, fontWeight: 500, fontFamily: C.font }}>
+                <option value="">All Severities</option><option>Critical</option><option>High</option><option>Medium</option><option>Low</option>
+              </select>
+              <select value={vulnFilterStat} onChange={e => setVulnFilterStat(e.target.value)} style={{ padding: '5px 10px', border: '1px solid #E5E7EB', borderRadius: 5, fontSize: 10.5, fontWeight: 500, fontFamily: C.font }}>
+                <option value="">All Statuses</option><option>Open</option><option>In Progress</option><option>Patched</option>
+              </select>
+            </div>
+            {vulnerabilities.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '16px 10px', color: '#b5b8c6', fontSize: 11 }}>No vulnerabilities recorded.</div>
+            ) : (
+              <div style={{ overflowX: 'auto', fontSize: 11 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead><tr style={{ borderBottom: '1px solid #E5E7EB' }}>
+                    <th style={{ textAlign: 'left', padding: '7px 10px', fontWeight: 600, color: '#6b7280', fontSize: 10, textTransform: 'uppercase' }}>Title</th>
+                    <th style={{ textAlign: 'center', padding: '7px 10px', fontWeight: 600, color: '#6b7280', fontSize: 10, textTransform: 'uppercase' }}>Severity</th>
+                    <th style={{ textAlign: 'center', padding: '7px 10px', fontWeight: 600, color: '#6b7280', fontSize: 10, textTransform: 'uppercase' }}>Status</th>
+                    <th style={{ textAlign: 'center', padding: '7px 10px', fontWeight: 600, color: '#6b7280', fontSize: 10, textTransform: 'uppercase' }}>Found</th>
+                    <th style={{ textAlign: 'center', padding: '7px 10px', fontWeight: 600, color: '#6b7280', fontSize: 10, textTransform: 'uppercase' }}>Deadline</th>
+                    <th style={{ textAlign: 'center', padding: '7px 10px' }}></th>
+                  </tr></thead>
+                  <tbody>
+                    {vulnerabilities.filter(v => {
+                      if (vulnFilterSev && v.severity !== vulnFilterSev) return false
+                      if (vulnFilterStat && v.status !== vulnFilterStat) return false
+                      return true
+                    }).map(v => {
+                      const sevColors = { Critical: { bg: '#FEE2E2', text: '#991B1B' }, High: { bg: '#FFF7ED', text: '#9A3412' }, Medium: { bg: '#FEF3C7', text: '#92400E' }, Low: { bg: '#DBEAFE', text: '#1E40AF' } }
+                      const statColors = { Open: { bg: '#FEF3C7', text: '#92400E' }, 'In Progress': { bg: '#DBEAFE', text: '#1E40AF' }, Patched: { bg: '#D1FAE5', text: '#065F46' } }
+                      const sc = sevColors[v.severity] || sevColors.Medium
+                      const stc = statColors[v.status] || statColors.Open
                       return (
-                        <div key={`${m._type}-${m.id}`} style={{
-                          display: 'flex', gap: 12, padding: '12px 16px', marginBottom: 8,
-                          background: isCancelled ? '#F9FAFB' : '#F8F9FC',
-                          borderRadius: 10, cursor: 'pointer', opacity: isCancelled ? 0.7 : 1,
-                          border: `1px solid ${isCancelled ? '#E5E7EB' : 'transparent'}`,
-                          transition: 'background 0.12s',
-                        }}
-                          onClick={() => navigate(`/meetings?id=${m.id}&type=${isReq ? 'request' : 'meeting'}`)}
-                          onMouseOver={e => { if (!isCancelled) e.currentTarget.style.background = '#EEF2FF' }}
-                          onMouseOut={e => { if (!isCancelled) e.currentTarget.style.background = '#F8F9FC' }}>
-                          {/* Left: color-coded calendar icon */}
-                          <div style={{ width: 36, height: 36, borderRadius: 8, background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={iconColor} strokeWidth="2"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                          </div>
-                          {/* Middle: title, date, by, status */}
-                          <div style={{ flex: 1, minWidth: 0, maxWidth: 'calc(100% - 120px)' }}>
-                            <div title={m.title} style={{ fontSize: 13, fontWeight: 600, color: isCancelled ? '#6B7280' : '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.4 }}>{m.title}</div>
-                            <div style={{ display: 'flex', gap: 4, alignItems: 'center', marginTop: 4, flexWrap: 'wrap' }}>
-                              <span style={{ fontSize: 11, color: isCancelled ? '#9CA3AF' : C.muted }}>{m.meeting_date ? formatDateTime(m.meeting_date) : '—'}</span>
-                              {isReq && m.requested_by_name && <span style={{ fontSize: 11, color: '#9CA3AF' }}>· By {m.requested_by_name}</span>}
-                            </div>
-                            <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
-                              <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: statusBg, color: statusColor }}>{m.status || '—'}</span>
-                            </div>
-                          </div>
-                          {/* Right: badge + actions */}
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0, width: 80, justifyContent: 'space-between' }}>
-                            <span style={{ fontSize: 8, fontWeight: 800, padding: '2px 8px', borderRadius: 4, background: isReq ? '#FEF3C7' : '#DBEAFE', color: isReq ? '#92400E' : '#1E40AF', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{isReq ? 'Request' : 'Meeting'}</span>
-                            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                              {m.meeting_link && (
-                                <a href={m.meeting_link} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ fontSize: 10, color: '#fff', background: '#059669', padding: '2px 8px', borderRadius: 4, textDecoration: 'none', fontWeight: 600, whiteSpace: 'nowrap' }}>Join</a>
-                              )}
-                              {!isReq && (
-                                <span onClick={e => { e.stopPropagation(); /* reschedule handler */ }} style={{ fontSize: 10, color: '#5B21B6', background: '#EEF2FF', border: 'none', borderRadius: 4, padding: '2px 8px', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}>Reschedule</span>
-                              )}
-                              {isReq && m.meeting_notes && (
-                                <span style={{ fontSize: 9, color: '#059669', fontWeight: 600, whiteSpace: 'nowrap' }}>Has Notes</span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
+                        <tr key={v.id} style={{ borderBottom: '1px solid #F3F4F6', background: v.overdue ? '#FFF5F5' : 'transparent' }}>
+                          <td style={{ padding: '7px 10px', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 500 }}>{v.title}</td>
+                          <td style={{ textAlign: 'center', padding: '7px 10px' }}><span style={{ background: sc.bg, color: sc.text, padding: '2px 8px', borderRadius: 4, fontWeight: 700, fontSize: 10 }}>{v.severity}</span></td>
+                          <td style={{ textAlign: 'center', padding: '7px 10px' }}><span style={{ background: stc.bg, color: stc.text, padding: '2px 8px', borderRadius: 4, fontWeight: 600, fontSize: 10 }}>{v.status}</span></td>
+                          <td style={{ textAlign: 'center', padding: '7px 10px', color: '#6b7280' }}>{formatDate(v.date_found)}</td>
+                          <td style={{ textAlign: 'center', padding: '7px 10px', color: v.overdue ? '#DC2626' : '#6b7280', fontWeight: v.overdue ? 700 : 400 }}>{formatDate(v.fix_deadline)}</td>
+                          <td style={{ textAlign: 'center', padding: '7px 10px' }}>{v.status !== 'Patched' && <button onClick={() => markVulnPatched(v.id)} style={{ padding: '3px 8px', background: '#D1FAE5', color: '#065F46', border: 'none', borderRadius: 4, fontSize: 10, fontWeight: 700, cursor: 'pointer' }}>Patch</button>}</td>
+                        </tr>
                       )
                     })}
-                    </div>
-                  </>
-                )}
-              </div>
-              {/* NOTES */}
-              <div id="section-notes" style={{ background: '#fff', borderRadius: 8, border: '1px solid #E5E7EB', padding: '12px 16px', boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
-                <SectionTitle icon={<NoteIcon />} text={`Notes (${(notes || []).length})`} />
-                <form onSubmit={addNote} style={{ display: 'flex', gap: 6, marginTop: 10, marginBottom: 10 }}>
-                  <input value={noteText} onChange={e => setNoteText(e.target.value)} placeholder="Add a note..."
-                    onKeyDown={e => { if ((e.key === 'Enter' && !e.shiftKey) || (e.key === 'Enter' && e.ctrlKey)) { e.preventDefault(); addNote(e) } }}
-                    style={{ flex: 1, padding: '10px 14px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: C.font, background: '#FAFAFA' }} />
-                  <button type="submit" disabled={!noteText.trim()} style={{ background: C.primary, color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: noteText.trim() ? 1 : 0.5 }}>Add Note</button>
-                </form>
-                {(!notes || notes.length === 0) ? (
-                  <EmptyState icon={<NoteIcon />} title="No notes." />
-                ) : (
-                  <div style={{ maxHeight: 440, overflowY: 'auto', paddingRight: 4 }}>
-                  {notes.map(n => (
-                    <div key={n.id} style={{ padding: '12px 16px', background: '#FAFBFC', borderRadius: 10, marginBottom: 6, border: '1px solid #F1F5F9' }}>
-                      <div style={{ fontSize: 13, color: '#475569', lineHeight: 1.5 }}>{n.content}</div>
-                      <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 4 }}>{formatDateTime(n.created_at)}</div>
-                    </div>
-                  ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* ═══ VULNERABILITIES ═══ */}
-            <div id="section-vulnerabilities" style={{ background: '#fff', borderRadius: 8, border: '1px solid #E5E7EB', padding: '12px 16px', marginBottom: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                <SectionTitle icon={<ShieldExclamationIcon size={14} />} text={`Vulnerabilities (${vulnerabilities.length})`} />
-                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                  {vulnOverdueCount > 0 && <span style={{ fontSize: 10, fontWeight: 600, color: '#EF4444', background: '#FEE2E2', padding: '2px 8px', borderRadius: 4 }}>{vulnOverdueCount} overdue</span>}
-                  <button onClick={() => setShowVulnForm(!showVulnForm)} style={{ display: 'flex', alignItems: 'center', gap: 4, background: C.primary, color: '#fff', border: 'none', borderRadius: 6, padding: '5px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
-                    <PlusIcon /> Add
-                  </button>
-                </div>
-              </div>
-              {showVulnForm && (
-                <form onSubmit={addVuln} style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16, padding: '18px', background: '#FAFBFC', borderRadius: 10, border: '1px solid #F1F5F9' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-                    <input value={vulnForm.title} onChange={e => setVulnForm({ ...vulnForm, title: e.target.value })} placeholder="Vulnerability title *"
-                      style={{ padding: '8px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 12, outline: 'none', fontFamily: C.font }} />
-                    <select value={vulnForm.severity} onChange={e => setVulnForm({ ...vulnForm, severity: e.target.value })}
-                      style={{ padding: '8px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 12, fontWeight: 500, outline: 'none', background: C.card, fontFamily: C.font }}>
-                      <option>Critical</option><option>High</option><option>Medium</option><option>Low</option>
-                    </select>
-                    <select value={vulnForm.status} onChange={e => setVulnForm({ ...vulnForm, status: e.target.value })}
-                      style={{ padding: '8px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 12, fontWeight: 500, outline: 'none', background: C.card, fontFamily: C.font }}>
-                      <option>Open</option><option>In Progress</option><option>Patched</option>
-                    </select>
-                    <input type="date" value={vulnForm.date_found} onChange={e => setVulnForm({ ...vulnForm, date_found: e.target.value })}
-                      style={{ padding: '8px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 12, outline: 'none', fontFamily: C.font }} />
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <input type="date" value={vulnForm.fix_deadline} onChange={e => setVulnForm({ ...vulnForm, fix_deadline: e.target.value })} placeholder="Fix deadline"
-                        style={{ flex: 1, padding: '8px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 12, outline: 'none', fontFamily: C.font }} />
-                      <input type="number" value={vulnForm.sla_days} onChange={e => setVulnForm({ ...vulnForm, sla_days: e.target.value })} placeholder="SLA"
-                        style={{ width: 70, padding: '8px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 12, outline: 'none', fontFamily: C.font }} />
-                    </div>
-                    <button type="submit" disabled={vulnSaving || !vulnForm.title.trim()} style={{ background: C.primary, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: vulnSaving || !vulnForm.title.trim() ? 0.5 : 1 }}>
-                      {vulnSaving ? 'Saving...' : 'Add'}
-                    </button>
-                  </div>
-                </form>
-              )}
-              <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-                <select value={vulnFilterSev} onChange={e => setVulnFilterSev(e.target.value)} style={{ padding: '6px 12px', border: `1.5px solid ${C.border}`, borderRadius: 6, fontSize: 11, fontWeight: 500, outline: 'none', background: C.card, fontFamily: C.font }}>
-                  <option value="">All Severities</option>
-                  <option>Critical</option><option>High</option><option>Medium</option><option>Low</option>
-                </select>
-                <select value={vulnFilterStat} onChange={e => setVulnFilterStat(e.target.value)} style={{ padding: '6px 12px', border: `1.5px solid ${C.border}`, borderRadius: 6, fontSize: 11, fontWeight: 500, outline: 'none', background: C.card, fontFamily: C.font }}>
-                  <option value="">All Statuses</option>
-                  <option>Open</option><option>In Progress</option><option>Patched</option>
-                </select>
-              </div>
-              {vulnerabilities.length === 0 ? (
-                <EmptyState icon={<ShieldExclamationIcon size={24} />} title="No vulnerabilities recorded" sub="Add a vulnerability using the button above" />
-              ) : (
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-                    <thead>
-                      <tr style={{ borderBottom: `2px solid ${C.border}` }}>
-                        <th style={{ textAlign: 'left', padding: '10px 12px', fontWeight: 600, color: '#64748B', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Title</th>
-                        <th style={{ textAlign: 'center', padding: '10px 12px', fontWeight: 600, color: '#64748B', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Severity</th>
-                        <th style={{ textAlign: 'center', padding: '10px 12px', fontWeight: 600, color: '#64748B', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Status</th>
-                        <th style={{ textAlign: 'center', padding: '10px 12px', fontWeight: 600, color: '#64748B', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Date Found</th>
-                        <th style={{ textAlign: 'center', padding: '10px 12px', fontWeight: 600, color: '#64748B', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Fix Deadline</th>
-                        <th style={{ textAlign: 'center', padding: '10px 12px', fontWeight: 600, color: '#64748B', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Patched</th>
-                        <th style={{ textAlign: 'center', padding: '10px 12px' }}>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {vulnerabilities.filter(v => {
-                        if (vulnFilterSev && v.severity !== vulnFilterSev) return false
-                        if (vulnFilterStat && v.status !== vulnFilterStat) return false
-                        return true
-                      }).map(v => {
-                        const sevColors = { Critical: { bg: '#FEE2E2', text: '#991B1B' }, High: { bg: '#FFF7ED', text: '#9A3412' }, Medium: { bg: '#FEF3C7', text: '#92400E' }, Low: { bg: '#DBEAFE', text: '#1E40AF' } }
-                        const statColors = { Open: { bg: '#FEF3C7', text: '#92400E' }, 'In Progress': { bg: '#DBEAFE', text: '#1E40AF' }, Patched: { bg: '#D1FAE5', text: '#065F46' } }
-                        const sc = sevColors[v.severity] || sevColors.Medium
-                        const stc = statColors[v.status] || statColors.Open
-                        return (
-                          <tr key={v.id} style={{ borderBottom: `1px solid #F3F4F6`, background: v.overdue ? '#FFF5F5' : 'transparent' }}>
-                            <td style={{ padding: '10px', maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 500 }} title={v.title}>{v.title}</td>
-                            <td style={{ textAlign: 'center', padding: 10 }}><span style={{ background: sc.bg, color: sc.text, padding: '2px 10px', borderRadius: 4, fontWeight: 700, fontSize: 11 }}>{v.severity}</span></td>
-                            <td style={{ textAlign: 'center', padding: 10 }}><span style={{ background: stc.bg, color: stc.text, padding: '2px 10px', borderRadius: 4, fontWeight: 600, fontSize: 11 }}>{v.status}</span></td>
-                            <td style={{ textAlign: 'center', padding: 10, color: '#6B7280' }}>{formatDate(v.date_found)}</td>
-                            <td style={{ textAlign: 'center', padding: 10, color: v.overdue ? '#DC2626' : '#6B7280', fontWeight: v.overdue ? 700 : 400 }}>{formatDate(v.fix_deadline)}</td>
-                            <td style={{ textAlign: 'center', padding: 10, color: '#6B7280' }}>{formatDate(v.date_patched)}</td>
-                            <td style={{ textAlign: 'center', padding: 10 }}>
-                              {v.status !== 'Patched' && (
-                                <button onClick={() => markVulnPatched(v.id)} style={{ padding: '4px 10px', background: '#D1FAE5', color: '#065F46', border: 'none', borderRadius: 4, fontSize: 10, fontWeight: 700, cursor: 'pointer' }}>Mark Patched</button>
-                              )}
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-
-            {/* FINDING QUERIES */}
-            {queries.length > 0 && (
-              <div id="section-queries" style={{ background: '#fff', borderRadius: 8, border: '1px solid #E5E7EB', padding: '12px 16px', marginBottom: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
-                <SectionTitle icon={<ChatIcon />} text={`Finding Queries (${queries.length})`} />
-                <div style={{ marginTop: 16 }}>
-                  {queries.map(q => (
-                    <div key={q.id} style={{ padding: '14px 18px', background: '#FAFBFC', borderRadius: 10, marginBottom: 8, border: '1px solid #F1F5F9' }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: '#0F172A' }}>{q.subject}</div>
-                      <div style={{ fontSize: 13, color: '#64748B', marginTop: 3 }}>{q.question}</div>
-                      {q.response && (
-                        <div style={{ marginTop: 10, padding: '12px 16px', background: '#F5F3FF', borderRadius: 8, border: `1px solid #EDE9FE` }}>
-                          <div style={{ fontSize: 11, fontWeight: 700, color: C.primary, marginBottom: 2 }}>Response:</div>
-                          <div style={{ fontSize: 13, color: '#475569' }}>{q.response}</div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                  </tbody>
+                </table>
               </div>
             )}
+          </div>
 
-            {/* TEAM */}
-            <div id="section-team" style={{ background: '#fff', borderRadius: 8, border: '1px solid #E5E7EB', boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
-              <div style={{ padding: '16px 20px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <SectionTitle icon={<UsersIcon />} text={`Team (${(team || []).length})`} />
-                {hasRole('super_admin', 'admin', 'project_lead') && (
-                  <button onClick={() => setShowTeamForm(!showTeamForm)} style={{ border: 'none', background: C.primary, cursor: 'pointer', color: '#fff', fontSize: 11, fontWeight: 600, padding: '6px 14px', borderRadius: 6 }}>+ Add</button>
-                )}
-              </div>
-              {showTeamForm && (
-                <div style={{ padding: '14px 20px', borderBottom: `1px solid ${C.border}`, background: '#FAFBFC' }}>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <select value={teamForm.userId} onChange={e => setTeamForm({ ...teamForm, userId: e.target.value })} style={{ flex: 1, padding: '8px 12px', border: `1.5px solid ${C.border}`, borderRadius: 6, fontSize: 12, fontWeight: 500, outline: 'none', fontFamily: C.font, background: C.card }}>
-                      <option value="">Select user...</option>
-                      {users.filter(u => !team.some(t => t.user_id === u.id)).map(u => (
-                        <option key={u.id} value={u.id}>{u.full_name} ({u.email})</option>
-                      ))}
-                    </select>
-                    <button onClick={addTeamMember} disabled={!teamForm.userId} style={{ padding: '8px 16px', border: 'none', borderRadius: 6, background: C.primary, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Add</button>
+          {/* Finding Queries */}
+          {queries.length > 0 && (
+            <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 9, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
+              <div style={{ padding: '9px 14px', borderBottom: '1px solid #E5E7EB', fontSize: 11.5, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>💬 Finding Queries ({queries.length})</div>
+              <div style={{ padding: '9px 14px' }}>
+                {queries.map(q => (
+                  <div key={q.id} style={{ padding: '10px 14px', background: '#FAFBFC', borderRadius: 8, marginBottom: 6, border: '1px solid #F1F5F9', fontSize: 12 }}>
+                    <div style={{ fontWeight: 600 }}>{q.subject}</div>
+                    <div style={{ color: '#6b7280', marginTop: 2 }}>{q.question}</div>
+                    {q.response && <div style={{ marginTop: 6, padding: '8px 12px', background: '#F5F3FF', borderRadius: 6, border: '1px solid #EDE9FE' }}><strong style={{ fontSize: 10, color: C.primary }}>Response:</strong> <span style={{ color: '#475569' }}>{q.response}</span></div>}
                   </div>
-                </div>
-              )}
-              <div style={{ padding: '8px 20px 16px' }}>
-                {(team || []).length === 0 ? (
-                  <div style={{ fontSize: 12, color: '#94A3B8', textAlign: 'center', padding: '14px 0' }}>No team members yet. Click "+ Add" to assign.</div>
-                ) : (
-                  team.map(t => (
-                    <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid #F1F5F9' }}>
-                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#EDE9FE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: C.primary, flexShrink: 0 }}>
-                        {(t.user_name || '?')[0]}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: '#0F172A' }}>{t.user_name}</div>
-                        <div style={{ fontSize: 10, color: '#94A3B8' }}>{t.role_in_project || 'Member'}</div>
-                      </div>
-                      {hasRole('admin') && (
-                        <button onClick={() => removeTeamMember(t.id)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 16, color: '#94A3B8', padding: 4 }}>×</button>
-                      )}
-                    </div>
-                  ))
-                )}
+                ))}
               </div>
             </div>
+          )}
+        </div>}
+
+        {/* ═══──────────────────────────────────────────────────╗ */}
+        {/* ═══  PLAN & TASKS PANE                               ║ */}
+        {/* ═══──────────────────────────────────────────────────╝ */}
+        {activeTab === 'plan' && <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minHeight: 0 }}>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+            {[
+              { label: 'Phases', value: phases.length },
+              { label: 'Tasks', value: tasks.length },
+              { label: 'Milestones', value: milestones.length },
+            ].map(s => (
+              <div key={s.label} style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 9, padding: '8px 12px', boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: C.primary }}>{s.value}</div>
+                <div style={{ fontSize: 9, color: '#6b7280', textTransform: 'uppercase' }}>{s.label}</div>
+              </div>
+            ))}
           </div>
-        }
-        {activeTab === 'tasks' && (
+
+          {!p.plan_generated && p.project_type && (
+            <ActionBtn icon={<FileTextIcon />} label={generatingPlan ? 'Generating...' : `Generate from ${p.project_type} Template`} onClick={generatePlan} disabled={generatingPlan} primary />
+          )}
+
           <TaskTrackerPanel
             projectId={id}
             project={p}
@@ -1318,8 +933,242 @@ export default function ProjectsDetailPage() {
               fetchData()
             }}
           />
-        )}
-        </div>
+        </div>}
+
+        {/* ═══──────────────────────────────────────────────────╗ */}
+        {/* ═══  REMARKS PANE                                    ║ */}
+        {/* ═══──────────────────────────────────────────────────╝ */}
+        {activeTab === 'remarks' && <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, minHeight: 0 }}>
+          <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 9, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
+            <div style={{ padding: '9px 14px', borderBottom: '1px solid #E5E7EB', fontSize: 11.5, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>💬 Remarks <span style={{ fontWeight: 500, color: '#6b7280' }}>({(remarks || []).length})</span></div>
+            <div style={{ padding: '9px 14px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+              <textarea ref={remarkInputRef} rows={3} value={remarkText} onChange={e => { if (e.target.value.length <= 1000) setRemarkText(e.target.value) }}
+                style={{ width: '100%', border: '1px solid #E5E7EB', borderRadius: 7, padding: '7px 9px', fontSize: 11.5, fontFamily: C.font, resize: 'none', marginBottom: 7, boxSizing: 'border-box' }}
+                placeholder="Write your remark here..." />
+              <button onClick={addRemark} disabled={sending || !remarkText.trim()} style={{ alignSelf: 'flex-start', background: '#f1ecff', color: C.primary, border: 'none', fontWeight: 700, fontSize: 11, padding: '6px 11px', borderRadius: 7, cursor: 'pointer', opacity: sending || !remarkText.trim() ? 0.5 : 1 }}>Add Remark</button>
+              {(!remarks || remarks.length === 0) ? (
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#b5b8c6', fontSize: 11 }}>No remarks yet.</div>
+              ) : (
+                <div style={{ flex: 1, overflowY: 'auto', marginTop: 8 }}>
+                  {remarks.map((r, i) => {
+                    const d = new Date(r.created_at)
+                    const now = new Date()
+                    const diffMs = now - d
+                    const diffMins = Math.floor(diffMs / 60000)
+                    const diffHrs = Math.floor(diffMs / 3600000)
+                    const diffDays = Math.floor(diffMs / 86400000)
+                    let timeAgo
+                    if (diffMins < 1) timeAgo = 'just now'
+                    else if (diffMins < 60) timeAgo = `${diffMins}m ago`
+                    else if (diffHrs < 24) timeAgo = `${diffHrs}h ago`
+                    else if (diffDays < 7) timeAgo = `${diffDays}d ago`
+                    else timeAgo = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+                    const author = r.author || 'User'
+                    const initial = author.charAt(0).toUpperCase()
+                    const avatarColors = [C.primary, '#16a34a', '#DB2777', '#e8930c', '#3B82F6', '#EF4444', '#0891B2', '#7C3AED']
+                    const avatarColor = avatarColors[author.length % avatarColors.length]
+                    const reactionEntries = r.reactions ? Object.entries(r.reactions) : []
+                    const isLong = r.text && r.text.replace(/<[^>]*>/g, '').length > 180
+                    const isExpanded = expandedRemark === r.id
+                    const shortText = isLong ? r.text.replace(/<[^>]*>/g, '').slice(0, 180) + '...' : r.text
+                    return (
+                      <div key={r.id} style={{ padding: '12px 0', borderBottom: i < remarks.length - 1 ? '1px solid #E5E7EB' : 'none' }}>
+                        <div style={{ display: 'flex', gap: 10 }}>
+                          <div style={{ width: 30, height: 30, borderRadius: '50%', background: avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 12, fontWeight: 800, color: '#fff' }}>{initial}</div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                              <span style={{ fontSize: 12, fontWeight: 700, color: '#1c1f2b' }}>{author}</span>
+                              <span style={{ fontSize: 10, color: '#9ca3af' }}>{timeAgo}</span>
+                            </div>
+                            <div onClick={() => openRemarkEditor(r)} style={{ fontSize: 12, color: '#475569', lineHeight: 1.5, cursor: 'pointer' }}>
+                              {isLong ? (isExpanded ? <span dangerouslySetInnerHTML={{ __html: r.text }} /> : <span>{shortText} <span onClick={e => { e.stopPropagation(); setExpandedRemark(r.id) }} style={{ color: C.primary, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>more</span></span>) : <span dangerouslySetInnerHTML={{ __html: r.text }} />}
+                            </div>
+                            <div style={{ display: 'flex', gap: 3, marginTop: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                              {reactionEntries.map(([emoji, reactors]) => (
+                                <button key={emoji} onClick={() => toggleReaction(r.id, emoji)} style={{ display: 'flex', alignItems: 'center', gap: 2, padding: '2px 8px', borderRadius: 99, border: '1.5px solid #E5E7EB', background: '#fff', fontSize: 11, cursor: 'pointer' }}>
+                                  <span>{emoji}</span><span style={{ fontSize: 9, fontWeight: 700, color: '#6b7280' }}>{reactors.length}</span>
+                                </button>
+                              ))}
+                              <AddReactionBtn r={r} showEmojiPicker={showEmojiPicker} setShowEmojiPicker={setShowEmojiPicker} toggleReaction={toggleReaction} EMOJIS={EMOJIS} />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>}
+
+        {/* ═══──────────────────────────────────────────────────╗ */}
+        {/* ═══  DOCS & MEETINGS PANE                            ║ */}
+        {/* ═══──────────────────────────────────────────────────╝ */}
+        {activeTab === 'docs' && <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, flex: 1, minHeight: 0 }}>
+          <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 9, display: 'flex', flexDirection: 'column', minHeight: 0, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
+            <div style={{ padding: '9px 14px', borderBottom: '1px solid #E5E7EB', fontSize: 11.5, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>📎 Documents & Reports <span style={{ fontWeight: 500, color: '#6b7280' }}>({totalDocs + reports.length})</span></div>
+            <div style={{ padding: '9px 14px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <select value={uploadCategory} onChange={e => setUploadCategory(e.target.value)} style={{ border: '1px solid #E5E7EB', borderRadius: 6, padding: '5px 8px', fontSize: 10.5, fontFamily: C.font }}>
+                  <option value="document">General</option><option value="working">Working</option><option value="final">Final</option>
+                </select>
+                <input ref={fileRef} type="file" onChange={e => {
+                  if (!e.target.files?.[0]) return;
+                  if (uploadCategory === 'document') { setUploading(true); const fd = new FormData(); fd.append('file', e.target.files[0]); api.post(`/api/projects/${id}/documents`, fd).then(fetchData).catch(() => toast('Upload failed', 'error')).finally(() => { setUploading(false); e.target.value = '' }) }
+                  else { uploadReport(e, uploadCategory) }
+                }} style={{ display: 'none' }} />
+                <button onClick={() => fileRef.current?.click()} disabled={uploading || reportUploading} style={{ background: '#f1ecff', color: C.primary, border: 'none', fontWeight: 700, fontSize: 10.5, padding: '5px 11px', borderRadius: 6, cursor: 'pointer', opacity: uploading || reportUploading ? 0.5 : 1 }}><UploadIcon /> {uploading || reportUploading ? '...' : 'Upload'}</button>
+              </div>
+              {(!documents || documents.length === 0) && reports.length === 0 ? (
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#b5b8c6', fontSize: 11 }}>No documents or reports uploaded.</div>
+              ) : (
+                <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 5 }}>
+                  {documents.map(d => {
+                    const isImage = /\.(jpg|jpeg|png|gif|webp|svg|bmp)$/i.test(d.file_name)
+                    const isPdf = /\.pdf$/i.test(d.file_name)
+                    return (
+                      <div key={`doc-${d.id}`} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '7px 10px', background: '#FAFBFC', borderRadius: 7, border: '1px solid #F1F5F9', fontSize: 11 }}>
+                        <div style={{ width: 28, height: 28, borderRadius: 6, background: isImage ? '#F1F5F9' : isPdf ? '#FEE2E2' : '#EDE9FE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden', fontSize: 12 }}>
+                          {isImage ? <img src={imgUrls[d.id] || ''} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : isPdf ? <span style={{ color: '#DC2626' }}>PDF</span> : <FileIcon />}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.file_name}</div>
+                        </div>
+                        <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                          {d.file_url && <span onClick={() => openBlob(d.file_url)} style={{ color: C.primary, fontWeight: 600, cursor: 'pointer', padding: '2px 7px', borderRadius: 4, background: '#F5F3FF', fontSize: 10 }}>Open</span>}
+                        </div>
+                      </div>
+                    )
+                  })}
+                  {reports.map(r => (
+                    <div key={`rpt-${r.id}`} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '7px 10px', background: '#FAFBFC', borderRadius: 7, border: '1px solid #F1F5F9', fontSize: 11 }}>
+                      <div style={{ width: 28, height: 28, borderRadius: 6, background: r.report_type === 'working' ? '#EDE9FE' : '#D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><FileIcon /></div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 600 }}>{r.file_name}</div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                        <span onClick={() => openBlob(r.file_url)} style={{ color: C.primary, fontWeight: 600, cursor: 'pointer', padding: '2px 7px', borderRadius: 4, background: '#F5F3FF', fontSize: 10 }}>View</span>
+                        <button onClick={() => deleteReport(r.id)} style={{ color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 10, padding: '2px 7px' }}>Del</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minHeight: 0 }}>
+            <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 9, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
+              <div style={{ padding: '9px 14px', borderBottom: '1px solid #E5E7EB', fontSize: 11.5, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span>📅 Meetings ({(meetings || []).length})</span>
+                <button onClick={() => setShowMeetingForm(!showMeetingForm)} style={{ background: '#f1ecff', color: C.primary, border: 'none', fontWeight: 700, fontSize: 10.5, padding: '5px 11px', borderRadius: 6, cursor: 'pointer' }}>+ Add Meeting</button>
+              </div>
+              <div style={{ padding: '9px 14px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                {showMeetingForm && (
+                  <form onSubmit={addMeeting} style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10, padding: '12px', background: '#FAFBFC', borderRadius: 7, border: '1px solid #F1F5F9' }}>
+                    <input value={meetingForm.title} onChange={e => setMeetingForm({ ...meetingForm, title: e.target.value })} placeholder="Meeting title *" style={{ padding: '6px 10px', border: '1px solid #E5E7EB', borderRadius: 5, fontSize: 11, outline: 'none', fontFamily: C.font }} />
+                    <input type="datetime-local" value={meetingForm.meeting_date} onChange={e => setMeetingForm({ ...meetingForm, meeting_date: e.target.value })} style={{ padding: '6px 10px', border: '1px solid #E5E7EB', borderRadius: 5, fontSize: 11, outline: 'none', fontFamily: C.font }} />
+                    <input value={meetingForm.meeting_link} onChange={e => setMeetingForm({ ...meetingForm, meeting_link: e.target.value })} placeholder="Meeting link *" style={{ padding: '6px 10px', border: '1px solid #E5E7EB', borderRadius: 5, fontSize: 11, outline: 'none', fontFamily: C.font }} />
+                    <button type="submit" disabled={!meetingForm.title.trim() || !meetingForm.meeting_date || !meetingForm.meeting_link.trim()} style={{ background: C.primary, color: '#fff', border: 'none', borderRadius: 5, padding: '6px 14px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>+ Add</button>
+                  </form>
+                )}
+                {allMeetings.length === 0 ? (
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#b5b8c6', fontSize: 11 }}>No meetings or requests</div>
+                ) : (
+                  <div style={{ flex: 1, overflowY: 'auto' }}>
+                    {allMeetings.map(m => {
+                      const isReq = m._type === 'request'
+                      const status = (m.status || '').toLowerCase()
+                      const isCancelled = status === 'cancelled'
+                      const statusColor = isCancelled ? '#DC2626' : isReq ? '#e8930c' : '#2563EB'
+                      const statusBg = isCancelled ? '#FEE2E2' : isReq ? '#FEF3C7' : '#DBEAFE'
+                      return (
+                        <div key={`${m._type}-${m.id}`} style={{ display: 'flex', gap: 10, padding: '9px 12px', marginBottom: 6, background: isCancelled ? '#F9FAFB' : '#F8F9FC', borderRadius: 7, cursor: 'pointer', border: isCancelled ? '1px solid #E5E7EB' : '1px solid transparent' }}
+                          onClick={() => navigate(`/meetings?id=${m.id}&type=${isReq ? 'request' : 'meeting'}`)}>
+                          <div style={{ width: 30, height: 30, borderRadius: 6, background: isCancelled ? '#FEE2E2' : isReq ? '#FEF3C7' : '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={isCancelled ? '#DC2626' : isReq ? '#e8930c' : '#2563EB'} strokeWidth="2"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 11.5, fontWeight: 600, color: isCancelled ? '#6B7280' : '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.title}</div>
+                            <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>{m.meeting_date ? formatDateTime(m.meeting_date) : '—'}</div>
+                            <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 7px', borderRadius: 3, background: statusBg, color: statusColor, marginTop: 3, display: 'inline-block' }}>{m.status || '—'}</span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 9, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
+              <div style={{ padding: '9px 14px', borderBottom: '1px solid #E5E7EB', fontSize: 11.5, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>Notes <span style={{ fontWeight: 500, color: '#6b7280' }}>({(notes || []).length})</span></div>
+              <div style={{ padding: '9px 14px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                <form onSubmit={addNote} style={{ display: 'flex', gap: 6, marginBottom: 7 }}>
+                  <input value={noteText} onChange={e => setNoteText(e.target.value)} placeholder="Add a note..." onKeyDown={e => { if ((e.key === 'Enter' && !e.shiftKey) || (e.key === 'Enter' && e.ctrlKey)) { e.preventDefault(); addNote(e) } }}
+                    style={{ flex: 1, padding: '6px 10px', border: '1px solid #E5E7EB', borderRadius: 6, fontSize: 11, outline: 'none', fontFamily: C.font }} />
+                  <button type="submit" disabled={!noteText.trim()} style={{ background: '#f1ecff', color: C.primary, border: 'none', fontWeight: 700, fontSize: 10.5, padding: '6px 11px', borderRadius: 6, cursor: 'pointer', opacity: noteText.trim() ? 1 : 0.5 }}>Add Note</button>
+                </form>
+                {(!notes || notes.length === 0) ? (
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#b5b8c6', fontSize: 11 }}>No notes.</div>
+                ) : (
+                  <div style={{ flex: 1, overflowY: 'auto' }}>
+                    {notes.map(n => (
+                      <div key={n.id} style={{ padding: '8px 12px', background: '#FAFBFC', borderRadius: 7, marginBottom: 4, border: '1px solid #F1F5F9', fontSize: 11 }}>
+                        <div style={{ color: '#475569' }}>{n.content}</div>
+                        <div style={{ fontSize: 9, color: '#9ca3af', marginTop: 2 }}>{formatDateTime(n.created_at)}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>}
+
+        {/* ═══──────────────────────────────────────────────────╗ */}
+        {/* ═══  TEAM PANE                                       ║ */}
+        {/* ═══──────────────────────────────────────────────────╝ */}
+        {activeTab === 'team' && <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, minHeight: 0 }}>
+          <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 9, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
+            <div style={{ padding: '9px 14px', borderBottom: '1px solid #E5E7EB', fontSize: 11.5, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span>👥 Team ({(team || []).length})</span>
+              {hasRole('super_admin', 'admin', 'project_lead') && (
+                <button onClick={() => setShowTeamForm(!showTeamForm)} style={{ background: '#f1ecff', color: C.primary, border: 'none', fontWeight: 700, fontSize: 10.5, padding: '5px 11px', borderRadius: 6, cursor: 'pointer' }}>+ Add</button>
+              )}
+            </div>
+            {showTeamForm && (
+              <div style={{ padding: '10px 14px', borderBottom: '1px solid #E5E7EB', background: '#FAFBFC' }}>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <select value={teamForm.userId} onChange={e => setTeamForm({ ...teamForm, userId: e.target.value })} style={{ flex: 1, padding: '6px 10px', border: '1px solid #E5E7EB', borderRadius: 5, fontSize: 11, fontWeight: 500, fontFamily: C.font }}>
+                    <option value="">Select user...</option>
+                    {users.filter(u => !team.some(t => t.user_id === u.id)).map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
+                  </select>
+                  <button onClick={addTeamMember} disabled={!teamForm.userId} style={{ padding: '6px 14px', border: 'none', borderRadius: 5, background: C.primary, color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Add</button>
+                </div>
+              </div>
+            )}
+            <div style={{ padding: '9px 14px', flex: 1, overflowY: 'auto' }}>
+              {(team || []).length === 0 ? (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#b5b8c6', fontSize: 11 }}>No team members assigned yet.</div>
+              ) : (
+                team.map(t => (
+                  <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: '1px solid #F1F5F9', fontSize: 12 }}>
+                    <div style={{ width: 26, height: 26, borderRadius: '50%', background: '#EDE9FE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: C.primary, flexShrink: 0 }}>{(t.user_name || '?')[0]}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600 }}>{t.user_name}</div>
+                      <div style={{ fontSize: 9, color: '#9ca3af' }}>{t.role_in_project || 'Member'}</div>
+                    </div>
+                    {hasRole('admin') && (
+                      <button onClick={() => removeTeamMember(t.id)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 14, color: '#9ca3af', padding: 2 }}>×</button>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>}
+
+      </div>
 
         {/* ═══ REMARK EDITOR MODAL ═══ */}
         {editRemark && (
