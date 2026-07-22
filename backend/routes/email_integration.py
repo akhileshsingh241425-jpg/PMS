@@ -4,7 +4,7 @@ import json
 import secrets
 from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify, current_app, redirect
-from models import db, User, EmailAccount, EmailMessage
+from models import db, User, EmailAccount, EmailMessage, EmailAuthState
 from models.email_integration import CATEGORIES
 from middleware.auth import login_required
 
@@ -14,8 +14,6 @@ def _get_authority():
     tenant = current_app.config.get('MICROSOFT_TENANT_ID', 'common')
     return f'https://login.microsoftonline.com/{tenant}'
 GRAPH_URL = 'https://graph.microsoft.com/v1.0'
-
-_temp_tokens = {}
 
 
 def _get_config():
@@ -30,7 +28,9 @@ def connect(current_user):
     if not client_id:
         return jsonify({'error': 'Microsoft Graph not configured. Set MICROSOFT_CLIENT_ID in server env.'}), 400
     state = secrets.token_urlsafe(32)
-    _temp_tokens[state] = {'user_id': current_user.id, 'expires': datetime.utcnow() + timedelta(minutes=5)}
+    auth_state = EmailAuthState(state=state, user_id=current_user.id, expires_at=datetime.utcnow() + timedelta(minutes=10))
+    db.session.add(auth_state)
+    db.session.commit()
     scopes = 'offline_access Mail.Read Mail.ReadWrite User.Read'
     authority = _get_authority()
     auth_url = (
@@ -55,8 +55,11 @@ def callback():
     if not code or not state:
         return jsonify({'error': 'Missing code or state'}), 400
 
-    temp = _temp_tokens.pop(state, None)
-    if not temp or temp['expires'] < datetime.utcnow():
+    auth_state = EmailAuthState.query.filter_by(state=state).first()
+    if not auth_state or auth_state.expires_at < datetime.utcnow():
+        if auth_state:
+            db.session.delete(auth_state)
+            db.session.commit()
         return jsonify({'error': 'State expired or invalid. Reconnect.'}), 400
 
     client_id, client_secret, redirect_uri = _get_config()
@@ -86,7 +89,7 @@ def callback():
     token_enc = base64.b64encode(access_token.encode()).decode()
     refresh_enc = base64.b64encode(refresh_token.encode()).decode() if refresh_token else ''
 
-    user_id = temp['user_id']
+    user_id = auth_state.user_id
     account = EmailAccount.query.filter_by(user_id=user_id).first()
     if not account:
         account = EmailAccount(user_id=user_id, email=email)
@@ -95,6 +98,7 @@ def callback():
     account.refresh_token = refresh_enc
     account.token_expiry = token_expiry
     account.is_active = True
+    db.session.delete(auth_state)
     db.session.commit()
 
     fe_url = current_app.config.get('FRONTEND_URL', 'http://localhost:5174')

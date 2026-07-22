@@ -27,6 +27,15 @@ class EmailAccount(db.Model):
         }
 
 
+class EmailAuthState(db.Model):
+    __tablename__ = 'email_auth_states'
+    id = db.Column(db.Integer, primary_key=True)
+    state = db.Column(db.String(64), unique=True, nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
 class EmailMessage(db.Model):
     __tablename__ = 'email_messages'
     id = db.Column(db.Integer, primary_key=True)
