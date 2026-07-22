@@ -66,62 +66,62 @@ export default function Clients() {
   const totalProjects = filteredClients.reduce((s, c) => s + (c.project_count || 0), 0)
 
   const columnHeader = {
-    fontSize: 11,
-    fontWeight: 600,
+    fontSize: 10,
+    fontWeight: 700,
     color: C.secondary,
     textTransform: 'uppercase',
-    letterSpacing: '0.5px',
+    letterSpacing: '0.3px',
   }
 
   return (
     <div style={{ minHeight: '100vh', fontFamily: C.font, color: C.text, WebkitFontSmoothing: 'antialiased', background: C.bg }}>
       <div style={{ padding: 0 }}>
         {/* ── Header ── */}
-        <div style={{ padding: '20px 24px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <h1 style={{ fontSize: 24, fontWeight: 700, color: C.text, margin: 0, lineHeight: 1.2 }}>Clients</h1>
-            <p style={{ fontSize: 13, color: C.secondary, margin: '4px 0 0' }}>
-              {summary.total} clients &middot; {totalProjects} projects
-            </p>
+          <div style={{ padding: '14px 24px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <h1 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: 0, lineHeight: 1.2 }}>Clients</h1>
+              <p style={{ fontSize: 12, color: C.secondary, margin: '2px 0 0' }}>
+                {summary.total} clients &middot; {totalProjects} projects
+              </p>
+            </div>
+            <button
+              onClick={() => setShowModal(true)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+                padding: '6px 14px',
+                borderRadius: 8,
+                border: 'none',
+                background: C.blue,
+                color: '#fff',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: C.font,
+                boxShadow: '0 1px 3px rgba(0,82,204,0.3)',
+              }}
+            >
+              <Plus className="w-3.5 h-3.5" /> New Client
+            </button>
           </div>
-          <button
-            onClick={() => setShowModal(true)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '8px 18px',
-              borderRadius: 8,
-              border: 'none',
-              background: C.blue,
-              color: '#fff',
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-              fontFamily: C.font,
-              boxShadow: '0 1px 3px rgba(0,82,204,0.3)',
-            }}
-          >
-            <Plus className="w-4 h-4" /> New Client
-          </button>
-        </div>
 
         {/* ── Filter Tabs ── */}
         <ClientFilterTabs summary={summary} activeFilter={activeFilter} onFilterChange={setActiveFilter} />
 
         {/* ── Search + Filter Bar ── */}
-        <div style={{ padding: '4px 24px 14px', display: 'flex', gap: 8, alignItems: 'center' }}>
-          <div style={{ position: 'relative', flex: '1 1 0' }}>
-            <Search className="w-4 h-4" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: C.secondary, pointerEvents: 'none' }} />
+        <div style={{ padding: '4px 24px 10px', display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ position: 'relative', flex: '1 1 160px', minWidth: 160 }}>
+            <Search className="w-3.5 h-3.5" style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: C.secondary, pointerEvents: 'none' }} />
             <input
               value={search}
               onChange={e => handleSearchInput(e.target.value)}
               style={{
                 width: '100%',
-                padding: '8px 12px 8px 34px',
+                padding: '6px 10px 6px 28px',
                 border: `1px solid ${C.border}`,
                 borderRadius: 8,
-                fontSize: 13,
+                fontSize: 12,
                 outline: 'none',
                 fontFamily: C.font,
                 background: '#fff',
@@ -135,16 +135,15 @@ export default function Clients() {
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
             style={{
-              padding: '8px 12px',
+              padding: '6px 10px',
               border: `1px solid ${C.border}`,
               borderRadius: 8,
-              fontSize: 13,
+              fontSize: 12,
               outline: 'none',
               fontFamily: C.font,
               background: '#fff',
               cursor: 'pointer',
               color: C.text,
-              minWidth: 120,
             }}
           >
             <option value="">All Status</option>
@@ -152,22 +151,22 @@ export default function Clients() {
             <option value="Inactive">Inactive</option>
             <option value="Pending">Pending</option>
           </select>
-          <select value={industryFilter} onChange={e => setIndustryFilter(e.target.value)} style={{ padding: '8px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: C.font, background: '#fff', cursor: 'pointer', color: C.text, minWidth: 120 }}>
+          <select value={industryFilter} onChange={e => setIndustryFilter(e.target.value)} style={{ padding: '6px 10px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12, outline: 'none', fontFamily: C.font, background: '#fff', cursor: 'pointer', color: C.text }}>
             <option value="">All Industries</option>
             {industries.map(i => <option key={i} value={i}>{i}</option>)}
           </select>
-          <select value={locationFilter} onChange={e => setLocationFilter(e.target.value)} style={{ padding: '8px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: C.font, background: '#fff', cursor: 'pointer', color: C.text, minWidth: 120 }}>
+          <select value={locationFilter} onChange={e => setLocationFilter(e.target.value)} style={{ padding: '6px 10px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12, outline: 'none', fontFamily: C.font, background: '#fff', cursor: 'pointer', color: C.text }}>
             <option value="">All Locations</option>
             {locations.map(l => <option key={l} value={l}>{l}</option>)}
           </select>
           <button
             onClick={handleSearchClick}
             style={{
-              padding: '8px 12px',
+              padding: '6px 10px',
               borderRadius: 8,
               border: `1px solid ${C.border}`,
               background: '#fff',
-              fontSize: 13,
+              fontSize: 12,
               cursor: 'pointer',
               color: C.text,
               fontFamily: C.font,
@@ -176,12 +175,12 @@ export default function Clients() {
               justifyContent: 'center',
             }}
           >
-            <Search className="w-4 h-4" />
+            <Search className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {/* ── Table ── */}
-        <div style={{ padding: '0 24px 24px' }}>
+        <div style={{ padding: '0 24px 16px' }}>
           {loading ? (
             <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, boxShadow: C.shadow, padding: 20 }}>
               <TableSkeleton rows={6} cols={5} />
@@ -198,15 +197,15 @@ export default function Clients() {
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                padding: '10px 20px',
+                padding: '6px 16px',
                 borderBottom: `1px solid ${C.border}`,
                 background: '#F8FAFC',
               }}>
                 <div style={{ flex: '1 1 0', ...columnHeader }}>Client</div>
-                <div style={{ width: 140, textAlign: 'center', ...columnHeader }}>Contact</div>
-                <div style={{ width: 120, textAlign: 'center', ...columnHeader }}>Industry</div>
-                <div style={{ width: 80, textAlign: 'center', ...columnHeader }}>Projects</div>
-                <div style={{ width: 80, textAlign: 'center', ...columnHeader }} />
+                <div style={{ width: 120, textAlign: 'center', ...columnHeader }}>Contact</div>
+                <div style={{ width: 100, textAlign: 'center', ...columnHeader }}>Industry</div>
+                <div style={{ width: 60, textAlign: 'center', ...columnHeader }}>Projects</div>
+                <div style={{ width: 70, textAlign: 'center', ...columnHeader }} />
               </div>
 
               {/* Rows */}

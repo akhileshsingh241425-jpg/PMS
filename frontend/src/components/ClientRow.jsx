@@ -5,40 +5,40 @@ import { C } from './styleConstants'
 const rowStyle = {
   display: 'flex',
   alignItems: 'center',
-  padding: '10px 20px',
+  padding: '6px 16px',
   borderBottom: '1px solid #F1F5F9',
   cursor: 'pointer',
   transition: 'background 0.1s',
-  fontSize: 14,
+  fontSize: 13,
   fontFamily: C.font,
-  minHeight: 56,
+  minHeight: 40,
   boxSizing: 'border-box',
   color: C.text,
 }
 
 const avatarMain = {
-  width: 36,
-  height: 36,
+  width: 28,
+  height: 28,
   borderRadius: '50%',
   background: C.blueDark,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  fontSize: 15,
+  fontSize: 12,
   fontWeight: 700,
   color: '#fff',
   flexShrink: 0,
 }
 
 const avatarSub = {
-  width: 32,
-  height: 32,
+  width: 24,
+  height: 24,
   borderRadius: '50%',
   background: C.blueLight,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  fontSize: 13,
+  fontSize: 11,
   fontWeight: 700,
   color: C.blue,
   flexShrink: 0,
@@ -94,31 +94,31 @@ export default function ClientRow({ client, onNavigate }) {
         onMouseEnter={e => { e.currentTarget.style.background = '#F8FAFC' }}
         onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: '1 1 0', minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: '1 1 0', minWidth: 0 }}>
           <div style={avatarMain}>
             {(client.name || '?')[0].toUpperCase()}
           </div>
           <div style={{ minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-              <span style={{ fontWeight: 600, fontSize: 14, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 200 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+              <span style={{ fontWeight: 600, fontSize: 13, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 180 }}>
                 {client.name}
               </span>
               <span style={idBadge}>{client.client_code}</span>
               {client.status === 'Active' && <span style={greenDot} />}
             </div>
             {client.client_type === 'main' && client.location && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
-                <MapPin className="w-3 h-3" style={{ color: C.secondary, flexShrink: 0 }} />
-                <span style={{ fontSize: 12, color: C.secondary }}>{client.location}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginTop: 1 }}>
+                <MapPin className="w-2.5 h-2.5" style={{ color: C.secondary, flexShrink: 0 }} />
+                <span style={{ fontSize: 11, color: C.secondary }}>{client.location}</span>
               </div>
             )}
           </div>
         </div>
 
-        <div style={{ width: 140, textAlign: 'center', flexShrink: 0 }}>
+        <div style={{ width: 120, textAlign: 'center', flexShrink: 0 }}>
           {client.contact_name && (
             <span
-              style={{ fontSize: 13, color: C.blue, cursor: 'pointer' }}
+              style={{ fontSize: 12, color: C.blue, cursor: 'pointer' }}
               onClick={e => { e.stopPropagation(); window.location.href = `mailto:${client.contact_email || ''}` }}
             >
               {client.contact_name}
@@ -126,24 +126,24 @@ export default function ClientRow({ client, onNavigate }) {
           )}
         </div>
 
-        <div style={{ width: 120, textAlign: 'center', flexShrink: 0 }}>
+        <div style={{ width: 100, textAlign: 'center', flexShrink: 0 }}>
           {client.industry && (
             <span style={industryTag}>{client.industry}</span>
           )}
         </div>
 
-        <div style={{ width: 80, textAlign: 'center', flexShrink: 0 }}>
-          <span style={{ fontWeight: 700, fontSize: 15, color: C.text }}>
+        <div style={{ width: 60, textAlign: 'center', flexShrink: 0 }}>
+          <span style={{ fontWeight: 700, fontSize: 13, color: C.text }}>
             {client.project_count || 0}
           </span>
         </div>
 
-        <div style={{ width: 80, textAlign: 'center', flexShrink: 0 }}>
+        <div style={{ width: 70, textAlign: 'center', flexShrink: 0 }}>
           {hasSubs && (
             <button
               onClick={e => { e.stopPropagation(); setExpanded(!expanded) }}
               style={{
-                padding: '3px 10px',
+                padding: '2px 8px',
                 borderRadius: 999,
                 border: '1px solid #E2E8F0',
                 background: '#fff',
@@ -152,13 +152,13 @@ export default function ClientRow({ client, onNavigate }) {
                 display: 'inline-flex',
                 alignItems: 'center',
                 fontFamily: C.font,
-                fontSize: 12,
-                gap: 4,
+                fontSize: 11,
+                gap: 3,
                 fontWeight: 500,
               }}
             >
-              {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-              {subClients.length} sub
+              {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+              {subClients.length}
             </button>
           )}
         </div>
@@ -172,40 +172,40 @@ export default function ClientRow({ client, onNavigate }) {
               onClick={() => onNavigate(sub.id)}
               style={{
                 ...rowStyle,
-                paddingLeft: 64,
-                minHeight: 48,
+                paddingLeft: 52,
+                minHeight: 36,
                 background: '#FAFBFC',
               }}
               onMouseEnter={e => { e.currentTarget.style.background = '#F1F5F9' }}
               onMouseLeave={e => { e.currentTarget.style.background = '#FAFBFC' }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: '1 1 0', minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 0', minWidth: 0 }}>
                 <div style={avatarSub}>
                   {(sub.name || '?')[0].toUpperCase()}
                 </div>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                    <span style={{ fontWeight: 500, fontSize: 13, color: C.text }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+                    <span style={{ fontWeight: 500, fontSize: 12, color: C.text }}>
                       {sub.name}
                     </span>
-                    <span style={{ fontSize: 12, color: C.secondary }}>{sub.client_code}</span>
+                    <span style={{ fontSize: 11, color: C.secondary }}>{sub.client_code}</span>
                   </div>
                 </div>
               </div>
 
-              <div style={{ width: 140, textAlign: 'center', flexShrink: 0 }}>
-                <span style={subBadge}>Sub-Client</span>
+              <div style={{ width: 120, textAlign: 'center', flexShrink: 0 }}>
+                <span style={subBadge}>Sub</span>
               </div>
 
-              <div style={{ width: 120, textAlign: 'center', flexShrink: 0 }} />
+              <div style={{ width: 100, textAlign: 'center', flexShrink: 0 }} />
 
-              <div style={{ width: 80, textAlign: 'center', flexShrink: 0 }}>
-                <span style={{ fontWeight: 600, fontSize: 14, color: C.text }}>
+              <div style={{ width: 60, textAlign: 'center', flexShrink: 0 }}>
+                <span style={{ fontWeight: 600, fontSize: 13, color: C.text }}>
                   {sub.project_count || 0}
                 </span>
               </div>
 
-              <div style={{ width: 80, textAlign: 'center', flexShrink: 0 }} />
+              <div style={{ width: 70, textAlign: 'center', flexShrink: 0 }} />
             </div>
           ))}
         </div>
