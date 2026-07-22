@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ToastProvider } from './contexts/ToastContext'
+import { ChatProvider } from './contexts/ChatContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import Layout from './components/Layout'
 import Login from './pages/Login'
@@ -32,6 +33,7 @@ import PMReports from './pages/PMReports'
 import VulnerabilityDashboard from './pages/VulnerabilityDashboard'
 import Clients from './pages/Clients'
 import EmailInbox from './pages/EmailInbox'
+import ChatPage from './pages/ChatPage'
 
 function Protected({ children }) {
   const { user } = useAuth()
@@ -83,6 +85,7 @@ export default function App() {
       <BrowserRouter>
         <AuthProvider>
           <ToastProvider>
+            <ChatProvider>
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/client-login" element={<ClientLogin />} />
@@ -112,6 +115,7 @@ export default function App() {
                 <Route path="attendance" element={<AttendancePage />} />
                 <Route path="attendance/face-register" element={<FaceRegisterPage />} />
                 <Route path="users" element={<AdminRoute><UsersPage /></AdminRoute>} />
+                <Route path="chat" element={<ChatPage />} />
               </Route>
               <Route path="/employee" element={<Protected><EmployeeRoute><EmployeeAppLayout /></EmployeeRoute></Protected>}>
                 <Route index element={<EmployeePortal activeTab="dashboard" />} />
@@ -125,6 +129,7 @@ export default function App() {
                 <Route path="notifications" element={<EmployeePortal activeTab="notifications" />} />
                 <Route path="profile" element={<EmployeePortal activeTab="profile" />} />
                 <Route path="face-register" element={<FaceRegisterPage />} />
+                <Route path="chat" element={<ChatPage />} />
               </Route>
               <Route path="/pm" element={<Protected><PMRoute><PMAppLayout /></PMRoute></Protected>}>
                 <Route path="face-register" element={<FaceRegisterPage />} />
@@ -134,10 +139,12 @@ export default function App() {
                 <Route path="team" element={<PMTeam />} />
                 <Route path="meetings" element={<PMMeetings />} />
                 <Route path="reports" element={<PMReports />} />
+                <Route path="chat" element={<ChatPage />} />
               </Route>
               <Route path="/vulnerabilities" element={<Protected><Layout><VulnerabilityDashboard /></Layout></Protected>} />
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
+            </ChatProvider>
           </ToastProvider>
         </AuthProvider>
       </BrowserRouter>

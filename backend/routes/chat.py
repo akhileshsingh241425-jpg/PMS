@@ -1,53 +1,152 @@
 from flask import Blueprint, request, jsonify
-from models import db, ChatMessage
+from models import db, User, ChatConversation, ChatConversationParticipant, ChatMessage, ChatMessageStatus
 from middleware.auth import login_required
+from datetime import datetime
 
 chat_bp = Blueprint('chat', __name__, url_prefix='/api/chat')
 
 
-@chat_bp.route('/messages', methods=['GET'])
+@chat_bp.route('/conversations', methods=['GET'])
 @login_required
-def get_messages(current_user):
-    project_id = request.args.get('project_id', type=int)
+def list_conversations(current_user):
+    convs = ChatConversation.query.join(ChatConversationParticipant).filter(
+        ChatConversationParticipant.user_id == current_user.id
+    ).order_by(ChatConversation.updated_at.desc()).all()
+    return jsonify({'conversations': [c.to_dict(current_user.id) for c in convs]})
+
+
+@chat_bp.route('/conversations', methods=['POST'])
+@login_required
+def create_conversation(current_user):
+    data = request.get_json() or {}
+    conv_type = data.get('type', 'direct')
+    name = data.get('name')
+    participant_ids = data.get('participant_ids', [])
+
+    if conv_type == 'direct':
+        if not participant_ids or len(participant_ids) != 1:
+            return jsonify({'error': 'Need exactly one recipient for DM'}), 400
+        recipient_id = participant_ids[0]
+        existing = ChatConversation.query.join(ChatConversationParticipant).filter(
+            ChatConversation.type == 'direct',
+            ChatConversationParticipant.user_id.in_([current_user.id, recipient_id])
+        ).group_by(ChatConversation.id).having(
+            db.func.count(ChatConversationParticipant.id) == 2
+        ).first()
+        if existing:
+            return jsonify({'conversation': existing.to_dict(current_user.id)})
+
+    conv = ChatConversation(type=conv_type, name=name, created_by=current_user.id)
+    db.session.add(conv)
+    db.session.flush()
+
+    ids = set(participant_ids + [current_user.id])
+    for uid in ids:
+        p = ChatConversationParticipant(conversation_id=conv.id, user_id=uid)
+        db.session.add(p)
+    db.session.commit()
+    return jsonify({'conversation': conv.to_dict(current_user.id)}), 201
+
+
+@chat_bp.route('/conversations/<int:conv_id>', methods=['GET'])
+@login_required
+def get_conversation(current_user, conv_id):
+    conv = ChatConversation.query.get_or_404(conv_id)
+    is_member = ChatConversationParticipant.query.filter_by(conversation_id=conv_id, user_id=current_user.id).first()
+    if not is_member:
+        return jsonify({'error': 'Access denied'}), 403
+    return jsonify({'conversation': conv.to_dict(current_user.id)})
+
+
+@chat_bp.route('/conversations/<int:conv_id>/messages', methods=['GET'])
+@login_required
+def get_messages(current_user, conv_id):
+    is_member = ChatConversationParticipant.query.filter_by(conversation_id=conv_id, user_id=current_user.id).first()
+    if not is_member:
+        return jsonify({'error': 'Access denied'}), 403
     before = request.args.get('before', type=int)
     limit = min(request.args.get('limit', 50, type=int), 200)
-
-    q = ChatMessage.query
-    if project_id:
-        q = q.filter_by(project_id=project_id)
+    q = ChatMessage.query.filter_by(conversation_id=conv_id)
     if before:
         q = q.filter(ChatMessage.id < before)
     q = q.order_by(ChatMessage.created_at.desc()).limit(limit)
-
     messages = list(reversed(q.all()))
     return jsonify({'messages': [m.to_dict() for m in messages]})
 
 
-@chat_bp.route('/messages', methods=['POST'])
+@chat_bp.route('/conversations/<int:conv_id>/read', methods=['POST'])
 @login_required
-def send_message(current_user):
-    data = request.get_json() or {}
-    if not data.get('message'):
-        return jsonify({'error': 'message required'}), 400
-    msg = ChatMessage(
-        project_id=data.get('project_id'),
-        sender_id=current_user.id,
-        message=data['message'],
-        message_type=data.get('message_type', 'text'),
-    )
-    db.session.add(msg)
+def mark_read(current_user, conv_id):
+    now = datetime.utcnow()
+    part = ChatConversationParticipant.query.filter_by(conversation_id=conv_id, user_id=current_user.id).first()
+    if not part:
+        return jsonify({'error': 'Not a member'}), 403
+    part.last_read_at = now
+    msgs = ChatMessage.query.filter(ChatMessage.conversation_id == conv_id, ChatMessage.sender_id != current_user.id).all()
+    for m in msgs:
+        s = ChatMessageStatus.query.filter_by(message_id=m.id, user_id=current_user.id).first()
+        if s and s.status != 'read':
+            s.status = 'read'
+            s.updated_at = now
     db.session.commit()
-    return jsonify({'message': msg.to_dict()}), 201
+    return jsonify({'ok': True})
 
 
-@chat_bp.route('/recent-projects', methods=['GET'])
+@chat_bp.route('/users', methods=['GET'])
 @login_required
-def recent_projects(current_user):
-    from models import Project, ProjectTeam
-    pids = set()
-    if current_user.role == 'admin':
-        projects = Project.query.order_by(Project.updated_at.desc()).limit(20).all()
-    else:
-        pids = {t.project_id for t in ProjectTeam.query.filter_by(user_id=current_user.id).all()}
-        projects = Project.query.filter(Project.id.in_(pids)).order_by(Project.updated_at.desc()).all() if pids else []
-    return jsonify({'projects': [{'id': p.id, 'title': p.title} for p in projects]})
+def list_users(current_user):
+    search = request.args.get('search', '').strip()
+    q = User.query.filter(User.is_active == True)
+    if search:
+        like = f'%{search}%'
+        q = q.filter(db.or_(User.first_name.ilike(like), User.last_name.ilike(like), User.emp_id.ilike(like), User.email.ilike(like)))
+    users = q.order_by(User.first_name).all()
+    return jsonify({'users': [u.to_dict() for u in users if u.id != current_user.id]})
+
+
+@chat_bp.route('/conversations/<int:conv_id>/participants', methods=['POST'])
+@login_required
+def add_participant(current_user, conv_id):
+    conv = ChatConversation.query.get_or_404(conv_id)
+    is_admin = ChatConversationParticipant.query.filter_by(conversation_id=conv_id, user_id=current_user.id, role='admin').first()
+    is_creator = conv.created_by == current_user.id
+    if not is_admin and not is_creator:
+        return jsonify({'error': 'Only admins can add members'}), 403
+    data = request.get_json() or {}
+    user_id = data.get('user_id')
+    if not user_id:
+        return jsonify({'error': 'user_id required'}), 400
+    existing = ChatConversationParticipant.query.filter_by(conversation_id=conv_id, user_id=user_id).first()
+    if existing:
+        return jsonify({'error': 'Already a member'}), 400
+    p = ChatConversationParticipant(conversation_id=conv_id, user_id=user_id)
+    db.session.add(p)
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
+@chat_bp.route('/conversations/<int:conv_id>/participants/<int:user_id>', methods=['DELETE'])
+@login_required
+def remove_participant(current_user, conv_id, user_id):
+    conv = ChatConversation.query.get_or_404(conv_id)
+    is_admin = ChatConversationParticipant.query.filter_by(conversation_id=conv_id, user_id=current_user.id, role='admin').first()
+    is_creator = conv.created_by == current_user.id
+    if not is_admin and not is_creator and current_user.id != user_id:
+        return jsonify({'error': 'Not authorized'}), 403
+    p = ChatConversationParticipant.query.filter_by(conversation_id=conv_id, user_id=user_id).first()
+    if not p:
+        return jsonify({'error': 'Not a member'}), 404
+    db.session.delete(p)
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
+@chat_bp.route('/messages/<int:msg_id>', methods=['DELETE'])
+@login_required
+def delete_message(current_user, msg_id):
+    msg = ChatMessage.query.get_or_404(msg_id)
+    if msg.sender_id != current_user.id:
+        return jsonify({'error': 'Can only delete own messages'}), 403
+    msg.deleted_at = datetime.utcnow()
+    db.session.commit()
+    return jsonify({'ok': True})

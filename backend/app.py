@@ -3,9 +3,12 @@ import traceback
 from flask import Flask, jsonify, send_from_directory, request
 from flask_cors import CORS
 from flask_migrate import Migrate
+from flask_socketio import SocketIO
 from config import Config
 from models import db, bcrypt
 from email_utils import init_mail
+
+socketio = SocketIO(cors_allowed_origins='*', async_mode='threading')
 
 
 def create_app():
@@ -18,6 +21,7 @@ def create_app():
     bcrypt.init_app(app)
     init_mail(app)
     CORS(app, origins=['*'], supports_credentials=True)
+    socketio.init_app(app)
 
     @app.route('/api/health', methods=['GET'])
     def health():
@@ -74,6 +78,9 @@ def create_app():
             return send_from_directory(frontend_dir, path)
         return send_from_directory(frontend_dir, 'index.html')
 
+    from socketio_events import register_socketio_events
+    register_socketio_events(socketio)
+
     with app.app_context():
         db.create_all()
 
@@ -86,4 +93,4 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5002))
     host = os.environ.get('HOST', '0.0.0.0')
     app = create_app()
-    app.run(debug=debug, host=host, port=port)
+    socketio.run(app, debug=debug, host=host, port=port)
