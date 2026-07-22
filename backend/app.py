@@ -90,7 +90,7 @@ def create_app():
 if __name__ == '__main__':
     import os
     debug = os.environ.get('FLASK_DEBUG', '0') == '1'
-    port = int(os.environ.get('PORT', 5002))
+    port = int(os.environ.get('PORT', 5010))
     host = os.environ.get('HOST', '0.0.0.0')
     app = create_app()
     socketio.run(app, debug=debug, host=host, port=port, allow_unsafe_werkzeug=True)
