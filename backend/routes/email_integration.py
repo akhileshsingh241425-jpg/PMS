@@ -7,7 +7,7 @@ from flask import Blueprint, request, jsonify, current_app, redirect
 from middleware.auth import login_required
 from models import (
     db, User, EmailAccount, EmailMessage, EmailAuthState,
-    EmailActivity, EmailNote, EmailAutoRule,
+    EmailActivity, EmailNote, EmailAutoRule, EmailFollowUp, EmailTemplate,
     CATEGORIES, EMAIL_STATUSES, PRIORITIES, TAGS_PRESET,
 )
 
@@ -243,6 +243,7 @@ def fetch_emails(current_user):
             )
             _apply_auto_rules(email_msg)
             db.session.add(email_msg)
+            db.session.flush()
             _add_activity(email_msg.id, current_user.id, 'Received', 'Email received from ' + sender_email)
             total_fetched += 1
 
@@ -534,3 +535,259 @@ def delete_rule(current_user, rid):
 @login_required
 def list_tags(current_user):
     return jsonify({'tags': TAGS_PRESET})
+
+
+# ─── Dashboard ───
+@email_bp.route('/dashboard', methods=['GET'])
+@login_required
+def dashboard(current_user):
+    account_ids = [a.id for a in EmailAccount.query.filter_by(user_id=current_user.id).all()]
+    base = EmailMessage.query
+    if account_ids:
+        base = base.filter(EmailMessage.email_account_id.in_(account_ids))
+    else:
+        base = base.filter(EmailMessage.assigned_to_id == current_user.id)
+
+    now = datetime.utcnow()
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    total = base.count()
+    unread = base.filter_by(is_read=False).count()
+    today = base.filter(EmailMessage.received_at >= today_start).count()
+    overdue = base.filter(EmailMessage.assigned_to_id.isnot(None), EmailMessage.status.in_(['New', 'Assigned', 'Working', 'Waiting Customer']), EmailMessage.received_at < (now - timedelta(hours=24))).count()
+
+    cat_counts = {}
+    for c in CATEGORIES:
+        cat_counts[c.lower()] = base.filter_by(category=c).count()
+
+    status_counts = {}
+    for s in EMAIL_STATUSES:
+        status_counts[s.lower().replace(' ', '_')] = base.filter_by(status=s).count()
+
+    assigned_to_me = base.filter(EmailMessage.assigned_to_id == current_user.id, EmailMessage.status.in_(['Assigned', 'Working', 'Waiting Customer'])).count()
+
+    return jsonify({
+        'total': total, 'unread': unread, 'today': today, 'overdue': overdue,
+        'assigned_to_me': assigned_to_me,
+        'by_category': cat_counts,
+        'by_status': status_counts,
+    })
+
+
+# ─── Kanban (messages grouped by status) ───
+@email_bp.route('/kanban', methods=['GET'])
+@login_required
+def kanban(current_user):
+    account_ids = [a.id for a in EmailAccount.query.filter_by(user_id=current_user.id).all()]
+    q = EmailMessage.query
+    if account_ids:
+        q = q.filter(EmailMessage.email_account_id.in_(account_ids))
+    else:
+        q = q.filter(EmailMessage.assigned_to_id == current_user.id)
+    now = datetime.utcnow()
+    q = q.filter(db.or_(EmailMessage.snooze_at.is_(None), EmailMessage.snooze_at <= now))
+
+    result = {}
+    for status in EMAIL_STATUSES:
+        msgs = q.filter_by(status=status).order_by(EmailMessage.received_at.desc()).limit(20).all()
+        result[status.lower().replace(' ', '_')] = [m.to_dict() for m in msgs]
+
+    return jsonify({'columns': result})
+
+
+# ─── Customer Profile ───
+@email_bp.route('/messages/<int:mid>/profile', methods=['GET'])
+@login_required
+def customer_profile(current_user, mid):
+    msg = EmailMessage.query.get_or_404(mid)
+    sender_email = msg.sender_email
+    from models import Lead, Account, Contact
+
+    previous_emails = EmailMessage.query.filter(
+        EmailMessage.sender_email == sender_email, EmailMessage.id != mid
+    ).order_by(EmailMessage.received_at.desc()).limit(10).all()
+
+    leads = Lead.query.filter(db.or_(Lead.email == sender_email, Lead.company_name.ilike(f'%{msg.company or ""}%'))).limit(5).all() if sender_email else []
+
+    accounts = Account.query.filter(db.or_(Account.email == sender_email, Account.company_name.ilike(f'%{msg.company or ""}%'))).limit(5).all() if sender_email else []
+
+    contacts = Contact.query.filter(Contact.email == sender_email).limit(5).all() if sender_email else []
+
+    return jsonify({
+        'sender_email': sender_email,
+        'sender_name': msg.sender_name,
+        'company': msg.company,
+        'previous_emails': [e.to_dict() for e in previous_emails],
+        'leads': [{'id': l.id, 'name': l.lead_name, 'company': l.company_name, 'status': l.status, 'created_at': l.created_at.isoformat() if l.created_at else None} for l in leads],
+        'accounts': [{'id': a.id, 'name': a.company_name, 'email': a.email, 'phone': a.phone} for a in accounts],
+        'contacts': [{'id': c.id, 'name': c.name, 'email': c.email, 'phone': c.phone} for c in contacts],
+    })
+
+
+# ─── Duplicate Lead Check ───
+@email_bp.route('/messages/<int:mid>/check-duplicate', methods=['GET'])
+@login_required
+def check_duplicate(current_user, mid):
+    msg = EmailMessage.query.get_or_404(mid)
+    from models import Lead, Account
+    duplicates = []
+    if msg.sender_email:
+        lead = Lead.query.filter(Lead.email == msg.sender_email).first()
+        if lead:
+            duplicates.append({'type': 'lead', 'id': lead.id, 'name': lead.lead_name, 'status': lead.status})
+        account = Account.query.filter(Account.email == msg.sender_email).first()
+        if account:
+            duplicates.append({'type': 'account', 'id': account.id, 'name': account.company_name, 'status': account.status})
+    return jsonify({'duplicates': duplicates, 'is_duplicate': len(duplicates) > 0})
+
+
+# ─── Follow-ups ───
+@email_bp.route('/messages/<int:mid>/followup', methods=['POST'])
+@login_required
+def create_followup(current_user, mid):
+    data = request.get_json() or {}
+    followup_at = data.get('followup_at', '')
+    note = data.get('note', '')
+    if not followup_at:
+        return jsonify({'error': 'followup_at required'}), 400
+    try:
+        dt = datetime.fromisoformat(followup_at)
+    except:
+        return jsonify({'error': 'Invalid date'}), 400
+    fu = EmailFollowUp(email_id=mid, user_id=current_user.id, followup_at=dt, note=note)
+    db.session.add(fu)
+    _add_activity(mid, current_user.id, 'Follow-up Set', f'Follow-up on {dt.isoformat()}: {note}')
+    db.session.commit()
+    return jsonify(fu.to_dict()), 201
+
+
+@email_bp.route('/followups', methods=['GET'])
+@login_required
+def list_followups(current_user):
+    now = datetime.utcnow()
+    upcoming = EmailFollowUp.query.filter(
+        EmailFollowUp.user_id == current_user.id,
+        EmailFollowUp.is_done == False,
+        EmailFollowUp.followup_at >= now,
+    ).order_by(EmailFollowUp.followup_at).limit(20).all()
+
+    overdue = EmailFollowUp.query.filter(
+        EmailFollowUp.user_id == current_user.id,
+        EmailFollowUp.is_done == False,
+        EmailFollowUp.followup_at < now,
+    ).order_by(EmailFollowUp.followup_at).limit(20).all()
+
+    return jsonify({
+        'upcoming': [f.to_dict() for f in upcoming],
+        'overdue': [f.to_dict() for f in overdue],
+    })
+
+
+@email_bp.route('/followups/<int:fid>/done', methods=['PUT'])
+@login_required
+def mark_followup_done(current_user, fid):
+    fu = EmailFollowUp.query.get_or_404(fid)
+    fu.is_done = True
+    db.session.commit()
+    return jsonify(fu.to_dict())
+
+
+# ─── Escalation ───
+@email_bp.route('/escalate', methods=['POST'])
+@login_required
+def escalate(current_user):
+    from models import Lead
+    now = datetime.utcnow()
+    cutoff = now - timedelta(hours=24)
+    account_ids = [a.id for a in EmailAccount.query.filter_by(user_id=current_user.id).all()]
+    stale = EmailMessage.query.filter(
+        EmailMessage.email_account_id.in_(account_ids) if account_ids else True,
+        EmailMessage.received_at < cutoff,
+        EmailMessage.status.in_(['New', 'Assigned']),
+        EmailMessage.assigned_to_id.isnot(None),
+    ).all()
+
+    escalated = []
+    for msg in stale:
+        employee = User.query.get(msg.assigned_to_id)
+        if employee and employee.reporting_manager_id:
+            msg.assigned_to_id = employee.reporting_manager_id
+            msg.assigned_by_id = current_user.id
+            msg.assigned_at = now
+            _add_activity(msg.id, current_user.id, 'Escalated',
+                          f'No action in 24h. Escalated from {employee.first_name} to manager.')
+            escalated.append({'email_id': msg.id, 'from': employee.first_name, 'to': employee.reporting_manager_id})
+    db.session.commit()
+    return jsonify({'escalated': len(escalated), 'details': escalated})
+
+
+# ─── Email Templates ───
+@email_bp.route('/templates', methods=['GET'])
+@login_required
+def list_templates(current_user):
+    templates = EmailTemplate.query.order_by(EmailTemplate.name).all()
+    return jsonify({'templates': [t.to_dict() for t in templates]})
+
+
+@email_bp.route('/templates', methods=['POST'])
+@login_required
+def create_template(current_user):
+    data = request.get_json() or {}
+    t = EmailTemplate(name=data.get('name', ''), subject=data.get('subject', ''), body=data.get('body', ''), category=data.get('category'))
+    db.session.add(t)
+    db.session.commit()
+    return jsonify(t.to_dict()), 201
+
+
+@email_bp.route('/templates/<int:tid>', methods=['PUT'])
+@login_required
+def update_template(current_user, tid):
+    t = EmailTemplate.query.get_or_404(tid)
+    data = request.get_json() or {}
+    for f in ['name', 'subject', 'body', 'category']:
+        if f in data:
+            setattr(t, f, data[f])
+    db.session.commit()
+    return jsonify(t.to_dict())
+
+
+@email_bp.route('/templates/<int:tid>', methods=['DELETE'])
+@login_required
+def delete_template(current_user, tid):
+    t = EmailTemplate.query.get_or_404(tid)
+    db.session.delete(t)
+    db.session.commit()
+    return jsonify({'message': 'Deleted'})
+
+
+# ─── Notifications ───
+@email_bp.route('/notifications', methods=['GET'])
+@login_required
+def email_notifications(current_user):
+    from models import Notification
+    now = datetime.utcnow()
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    new_emails_today = EmailMessage.query.filter(
+        EmailMessage.received_at >= today_start,
+        EmailMessage.is_read == False,
+    ).count()
+
+    followup_today = EmailFollowUp.query.filter(
+        EmailFollowUp.user_id == current_user.id,
+        EmailFollowUp.is_done == False,
+        EmailFollowUp.followup_at >= today_start,
+        EmailFollowUp.followup_at <= now + timedelta(hours=1),
+    ).count()
+
+    assigned_new = EmailMessage.query.filter(
+        EmailMessage.assigned_to_id == current_user.id,
+        EmailMessage.status == 'Assigned',
+        EmailMessage.assigned_at >= today_start,
+    ).count()
+
+    return jsonify({
+        'new_emails_today': new_emails_today,
+        'followup_today': followup_today,
+        'assigned_new': assigned_new,
+    })

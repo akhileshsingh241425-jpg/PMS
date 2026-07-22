@@ -12,8 +12,8 @@ with app.app_context():
     cols = [c['name'] for c in inspector.get_columns('email_messages')]
     additions = [
         ('company', 'VARCHAR(255)'),
-        ('priority', 'VARCHAR(20) DEFAULT "Medium"'),
-        ('status', 'VARCHAR(30) DEFAULT "New"'),
+        ('priority', 'VARCHAR(20) DEFAULT \'Medium\''),
+        ('status', 'VARCHAR(30) DEFAULT \'New\''),
         ('tags', 'TEXT'),
         ('snooze_at', 'DATETIME'),
     ]
@@ -25,12 +25,15 @@ with app.app_context():
             print(f'Added column: {name}')
 
     # Create new tables
-    new_tables = ['email_activities', 'email_notes', 'email_auto_rules']
+    new_tables = ['email_activities', 'email_notes', 'email_auto_rules', 'email_followups', 'email_templates']
     existing = inspector.get_table_names()
+    created_any = False
     for t in new_tables:
         if t not in existing:
             db.create_all()
             print(f'Created table: {t}')
-            break
+            created_any = True
+    if not created_any:
+        print('All tables already exist')
 
     print('Migration complete')
