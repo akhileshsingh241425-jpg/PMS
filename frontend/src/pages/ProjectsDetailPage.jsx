@@ -6,15 +6,16 @@ import api from '../services/api'
 import TaskTrackerPanel from '../components/task-tracker/TaskTrackerPanel'
 
 const C = {
-  bg: '#F1F5F9', card: '#fff', border: '#E2E8F0',
+  bg: '#F8FAFC', card: '#fff', border: '#E5E7EB',
   primary: '#6D28D9', primaryLight: '#F5F3FF',
   text: '#0F172A', muted: '#94A3B8', secondary: '#64748B',
   success: '#10B981', danger: '#EF4444', warning: '#F59E0B', info: '#3B82F6',
-  shadow: '0 1px 3px 0 rgba(0,0,0,0.06), 0 1px 2px -1px rgba(0,0,0,0.06)',
-  shadowMd: '0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05)',
-  radius: 12,
+  shadow: '0 1px 2px rgba(0,0,0,0.04), 0 1px 3px -1px rgba(0,0,0,0.06)',
+  shadowMd: '0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.03)',
+  radius: 8,
   font: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
 }
+const card = { background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '12px 16px', boxShadow: C.shadow }
 
 const DELIVERY_STAGES = ['Initiated','Planning','Information Gathering','Execution','Internal Review','Client Review','Remediation Support','Final Delivery']
 
@@ -432,112 +433,92 @@ export default function ProjectsDetailPage() {
       {/* Pulse animation keyframes */}
       <style>{`@keyframes pulse-dot { 0%,100% { box-shadow:0 0 0 0 rgba(109,40,217,0.4); } 50% { box-shadow:0 0 0 8px rgba(109,40,217,0); } } @keyframes pulse-dot-blocked { 0%,100% { box-shadow:0 0 0 0 rgba(239,68,68,0.4); } 50% { box-shadow:0 0 0 8px rgba(239,68,68,0); } } @keyframes pulse-dot-done { 0%,100% { box-shadow:0 0 0 0 rgba(16,185,129,0.4); } 50% { box-shadow:0 0 0 8px rgba(16,185,129,0); } }`}</style>
       <div style={{ padding: '0 0 16px', width: '100%', maxWidth: '100%' }}>
-        {/* ═══ HEADER CARD ═══ */}
-        <div style={{ background: C.card, borderRadius: C.radius + 2, border: `1px solid ${C.border}`, padding: '14px 20px', marginBottom: 10 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, flex: 1 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 6, background: '#6D28D9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: '#fff', flexShrink: 0 }}>
-                {(p.title || 'P')[0].toUpperCase()}
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                  {editingTitle ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <input value={titleVal} onChange={e => setTitleVal(e.target.value)} autoFocus
-                        onKeyDown={e => { if (e.key === 'Enter') saveTitle(); if (e.key === 'Escape') setEditingTitle(false) }}
-                        style={{ fontSize: 22, fontWeight: 700, color: '#0F172A', border: `2px solid ${C.primary}`, borderRadius: 8, padding: '4px 10px', outline: 'none', fontFamily: C.font, letterSpacing: '-0.3px', width: 320 }} />
-                      <button onClick={saveTitle} disabled={savingField} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', background: C.success, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>{savingField ? '...' : 'Save'}</button>
-                      <button onClick={() => setEditingTitle(false)} style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #D1D5DB', background: '#fff', color: '#6B7280', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>Cancel</button>
-                    </div>
-                  ) : (
-                    <>
-                      <span style={{ fontSize: 20, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.3px', lineHeight: 1.2 }}>{p.title}</span>
-                      {hasRole('super_admin', 'admin', 'project_lead') && (
-                        <button onClick={() => { setTitleVal(p.title); setEditingTitle(true) }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: '#94A3B8', display: 'flex', borderRadius: 4, transition: 'all 0.15s' }} title="Edit title" onMouseEnter={e => e.target.style.background = '#F1F5F9'} onMouseLeave={e => e.target.style.background = 'transparent'}>
-                          <EditIcon size={12} />
-                        </button>
-                      )}
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 16, fontSize: 11, fontWeight: 700, border: 'none', color: '#fff', background: isBlocked ? '#EF4444' : isTerminal ? '#10B981' : '#6D28D9' }}>
-                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(255,255,255,0.7)', animation: `pulse-dot${isBlocked ? '-blocked' : isTerminal ? '-done' : ''} 2s infinite` }} />
-                        {p.stage}
-                      </span>
-                    </>
+        {/* ═══ HEADER ═══ */}
+        <div style={{ background: '#fff', borderRadius: 8, border: '1px solid #E5E7EB', padding: '12px 16px', marginBottom: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
+              {editingTitle ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
+                  <input value={titleVal} onChange={e => setTitleVal(e.target.value)} autoFocus
+                    onKeyDown={e => { if (e.key === 'Enter') saveTitle(); if (e.key === 'Escape') setEditingTitle(false) }}
+                    style={{ fontSize: 18, fontWeight: 700, color: '#0F172A', border: `2px solid ${C.primary}`, borderRadius: 6, padding: '4px 10px', outline: 'none', fontFamily: C.font, width: 280 }} />
+                  <button onClick={saveTitle} disabled={savingField} style={{ padding: '5px 12px', borderRadius: 6, border: 'none', background: '#10B981', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>{savingField ? '...' : 'Save'}</button>
+                  <button onClick={() => setEditingTitle(false)} style={{ padding: '5px 12px', borderRadius: 6, border: '1px solid #D1D5DB', background: '#fff', color: '#6B7280', fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>Cancel</button>
+                </div>
+              ) : (
+                <>
+                  <div style={{ width: 28, height: 28, borderRadius: 6, background: '#6D28D9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, color: '#fff', flexShrink: 0 }}>
+                    {(p.title || 'P')[0].toUpperCase()}
+                  </div>
+                  <span style={{ fontSize: 18, fontWeight: 700, color: '#0F172A', lineHeight: 1.2 }}>{p.title}</span>
+                  {hasRole('super_admin', 'admin', 'project_lead') && (
+                    <button onClick={() => { setTitleVal(p.title); setEditingTitle(true) }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: '#94A3B8', display: 'flex' }} title="Edit title">
+                      <EditIcon size={11} />
+                    </button>
                   )}
-                </div>
-                <div style={{ fontSize: 12, color: '#94A3B8', marginTop: 2, fontWeight: 500 }}>
-                  {p.account_name && <>{p.account_name}</>}{p.account_name && p.created_at ? ' · ' : ''}{p.created_at && <>{new Date(p.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'short' })}</>}
-                </div>
-                <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
-                  <InfoChip icon={<BriefcaseIcon color="#6D28D9" />} value={p.proj_id} />
-                  {p.account_name && <InfoChip icon={<BuildingIcon color="#64748B" />} value={p.account_name} />}
-                  {p.pm_name && <InfoChip icon={<PersonIcon color="#6D28D9" />} value={p.pm_name} label="PM" />}
-                  <InfoChip icon={<CalendarIcon color="#64748B" />} value={`S ${formatDate(p.start_date)}`} />
-                  <InfoChip icon={<TargetIcon color="#D97706" />} value={`T ${formatDate(p.target_date)}`} />
-                  {p.total_value && <InfoChip icon={<MoneyIcon color="#059669" />} value={`₹${(p.total_value / 100000).toFixed(1)}L`} highlight />}
-                </div>
-              </div>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 6, fontSize: 10, fontWeight: 700, color: '#fff', background: isBlocked ? '#EF4444' : isTerminal ? '#10B981' : '#6D28D9' }}>
+                    <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'rgba(255,255,255,0.7)' }} />
+                    {p.stage}
+                  </span>
+                </>
+              )}
             </div>
-            <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
               {hasRole('super_admin', 'admin', 'project_lead') && (
                 <ActionBtn icon={<EditIcon />} label="Edit" onClick={() => setShowEditForm(true)} primary />
               )}
             </div>
           </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, flexWrap: 'wrap', fontSize: 11, color: '#64748B' }}>
+            {p.account_name && <span>{p.account_name}</span>}
+            {p.account_name && p.created_at && <span style={{ color: '#D1D5DB' }}>|</span>}
+            {p.created_at && <span>{new Date(p.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'short' })}</span>}
+            {p.proj_id && <><span style={{ color: '#D1D5DB' }}>|</span><span style={{ color: '#6D28D9', fontWeight: 600 }}>{p.proj_id}</span></>}
+            {p.pm_name && <><span style={{ color: '#D1D5DB' }}>|</span><span>PM: {p.pm_name}</span></>}
+            {p.start_date && <><span style={{ color: '#D1D5DB' }}>|</span><span>Start: {formatDate(p.start_date)}</span></>}
+            {p.target_date && <><span style={{ color: '#D1D5DB' }}>|</span><span>Target: {formatDate(p.target_date)}</span></>}
+          </div>
         </div>
 
         {/* ═══ KPI CARDS ═══ */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8, marginBottom: 10 }}>
-          <KPICard icon={<MoneyIcon />} accent="#10B981" label="Total Value" value={p.total_value ? `₹${(p.total_value / 100000).toFixed(1)}L` : '—'} progress={p.total_value ? 1 : 0} />
-          <KPICard icon={<CheckCircleIcon color={C.primary} />} accent={C.primary} label="Open Tasks" value={`${openTasks}/${tasks.length}`} onClick={() => setActiveTab('tasks')} progress={tasks.length > 0 ? completedTasks / tasks.length : 0} />
-          <KPICard icon={<UsersIcon />} accent="#4F46E5" label="Team" value={(team || []).length} onClick={() => document.getElementById('section-team')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} progress={0} />
-          <KPICard icon={<CalendarIcon />} accent="#D97706" label="Activity" value={`${totalDocs}D / ${totalMeetings}M`} onClick={() => document.getElementById('section-documents')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} progress={0} />
-          <KPICard icon={<ShieldExclamationIcon />} accent={vulnOverdueCount > 0 ? '#EF4444' : C.primary} label="Vulnerabilities" value={vulnerabilities.length} onClick={() => document.getElementById('section-vulnerabilities')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} progress={0} />
-          <KPICard icon={<TargetIcon />} accent="#0284C7" label="Stage" value={getStageGroup(p.stage)} progress={currentDeliveryIdx >= 0 ? (currentDeliveryIdx + 1) / DELIVERY_STAGES.length : 0} />
+          <KPICard icon={<MoneyIcon />} accent="#10B981" label="Total Value" value={p.total_value ? `₹${(p.total_value / 100000).toFixed(1)}L` : '—'} />
+          <KPICard icon={<CheckCircleIcon color={C.primary} />} accent="#6D28D9" label="Open Tasks" value={`${openTasks}/${tasks.length}`} onClick={() => setActiveTab('tasks')} />
+          <KPICard icon={<UsersIcon />} accent="#4F46E5" label="Team" value={(team || []).length} onClick={() => document.getElementById('section-team')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />
+          <KPICard icon={<CalendarIcon />} accent="#D97706" label="Activity" value={`${totalDocs}D / ${totalMeetings}M`} onClick={() => document.getElementById('section-documents')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />
+          <KPICard icon={<ShieldExclamationIcon />} accent={vulnOverdueCount > 0 ? '#EF4444' : '#6D28D9'} label="Vulnerabilities" value={vulnerabilities.length} onClick={() => document.getElementById('section-vulnerabilities')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />
+          <KPICard icon={<TargetIcon />} accent="#0284C7" label="Stage" value={getStageGroup(p.stage)} />
         </div>
 
         {/* ═══ STAGE TIMELINE ═══ */}
-        <div style={{ background: 'transparent', borderRadius: 0, border: 0, borderBottom: `1px solid ${C.border}`, padding: '10px 16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <div style={{ background: '#fff', borderRadius: 8, border: '1px solid #E5E7EB', padding: '10px 16px', marginBottom: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <TagIcon />
               <span style={{ fontSize: 12, fontWeight: 600, color: '#64748B' }}>Project Lifecycle</span>
             </div>
             {hasRole('super_admin', 'admin', 'project_lead') && !isTerminal && (
               <select value={p.stage} onChange={e => changeStage(e.target.value)}
-                style={{ padding: '6px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12, fontWeight: 500, color: '#0F172A', background: '#fff', outline: 'none', fontFamily: C.font, cursor: 'pointer' }}>
+                style={{ padding: '4px 10px', border: `1px solid ${C.border}`, borderRadius: 6, fontSize: 11, fontWeight: 500, color: '#0F172A', background: '#fff', outline: 'none', fontFamily: C.font, cursor: 'pointer' }}>
                 {ALL_STAGES.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             )}
           </div>
-          <div style={{ position: 'relative', padding: '6px 0', minHeight: 48 }}>
-            <div style={{ position: 'absolute', top: 16, left: 0, right: 0, height: 2, background: '#E2E8F0', zIndex: 0, borderRadius: 2 }} />
-            <div style={{ position: 'absolute', top: 16, left: 0, height: 2, background: 'linear-gradient(90deg,#6D28D9,#8B5CF6)', zIndex: 1, transition: 'width 0.4s ease', borderRadius: 2, width: `${Math.min((DELIVERY_STAGES.indexOf(p.stage) + 1) / DELIVERY_STAGES.length * 100, 100)}%` }} />
+          <div style={{ position: 'relative', padding: '4px 0' }}>
+            <div style={{ position: 'absolute', top: 10, left: 0, right: 0, height: 2, background: '#E2E8F0', zIndex: 0, borderRadius: 2 }} />
+            <div style={{ position: 'absolute', top: 10, left: 0, height: 2, background: '#6D28D9', zIndex: 1, transition: 'width 0.4s ease', borderRadius: 2, width: `${Math.min((DELIVERY_STAGES.indexOf(p.stage) + 1) / DELIVERY_STAGES.length * 100, 100)}%` }} />
             <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative', zIndex: 2 }}>
               {DELIVERY_STAGES.map((s, i) => {
                 const idx = DELIVERY_STAGES.indexOf(p.stage);
                 const isPast = i < idx;
                 const isCurrent = i === idx;
-                const isFuture = i > idx;
-                const isBlockedStage = BLOCKED_STAGES.includes(p.stage);
-                const dotSize = isCurrent ? 14 : 10;
+                const dotSize = isCurrent ? 12 : 8;
                 return (
-                  <div key={s} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer', flex: 1, padding: '0 1px' }} onClick={() => { if (!isTerminal) changeStage(s) }}>
-                    <div style={{
-                      width: dotSize, height: dotSize, borderRadius: '50%', position: 'relative',
-                      background: isPast || isCurrent ? '#6D28D9' : '#E2E8F0',
-                      transition: 'all 0.3s ease',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      {isPast && (
-                        <svg width="6" height="6" fill="none" stroke="#fff" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
-                      )}
-                      {isCurrent && <div style={{ position: 'absolute', inset: -4, borderRadius: '50%', border: '2px solid rgba(109,40,217,0.25)', animation: 'pulse-dot 2s infinite' }} />}
+                  <div key={s} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, cursor: 'pointer', flex: 1 }} onClick={() => { if (!isTerminal) changeStage(s) }}>
+                    <div style={{ width: dotSize, height: dotSize, borderRadius: '50%', background: isPast || isCurrent ? '#6D28D9' : '#E2E8F0', transition: 'all 0.3s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {isPast && <svg width="5" height="5" fill="none" stroke="#fff" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>}
                     </div>
-                    <span style={{
-                      fontSize: 9, fontWeight: isCurrent ? 700 : isPast ? 600 : 400, color: isCurrent ? '#6D28D9' : isPast ? '#334155' : '#CBD5E1',
-                      textAlign: 'center', lineHeight: 1.1, maxWidth: 80, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                      transition: 'all 0.2s',
-                    }}>{s}</span>
+                    <span style={{ fontSize: 9, fontWeight: isCurrent ? 700 : isPast ? 600 : 400, color: isCurrent ? '#6D28D9' : isPast ? '#334155' : '#CBD5E1', textAlign: 'center', lineHeight: 1.1, maxWidth: 72, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s}</span>
                   </div>
                 )
               })}
@@ -545,34 +526,22 @@ export default function ProjectsDetailPage() {
           </div>
         </div>
 
-        {/* ═══ PROJECT INFO (TWO-COLUMN GRID) ═══ */}
-        <div id="section-info" style={{ background: 'transparent', borderRadius: 0, border: 0, borderBottom: `1px solid ${C.border}`, padding: '10px 16px' }}>
+        {/* ═══ PROJECT INFO ═══ */}
+        <div id="section-info" style={{ background: '#fff', borderRadius: 8, border: '1px solid #E5E7EB', padding: '12px 16px', marginBottom: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
           <SectionTitle icon={<BriefcaseIcon />} text="Project Information" />
-          <div style={{ marginTop: 10, marginBottom: 8 }}>
-            <div style={{ fontSize: 10, fontWeight: 600, color: '#94A3B8', letterSpacing: '0.4px', textTransform: 'uppercase', marginBottom: 5 }}>Timeline</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
-              <InfoField icon={<CalendarIcon />} label="Start Date" value={formatDate(p.start_date)} empty={!p.start_date} />
-              <InfoField icon={<TargetIcon />} label="Target Date" value={formatDate(p.target_date)} empty={!p.target_date} highlight={!!p.target_date} />
-              <InfoField icon={<CalendarIcon />} label="End Date" value={formatDate(p.actual_end_date)} empty={!p.actual_end_date} />
-            </div>
-          </div>
-          <div style={{ marginBottom: 8 }}>
-            <div style={{ fontSize: 10, fontWeight: 600, color: '#94A3B8', letterSpacing: '0.4px', textTransform: 'uppercase', marginBottom: 5 }}>Ownership &amp; Value</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
-              <InfoField icon={<BuildingIcon />} label="Account" value={p.account_name} empty={!p.account_name} />
-              <InfoField icon={<PersonIcon />} label="Project Manager" value={p.pm_name} empty={!p.pm_name} />
-              <InfoField icon={<TagIcon />} label="Service" value={p.service_type} empty={!p.service_type} />
-              <InfoField icon={<MoneyIcon />} label="Total Value" value={p.total_value ? `₹${p.total_value.toLocaleString()}` : null} empty={!p.total_value} highlight />
-            </div>
-          </div>
-          <div>
-            <div style={{ fontSize: 10, fontWeight: 600, color: '#94A3B8', letterSpacing: '0.4px', textTransform: 'uppercase', marginBottom: 5 }}>Status</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
-              <InfoField icon={<ShieldIcon />} label="Stage Group" value={getStageGroup(p.stage)} badge />
-              <InfoField icon={<CheckCircleIcon />} label="Client Review" value={p.is_client_review_enabled ? 'Enabled' : 'Off'} />
-              <InfoField icon={<UsersIcon />} label="Team Size" value={p.team_count || '0'} />
-              <InfoField icon={<CalendarIcon />} label="Last Updated" value={formatDate(p.updated_at)} empty={!p.updated_at} />
-            </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginTop: 10 }}>
+            <InfoField icon={<CalendarIcon />} label="Start Date" value={formatDate(p.start_date)} empty={!p.start_date} />
+            <InfoField icon={<TargetIcon />} label="Target Date" value={formatDate(p.target_date)} empty={!p.target_date} highlight={!!p.target_date} />
+            <InfoField icon={<CalendarIcon />} label="End Date" value={formatDate(p.actual_end_date)} empty={!p.actual_end_date} />
+            <InfoField icon={<CalendarIcon />} label="Last Updated" value={formatDate(p.updated_at)} empty={!p.updated_at} />
+            <InfoField icon={<BuildingIcon />} label="Account" value={p.account_name} empty={!p.account_name} />
+            <InfoField icon={<PersonIcon />} label="Project Manager" value={p.pm_name} empty={!p.pm_name} />
+            <InfoField icon={<TagIcon />} label="Service" value={p.service_type} empty={!p.service_type} />
+            <InfoField icon={<MoneyIcon />} label="Total Value" value={p.total_value ? `₹${p.total_value.toLocaleString()}` : null} empty={!p.total_value} highlight />
+            <InfoField icon={<ShieldIcon />} label="Stage Group" value={getStageGroup(p.stage)} badge />
+            <InfoField icon={<CheckCircleIcon />} label="Client Review" value={p.is_client_review_enabled ? 'Enabled' : 'Off'} />
+            <InfoField icon={<UsersIcon />} label="Team Size" value={p.team_count || '0'} />
+            <InfoField icon={<TargetIcon />} label="Stage" value={p.stage} />
           </div>
         </div>
 
@@ -590,38 +559,30 @@ export default function ProjectsDetailPage() {
           </div>
         )}
 
-        {/* ═══ PLAN & TASKS (COMPACT) ═══ */}
-        <div id="section-plan" style={{ background: 'transparent', borderRadius: 0, border: 0, borderBottom: `1px solid ${C.border}`, padding: '10px 16px' }}>
+        {/* ═══ PLAN & TASKS ═══ */}
+        <div id="section-plan" style={{ background: '#fff', borderRadius: 8, border: '1px solid #E5E7EB', padding: '12px 16px', marginBottom: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <SectionTitle icon={<FileTextIcon />} text="Plan & Tasks" />
-            <button onClick={() => setActiveTab('tasks')} style={{ padding: '5px 14px', borderRadius: 6, border: 'none', background: C.primary, color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+            <button onClick={() => setActiveTab('tasks')} style={{ padding: '5px 14px', borderRadius: 6, border: 'none', background: '#6D28D9', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
               Full Plan
             </button>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: p.po_amount ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)', gap: 8, marginTop: 10 }}>
-            <div style={{ background: '#F8FAFC', borderRadius: 8, padding: '8px 12px', border: '1px solid #F1F5F9' }}>
-              <div style={{ fontSize: 10, fontWeight: 500, color: '#94A3B8', letterSpacing: '0.3px', textTransform: 'uppercase' }}>Phases</div>
-              <div style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', marginTop: 2, letterSpacing: '-0.3px' }}>{phases.length}</div>
-            </div>
-            <div style={{ background: '#F8FAFC', borderRadius: 8, padding: '8px 12px', border: '1px solid #F1F5F9' }}>
-              <div style={{ fontSize: 10, fontWeight: 500, color: '#94A3B8', letterSpacing: '0.3px', textTransform: 'uppercase' }}>Tasks</div>
-              <div style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', marginTop: 2, letterSpacing: '-0.3px' }}>{tasks.length}</div>
-            </div>
-            <div style={{ background: '#F8FAFC', borderRadius: 8, padding: '8px 12px', border: '1px solid #F1F5F9' }}>
-              <div style={{ fontSize: 10, fontWeight: 500, color: '#94A3B8', letterSpacing: '0.3px', textTransform: 'uppercase' }}>Milestones</div>
-              <div style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', marginTop: 2, letterSpacing: '-0.3px' }}>{milestones.length}</div>
-            </div>
-            {p.po_amount && <div style={{ background: '#F8FAFC', borderRadius: 8, padding: '8px 12px', border: '1px solid #F1F5F9' }}>
-              <div style={{ fontSize: 10, fontWeight: 500, color: '#94A3B8', letterSpacing: '0.3px', textTransform: 'uppercase' }}>PO Amount</div>
-              <div style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', marginTop: 2, letterSpacing: '-0.3px' }}>₹{(p.po_amount || 0).toLocaleString()}</div>
-            </div>}
+            {[
+              { label: 'Phases', value: phases.length },
+              { label: 'Tasks', value: tasks.length },
+              { label: 'Milestones', value: milestones.length },
+              ...(p.po_amount ? [{ label: 'PO Amount', value: `₹${(p.po_amount || 0).toLocaleString()}`, highlight: true }] : []),
+            ].map(stat => (
+              <div key={stat.label} style={{ background: '#F8FAFC', borderRadius: 6, padding: '8px 12px', border: '1px solid #F1F5F9' }}>
+                <div style={{ fontSize: 10, fontWeight: 500, color: '#94A3B8', letterSpacing: '0.3px', textTransform: 'uppercase' }}>{stat.label}</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: stat.highlight ? '#10B981' : '#0F172A', marginTop: 1 }}>{stat.value}</div>
+              </div>
+            ))}
           </div>
           {!p.plan_generated && p.project_type && (
-            <div style={{ marginTop: 12 }}>
-              <button onClick={generatePlan} disabled={generatingPlan}
-                style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: C.primary, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: generatingPlan ? 0.6 : 1 }}>
-                {generatingPlan ? 'Generating...' : `Generate Plan from ${p.project_type} Template`}
-              </button>
+            <div style={{ marginTop: 10 }}>
+              <ActionBtn icon={<FileTextIcon />} label={generatingPlan ? 'Generating...' : `Generate from ${p.project_type} Template`} onClick={generatePlan} disabled={generatingPlan} primary />
             </div>
           )}
         </div>
@@ -811,7 +772,7 @@ export default function ProjectsDetailPage() {
         )}
 
         {/* ═══ TAB NAVIGATION ═══ */}
-        <div style={{ display: 'flex', gap: 3, background: 'transparent', borderRadius: 0, border: 0, borderBottom: `1px solid ${C.border}`, padding: '3px', marginBottom: 6 }}>
+        <div style={{ display: 'flex', gap: 3, background: '#fff', borderRadius: 8, border: '1px solid #E5E7EB', padding: '3px', marginBottom: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
           {[
             { key: 'overview', label: 'Overview', icon: '▶' },
             { key: 'tasks', label: 'Tasks', icon: '✓' },
@@ -849,7 +810,7 @@ export default function ProjectsDetailPage() {
         {activeTab === 'overview' && <div>
           {/* DESCRIPTION */}
           {(p.description || editingDesc || hasRole('super_admin', 'admin', 'project_lead')) && (
-            <div id="section-description" style={{ background: 'transparent', borderRadius: 0, border: 0, borderBottom: `1px solid ${C.border}`, padding: '10px 16px' }}>
+            <div id="section-description" style={{ background: '#fff', borderRadius: 8, border: '1px solid #E5E7EB', padding: '12px 16px', marginBottom: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <SectionTitle icon={<FileIcon />} text="Description" />
                 {!editingDesc && p.description && hasRole('super_admin', 'admin', 'project_lead') && (
@@ -875,7 +836,7 @@ export default function ProjectsDetailPage() {
           )}
 
             {/* REMARKS */}
-            <div id="section-remarks" style={{ background: 'transparent', borderRadius: 0, border: 0, borderBottom: `1px solid ${C.border}`, padding: '10px 16px' }}>
+            <div id="section-remarks" style={{ background: '#fff', borderRadius: 8, border: '1px solid #E5E7EB', padding: '12px 16px', marginBottom: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
               <SectionTitle icon={<ChatIcon />} text={`Remarks (${(remarks || []).length})`} />
               <div style={{ marginTop: 10, marginBottom: 14 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
@@ -967,7 +928,7 @@ export default function ProjectsDetailPage() {
             </div>
 
             {/* DOCUMENTS */}
-            <div id="section-documents" style={{ background: 'transparent', borderRadius: 0, border: 0, borderBottom: `1px solid ${C.border}`, padding: '10px 16px' }}>
+            <div id="section-documents" style={{ background: '#fff', borderRadius: 8, border: '1px solid #E5E7EB', padding: '12px 16px', marginBottom: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
               <SectionTitle icon={<PaperclipIcon />} text={`Documents & Reports (${totalDocs + reports.length})`} />
               <div style={{ display: 'flex', gap: 8, marginTop: 10, marginBottom: 10, alignItems: 'center' }}>
                 <select value={uploadCategory} onChange={e => setUploadCategory(e.target.value)}
@@ -1041,7 +1002,7 @@ export default function ProjectsDetailPage() {
             {/* ═══ MEETINGS + NOTES ═══ */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10, alignItems: 'start' }}>
               {/* MEETINGS */}
-              <div id="section-meetings" style={{ background: 'transparent', borderRadius: 0, border: 0, borderBottom: `1px solid ${C.border}`, padding: '10px 16px' }}>
+              <div id="section-meetings" style={{ background: '#fff', borderRadius: 8, border: '1px solid #E5E7EB', padding: '12px 16px', boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
                 <SectionTitle icon={<CalendarIcon />} text={`Meetings (${totalMeetings})`} />
                 <div style={{ marginTop: 10, marginBottom: 8 }}>
                   <button onClick={() => setShowMeetingForm(!showMeetingForm)} style={{ display: 'flex', alignItems: 'center', gap: 4, background: C.primary, color: '#fff', border: 'none', borderRadius: 6, padding: '5px 14px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
@@ -1132,7 +1093,7 @@ export default function ProjectsDetailPage() {
                 )}
               </div>
               {/* NOTES */}
-              <div id="section-notes" style={{ background: 'transparent', borderRadius: 0, border: 0, borderBottom: `1px solid ${C.border}`, padding: '10px 16px' }}>
+              <div id="section-notes" style={{ background: '#fff', borderRadius: 8, border: '1px solid #E5E7EB', padding: '12px 16px', boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
                 <SectionTitle icon={<NoteIcon />} text={`Notes (${(notes || []).length})`} />
                 <form onSubmit={addNote} style={{ display: 'flex', gap: 6, marginTop: 10, marginBottom: 10 }}>
                   <input value={noteText} onChange={e => setNoteText(e.target.value)} placeholder="Add a note..."
@@ -1156,7 +1117,7 @@ export default function ProjectsDetailPage() {
             </div>
 
             {/* ═══ VULNERABILITIES ═══ */}
-            <div id="section-vulnerabilities" style={{ background: 'transparent', borderRadius: 0, border: 0, borderBottom: `1px solid ${C.border}`, padding: '10px 16px' }}>
+            <div id="section-vulnerabilities" style={{ background: '#fff', borderRadius: 8, border: '1px solid #E5E7EB', padding: '12px 16px', marginBottom: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                 <SectionTitle icon={<ShieldExclamationIcon size={14} />} text={`Vulnerabilities (${vulnerabilities.length})`} />
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -1253,7 +1214,7 @@ export default function ProjectsDetailPage() {
 
             {/* FINDING QUERIES */}
             {queries.length > 0 && (
-              <div id="section-queries" style={{ borderBottom: `1px solid ${C.border}`, padding: '6px 12px' }}>
+              <div id="section-queries" style={{ background: '#fff', borderRadius: 8, border: '1px solid #E5E7EB', padding: '12px 16px', marginBottom: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
                 <SectionTitle icon={<ChatIcon />} text={`Finding Queries (${queries.length})`} />
                 <div style={{ marginTop: 16 }}>
                   {queries.map(q => (
@@ -1273,7 +1234,7 @@ export default function ProjectsDetailPage() {
             )}
 
             {/* TEAM */}
-            <div id="section-team" style={{ background: 'transparent', borderRadius: 0, border: 0, borderBottom: `1px solid ${C.border}` }}>
+            <div id="section-team" style={{ background: '#fff', borderRadius: 8, border: '1px solid #E5E7EB', boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
               <div style={{ padding: '16px 20px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <SectionTitle icon={<UsersIcon />} text={`Team (${(team || []).length})`} />
                 {hasRole('super_admin', 'admin', 'project_lead') && (
@@ -1697,37 +1658,36 @@ function DocStatusBadge({ status }) {
   return <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 4, background: s.bg, color: s.color }}>{status}</span>
 }
 
-function KPICard({ icon, accent, label, value, onClick, progress }) {
+function KPICard({ icon, accent, label, value, onClick }) {
   return (
-    <div onClick={onClick} style={{ padding: '4px 6px', cursor: onClick ? 'pointer' : 'default' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <div style={{ width: 22, height: 22, borderRadius: 4, background: `${accent}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 11, color: accent }}>{icon}</div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: accent, lineHeight: 1.1 }}>{value}</div>
-          <div style={{ fontSize: 9, fontWeight: 500, color: '#94A3B8' }}>{label}</div>
-        </div>
+    <div onClick={onClick} style={{ background: '#fff', borderRadius: 8, border: '1px solid #E5E7EB', padding: '8px 12px', cursor: onClick ? 'pointer' : 'default', display: 'flex', alignItems: 'center', gap: 10, height: 56, boxSizing: 'border-box', transition: 'box-shadow 0.15s' }}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)' }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none' }}>
+      <div style={{ width: 28, height: 28, borderRadius: 6, background: `${accent}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 13, color: accent }}>{icon}</div>
+      <div>
+        <div style={{ fontSize: 18, fontWeight: 700, color: accent, lineHeight: 1.1 }}>{value}</div>
+        <div style={{ fontSize: 10, fontWeight: 500, color: '#64748B', marginTop: 1 }}>{label}</div>
       </div>
     </div>
   )
 }
 
 function SectionTitle({ icon, text }) {
-  return <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: '#0F172A' }}>{icon}{text}</div>
+  return <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 15, fontWeight: 600, color: '#0F172A' }}>{icon}{text}</div>
 }
 
 function InfoField({ icon, label, value, empty, badge, highlight }) {
-  const displayValue = value ?? (empty ? null : value)
   return (
-    <div style={{ borderRadius: 6, padding: '6px 8px', border: '1px solid #F1F5F9', background: '#FAFBFC', borderLeft: highlight ? '3px solid #6D28D9' : '1px solid #F1F5F9', paddingLeft: highlight ? 6 : 8 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 9, fontWeight: 600, color: '#94A3B8', letterSpacing: '0.3px', textTransform: 'uppercase', marginBottom: 2 }}>
-        <span style={{ color: '#64748B' }}>{icon}</span> {label}
+    <div style={{ padding: '4px 0' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 600, color: '#94A3B8', letterSpacing: '0.3px', textTransform: 'uppercase', marginBottom: 1 }}>
+        {icon} {label}
       </div>
       {badge ? (
-        <span style={{ color: C.primary, background: '#F0EBFF', display: 'inline-block', padding: '1px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }}>{value}</span>
+        <span style={{ color: '#6D28D9', background: '#F0EBFF', display: 'inline-block', padding: '1px 8px', borderRadius: 4, fontSize: 12, fontWeight: 600 }}>{value}</span>
       ) : empty ? (
-        <div style={{ fontSize: 12, fontWeight: 500, color: '#CBD5E1', fontStyle: 'italic', lineHeight: 1.2 }}>Not set</div>
+        <div style={{ fontSize: 13, fontWeight: 500, color: '#CBD5E1', fontStyle: 'italic' }}>Not set</div>
       ) : (
-        <div style={{ fontSize: 12, fontWeight: highlight ? 700 : 600, color: highlight ? '#6D28D9' : '#0F172A', lineHeight: 1.2 }}>{value}</div>
+        <div style={{ fontSize: 13, fontWeight: highlight ? 700 : 600, color: highlight ? '#6D28D9' : '#0F172A' }}>{value}</div>
       )}
     </div>
   )
@@ -1735,10 +1695,8 @@ function InfoField({ icon, label, value, empty, badge, highlight }) {
 
 function InfoChip({ icon, value, label, highlight }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 6, background: highlight ? '#F5F3FF' : '#F1F5F9', fontSize: 11, fontWeight: 500, color: highlight ? C.primary : '#475569' }}>
-      {icon}
-      {label && <span style={{ color: '#94A3B8', fontWeight: 500 }}>{label}:</span>}
-      <span>{value || '—'}</span>
+    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 4, background: highlight ? '#F5F3FF' : '#F1F5F9', fontSize: 11, fontWeight: 500, color: highlight ? '#6D28D9' : '#475569' }}>
+      {icon}{label && <span style={{ color: '#94A3B8' }}>{label}:</span>}{value || '—'}
     </div>
   )
 }
@@ -1747,11 +1705,12 @@ function InfoChipSeperator() {
   return <span style={{ color: '#E2E8F0', fontSize: 10 }}>|</span>
 }
 
-function ActionBtn({ icon, label, onClick, primary, success, danger }) {
-  const bg = success ? '#059669' : danger ? '#DC2626' : primary ? C.primary : '#F1F5F9'
-  const color = primary || success || danger ? '#fff' : '#475569'
+function ActionBtn({ icon, label, onClick, primary, success, danger, outline }) {
+  const bg = outline ? '#fff' : success ? '#059669' : danger ? '#DC2626' : primary ? '#6D28D9' : '#F1F5F9'
+  const color = outline ? '#6D28D9' : (primary || success || danger) ? '#fff' : '#475569'
+  const bd = outline ? '1.5px solid #6D28D9' : 'none'
   return (
-    <button onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px', borderRadius: 6, border: 'none', background: bg, color, fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap', boxShadow: primary || success || danger ? '0 1px 3px rgba(0,0,0,0.15)' : 'none' }}>
+    <button onClick={onClick} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 14px', borderRadius: 8, border: bd, background: bg, color, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: C.font, transition: 'all 0.12s', whiteSpace: 'nowrap' }}>
       {icon} {label}
     </button>
   )
@@ -1759,10 +1718,10 @@ function ActionBtn({ icon, label, onClick, primary, success, danger }) {
 
 function EmptyState({ icon, title, sub }) {
   return (
-    <div style={{ textAlign: 'center', padding: '14px 10px', color: '#94A3B8' }}>
-      <div style={{ margin: '0 auto 6px', opacity: 0.2, fontSize: 16 }}>{icon}</div>
-      <div style={{ fontSize: 12, fontWeight: 600, color: '#64748B' }}>{title}</div>
-      {sub && <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>{sub}</div>}
+    <div style={{ textAlign: 'center', padding: '20px 10px', color: '#94A3B8' }}>
+      <div style={{ margin: '0 auto 8px', opacity: 0.2, fontSize: 18 }}>{icon}</div>
+      <div style={{ fontSize: 13, fontWeight: 600, color: '#64748B' }}>{title}</div>
+      {sub && <div style={{ fontSize: 12, color: '#94A3B8', marginTop: 2 }}>{sub}</div>}
     </div>
   )
 }
