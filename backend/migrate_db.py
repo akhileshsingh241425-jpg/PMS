@@ -196,6 +196,65 @@ if 'chat_messages' not in tables:
     c.execute('CREATE INDEX IF NOT EXISTS idx_chat_messages_channel ON chat_messages(channel)')
     print('  chat_messages table created')
 
+# --- Chat v2 tables (real-time chat) ---
+c.execute('''
+    CREATE TABLE IF NOT EXISTS chat_conversations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        type VARCHAR(10) NOT NULL DEFAULT 'direct',
+        name VARCHAR(200),
+        group_photo VARCHAR(500),
+        created_by INTEGER NOT NULL REFERENCES users(id),
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )''')
+print('  chat_conversations table created')
+
+c.execute('''
+    CREATE TABLE IF NOT EXISTS chat_conversation_participants (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        conversation_id INTEGER NOT NULL REFERENCES chat_conversations(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        role VARCHAR(20) DEFAULT 'member',
+        joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        last_read_at DATETIME,
+        UNIQUE(conversation_id, user_id)
+    )''')
+c.execute('CREATE INDEX IF NOT EXISTS idx_ccp_conv ON chat_conversation_participants(conversation_id)')
+c.execute('CREATE INDEX IF NOT EXISTS idx_ccp_user ON chat_conversation_participants(user_id)')
+print('  chat_conversation_participants table created')
+
+c.execute('''
+    CREATE TABLE IF NOT EXISTS chat_messages_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        conversation_id INTEGER NOT NULL REFERENCES chat_conversations(id) ON DELETE CASCADE,
+        sender_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        message TEXT,
+        message_type VARCHAR(20) DEFAULT 'text',
+        file_url VARCHAR(500),
+        file_name VARCHAR(255),
+        file_size INTEGER,
+        reply_to INTEGER REFERENCES chat_messages_new(id),
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        edited_at DATETIME,
+        deleted_at DATETIME
+    )''')
+c.execute('CREATE INDEX IF NOT EXISTS idx_cmn_conv ON chat_messages_new(conversation_id)')
+c.execute('CREATE INDEX IF NOT EXISTS idx_cmn_sender ON chat_messages_new(sender_id)')
+print('  chat_messages_new table created')
+
+c.execute('''
+    CREATE TABLE IF NOT EXISTS chat_message_status (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        message_id INTEGER NOT NULL REFERENCES chat_messages_new(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        status VARCHAR(20) DEFAULT 'sent',
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(message_id, user_id)
+    )''')
+c.execute('CREATE INDEX IF NOT EXISTS idx_cms_msg ON chat_message_status(message_id)')
+c.execute('CREATE INDEX IF NOT EXISTS idx_cms_user ON chat_message_status(user_id)')
+print('  chat_message_status table created')
+
 conn.commit()
 conn.close()
 print('Migration done')
