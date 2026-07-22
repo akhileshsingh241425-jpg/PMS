@@ -398,7 +398,7 @@ def assign(current_user, mid):
     project = Project.query.filter_by(proj_id='EMAIL_TASKS').first()
     if not project:
         project = Project(proj_id='EMAIL_TASKS', title='Email Tasks',
-                          pm_id=current_user.id, stage='Active')
+                          pm_id=current_user.id, stage='Created')
         db.session.add(project)
         db.session.flush()
     due_date = None
