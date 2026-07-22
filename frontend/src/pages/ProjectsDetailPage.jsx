@@ -433,10 +433,10 @@ export default function ProjectsDetailPage() {
       <style>{`@keyframes pulse-dot { 0%,100% { box-shadow:0 0 0 0 rgba(109,40,217,0.4); } 50% { box-shadow:0 0 0 8px rgba(109,40,217,0); } } @keyframes pulse-dot-blocked { 0%,100% { box-shadow:0 0 0 0 rgba(239,68,68,0.4); } 50% { box-shadow:0 0 0 8px rgba(239,68,68,0); } } @keyframes pulse-dot-done { 0%,100% { box-shadow:0 0 0 0 rgba(16,185,129,0.4); } 50% { box-shadow:0 0 0 8px rgba(16,185,129,0); } }`}</style>
       <div style={{ padding: '0 0 16px', width: '100%', maxWidth: '100%' }}>
         {/* ═══ HEADER CARD ═══ */}
-        <div style={{ background: C.card, borderRadius: C.radius + 2, border: `1px solid ${C.border}`, padding: '14px 20px', marginBottom: 10, boxShadow: C.shadowMd }}>
+        <div style={{ background: C.card, borderRadius: C.radius + 2, border: `1px solid ${C.border}`, padding: '14px 20px', marginBottom: 10 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, flex: 1 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(135deg,#6D28D9,#8B5CF6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 800, color: '#fff', flexShrink: 0, boxShadow: '0 4px 14px rgba(109,40,217,0.3)', border: '2px solid rgba(139,92,246,0.3)' }}>
+              <div style={{ width: 32, height: 32, borderRadius: 6, background: '#6D28D9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: '#fff', flexShrink: 0 }}>
                 {(p.title || 'P')[0].toUpperCase()}
               </div>
               <div style={{ flex: 1 }}>
@@ -496,7 +496,7 @@ export default function ProjectsDetailPage() {
         </div>
 
         {/* ═══ STAGE TIMELINE ═══ */}
-        <div style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '10px 16px', marginBottom: 10, boxShadow: C.shadow }}>
+        <div style={{ background: 'transparent', borderRadius: 0, border: 0, borderBottom: `1px solid ${C.border}`, padding: '10px 16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <TagIcon />
@@ -546,7 +546,7 @@ export default function ProjectsDetailPage() {
         </div>
 
         {/* ═══ PROJECT INFO (TWO-COLUMN GRID) ═══ */}
-        <div id="section-info" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '10px 16px', marginBottom: 10, boxShadow: C.shadow }}>
+        <div id="section-info" style={{ background: 'transparent', borderRadius: 0, border: 0, borderBottom: `1px solid ${C.border}`, padding: '10px 16px' }}>
           <SectionTitle icon={<BriefcaseIcon />} text="Project Information" />
           <div style={{ marginTop: 10, marginBottom: 8 }}>
             <div style={{ fontSize: 10, fontWeight: 600, color: '#94A3B8', letterSpacing: '0.4px', textTransform: 'uppercase', marginBottom: 5 }}>Timeline</div>
@@ -591,7 +591,7 @@ export default function ProjectsDetailPage() {
         )}
 
         {/* ═══ PLAN & TASKS (COMPACT) ═══ */}
-        <div id="section-plan" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '10px 16px', marginBottom: 10, boxShadow: C.shadow }}>
+        <div id="section-plan" style={{ background: 'transparent', borderRadius: 0, border: 0, borderBottom: `1px solid ${C.border}`, padding: '10px 16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <SectionTitle icon={<FileTextIcon />} text="Plan & Tasks" />
             <button onClick={() => setActiveTab('tasks')} style={{ padding: '5px 14px', borderRadius: 6, border: 'none', background: C.primary, color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
@@ -628,7 +628,7 @@ export default function ProjectsDetailPage() {
 
         {/* ═══ PO OUT WORKFLOW ═══ */}
         {p.direction === 'OUT' && (
-          <div id="section-po-out" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '24px 28px', marginBottom: 20, boxShadow: C.shadow }}>
+          <div id="section-po-out" style={{ borderBottom: `1px solid ${C.border}`, padding: '6px 12px' }}>
             <SectionTitle icon={<span style={{ fontSize: 18 }}>📋</span>} text={`PO Out Workflow`} />
             {p.po_next_due_date && p.balance_outstanding > 0 && new Date(p.po_next_due_date) <= new Date() && (
               <div style={{ marginTop: 12, padding: '12px 18px', background: '#FEF3C7', borderRadius: 10, fontSize: 14, fontWeight: 600, color: '#92400E', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -811,7 +811,7 @@ export default function ProjectsDetailPage() {
         )}
 
         {/* ═══ TAB NAVIGATION ═══ */}
-        <div style={{ display: 'flex', gap: 3, background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '3px', marginBottom: 6, boxShadow: C.shadow }}>
+        <div style={{ display: 'flex', gap: 3, background: 'transparent', borderRadius: 0, border: 0, borderBottom: `1px solid ${C.border}`, padding: '3px', marginBottom: 6 }}>
           {[
             { key: 'overview', label: 'Overview', icon: '▶' },
             { key: 'tasks', label: 'Tasks', icon: '✓' },
@@ -849,7 +849,7 @@ export default function ProjectsDetailPage() {
         {activeTab === 'overview' && <div>
           {/* DESCRIPTION */}
           {(p.description || editingDesc || hasRole('super_admin', 'admin', 'project_lead')) && (
-            <div id="section-description" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '10px 16px', marginBottom: 10, boxShadow: C.shadow }}>
+            <div id="section-description" style={{ background: 'transparent', borderRadius: 0, border: 0, borderBottom: `1px solid ${C.border}`, padding: '10px 16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <SectionTitle icon={<FileIcon />} text="Description" />
                 {!editingDesc && p.description && hasRole('super_admin', 'admin', 'project_lead') && (
@@ -875,7 +875,7 @@ export default function ProjectsDetailPage() {
           )}
 
             {/* REMARKS */}
-            <div id="section-remarks" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '10px 16px', marginBottom: 10, boxShadow: C.shadow }}>
+            <div id="section-remarks" style={{ background: 'transparent', borderRadius: 0, border: 0, borderBottom: `1px solid ${C.border}`, padding: '10px 16px' }}>
               <SectionTitle icon={<ChatIcon />} text={`Remarks (${(remarks || []).length})`} />
               <div style={{ marginTop: 10, marginBottom: 14 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
@@ -967,7 +967,7 @@ export default function ProjectsDetailPage() {
             </div>
 
             {/* DOCUMENTS */}
-            <div id="section-documents" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '10px 16px', marginBottom: 10, boxShadow: C.shadow }}>
+            <div id="section-documents" style={{ background: 'transparent', borderRadius: 0, border: 0, borderBottom: `1px solid ${C.border}`, padding: '10px 16px' }}>
               <SectionTitle icon={<PaperclipIcon />} text={`Documents & Reports (${totalDocs + reports.length})`} />
               <div style={{ display: 'flex', gap: 8, marginTop: 10, marginBottom: 10, alignItems: 'center' }}>
                 <select value={uploadCategory} onChange={e => setUploadCategory(e.target.value)}
@@ -1041,7 +1041,7 @@ export default function ProjectsDetailPage() {
             {/* ═══ MEETINGS + NOTES ═══ */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10, alignItems: 'start' }}>
               {/* MEETINGS */}
-              <div id="section-meetings" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '10px 16px', boxShadow: C.shadow }}>
+              <div id="section-meetings" style={{ background: 'transparent', borderRadius: 0, border: 0, borderBottom: `1px solid ${C.border}`, padding: '10px 16px' }}>
                 <SectionTitle icon={<CalendarIcon />} text={`Meetings (${totalMeetings})`} />
                 <div style={{ marginTop: 10, marginBottom: 8 }}>
                   <button onClick={() => setShowMeetingForm(!showMeetingForm)} style={{ display: 'flex', alignItems: 'center', gap: 4, background: C.primary, color: '#fff', border: 'none', borderRadius: 6, padding: '5px 14px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
@@ -1132,7 +1132,7 @@ export default function ProjectsDetailPage() {
                 )}
               </div>
               {/* NOTES */}
-              <div id="section-notes" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '10px 16px', boxShadow: C.shadow }}>
+              <div id="section-notes" style={{ background: 'transparent', borderRadius: 0, border: 0, borderBottom: `1px solid ${C.border}`, padding: '10px 16px' }}>
                 <SectionTitle icon={<NoteIcon />} text={`Notes (${(notes || []).length})`} />
                 <form onSubmit={addNote} style={{ display: 'flex', gap: 6, marginTop: 10, marginBottom: 10 }}>
                   <input value={noteText} onChange={e => setNoteText(e.target.value)} placeholder="Add a note..."
@@ -1156,7 +1156,7 @@ export default function ProjectsDetailPage() {
             </div>
 
             {/* ═══ VULNERABILITIES ═══ */}
-            <div id="section-vulnerabilities" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '10px 16px', marginBottom: 10, boxShadow: C.shadow }}>
+            <div id="section-vulnerabilities" style={{ background: 'transparent', borderRadius: 0, border: 0, borderBottom: `1px solid ${C.border}`, padding: '10px 16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                 <SectionTitle icon={<ShieldExclamationIcon size={14} />} text={`Vulnerabilities (${vulnerabilities.length})`} />
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -1253,7 +1253,7 @@ export default function ProjectsDetailPage() {
 
             {/* FINDING QUERIES */}
             {queries.length > 0 && (
-              <div id="section-queries" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 20, boxShadow: C.shadow }}>
+              <div id="section-queries" style={{ borderBottom: `1px solid ${C.border}`, padding: '6px 12px' }}>
                 <SectionTitle icon={<ChatIcon />} text={`Finding Queries (${queries.length})`} />
                 <div style={{ marginTop: 16 }}>
                   {queries.map(q => (
@@ -1273,7 +1273,7 @@ export default function ProjectsDetailPage() {
             )}
 
             {/* TEAM */}
-            <div id="section-team" style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, boxShadow: C.shadow }}>
+            <div id="section-team" style={{ background: 'transparent', borderRadius: 0, border: 0, borderBottom: `1px solid ${C.border}` }}>
               <div style={{ padding: '16px 20px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <SectionTitle icon={<UsersIcon />} text={`Team (${(team || []).length})`} />
                 {hasRole('super_admin', 'admin', 'project_lead') && (
@@ -1699,22 +1699,14 @@ function DocStatusBadge({ status }) {
 
 function KPICard({ icon, accent, label, value, onClick, progress }) {
   return (
-    <div onClick={onClick} style={{ background: C.card, borderRadius: C.radius, border: `1px solid ${C.border}`, padding: '10px 12px 0', cursor: onClick ? 'pointer' : 'default', transition: 'all 0.2s ease', boxShadow: C.shadow, overflow: 'hidden', position: 'relative', transform: 'translateY(0)' }}
-      onMouseEnter={e => { e.currentTarget.style.boxShadow = C.shadowMd; e.currentTarget.style.borderColor = '#C4B5FD'; e.currentTarget.style.transform = 'translateY(-1px)' }}
-      onMouseLeave={e => { e.currentTarget.style.boxShadow = C.shadow; e.currentTarget.style.borderColor = C.border; e.currentTarget.style.transform = 'translateY(0)' }}>
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, background: accent, borderRadius: '0 0 10px 10px' }} />
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingBottom: 10 }}>
-        <div style={{ width: 32, height: 32, borderRadius: 8, background: `${accent}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 14, color: accent }}>{icon}</div>
+    <div onClick={onClick} style={{ padding: '4px 6px', cursor: onClick ? 'pointer' : 'default' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ width: 22, height: 22, borderRadius: 4, background: `${accent}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 11, color: accent }}>{icon}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 16, fontWeight: 700, color: accent, letterSpacing: '-0.3px', lineHeight: 1.1 }}>{value}</div>
-          <div style={{ fontSize: 10, fontWeight: 500, color: '#94A3B8', marginTop: 1 }}>{label}</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: accent, lineHeight: 1.1 }}>{value}</div>
+          <div style={{ fontSize: 9, fontWeight: 500, color: '#94A3B8' }}>{label}</div>
         </div>
       </div>
-      {progress > 0 && (
-        <div style={{ height: 2, background: '#F1F5F9' }}>
-          <div style={{ width: `${Math.min(progress * 100, 100)}%`, height: '100%', background: accent, transition: 'width 0.4s ease', borderRadius: '0 1px 1px 0' }} />
-        </div>
-      )}
     </div>
   )
 }
