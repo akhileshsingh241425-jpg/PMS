@@ -7,7 +7,7 @@ export async function disconnectAccount(id) { const r = await api.delete(`/api/e
 export async function listMessages(params = {}) { const r = await api.get('/api/email/messages', { params }); return r.data }
 export async function markRead(id) { const r = await api.put(`/api/email/messages/${id}/read`); return r.data }
 export async function categorizeMessage(id, category) { const r = await api.put(`/api/email/messages/${id}/categorize`, { category }); return r.data }
-export async function assignMessage(id, assignedToId) { const r = await api.put(`/api/email/messages/${id}/assign`, { assigned_to_id: assignedToId }); return r.data }
+export async function assignMessage(id, assignedToId, notes = '', dueDate = '') { const r = await api.put(`/api/email/messages/${id}/assign`, { assigned_to_id: assignedToId, notes, due_date: dueDate }); return r.data }
 export async function updateStatus(id, status) { const r = await api.put(`/api/email/messages/${id}/status`, { status }); return r.data }
 export async function setPriority(id, priority) { const r = await api.put(`/api/email/messages/${id}/priority`, { priority }); return r.data }
 export async function setTags(id, tags) { const r = await api.put(`/api/email/messages/${id}/tags`, { tags }); return r.data }

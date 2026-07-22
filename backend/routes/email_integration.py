@@ -375,9 +375,11 @@ def categorize(current_user, mid):
 @email_bp.route('/messages/<int:mid>/assign', methods=['PUT'])
 @login_required
 def assign(current_user, mid):
+    from models import Project, Task
     data = request.get_json() or {}
     user_id = data.get('assigned_to_id')
-    create_task = data.get('create_task', True)
+    notes = data.get('notes', '')
+    due_date_str = data.get('due_date', '')
     if not user_id:
         return jsonify({'error': 'assigned_to_id required'}), 400
     if not User.query.get(user_id):
@@ -390,8 +392,33 @@ def assign(current_user, mid):
     user = User.query.get(user_id)
     _add_activity(mid, current_user.id, 'Assigned',
                   f'Assigned to {user.first_name if user else "?"}')
+    if notes:
+        note = EmailNote(email_id=mid, user_id=current_user.id, note=f'Assignment note: {notes}')
+        db.session.add(note)
+    project = Project.query.filter_by(proj_id='EMAIL_TASKS').first()
+    if not project:
+        project = Project(proj_id='EMAIL_TASKS', title='Email Tasks',
+                          pm_id=current_user.id, stage='Active')
+        db.session.add(project)
+        db.session.flush()
+    due_date = None
+    if due_date_str:
+        try: due_date = datetime.fromisoformat(due_date_str)
+        except: pass
+    task_title = f'Email: {msg.subject or "(no subject)"}'
+    task = Task(title=task_title[:250], project_id=project.id,
+                assigned_to=user_id, created_by=current_user.id,
+                status='Open', priority=msg.priority or 'Normal',
+                description=f'From: {msg.sender_name} <{msg.sender_email}>\nSubject: {msg.subject or ""}\n\n{notes}',
+                due_date=due_date.date() if due_date else None)
+    db.session.add(task)
+    db.session.flush()
+    _add_activity(mid, current_user.id, 'Task Created',
+                  f'Task #{task.id} created and assigned to {user.first_name if user else "?"}')
     db.session.commit()
-    return jsonify(msg.to_dict())
+    result = msg.to_dict()
+    result['task_id'] = task.id
+    return jsonify(result)
 
 
 @email_bp.route('/messages/<int:mid>/status', methods=['PUT'])

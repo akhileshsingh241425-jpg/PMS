@@ -21,6 +21,9 @@ export default function EmailDetailPanel({ msg, employees, onClose, onRefresh })
   const [activeTab, setActiveTab] = useState('actions')
   const [assignSearch, setAssignSearch] = useState('')
   const [showAssignDropdown, setShowAssignDropdown] = useState(false)
+  const [assignNotes, setAssignNotes] = useState('')
+  const [assignDueDate, setAssignDueDate] = useState('')
+  const [assigning, setAssigning] = useState(false)
 
   const loadDetails = useCallback(async () => {
     try { const r = await listNotes(msg.id); setNotes(r.notes || []) } catch (e) {}
@@ -33,7 +36,19 @@ export default function EmailDetailPanel({ msg, employees, onClose, onRefresh })
   useEffect(() => { loadDetails() }, [loadDetails])
 
   const handleCategorize = async (cat) => { await categorizeMessage(msg.id, cat); msg.category = cat; onRefresh() }
-  const handleAssign = async (uid) => { await assignMessage(msg.id, uid); const emp = employees.find(e => e.id === uid); msg.assigned_to_id = uid; msg.assigned_to_name = emp?.name; msg.status = 'Assigned'; setShowAssignDropdown(false); setAssignSearch(''); onRefresh() }
+  const handleAssign = async (uid) => {
+    setAssigning(true)
+    try {
+      await assignMessage(msg.id, uid, assignNotes, assignDueDate)
+      const emp = employees.find(e => e.id === uid)
+      msg.assigned_to_id = uid
+      msg.assigned_to_name = emp?.name
+      msg.status = 'Assigned'
+      setShowAssignDropdown(false); setAssignSearch(''); setAssignNotes(''); setAssignDueDate('')
+      onRefresh()
+    } catch (e) {}
+    finally { setAssigning(false) }
+  }
   const handleStatus = async (st) => { await updateStatus(msg.id, st); msg.status = st; onRefresh() }
   const handlePriority = async (pr) => { await setPriority(msg.id, pr); msg.priority = pr; onRefresh() }
   const handleAddNote = async () => { if (!newNote.trim()) return; await addNote(msg.id, newNote); setNewNote(''); loadDetails() }
@@ -136,43 +151,56 @@ export default function EmailDetailPanel({ msg, employees, onClose, onRefresh })
                   {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
-              <div>
-                <label style={{ fontSize: 11, color: C.secondary, fontWeight: 600, marginBottom: 4, display: 'block' }}>Assign To</label>
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={{ fontSize: 11, color: C.secondary, fontWeight: 600, marginBottom: 4, display: 'block' }}>Assign as Task To</label>
                 <div style={{ position: 'relative' }}>
                   <div onClick={() => setShowAssignDropdown(!showAssignDropdown)}
                     style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12, fontFamily: C.font, background: '#fff', cursor: 'pointer', color: C.text, display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxSizing: 'border-box' }}>
-                    <span>{msg.assigned_to_name || 'Select employee...'}</span>
+                    <span>{msg.assigned_to_name ? `Task → ${msg.assigned_to_name}` : 'Select employee...'}</span>
                     <ChevronDown className="w-3 h-3" style={{ color: C.secondary }} />
                   </div>
                   {showAssignDropdown && (
                     <div style={{
                       position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100,
                       background: '#fff', border: `1px solid ${C.border}`, borderRadius: 8, marginTop: 4,
-                      boxShadow: '0 4px 16px rgba(0,0,0,0.1)', maxHeight: 200, overflow: 'auto',
+                      boxShadow: '0 4px 16px rgba(0,0,0,0.15)', overflow: 'hidden',
                     }}>
-                      <div style={{ padding: '6px 8px', borderBottom: `1px solid ${C.border}` }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#F1F5F9', borderRadius: 6, padding: '4px 8px' }}>
+                      <div style={{ padding: '8px 10px', borderBottom: `1px solid ${C.border}` }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#F1F5F9', borderRadius: 6, padding: '6px 10px', marginBottom: 6 }}>
                           <Search className="w-3 h-3" style={{ color: C.secondary }} />
                           <input value={assignSearch} onChange={e => setAssignSearch(e.target.value)}
                             style={{ border: 'none', outline: 'none', fontSize: 12, fontFamily: C.font, background: 'transparent', flex: 1, color: C.text }}
                             placeholder="Search employee..." />
                         </div>
+                        <textarea value={assignNotes} onChange={e => setAssignNotes(e.target.value)}
+                          placeholder="Assignment notes (task description)..."
+                          rows={2}
+                          style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: `1px solid ${C.border}`, fontSize: 11, fontFamily: C.font, background: '#fff', color: C.text, resize: 'vertical', boxSizing: 'border-box', outline: 'none', marginBottom: 6 }} />
+                        <input type="date" value={assignDueDate} onChange={e => setAssignDueDate(e.target.value)}
+                          style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: `1px solid ${C.border}`, fontSize: 11, fontFamily: C.font, background: '#fff', color: C.text, outline: 'none', boxSizing: 'border-box', marginBottom: 6 }} />
                       </div>
-                      {filteredEmployees.map(e => (
-                        <div key={e.id} onClick={() => handleAssign(e.id)}
-                          style={{ padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: C.text, transition: 'background 0.1s' }}
-                          onMouseEnter={e => e.currentTarget.style.background = '#F8FAFC'}
-                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                          <User className="w-3 h-3" style={{ color: C.secondary }} />
-                          <div>
-                            <div style={{ fontWeight: 500 }}>{e.name}</div>
-                            <div style={{ fontSize: 11, color: C.secondary }}>{e.email}</div>
+                      <div style={{ maxHeight: 160, overflow: 'auto' }}>
+                        {filteredEmployees.map(e => (
+                          <div key={e.id} onClick={() => !assigning && handleAssign(e.id)}
+                            style={{ padding: '8px 14px', cursor: assigning ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: C.text, opacity: assigning ? 0.5 : 1, transition: 'background 0.1s' }}
+                            onMouseEnter={e => { if (!assigning) e.currentTarget.style.background = '#F1F5F9' }}
+                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                            <div style={{ width: 28, height: 28, borderRadius: 8, background: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+                              {e.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <div style={{ fontWeight: 500 }}>{e.name}</div>
+                              <div style={{ fontSize: 10, color: C.secondary }}>{e.email}</div>
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                      {filteredEmployees.length === 0 && (
-                        <div style={{ padding: '8px 12px', fontSize: 12, color: C.secondary }}>No employees found</div>
-                      )}
+                        ))}
+                        {filteredEmployees.length === 0 && (
+                          <div style={{ padding: '12px 14px', fontSize: 12, color: C.secondary, textAlign: 'center' }}>No employees found</div>
+                        )}
+                      </div>
+                      <div style={{ padding: '6px 10px', borderTop: `1px solid ${C.border}`, textAlign: 'right', fontSize: 10, color: C.secondary }}>
+                        Task will be created with email as title
+                      </div>
                     </div>
                   )}
                 </div>
