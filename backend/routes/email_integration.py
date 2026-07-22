@@ -10,7 +10,9 @@ from middleware.auth import login_required
 
 email_bp = Blueprint('email', __name__, url_prefix='/api/email')
 
-AUTHORITY = 'https://login.microsoftonline.com/common'
+def _get_authority():
+    tenant = current_app.config.get('MICROSOFT_TENANT_ID', 'common')
+    return f'https://login.microsoftonline.com/{tenant}'
 GRAPH_URL = 'https://graph.microsoft.com/v1.0'
 
 _temp_tokens = {}
@@ -30,8 +32,9 @@ def connect(current_user):
     state = secrets.token_urlsafe(32)
     _temp_tokens[state] = {'user_id': current_user.id, 'expires': datetime.utcnow() + timedelta(minutes=5)}
     scopes = 'offline_access Mail.Read Mail.ReadWrite User.Read'
+    authority = _get_authority()
     auth_url = (
-        f'{AUTHORITY}/oauth2/v2.0/authorize'
+        f'{authority}/oauth2/v2.0/authorize'
         f'?client_id={client_id}'
         f'&response_type=code'
         f'&redirect_uri={redirect_uri}'
@@ -57,7 +60,8 @@ def callback():
         return jsonify({'error': 'State expired or invalid. Reconnect.'}), 400
 
     client_id, client_secret, redirect_uri = _get_config()
-    token_url = f'{AUTHORITY}/oauth2/v2.0/token'
+    authority = _get_authority()
+    token_url = f'{authority}/oauth2/v2.0/token'
     data = {
         'client_id': client_id,
         'client_secret': client_secret,
@@ -105,7 +109,8 @@ def _refresh_access_token(account):
         refresh_token = base64.b64decode(account.refresh_token.encode()).decode()
     except Exception:
         return None
-    token_url = f'{AUTHORITY}/oauth2/v2.0/token'
+    authority = _get_authority()
+    token_url = f'{authority}/oauth2/v2.0/token'
     data = {
         'client_id': client_id,
         'client_secret': client_secret,
