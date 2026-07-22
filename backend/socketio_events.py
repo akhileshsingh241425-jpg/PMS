@@ -50,7 +50,7 @@ def register_socketio_events(socketio):
 
     @socketio.on('send_message')
     def handle_send_message(data):
-        from models import db, ChatConversation, ChatConversationParticipant, ChatMessage, ChatMessageStatus
+        from models import db, ChatConversation, ChatConversationParticipant, ConversationMessage, ChatMessageStatus
         user = online_users.get(request.sid)
         if not user:
             return
@@ -85,7 +85,7 @@ def register_socketio_events(socketio):
                 db.session.flush()
                 conversation_id = conv.id
 
-        msg = ChatMessage(
+        msg = ConversationMessage(
             conversation_id=conversation_id,
             sender_id=user.id,
             message=message_text or None,
@@ -132,7 +132,7 @@ def register_socketio_events(socketio):
 
     @socketio.on('mark_read')
     def handle_mark_read(data):
-        from models import db, ChatConversationParticipant, ChatMessage, ChatMessageStatus
+        from models import db, ChatConversationParticipant, ConversationMessage, ChatMessageStatus
         user = online_users.get(request.sid)
         if not user:
             return
@@ -144,7 +144,7 @@ def register_socketio_events(socketio):
         if part:
             part.last_read_at = now
             db.session.commit()
-        msgs = ChatMessage.query.filter(ChatMessage.conversation_id == conversation_id, ChatMessage.sender_id != user.id).all()
+        msgs = ConversationMessage.query.filter(ConversationMessage.conversation_id == conversation_id, ConversationMessage.sender_id != user.id).all()
         for m in msgs:
             status = ChatMessageStatus.query.filter_by(message_id=m.id, user_id=user.id).first()
             if status and status.status != 'read':
@@ -154,13 +154,13 @@ def register_socketio_events(socketio):
 
     @socketio.on('delete_message')
     def handle_delete_message(data):
-        from models import db, ChatMessage
+        from models import db, ConversationMessage
         user = online_users.get(request.sid)
         if not user:
             return
         message_id = data.get('message_id')
         scope = data.get('scope', 'me')
-        msg = ChatMessage.query.get(message_id)
+        msg = ConversationMessage.query.get(message_id)
         if not msg or msg.sender_id != user.id:
             return
         if scope == 'everyone':

@@ -16,7 +16,7 @@ class ChatConversation(db.Model):
     participants = db.relationship('ChatConversationParticipant', back_populates='conversation', cascade='all, delete-orphan', lazy='joined')
 
     def to_dict(self, current_user_id=None):
-        last_msg = ChatMessage.query.filter_by(conversation_id=self.id).order_by(ChatMessage.created_at.desc()).first()
+        last_msg = ConversationMessage.query.filter_by(conversation_id=self.id).order_by(ConversationMessage.created_at.desc()).first()
         other = None
         if self.type == 'direct' and current_user_id:
             other_p = [p for p in self.participants if p.user_id != current_user_id]
@@ -26,7 +26,7 @@ class ChatConversation(db.Model):
         if current_user_id:
             part = ChatConversationParticipant.query.filter_by(conversation_id=self.id, user_id=current_user_id).first()
             if part and part.last_read_at:
-                unread = ChatMessage.query.filter(ChatMessage.conversation_id == self.id, ChatMessage.created_at > part.last_read_at, ChatMessage.sender_id != current_user_id).count()
+                unread = ConversationMessage.query.filter(ConversationMessage.conversation_id == self.id, ConversationMessage.created_at > part.last_read_at, ConversationMessage.sender_id != current_user_id).count()
         return {
             'id': self.id,
             'type': self.type,
@@ -57,7 +57,7 @@ class ChatConversationParticipant(db.Model):
     __table_args__ = (db.UniqueConstraint('conversation_id', 'user_id'),)
 
 
-class ChatMessage(db.Model):
+class ConversationMessage(db.Model):
     __tablename__ = 'chat_messages_new'
     id = db.Column(db.Integer, primary_key=True)
     conversation_id = db.Column(db.Integer, db.ForeignKey('chat_conversations.id', ondelete='CASCADE'), nullable=False, index=True)
@@ -73,7 +73,7 @@ class ChatMessage(db.Model):
     deleted_at = db.Column(db.DateTime)
 
     sender = db.relationship('User', foreign_keys=[sender_id])
-    reply_msg = db.relationship('ChatMessage', foreign_keys=[reply_to], remote_side='ChatMessage.id')
+    reply_msg = db.relationship('ConversationMessage', foreign_keys=[reply_to], remote_side='ConversationMessage.id')
 
     def to_dict(self):
         from models import User

@@ -21,7 +21,7 @@ from .attendance import Attendance
 from .device_token import DeviceToken
 from .location_log import LocationLog
 from .chat_message import ChatMessage
-from .conversation import ChatConversation, ChatConversationParticipant, ChatMessageStatus
+from .conversation import ChatConversation, ChatConversationParticipant, ConversationMessage, ChatMessageStatus
 from .backlog import Epic, Sprint, Issue
 from .client import Client
 from .email_integration import EmailAccount, EmailMessage, EmailAuthState, EmailActivity, EmailNote, EmailAutoRule, EmailFollowUp, EmailTemplate, CATEGORIES, EMAIL_STATUSES, PRIORITIES, TAGS_PRESET

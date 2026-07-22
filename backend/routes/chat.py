@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import db, User, ChatConversation, ChatConversationParticipant, ChatMessage, ChatMessageStatus
+from models import db, User, ChatConversation, ChatConversationParticipant, ConversationMessage, ChatMessageStatus
 from middleware.auth import login_required
 from datetime import datetime
 
@@ -66,10 +66,10 @@ def get_messages(current_user, conv_id):
         return jsonify({'error': 'Access denied'}), 403
     before = request.args.get('before', type=int)
     limit = min(request.args.get('limit', 50, type=int), 200)
-    q = ChatMessage.query.filter_by(conversation_id=conv_id)
+    q = ConversationMessage.query.filter_by(conversation_id=conv_id)
     if before:
-        q = q.filter(ChatMessage.id < before)
-    q = q.order_by(ChatMessage.created_at.desc()).limit(limit)
+        q = q.filter(ConversationMessage.id < before)
+    q = q.order_by(ConversationMessage.created_at.desc()).limit(limit)
     messages = list(reversed(q.all()))
     return jsonify({'messages': [m.to_dict() for m in messages]})
 
@@ -82,7 +82,7 @@ def mark_read(current_user, conv_id):
     if not part:
         return jsonify({'error': 'Not a member'}), 403
     part.last_read_at = now
-    msgs = ChatMessage.query.filter(ChatMessage.conversation_id == conv_id, ChatMessage.sender_id != current_user.id).all()
+    msgs = ConversationMessage.query.filter(ConversationMessage.conversation_id == conv_id, ConversationMessage.sender_id != current_user.id).all()
     for m in msgs:
         s = ChatMessageStatus.query.filter_by(message_id=m.id, user_id=current_user.id).first()
         if s and s.status != 'read':
@@ -144,7 +144,7 @@ def remove_participant(current_user, conv_id, user_id):
 @chat_bp.route('/messages/<int:msg_id>', methods=['DELETE'])
 @login_required
 def delete_message(current_user, msg_id):
-    msg = ChatMessage.query.get_or_404(msg_id)
+    msg = ConversationMessage.query.get_or_404(msg_id)
     if msg.sender_id != current_user.id:
         return jsonify({'error': 'Can only delete own messages'}), 403
     msg.deleted_at = datetime.utcnow()
