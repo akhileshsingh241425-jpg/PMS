@@ -1,82 +1,63 @@
 import { useState } from 'react'
-import { MapPin, ChevronDown, ChevronRight } from 'lucide-react'
+import { ChevronDown, ChevronRight } from 'lucide-react'
 import { C } from './styleConstants'
 
 const rowStyle = {
   display: 'flex',
   alignItems: 'center',
-  padding: '6px 16px',
+  padding: '3px 12px',
   borderBottom: '1px solid #F1F5F9',
   cursor: 'pointer',
   transition: 'background 0.1s',
-  fontSize: 13,
+  fontSize: 12,
   fontFamily: C.font,
-  minHeight: 40,
   boxSizing: 'border-box',
   color: C.text,
 }
 
 const avatarMain = {
-  width: 28,
-  height: 28,
+  width: 20,
+  height: 20,
   borderRadius: '50%',
   background: C.blueDark,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  fontSize: 12,
+  fontSize: 9,
   fontWeight: 700,
   color: '#fff',
   flexShrink: 0,
 }
 
 const avatarSub = {
-  width: 24,
-  height: 24,
+  width: 18,
+  height: 18,
   borderRadius: '50%',
   background: C.blueLight,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  fontSize: 11,
+  fontSize: 8,
   fontWeight: 700,
   color: C.blue,
   flexShrink: 0,
 }
 
 const idBadge = {
-  fontSize: 11,
+  fontSize: 10,
   fontWeight: 600,
   color: C.blue,
   background: C.blueLight,
-  padding: '2px 8px',
+  padding: '1px 6px',
   borderRadius: 999,
   whiteSpace: 'nowrap',
-}
-
-const greenDot = {
-  width: 8,
-  height: 8,
-  borderRadius: '50%',
-  background: C.green,
-  flexShrink: 0,
 }
 
 const industryTag = {
-  fontSize: 12,
+  fontSize: 11,
   color: '#475569',
   background: '#F1F5F9',
-  padding: '2px 10px',
-  borderRadius: 999,
-  whiteSpace: 'nowrap',
-}
-
-const subBadge = {
-  fontSize: 11,
-  fontWeight: 600,
-  color: C.orangeText,
-  background: C.orangeLight,
-  padding: '2px 10px',
+  padding: '1px 8px',
   borderRadius: 999,
   whiteSpace: 'nowrap',
 }
@@ -94,31 +75,23 @@ export default function ClientRow({ client, onNavigate }) {
         onMouseEnter={e => { e.currentTarget.style.background = '#F8FAFC' }}
         onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: '1 1 0', minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: '1 1 0', minWidth: 0 }}>
           <div style={avatarMain}>
             {(client.name || '?')[0].toUpperCase()}
           </div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-              <span style={{ fontWeight: 600, fontSize: 13, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 180 }}>
-                {client.name}
-              </span>
-              <span style={idBadge}>{client.client_code}</span>
-              {client.status === 'Active' && <span style={greenDot} />}
-            </div>
-            {client.client_type === 'main' && client.location && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginTop: 1 }}>
-                <MapPin className="w-2.5 h-2.5" style={{ color: C.secondary, flexShrink: 0 }} />
-                <span style={{ fontSize: 11, color: C.secondary }}>{client.location}</span>
-              </div>
-            )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0, flexWrap: 'wrap' }}>
+            <span style={{ fontWeight: 600, fontSize: 12, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 140 }}>
+              {client.name}
+            </span>
+            <span style={idBadge}>{client.client_code}</span>
+            {client.location && <span style={{ fontSize: 10, color: C.secondary }}>{client.location}</span>}
           </div>
         </div>
 
-        <div style={{ width: 120, textAlign: 'center', flexShrink: 0 }}>
+        <div style={{ width: 100, textAlign: 'center', flexShrink: 0 }}>
           {client.contact_name && (
             <span
-              style={{ fontSize: 12, color: C.blue, cursor: 'pointer' }}
+              style={{ fontSize: 11, color: C.blue, cursor: 'pointer' }}
               onClick={e => { e.stopPropagation(); window.location.href = `mailto:${client.contact_email || ''}` }}
             >
               {client.contact_name}
@@ -126,40 +99,27 @@ export default function ClientRow({ client, onNavigate }) {
           )}
         </div>
 
-        <div style={{ width: 100, textAlign: 'center', flexShrink: 0 }}>
+        <div style={{ width: 80, textAlign: 'center', flexShrink: 0 }}>
           {client.industry && (
             <span style={industryTag}>{client.industry}</span>
           )}
         </div>
 
-        <div style={{ width: 60, textAlign: 'center', flexShrink: 0 }}>
-          <span style={{ fontWeight: 700, fontSize: 13, color: C.text }}>
+        <div style={{ width: 40, textAlign: 'center', flexShrink: 0 }}>
+          <span style={{ fontWeight: 700, fontSize: 12, color: C.text }}>
             {client.project_count || 0}
           </span>
         </div>
 
-        <div style={{ width: 70, textAlign: 'center', flexShrink: 0 }}>
+        <div style={{ width: 50, textAlign: 'center', flexShrink: 0 }}>
           {hasSubs && (
-            <button
+            <span
               onClick={e => { e.stopPropagation(); setExpanded(!expanded) }}
-              style={{
-                padding: '2px 8px',
-                borderRadius: 999,
-                border: '1px solid #E2E8F0',
-                background: '#fff',
-                cursor: 'pointer',
-                color: C.secondary,
-                display: 'inline-flex',
-                alignItems: 'center',
-                fontFamily: C.font,
-                fontSize: 11,
-                gap: 3,
-                fontWeight: 500,
-              }}
+              style={{ fontSize: 10, color: C.orangeText, cursor: 'pointer', whiteSpace: 'nowrap' }}
             >
-              {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+              {expanded ? <ChevronDown className="w-2.5 h-2.5" style={{ display: 'inline', verticalAlign: 'middle' }} /> : <ChevronRight className="w-2.5 h-2.5" style={{ display: 'inline', verticalAlign: 'middle' }} />}
               {subClients.length}
-            </button>
+            </span>
           )}
         </div>
       </div>
@@ -172,40 +132,37 @@ export default function ClientRow({ client, onNavigate }) {
               onClick={() => onNavigate(sub.id)}
               style={{
                 ...rowStyle,
-                paddingLeft: 52,
-                minHeight: 36,
+                paddingLeft: 44,
                 background: '#FAFBFC',
               }}
               onMouseEnter={e => { e.currentTarget.style.background = '#F1F5F9' }}
               onMouseLeave={e => { e.currentTarget.style.background = '#FAFBFC' }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 0', minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: '1 1 0', minWidth: 0 }}>
                 <div style={avatarSub}>
                   {(sub.name || '?')[0].toUpperCase()}
                 </div>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-                    <span style={{ fontWeight: 500, fontSize: 12, color: C.text }}>
-                      {sub.name}
-                    </span>
-                    <span style={{ fontSize: 11, color: C.secondary }}>{sub.client_code}</span>
-                  </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
+                  <span style={{ fontWeight: 500, fontSize: 11, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 140 }}>
+                    {sub.name}
+                  </span>
+                  <span style={{ fontSize: 10, color: C.secondary }}>{sub.client_code}</span>
                 </div>
               </div>
 
-              <div style={{ width: 120, textAlign: 'center', flexShrink: 0 }}>
-                <span style={subBadge}>Sub</span>
+              <div style={{ width: 100, textAlign: 'center', flexShrink: 0 }}>
+                <span style={{ fontSize: 10, color: C.orangeText }}>Sub</span>
               </div>
 
-              <div style={{ width: 100, textAlign: 'center', flexShrink: 0 }} />
+              <div style={{ width: 80, textAlign: 'center', flexShrink: 0 }} />
 
-              <div style={{ width: 60, textAlign: 'center', flexShrink: 0 }}>
-                <span style={{ fontWeight: 600, fontSize: 13, color: C.text }}>
+              <div style={{ width: 40, textAlign: 'center', flexShrink: 0 }}>
+                <span style={{ fontWeight: 600, fontSize: 12, color: C.text }}>
                   {sub.project_count || 0}
                 </span>
               </div>
 
-              <div style={{ width: 70, textAlign: 'center', flexShrink: 0 }} />
+              <div style={{ width: 50, textAlign: 'center', flexShrink: 0 }} />
             </div>
           ))}
         </div>
