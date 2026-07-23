@@ -113,8 +113,8 @@ export default function FloatingChat() {
     <>
       {open && (
         <div style={{
-          position: 'fixed', bottom: 80, right: 20, zIndex: 9999,
-          width: 380, height: 540, background: C.card,
+          position: 'fixed', bottom: 88, right: 24, zIndex: 9999,
+          width: 380, maxWidth: 'calc(100vw - 48px)', height: 540, maxHeight: 'calc(100vh - 112px)', background: C.card,
           borderRadius: 16, boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
           display: 'flex', flexDirection: 'column', overflow: 'hidden',
           border: `1px solid ${C.border}`,
@@ -132,6 +132,10 @@ export default function FloatingChat() {
               {connected && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22C55E' }} />}
             </div>
             <div style={{ display: 'flex', gap: 4 }}>
+                      <button onClick={() => { if (activeConv) { loadMessages(activeConv.id).then(msgs => setMessages(msgs)) } else { loadConversations() } }} title="Refresh"
+                style={{ width: 26, height: 26, borderRadius: 6, border: 'none', background: 'rgba(255,255,255,0.15)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              </button>
               <button onClick={() => navigate('/chat')} title="Open full chat"
                 style={{ width: 26, height: 26, borderRadius: 6, border: 'none', background: 'rgba(255,255,255,0.15)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Maximize2 size={12} />
@@ -305,16 +309,13 @@ export default function FloatingChat() {
       {/* Floating Button */}
       <button onClick={() => setOpen(!open)}
         style={{
-          position: 'fixed', bottom: 20, right: 20, zIndex: 9999,
-          width: 54, height: 54, borderRadius: '50%',
+          position: 'fixed', bottom: 24, right: 24, zIndex: 9999,
+          width: 56, height: 56, borderRadius: '50%',
           background: C.primary, color: '#fff', border: 'none',
           cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 4px 16px rgba(108,62,244,0.4)',
-          transition: 'transform 0.15s',
-        }}
-        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
-        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
-        <MessageSquare size={22} />
+          boxShadow: '0 4px 20px rgba(108,62,244,0.45)',
+        }}>
+        {open ? <X size={22} /> : <MessageSquare size={22} />}
       </button>
     </>
   )

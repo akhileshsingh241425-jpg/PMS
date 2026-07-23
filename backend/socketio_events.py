@@ -53,6 +53,7 @@ def register_socketio_events(socketio):
         from models import db, ChatConversation, ChatConversationParticipant, ConversationMessage, ChatMessageStatus
         user = online_users.get(request.sid)
         if not user:
+            print(f'[send_message] user not found for sid {request.sid}')
             return
 
         conversation_id = data.get('conversation_id')
@@ -85,6 +86,9 @@ def register_socketio_events(socketio):
                 db.session.flush()
                 conversation_id = conv.id
 
+        if not message_text and not file_url and not message_type == 'text':
+            return
+
         msg = ConversationMessage(
             conversation_id=conversation_id,
             sender_id=user.id,
@@ -110,6 +114,7 @@ def register_socketio_events(socketio):
         db.session.commit()
 
         msg_data = msg.to_dict()
+        print(f'[send_message] emitting new_message to conversation_{conversation_id}: {msg.id}')
         socketio.emit('new_message', msg_data, room=f'conversation_{conversation_id}')
 
     @socketio.on('typing_start')
