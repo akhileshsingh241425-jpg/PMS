@@ -8,7 +8,7 @@ from config import Config
 from models import db, bcrypt
 from email_utils import init_mail
 
-socketio = SocketIO(cors_allowed_origins='*', async_mode='threading')
+socketio = SocketIO(cors_allowed_origins='*', async_mode='threading', path='/api/socket.io')
 
 
 def create_app():
