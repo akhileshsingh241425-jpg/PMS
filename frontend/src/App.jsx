@@ -34,6 +34,7 @@ import VulnerabilityDashboard from './pages/VulnerabilityDashboard'
 import Clients from './pages/Clients'
 import EmailInbox from './pages/EmailInbox'
 import ChatPage from './pages/ChatPage'
+import FloatingChat from './components/FloatingChat'
 
 function Protected({ children }) {
   const { user } = useAuth()
@@ -144,6 +145,7 @@ export default function App() {
               <Route path="/vulnerabilities" element={<Protected><Layout><VulnerabilityDashboard /></Layout></Protected>} />
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
+            <FloatingChat />
             </ChatProvider>
           </ToastProvider>
         </AuthProvider>
