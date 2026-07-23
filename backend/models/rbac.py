@@ -98,7 +98,7 @@ class AuditLog(db.Model):
     new_value = db.Column(db.Text)
     ip_address = db.Column(db.String(45))
     user_agent = db.Column(db.String(255))
-    action_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=False, index=True)
+    action_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
 
     actor = db.relationship('User', foreign_keys=[action_by])
