@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { key: 'calendar', label: 'Calendar', icon: Clock, path: '/employee/calendar' },
   { key: 'team', label: 'Team', icon: Users, path: '/employee/team' },
   { key: 'performance', label: 'Performance', icon: CheckSquare, path: '/employee/performance' },
+  { key: 'chat', label: 'Chat', icon: MessageSquare, path: '/employee/chat' },  
   { key: 'notifications', label: 'Notifications', icon: Bell, path: '/employee/notifications' },
   { key: 'profile', label: 'Profile', icon: UserCircle, path: '/employee/profile' },
 ]
