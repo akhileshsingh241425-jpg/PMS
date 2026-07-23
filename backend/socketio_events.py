@@ -40,13 +40,13 @@ def register_socketio_events(socketio):
     def handle_join(data):
         conversation_id = data.get('conversation_id')
         if conversation_id:
-            socketio.enter_room(request.sid, f'conversation_{conversation_id}')
+            socketio.join_room(f'conversation_{conversation_id}', sid=request.sid)
 
     @socketio.on('leave')
     def handle_leave(data):
         conversation_id = data.get('conversation_id')
         if conversation_id:
-            socketio.leave_room(request.sid, f'conversation_{conversation_id}')
+            socketio.leave_room(f'conversation_{conversation_id}', sid=request.sid)
 
     @socketio.on('send_message')
     def handle_send_message(data):
