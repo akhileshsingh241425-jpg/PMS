@@ -10,3 +10,5 @@ marshmallow==3.23.2
 flask-mail==0.10.0
 
 requests==2.31.0
+PyMySQL==1.1.0
+cryptography==44.0.0
