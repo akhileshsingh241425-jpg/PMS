@@ -9,7 +9,8 @@ import {
   Trash2, AlertTriangle
 } from 'lucide-react'
 
-const DESIGNATIONS = ['Director','CEO','CTO','Project Lead','Senior Consultant','Security Consultant','Senior Auditor','Auditor','Junior Auditor','Security Analyst','BD Manager','BD Executive','Admin Manager','Finance Manager','Other']
+const DESIGNATIONS = ['Director','CEO','CTO','Project Lead','Senior Consultant','Security Consultant','Senior Auditor','Auditor','Junior Auditor','Security Analyst','Junior Analyst','BD Manager','BD Executive','Admin Manager','Finance Manager','Other']
+const DEPARTMENTS = ['IT','Information Security','Human Resources','Finance & Accounts','Administration','Sales & Marketing','Business Development','Operations','Legal & Compliance','Research & Development','Customer Support','Training','Other']
 
 const PERMISSION_LABELS = {
   dashboard: 'Dashboard', projects: 'Projects', leads: 'Leads',
@@ -19,7 +20,6 @@ const PERMISSION_LABELS = {
 export default function UsersPage() {
   const [users, setUsers] = useState([])
   const [roles, setRoles] = useState([])
-  const [depts, setDepts] = useState([])
   const [permissions, setPermissions] = useState([])
   const [search, setSearch] = useState('')
 const [showForm, setShowForm] = useState(false)
@@ -27,7 +27,7 @@ const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [userType, setUserType] = useState('employee')
-  const [form, setForm] = useState({ first_name:'',last_name:'',email:'',password:'',phone:'',designation:'',department_id:'',manager_id:'',role_id:5,client_company_name:'' })
+  const [form, setForm] = useState({ first_name:'',last_name:'',email:'',password:'',phone:'',designation:'',designation_other:'',department:'',department_other:'',manager_id:'',role_id:5,client_company_name:'' })
   const [expandedUser, setExpandedUser] = useState(null)
   const [permSaving, setPermSaving] = useState({})
   const [allProjects, setAllProjects] = useState([])
@@ -37,11 +37,10 @@ const [showForm, setShowForm] = useState(false)
   const toast = useToast()
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(()=>{load();loadRoles();loadDepts();if(hasRole('admin'))loadPerms()},[])
+  useEffect(()=>{load();loadRoles();if(hasRole('admin'))loadPerms()},[])
   useEffect(()=>{if(expandedUser&&allProjects.length===0)loadProjects()},[expandedUser])
   const load = async()=>{try{const r=await api.get('/api/auth/users');setUsers(r.data.users)}catch(e){}}
   const loadRoles = async()=>{try{const r=await api.get('/api/auth/roles');setRoles(r.data.roles)}catch(e){}}
-  const loadDepts = async()=>{try{const r=await api.get('/api/auth/departments');setDepts(r.data.departments)}catch(e){}}
   const loadPerms = async()=>{try{const r=await api.get('/api/admin/permissions');setPermissions(r.data.permissions)}catch(e){}}
   const loadProjects = async()=>{try{const r=await api.get('/api/projects',{params:{per_page:500}});setAllProjects(r.data.projects)}catch(e){}}
 
@@ -81,8 +80,8 @@ const [showForm, setShowForm] = useState(false)
     } catch (e) { toast(e.response?.data?.error || 'Failed', 'error') }
   }
 
-  const openCreate = ()=>{setEditUser(null);setError('');setUserType('employee');setForm({first_name:'',last_name:'',email:'',password:'',phone:'',designation:'',department_id:'',manager_id:'',role_id:5,client_company_name:''});setShowForm(true)}
-  const openEdit = (u)=>{setEditUser(u);setError('');setUserType(u.role==='client'?'client':'employee');setForm({first_name:u.first_name,last_name:u.last_name||'',email:u.email,password:'',phone:u.phone||'',designation:u.designation||'',department_id:u.department_id||'',manager_id:u.manager_id||'',role_ids:u.role_ids||[],role_id:(u.role_ids&&u.role_ids[0])||5,client_company_name:u.client_company_name||''});setShowForm(true)}
+  const openCreate = ()=>{setEditUser(null);setError('');setUserType('employee');setForm({first_name:'',last_name:'',email:'',password:'',phone:'',designation:'',designation_other:'',department:'',department_other:'',manager_id:'',role_id:5,client_company_name:''});setShowForm(true)}
+  const openEdit = (u)=>{setEditUser(u);setError('');setUserType(u.role==='client'?'client':'employee');setForm({first_name:u.first_name,last_name:u.last_name||'',email:u.email,password:'',phone:u.phone||'',designation:u.designation||'',designation_other:'',department:u.department||'',department_other:'',manager_id:u.manager_id||'',role_ids:u.role_ids||[],role_id:(u.role_ids&&u.role_ids[0])||5,client_company_name:u.client_company_name||''});setShowForm(true)}
 
   const ROLE_CODES = {1:'super_admin',2:'project_manager',3:'team_leader',4:'sales',5:'employee',6:'client'}
 
@@ -90,7 +89,9 @@ const [showForm, setShowForm] = useState(false)
     e.preventDefault();setSaving(true);setError('')
     try{
       const p={...form}
-      if(p.department_id)p.department_id=parseInt(p.department_id);else delete p.department_id
+      p.designation = p.designation==='Other'?p.designation_other:p.designation
+      p.department = p.department==='Other'?p.department_other:p.department
+      delete p.designation_other; delete p.department_other; delete p.department_id
       if(p.manager_id)p.manager_id=parseInt(p.manager_id);else delete p.manager_id
 
       if(!p.password)delete p.password
@@ -185,10 +186,24 @@ const [showForm, setShowForm] = useState(false)
           {/* Employee Fields */}
           {userType==='employee'&&<>
             <div className="grid grid-cols-2 gap-3">
-              <div><label className="text-sm font-medium">Designation</label><select value={form.designation} onChange={e=>setForm({...form,designation:e.target.value})} className="mt-1 w-full px-3 py-2 border  text-sm outline-none"><option value="">Select</option>{DESIGNATIONS.map(d=><option key={d}>{d}</option>)}</select></div>
-              <div><label className="text-sm font-medium">Department</label><select value={form.department_id} onChange={e=>setForm({...form,department_id:e.target.value})} className="mt-1 w-full px-3 py-2 border  text-sm outline-none"><option value="">Select</option>{depts.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></div>
+              <div>
+                <label className="text-sm font-medium">Designation</label>
+                <select value={form.designation} onChange={e=>setForm({...form,designation:e.target.value,designation_other:''})} className="mt-1 w-full px-3 py-2 border  text-sm outline-none">
+                  <option value="">Select</option>
+                  {DESIGNATIONS.map(d=><option key={d}>{d}</option>)}
+                </select>
+                {form.designation==='Other'&&<input value={form.designation_other||''} onChange={e=>setForm({...form,designation_other:e.target.value})} className="mt-1 w-full px-3 py-2 border  text-sm outline-none" placeholder="Enter designation..." />}
+              </div>
+              <div>
+                <label className="text-sm font-medium">Department</label>
+                <select value={form.department} onChange={e=>setForm({...form,department:e.target.value,department_other:''})} className="mt-1 w-full px-3 py-2 border  text-sm outline-none">
+                  <option value="">Select</option>
+                  {DEPARTMENTS.map(d=><option key={d}>{d}</option>)}
+                </select>
+                {form.department==='Other'&&<input value={form.department_other||''} onChange={e=>setForm({...form,department_other:e.target.value})} className="mt-1 w-full px-3 py-2 border  text-sm outline-none" placeholder="Enter department..." />}
+              </div>
             </div>
-            <div className="col-span-2"><label className="text-sm font-medium">Reports To</label><select value={form.manager_id} onChange={e=>setForm({...form,manager_id:e.target.value})} className="mt-1 w-full px-3 py-2 border  text-sm outline-none"><option value="">None</option>{users.filter(u=>u.is_active&&u.id!==editUser?.id).map(u=><option key={u.id} value={u.id}>{u.full_name} — {u.designation||''}</option>)}</select></div>
+            <div><label className="text-sm font-medium">Reports To</label><select value={form.manager_id} onChange={e=>setForm({...form,manager_id:e.target.value})} className="mt-1 w-full px-3 py-2 border  text-sm outline-none"><option value="">None</option>{users.filter(u=>u.is_active&&u.id!==editUser?.id).map(u=><option key={u.id} value={u.id}>{u.full_name} — {u.designation||''}</option>)}</select></div>
             <div><label className="text-sm font-medium block mb-2">Role *</label><div className="flex flex-wrap gap-2">{roles.filter(r=>r.id!==6).map(r=>(<label key={r.id} className={`px-3 py-1.5 text-sm border cursor-pointer ${form.role_id===r.id?'bg-blue-50 border-blue-300 text-blue-700':'bg-gray-50 border-gray-200'}`}><input type="radio" name="emp-role" className="hidden" checked={form.role_id===r.id} onChange={()=>setEmployeeRole(r.id)}/>{r.name}</label>))}</div></div>
           </>}
 
