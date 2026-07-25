@@ -352,6 +352,7 @@ export default function ChatPage() {
                         fontSize: 13, lineHeight: 1.5, wordBreak: 'break-word',
                         borderBottomRightRadius: isMe ? 4 : 14,
                         borderBottomLeftRadius: isMe ? 14 : 4,
+                        opacity: msg.pending ? 0.6 : 1,
                       }}>
                         {msg.is_deleted ? (
                           <span style={{ fontStyle: 'italic', color: C.muted, fontSize: 11 }}>Message deleted</span>

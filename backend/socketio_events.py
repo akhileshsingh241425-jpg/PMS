@@ -63,6 +63,7 @@ def register_socketio_events(socketio):
         file_url = data.get('file_url')
         file_name = data.get('file_name')
         file_size = data.get('file_size')
+        client_id = data.get('client_id')
 
         if not conversation_id:
             recipient_id = data.get('recipient_id')
@@ -114,6 +115,8 @@ def register_socketio_events(socketio):
         db.session.commit()
 
         msg_data = msg.to_dict()
+        if client_id:
+            msg_data['client_id'] = client_id
         print(f'[send_message] emitting new_message to conversation_{conversation_id}: {msg.id}')
         socketio.emit('new_message', msg_data, room=f'conversation_{conversation_id}')
 

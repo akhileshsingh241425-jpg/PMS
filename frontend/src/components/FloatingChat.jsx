@@ -194,6 +194,7 @@ export default function FloatingChat() {
                           fontSize: 12, lineHeight: 1.4, wordBreak: 'break-word',
                           borderBottomRightRadius: isMe ? 4 : 12,
                           borderBottomLeftRadius: isMe ? 12 : 4,
+                          opacity: msg.pending ? 0.6 : 1,
                         }}>
                           {msg.is_deleted ? (
                             <span style={{ fontStyle: 'italic', color: C.muted, fontSize: 10 }}>Deleted</span>
