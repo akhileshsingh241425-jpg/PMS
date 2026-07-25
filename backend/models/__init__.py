@@ -26,3 +26,4 @@ from .backlog import Epic, Sprint, Issue
 from .client import Client
 from .po_out import POLineItem, TDSRecord, POVersion
 from .email_integration import EmailAccount, EmailMessage, EmailFolder, EmailAuthState, EmailActivity, EmailNote, EmailAutoRule, EmailFollowUp, EmailTemplate, CATEGORIES, EMAIL_STATUSES, PRIORITIES, TAGS_PRESET
+from .settings import Setting, SettingVersion, SettingSuggestion, SETTING_GROUPS
