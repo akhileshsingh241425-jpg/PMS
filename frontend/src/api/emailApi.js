@@ -33,3 +33,5 @@ export async function createTemplate(data) { const r = await api.post('/api/emai
 export async function updateTemplate(id, data) { const r = await api.put(`/api/email/templates/${id}`, data); return r.data }
 export async function deleteTemplate(id) { const r = await api.delete(`/api/email/templates/${id}`); return r.data }
 export async function getNotifications() { const r = await api.get('/api/email/notifications'); return r.data }
+export async function listFolders() { const r = await api.get('/api/email/folders'); return r.data }
+export async function syncFolders() { const r = await api.post('/api/email/folders/sync'); return r.data }

@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify, current_app, redirect
 from middleware.auth import login_required
 from models import (
-    db, User, EmailAccount, EmailMessage, EmailAuthState,
+    db, User, EmailAccount, EmailMessage, EmailFolder, EmailAuthState,
     EmailActivity, EmailNote, EmailAutoRule, EmailFollowUp, EmailTemplate,
     CATEGORIES, EMAIL_STATUSES, PRIORITIES, TAGS_PRESET,
 )
@@ -200,6 +200,93 @@ def _get_valid_token(account):
     return token
 
 
+def _sync_folders(account, token):
+    resp = requests.get(f'{GRAPH_URL}/me/mailFolders?$top=200', headers={'Authorization': f'Bearer {token}'})
+    if resp.status_code != 200:
+        return
+    for fd in resp.json().get('value', []):
+        existing = EmailFolder.query.filter_by(email_account_id=account.id, folder_id=fd['id']).first()
+        if not existing:
+            existing = EmailFolder(email_account_id=account.id, folder_id=fd['id'])
+            db.session.add(existing)
+        existing.name = fd.get('displayName', fd['id'])
+        existing.display_name = fd.get('displayName', fd['id'])
+        existing.parent_folder_id = fd.get('parentFolderId')
+        existing.well_known_name = fd.get('wellKnownName', '')
+        existing.unread_count = fd.get('unreadItemCount', 0)
+        existing.total_count = fd.get('totalItemCount', 0)
+        existing.child_folder_count = fd.get('childFolderCount', 0)
+        existing.is_synced = True
+    db.session.commit()
+
+
+def _fetch_messages(account, token, folder_id=None):
+    fetched = 0
+    folder_path = f'/me/mailFolders/{folder_id}/messages' if folder_id else '/me/messages'
+    last_msg = EmailMessage.query.filter_by(email_account_id=account.id)
+    if folder_id:
+        last_msg = last_msg.filter_by(folder_id=folder_id)
+    last_msg = last_msg.order_by(EmailMessage.received_at.desc()).first()
+    filter_str = '?$top=50&$orderby=receivedDateTime desc'
+    if last_msg and last_msg.received_at:
+        since = last_msg.received_at.strftime('%Y-%m-%dT%H:%M:%SZ')
+        filter_str = f'?$top=50&$filter=receivedDateTime gt {since}&$orderby=receivedDateTime desc'
+
+    resp = requests.get(f'{GRAPH_URL}{folder_path}{filter_str}', headers={'Authorization': f'Bearer {token}'})
+    if resp.status_code != 200:
+        return 0
+
+    for msg in resp.json().get('value', []):
+        if EmailMessage.query.filter_by(message_id=msg['id']).first():
+            continue
+        received = msg.get('receivedDateTime')
+        sender_email = msg.get('from', {}).get('emailAddress', {}).get('address', '')
+        subject = msg.get('subject', '')
+        body = msg.get('bodyPreview', '')
+        email_msg = EmailMessage(
+            email_account_id=account.id, message_id=msg['id'],
+            folder_id=folder_id or msg.get('parentFolderId', ''),
+            subject=subject, body_preview=body,
+            sender_name=msg.get('from', {}).get('emailAddress', {}).get('name', ''),
+            sender_email=sender_email,
+            recipient_email=msg.get('toRecipients', [{}])[0].get('emailAddress', {}).get('address', '') if msg.get('toRecipients') else '',
+            company=_detect_company(subject, sender_email, body),
+            priority=_detect_priority(subject, body),
+            category=_detect_category(subject, body),
+            received_at=datetime.fromisoformat(received.replace('Z', '+00:00')) if received else datetime.utcnow(),
+            is_read=msg.get('isRead', False),
+        )
+        _apply_auto_rules(email_msg)
+        db.session.add(email_msg)
+        db.session.flush()
+        _add_activity(email_msg.id, current_user.id, 'Received', 'Email received from ' + sender_email)
+        fetched += 1
+    return fetched
+
+
+@email_bp.route('/folders', methods=['GET'])
+@login_required
+def list_folders(current_user):
+    account_ids = [a.id for a in EmailAccount.query.filter_by(user_id=current_user.id, is_active=True).all()]
+    if not account_ids:
+        return jsonify({'folders': []})
+    folders = EmailFolder.query.filter(EmailFolder.email_account_id.in_(account_ids)).order_by(EmailFolder.display_name).all()
+    return jsonify({'folders': [f.to_dict() for f in folders]})
+
+
+@email_bp.route('/folders/sync', methods=['POST'])
+@login_required
+def sync_folders(current_user):
+    accounts = EmailAccount.query.filter_by(user_id=current_user.id, is_active=True).all()
+    if not accounts:
+        return jsonify({'error': 'No connected email account'}), 400
+    for account in accounts:
+        token = _get_valid_token(account)
+        if token:
+            _sync_folders(account, token)
+    return jsonify({'ok': True})
+
+
 @email_bp.route('/fetch', methods=['POST'])
 @login_required
 def fetch_emails(current_user):
@@ -207,45 +294,19 @@ def fetch_emails(current_user):
     if not accounts:
         return jsonify({'error': 'No connected email account'}), 400
 
+    folder_id = request.args.get('folder_id')
     total_fetched = 0
     for account in accounts:
         token = _get_valid_token(account)
         if not token:
             continue
-        last_msg = EmailMessage.query.filter_by(email_account_id=account.id).order_by(EmailMessage.received_at.desc()).first()
-        filter_str = '?$top=50&$orderby=receivedDateTime desc'
-        if last_msg and last_msg.received_at:
-            since = last_msg.received_at.strftime('%Y-%m-%dT%H:%M:%SZ')
-            filter_str = f'?$top=50&$filter=receivedDateTime gt {since}&$orderby=receivedDateTime desc'
-
-        resp = requests.get(f'{GRAPH_URL}/me/messages{filter_str}', headers={'Authorization': f'Bearer {token}'})
-        if resp.status_code != 200:
-            continue
-
-        for msg in resp.json().get('value', []):
-            if EmailMessage.query.filter_by(message_id=msg['id']).first():
-                continue
-            received = msg.get('receivedDateTime')
-            sender_email = msg.get('from', {}).get('emailAddress', {}).get('address', '')
-            subject = msg.get('subject', '')
-            body = msg.get('bodyPreview', '')
-            email_msg = EmailMessage(
-                email_account_id=account.id, message_id=msg['id'],
-                subject=subject, body_preview=body,
-                sender_name=msg.get('from', {}).get('emailAddress', {}).get('name', ''),
-                sender_email=sender_email,
-                recipient_email=msg.get('toRecipients', [{}])[0].get('emailAddress', {}).get('address', '') if msg.get('toRecipients') else '',
-                company=_detect_company(subject, sender_email, body),
-                priority=_detect_priority(subject, body),
-                category=_detect_category(subject, body),
-                received_at=datetime.fromisoformat(received.replace('Z', '+00:00')) if received else datetime.utcnow(),
-                is_read=msg.get('isRead', False),
-            )
-            _apply_auto_rules(email_msg)
-            db.session.add(email_msg)
-            db.session.flush()
-            _add_activity(email_msg.id, current_user.id, 'Received', 'Email received from ' + sender_email)
-            total_fetched += 1
+        if not folder_id:
+            _sync_folders(account, token)
+            folders = EmailFolder.query.filter_by(email_account_id=account.id).all()
+            for f in folders:
+                total_fetched += _fetch_messages(account, token, f.folder_id)
+        else:
+            total_fetched += _fetch_messages(account, token, folder_id)
 
     db.session.commit()
     return jsonify({'fetched': total_fetched})
@@ -284,6 +345,7 @@ def list_messages(current_user):
     status_f = request.args.get('status', '')
     priority_f = request.args.get('priority', '')
     tag_f = request.args.get('tag', '')
+    folder_id = request.args.get('folder_id', '')
     page = int(request.args.get('page', 1))
     per_page = int(request.args.get('per_page', 50))
 
@@ -297,6 +359,14 @@ def list_messages(current_user):
     now = datetime.utcnow()
     q = q.filter(db.or_(EmailMessage.snooze_at.is_(None), EmailMessage.snooze_at <= now))
 
+    if folder_id:
+        folder_obj = EmailFolder.query.filter(EmailFolder.folder_id == folder_id, EmailFolder.email_account_id.in_(account_ids)).first() if account_ids else None
+        if folder_obj and (folder_obj.well_known_name or '').lower() == 'inbox':
+            # Emails fetched before folder sync existed have no folder_id — treat them as Inbox
+            # so they don't silently disappear from the folder-filtered list.
+            q = q.filter(db.or_(EmailMessage.folder_id == folder_id, EmailMessage.folder_id.is_(None), EmailMessage.folder_id == ''))
+        else:
+            q = q.filter_by(folder_id=folder_id)
     if cat:
         q = q.filter_by(category=cat)
     if status_f:
@@ -330,6 +400,11 @@ def list_messages(current_user):
         base = base.filter(EmailMessage.email_account_id.in_(account_ids))
     else:
         base = base.filter(EmailMessage.assigned_to_id == current_user.id)
+    if folder_id:
+        if folder_obj and (folder_obj.well_known_name or '').lower() == 'inbox':
+            base = base.filter(db.or_(EmailMessage.folder_id == folder_id, EmailMessage.folder_id.is_(None), EmailMessage.folder_id == ''))
+        else:
+            base = base.filter_by(folder_id=folder_id)
     counts = {'total': base.count(), 'unread': base.filter_by(is_read=False).count()}
     for c in CATEGORIES:
         counts[c.lower()] = base.filter_by(category=c).count()

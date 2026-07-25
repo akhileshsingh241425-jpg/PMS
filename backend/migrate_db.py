@@ -57,6 +57,9 @@ MIGRATIONS = {
     'lead_proposals': [
         ('html_content', 'TEXT'),
     ],
+    'email_messages': [
+        ('folder_id', 'VARCHAR(255)'),
+    ],
 }
 
 for table, cols in MIGRATIONS.items():

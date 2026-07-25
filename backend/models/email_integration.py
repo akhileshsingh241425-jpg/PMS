@@ -40,11 +40,44 @@ class EmailAccount(db.Model):
         }
 
 
+class EmailFolder(db.Model):
+    __tablename__ = 'email_folders'
+    id = db.Column(db.Integer, primary_key=True)
+    email_account_id = db.Column(db.Integer, db.ForeignKey('email_accounts.id'), nullable=False, index=True)
+    folder_id = db.Column(db.String(255), nullable=False)
+    parent_folder_id = db.Column(db.String(255))
+    name = db.Column(db.String(255), nullable=False)
+    display_name = db.Column(db.String(255))
+    well_known_name = db.Column(db.String(50))
+    unread_count = db.Column(db.Integer, default=0)
+    total_count = db.Column(db.Integer, default=0)
+    child_folder_count = db.Column(db.Integer, default=0)
+    is_synced = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    email_account = db.relationship('EmailAccount', foreign_keys=[email_account_id])
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'email_account_id': self.email_account_id,
+            'folder_id': self.folder_id,
+            'parent_folder_id': self.parent_folder_id,
+            'name': self.name,
+            'display_name': self.display_name or self.name,
+            'well_known_name': self.well_known_name,
+            'unread_count': self.unread_count,
+            'total_count': self.total_count,
+            'child_folder_count': self.child_folder_count,
+        }
+
+
 class EmailMessage(db.Model):
     __tablename__ = 'email_messages'
     id = db.Column(db.Integer, primary_key=True)
     email_account_id = db.Column(db.Integer, db.ForeignKey('email_accounts.id'), nullable=False, index=True)
     message_id = db.Column(db.String(255), unique=True, nullable=False)
+    folder_id = db.Column(db.String(255), index=True)
     subject = db.Column(db.String(500))
     body_preview = db.Column(db.Text)
     sender_name = db.Column(db.String(255))
@@ -72,6 +105,7 @@ class EmailMessage(db.Model):
         return {
             'id': self.id,
             'email_account_id': self.email_account_id,
+            'folder_id': self.folder_id,
             'subject': self.subject,
             'body_preview': self.body_preview[:500] if self.body_preview else None,
             'sender_name': self.sender_name,
