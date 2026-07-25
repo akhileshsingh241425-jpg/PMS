@@ -518,20 +518,17 @@ def send_po_mail(current_user, pid):
         </div>
     </div>'''
 
-    # send via email_utils
+    # send via Microsoft Graph API
     try:
-        from flask_mail import Message
-        from flask import current_app
-        from email_utils import mail
-        app = current_app._get_current_object()
-        if not app.config.get('MAIL_SERVER'):
-            return jsonify({'error': 'Mail server not configured. Set MAIL_SERVER, MAIL_USERNAME, and MAIL_PASSWORD in .env'}), 500
-        with app.app_context():
-            msg = Message(subject, recipients=[vendor_email], cc=['accounts@infocus-it.com'], html=html)
-            with open(path, 'rb') as fp:
-                msg.attach(f"{project.po_number or 'PO'}.pdf", 'application/pdf', fp.read())
-            mail.send(msg)
-        return jsonify({'message': f'Email sent to {vendor_email}'})
+        from routes.email_integration import send_via_graph
+        from models.email_integration import EmailAccount
+        acct = EmailAccount.query.filter_by(is_active=True).first()
+        if not acct:
+            return jsonify({'error': 'No connected email account. Connect Microsoft email first.'}), 500
+        ok, msg = send_via_graph(acct, vendor_email, 'accounts@infocus-it.com', subject, html, pdf_path=path if os.path.exists(path) else None)
+        if ok:
+            return jsonify({'message': f'Email sent to {vendor_email}'})
+        return jsonify({'error': msg}), 500
     except Exception as e:
         return jsonify({'error': f'Failed to send email: {str(e)}'}), 500
 

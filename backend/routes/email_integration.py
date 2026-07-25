@@ -1,3 +1,4 @@
+import os
 import re
 import requests
 import base64
@@ -112,7 +113,7 @@ def connect(current_user):
     state = secrets.token_urlsafe(32)
     db.session.add(EmailAuthState(state=state, user_id=current_user.id, expires_at=datetime.utcnow() + timedelta(minutes=10)))
     db.session.commit()
-    scopes = 'offline_access Mail.Read Mail.ReadWrite User.Read'
+    scopes = 'offline_access Mail.Read Mail.ReadWrite Mail.Send User.Read'
     auth_url = (
         f'{_get_authority()}/oauth2/v2.0/authorize'
         f'?client_id={client_id}&response_type=code&redirect_uri={redirect_uri}'
@@ -198,6 +199,38 @@ def _get_valid_token(account):
     if account.token_expiry and datetime.utcnow() >= account.token_expiry:
         token = _refresh_access_token(account)
     return token
+
+
+def send_via_graph(account, to_email, cc_email, subject, html_body, pdf_path=None):
+    token = _get_valid_token(account)
+    if not token:
+        return False, 'No valid token'
+    msg = {
+        'message': {
+            'subject': subject,
+            'body': {'contentType': 'HTML', 'content': html_body},
+            'toRecipients': [{'emailAddress': {'address': to_email}}],
+        }
+    }
+    if cc_email:
+        msg['message']['ccRecipients'] = [{'emailAddress': {'address': cc_email}}]
+    if pdf_path and os.path.exists(pdf_path):
+        import mimetypes
+        with open(pdf_path, 'rb') as f:
+            pdf_bytes = f.read()
+        fname = os.path.basename(pdf_path)
+        content_type = mimetypes.guess_type(fname)[0] or 'application/pdf'
+        msg['message']['attachments'] = [{
+            '@odata.type': '#microsoft.graph.FileAttachment',
+            'name': fname,
+            'contentType': content_type,
+            'contentBytes': base64.b64encode(pdf_bytes).decode(),
+        }]
+    resp = requests.post(f'{GRAPH_URL}/me/sendMail', json=msg,
+                         headers={'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'})
+    if resp.status_code in (200, 202):
+        return True, 'Sent'
+    return False, f'Graph API error: {resp.status_code} {resp.text}'
 
 
 def _sync_folders(account, token):
