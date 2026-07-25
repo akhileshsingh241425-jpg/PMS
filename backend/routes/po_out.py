@@ -1,8 +1,14 @@
-from flask import Blueprint, request, jsonify
+import os
+from flask import Blueprint, request, jsonify, send_file
 from datetime import datetime
 from models import db, Project, Client, POLineItem, TDSRecord, POVersion, PoPayment
 from middleware.auth import login_required
 from utils import generate_id
+from pdf_utils import generate_po_pdf
+from email_utils import send_email_async
+
+PO_PDF_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'uploads', 'po_pdfs')
+os.makedirs(PO_PDF_DIR, exist_ok=True)
 
 po_out_bp = Blueprint('po_out', __name__, url_prefix='/api/po-out')
 
@@ -430,6 +436,93 @@ def create_revision(current_user, pid):
     project.po_out_status = 'DRAFT'
     db.session.commit()
     return jsonify({'message': f'Revision Rev-{current_rev + 1} created', 'po': project.to_dict()})
+
+
+@po_out_bp.route('/<int:pid>/generate-pdf', methods=['POST'])
+@login_required
+def generate_pdf(current_user, pid):
+    project = Project.query.filter_by(id=pid, direction='OUT').first_or_404()
+    try:
+        items = [li.to_dict() for li in project.line_items]
+        pdf_bytes = generate_po_pdf(project, items)
+        fname = f"{project.po_number or 'PO'}_{project.id}.pdf".replace('/', '_')
+        path = os.path.join(PO_PDF_DIR, fname)
+        with open(path, 'wb') as f:
+            f.write(pdf_bytes)
+        project.po_document_id = project.id
+        db.session.commit()
+        return jsonify({'message': 'PDF generated', 'path': f'/api/po-out/{pid}/pdf'})
+    except Exception as e:
+        return jsonify({'error': f'PDF generation failed: {str(e)}'}), 500
+
+
+@po_out_bp.route('/<int:pid>/pdf', methods=['GET'])
+@login_required
+def serve_pdf(current_user, pid):
+    project = Project.query.filter_by(id=pid, direction='OUT').first_or_404()
+    fname = f"{project.po_number or 'PO'}_{project.id}.pdf".replace('/', '_')
+    path = os.path.join(PO_PDF_DIR, fname)
+    if not os.path.exists(path):
+        return jsonify({'error': 'PDF not generated yet'}), 404
+    return send_file(path, mimetype='application/pdf', as_attachment=False,
+                     download_name=f"{project.po_number or 'PO'}.pdf")
+
+
+@po_out_bp.route('/<int:pid>/send-mail', methods=['POST'])
+@login_required
+def send_po_mail(current_user, pid):
+    project = Project.query.filter_by(id=pid, direction='OUT').first_or_404()
+    data = request.get_json() or {}
+    vendor_email = data.get('vendor_email') or project.vendor_email
+    if not vendor_email:
+        return jsonify({'error': 'Vendor email is required'}), 400
+
+    # generate PDF if not exists
+    fname = f"{project.po_number or 'PO'}_{project.id}.pdf".replace('/', '_')
+    path = os.path.join(PO_PDF_DIR, fname)
+    if not os.path.exists(path):
+        items = [li.to_dict() for li in project.line_items]
+        pdf_bytes = generate_po_pdf(project, items)
+        with open(path, 'wb') as f:
+            f.write(pdf_bytes)
+
+    net_val = (project.net_amount or 0)
+    fmt_curr = '₹{:,.2f}'.format(net_val)
+
+    subject = f'Purchase Order No. {project.po_number or ""} dated {project.po_date.strftime("%d-%b-%Y") if project.po_date else ""} — {project.title or project.vendor_name or ""}'
+
+    html = f'''
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(90deg, #1e3a8a, #0052CC); padding: 20px 30px;">
+            <h1 style="color: #fff; font-size: 18px; margin: 0;">INFOCUS IT CONSULTING PVT LTD</h1>
+        </div>
+        <div style="padding: 24px 30px; background: #fff;">
+            <p>Dear {project.vendor_contact_person or 'Sir/Madam'},</p>
+            <p>Please find attached our Purchase Order No. <b>{project.po_number or ''}</b> dated <b>{project.po_date.strftime("%d-%b-%Y") if project.po_date else ''}</b> for <b>{project.title or project.vendor_name or ''}</b>, for a net value of <b>{fmt_curr}</b> (inclusive of GST).</p>
+            <p>Kindly acknowledge receipt of this Purchase Order by return mail and confirm the delivery schedule. Please quote the PO number on your invoice and all correspondence, and ensure your GST-compliant invoice is raised in favour of <b>INFOCUS IT CONSULTING PVT LTD</b> (GSTIN: 07AAGCI4467G1ZF).</p>
+            <p>Payment shall be released as per the payment terms stated in the PO. TDS will be deducted as applicable under the Income Tax Act.</p>
+            <br>
+            <p>Warm Regards,<br><b>{current_user.full_name or current_user.email}</b><br>{current_user.designation or ''}<br>INFOCUS IT CONSULTING PVT LTD</p>
+        </div>
+        <div style="padding: 12px 30px; background: #f3f4f6; font-size: 11px; color: #666;">
+            A-19, Yadav Park, Rohtak Road, Nangloi, New Delhi – 110041 | www.infocus-it.com
+        </div>
+    </div>'''
+
+    # send via email_utils
+    try:
+        from flask_mail import Message
+        from flask import current_app
+        from email_utils import mail
+        app = current_app._get_current_object()
+        with app.app_context():
+            msg = Message(subject, recipients=[vendor_email], cc=['accounts@infocus-it.com'], html=html)
+            with app.open_resource(path) as fp:
+                msg.attach(f"{project.po_number or 'PO'}.pdf", 'application/pdf', fp.read())
+            mail.send(msg)
+        return jsonify({'message': f'Email sent to {vendor_email}'})
+    except Exception as e:
+        return jsonify({'error': f'Failed to send email: {str(e)}'}), 500
 
 
 @po_out_bp.route('/report/tds-quarterly', methods=['GET'])

@@ -65,6 +65,8 @@ export default function POVendorPage() {
   const [error, setError] = useState('')
   const [vendors, setVendors] = useState([])
   const [previewMode, setPreviewMode] = useState(false)
+  const [showTDSReport, setShowTDSReport] = useState(false)
+  const [tdsReport, setTdsReport] = useState({ records: [], summary: {}, total_tds: 0 })
 
   const [form, setForm] = useState({
     po_number: '', title: '', po_date: new Date().toISOString().split('T')[0],
@@ -97,6 +99,14 @@ export default function POVendorPage() {
   }
 
   useEffect(() => { load(); loadVendors() }, [])
+
+  const openTDSReport = async () => {
+    try {
+      const r = await api.get('/api/po-out/report/tds-quarterly')
+      setTdsReport(r.data)
+    } catch (e) {}
+    setShowTDSReport(true)
+  }
 
   const openCreate = async () => {
     setError(''); setPreviewMode(false); setVendorMode('existing')
@@ -191,9 +201,14 @@ export default function POVendorPage() {
           <h1 style={{ fontSize: 22, fontWeight: 700, color: C.text, margin: 0 }}>Vendor Purchase Orders</h1>
           <p style={{ fontSize: 13, color: C.muted, marginTop: 2 }}>POs issued to vendors — track, dispatch, pay & close</p>
         </div>
-        <button onClick={openCreate} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', background: C.blue, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-          <Plus className="w-4 h-4" /> Issue Vendor PO
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={openTDSReport} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '8px 14px', background: '#fff', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12, fontWeight: 500, cursor: 'pointer', color: C.text }}>
+            <FileText className="w-4 h-4" /> TDS Report
+          </button>
+          <button onClick={openCreate} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', background: C.blue, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            <Plus className="w-4 h-4" /> Issue Vendor PO
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -456,6 +471,65 @@ export default function POVendorPage() {
                 </div>
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* TDS Report Modal */}
+      {showTDSReport && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={() => setShowTDSReport(false)}>
+          <div style={{ background: '#fff', borderRadius: 14, width: 700, maxWidth: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: C.shadowMd }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '14px 20px', borderBottom: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: C.text, margin: 0 }}>TDS Quarterly Report</h3>
+              <button onClick={() => setShowTDSReport(false)} style={{ width: 28, height: 28, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: C.muted }}>
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div style={{ padding: 16, overflowY: 'auto', flex: 1 }}>
+              <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+                <div style={{ padding: '10px 16px', background: '#F3F4F6', borderRadius: 8, textAlign: 'center', flex: 1 }}>
+                  <div style={{ fontSize: 11, color: C.muted }}>Total TDS</div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: '#DC2626' }}>{fmtCurr(tdsReport.total_tds)}</div>
+                </div>
+                {Object.entries(tdsReport.summary || {}).map(([section, s]) => (
+                  <div key={section} style={{ padding: '10px 16px', background: '#FEF3C7', borderRadius: 8, textAlign: 'center', flex: 1 }}>
+                    <div style={{ fontSize: 11, color: C.muted }}>Section {section}</div>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: '#92400E' }}>{fmtCurr(s.total_tds)}</div>
+                    <div style={{ fontSize: 10, color: C.muted }}>{s.count} entries</div>
+                  </div>
+                ))}
+              </div>
+              {tdsReport.records?.length > 0 ? (
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+                  <thead>
+                    <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                      <th style={{ padding: '6px 8px', textAlign: 'left', color: C.muted, fontWeight: 600 }}>PO #</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'left', color: C.muted, fontWeight: 600 }}>Vendor</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'left', color: C.muted, fontWeight: 600 }}>Section</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'right', color: C.muted, fontWeight: 600 }}>Base</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'right', color: C.muted, fontWeight: 600 }}>TDS</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'center', color: C.muted, fontWeight: 600 }}>Quarter</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'center', color: C.muted, fontWeight: 600 }}>Form 16A</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tdsReport.records.map(r => (
+                      <tr key={r.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
+                        <td style={{ padding: '5px 8px', fontWeight: 600 }}>{r.po_number || '—'}</td>
+                        <td style={{ padding: '5px 8px' }}>{r.vendor_name || '—'}</td>
+                        <td style={{ padding: '5px 8px' }}>{r.section}</td>
+                        <td style={{ padding: '5px 8px', textAlign: 'right' }}>{fmtCurr(r.base_amount)}</td>
+                        <td style={{ padding: '5px 8px', textAlign: 'right', fontWeight: 600, color: '#DC2626' }}>{fmtCurr(r.tds_amount)}</td>
+                        <td style={{ padding: '5px 8px', textAlign: 'center' }}>{r.quarter} {r.financial_year}</td>
+                        <td style={{ padding: '5px 8px', textAlign: 'center' }}>{r.form_16a_issued ? <span style={{ color: '#059669' }}>Issued</span> : <span style={{ color: '#92400E' }}>Pending</span>}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p style={{ textAlign: 'center', color: C.muted, padding: 30 }}>No TDS records found</p>
+              )}
+            </div>
           </div>
         </div>
       )}

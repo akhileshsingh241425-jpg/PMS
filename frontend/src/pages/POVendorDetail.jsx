@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, FileText, Building2, Calendar, CheckCircle, Clock, XCircle, Ban, Send, Play, Download, Mail, Plus } from 'lucide-react'
+import { ArrowLeft, FileText, Building2, Calendar, CheckCircle, Clock, XCircle, Ban, Send, Play, Download, Mail, Plus, RefreshCw, History } from 'lucide-react'
 import api from '../services/api'
 import { C } from '../components/styleConstants'
 
@@ -112,6 +112,42 @@ export default function POVendorDetail() {
     setShowCancel(false); setCancelReason('')
   }
 
+  const [pdfStatus, setPdfStatus] = useState('')
+  const [mailStatus, setMailStatus] = useState('')
+
+  const handleGeneratePDF = async () => {
+    setPdfStatus('generating...')
+    try {
+      await api.post(`/api/po-out/${id}/generate-pdf`)
+      setPdfStatus('PDF ready')
+      setTimeout(() => setPdfStatus(''), 3000)
+      window.open(`/api/po-out/${id}/pdf`, '_blank')
+    } catch (e) { setPdfStatus('Failed'); setTimeout(() => setPdfStatus(''), 3000) }
+  }
+
+  const handleSendMail = async () => {
+    const email = po.vendor_email
+    if (!email) return alert('Vendor email is missing. Please update vendor email first.')
+    setMailStatus('sending...')
+    try {
+      await api.post(`/api/po-out/${id}/send-mail`)
+      setMailStatus('Mail sent!')
+      setTimeout(() => setMailStatus(''), 3000)
+    } catch (e) { setMailStatus('Failed'); setTimeout(() => setMailStatus(''), 3000) }
+  }
+
+  const [showRevForm, setShowRevForm] = useState(false)
+  const [revReason, setRevReason] = useState('')
+
+  const handleCreateRevision = async () => {
+    if (!revReason.trim()) return alert('Please enter a reason for revision')
+    try {
+      await api.post(`/api/po-out/${id}/create-revision`, { reason: revReason })
+      setShowRevForm(false); setRevReason('')
+      await load()
+    } catch (e) { alert(e.response?.data?.error || 'Failed') }
+  }
+
   if (loading) return <div style={{ padding: 40, color: C.muted, fontSize: 14 }}>Loading...</div>
   if (!po) return null
   if (po.notFound) {
@@ -168,8 +204,24 @@ export default function POVendorDetail() {
           {!['PAID & CLOSED', 'CANCELLED', 'DRAFT'].includes(po.po_out_status) && (
             <ActionBtn icon={Ban} label="Cancel PO" color="#EF4444" onClick={() => setShowCancel(true)} />
           )}
+
+          {/* PDF & Mail actions */}
+          <div style={{ flex: 1 }}></div>
+          {po.po_out_status === 'PO ISSUED' && (
+            <>
+              <ActionBtn icon={Download} label="Save PDF" color="#059669" onClick={handleGeneratePDF} />
+              <ActionBtn icon={Mail} label="Send Mail" color={C.blue} onClick={handleSendMail} />
+            </>
+          )}
+          {['PO ISSUED', 'WORK IN PROGRESS', 'WORK COMPLETED', 'PARTIALLY PAID'].includes(po.po_out_status) && po.po_revision_number >= 0 && (
+            <ActionBtn icon={RefreshCw} label="Create Revision" color="#7C3AED" onClick={() => setShowRevForm(true)} />
+          )}
         </div>
       </div>
+
+      {/* Status messages */}
+      {pdfStatus && <div style={{ fontSize: 12, color: pdfStatus === 'Failed' ? '#EF4444' : '#059669', marginBottom: 8 }}>{pdfStatus}</div>}
+      {mailStatus && <div style={{ fontSize: 12, color: mailStatus === 'Failed' ? '#EF4444' : '#059669', marginBottom: 8 }}>{mailStatus}</div>}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         {/* Vendor Info */}
@@ -303,6 +355,23 @@ export default function POVendorDetail() {
         )}
       </div>
 
+      {/* Revisions History */}
+      {po.versions?.length > 0 && (
+        <div style={{ background: '#fff', borderRadius: 12, border: `1px solid ${C.border}`, padding: 16, marginTop: 16 }}>
+          <h3 style={{ fontSize: 13, fontWeight: 700, color: C.text, margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <History className="w-4 h-4" style={{ color: C.muted }} /> Revision History
+          </h3>
+          <div style={{ fontSize: 12 }}>
+            {po.versions.map((v, i) => (
+              <div key={v.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: i < po.versions.length - 1 ? `1px solid #F3F4F6` : 'none' }}>
+                <span><strong>Rev-{v.revision_number}</strong> — {v.reason || '—'}</span>
+                <span style={{ color: C.muted }}>{v.created_by_name} | {fmtDate(v.created_at)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Work Complete Form Modal */}
       {showCompleteForm && (
         <Modal title="Mark Work Complete" onClose={() => setShowCompleteForm(false)}>
@@ -363,6 +432,20 @@ export default function POVendorDetail() {
               <button type="submit" disabled={paySaving} style={{ padding: '7px 16px', border: 'none', borderRadius: 6, background: C.blue, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: paySaving ? 0.6 : 1 }}>{paySaving ? 'Saving...' : 'Record Payment'}</button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {/* Revision Form Modal */}
+      {showRevForm && (
+        <Modal title="Create Revision" onClose={() => setShowRevForm(false)}>
+          <div>
+            <Label>Reason for revision *</Label>
+            <textarea value={revReason} onChange={e => setRevReason(e.target.value)} style={{ ...inputS, minHeight: 60, resize: 'vertical' }} placeholder="e.g. Change in scope, price adjustment..." />
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 14 }}>
+              <button onClick={() => setShowRevForm(false)} style={{ padding: '7px 16px', border: `1px solid ${C.border}`, borderRadius: 6, background: '#fff', fontSize: 12, cursor: 'pointer' }}>Close</button>
+              <button onClick={handleCreateRevision} style={{ padding: '7px 16px', border: 'none', borderRadius: 6, background: '#7C3AED', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Create Revision</button>
+            </div>
+          </div>
         </Modal>
       )}
 
