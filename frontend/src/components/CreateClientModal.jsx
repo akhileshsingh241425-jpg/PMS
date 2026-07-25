@@ -122,6 +122,7 @@ export default function CreateClientModal({ onClose, onSaved }) {
                 <select value={form.client_type} onChange={e => set('client_type', e.target.value)} style={inputStyle}>
                   <option value="main">Main Client</option>
                   <option value="sub">Sub-Client</option>
+                  <option value="vendor">Vendor</option>
                 </select>
               </div>
               {form.client_type === 'sub' && (

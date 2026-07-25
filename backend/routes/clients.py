@@ -17,6 +17,8 @@ def list_clients(current_user):
         query = query.filter_by(client_type='main')
     elif filter_param == 'sub':
         query = query.filter_by(client_type='sub')
+    elif filter_param == 'vendor':
+        query = query.filter_by(client_type='vendor')
 
     if s := request.args.get('search'):
         query = query.filter(db.or_(

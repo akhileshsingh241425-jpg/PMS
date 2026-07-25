@@ -24,6 +24,7 @@ export default function Projects() {
   const [projects, setProjects] = useState([])
   const [accounts, setAccounts] = useState([])
   const [users, setUsers] = useState([])
+  const [vendors, setVendors] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [stageFilter, setStageFilter] = useState('')
@@ -37,7 +38,7 @@ export default function Projects() {
   const { hasRole } = useAuth()
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { load(); loadAccounts(); loadUsers() }, [])
+  useEffect(() => { load(); loadAccounts(); loadUsers(); loadVendors() }, [])
 
   useEffect(() => {
     if (searchParams.get('create') === '1') {
@@ -55,6 +56,7 @@ export default function Projects() {
   const load = async () => { try { const r = await api.get('/api/projects', { params: { search, stage: stageFilter, page, per_page: 25 } }); setProjects(r.data.projects); setPagination(r.data.pagination) } catch (e) { console.error(e) } finally { setLoading(false) } }
   const loadAccounts = async () => { try { const r = await api.get('/api/accounts'); setAccounts(r.data.accounts) } catch (e) { console.error(e) } }
   const loadUsers = async () => { try { const r = await api.get('/api/auth/users'); setUsers(r.data.users) } catch (e) { console.error(e) } }
+  const loadVendors = async () => { try { const r = await api.get('/api/clients', { params: { filter: 'vendor' } }); setVendors(r.data.clients) } catch (e) { console.error(e) } }
 
   // Stats
   const activeProjects = projects.filter(p => !['Closed','Cancelled'].includes(p.stage))
@@ -146,16 +148,16 @@ export default function Projects() {
         {pagination && <div className="px-3 pb-2"><Pagination page={pagination.page} pages={pagination.pages} total={pagination.total} onPageChange={setPage} /></div>}
       </div>
 
-      {showForm && <ProjectForm accounts={accounts} users={users} initialAccountId={formAccountId} onClose={() => { setShowForm(false); setFormAccountId('') }} onSaved={() => { setShowForm(false); setFormAccountId(''); load() }} />}
+      {showForm && <ProjectForm accounts={accounts} users={users} vendors={vendors} initialAccountId={formAccountId} onClose={() => { setShowForm(false); setFormAccountId('') }} onSaved={() => { setShowForm(false); setFormAccountId(''); load() }} />}
     </div>
   )
 }
 
 // ═══════════ PROJECT FORM ═══════════
-function ProjectForm({ accounts, users, onClose, onSaved, initialAccountId }) {
+function ProjectForm({ accounts, users, vendors, onClose, onSaved, initialAccountId }) {
   const toast = useToast()
   const [direction, setDirection] = useState('IN')
-  const [form, setForm] = useState({ title:'', description:'', account_id: initialAccountId || '', service_type:'', service_type_other:'', project_type:'', pm_id:'', total_value:'', start_date:'', target_date:'', is_client_review_enabled: false, po_number:'', po_date:'', po_amount:'', po_terms:'', tds:'', gst:'', net_amount:'', vendor_name:'', po_template:'', approval_status:'Pending', send_method:'', advance_paid:'', balance_outstanding:'' })
+  const [form, setForm] = useState({ title:'', description:'', account_id: initialAccountId || '', service_type:'', service_type_other:'', project_type:'', pm_id:'', total_value:'', start_date:'', target_date:'', is_client_review_enabled: false, po_number:'', po_date:'', po_amount:'', po_terms:'', tds:'', gst:'', net_amount:'', vendor_name:'', vendor_name_other:'', po_template:'', approval_status:'Pending', send_method:'', advance_paid:'', balance_outstanding:'' })
   const [poDocument, setPoDocument] = useState(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -189,6 +191,8 @@ function ProjectForm({ accounts, users, onClose, onSaved, initialAccountId }) {
       const p = { ...form, direction }
       if (p.service_type === 'Other' && p.service_type_other) p.service_type = p.service_type_other
       delete p.service_type_other
+      if (p.vendor_name === '__custom__' && p.vendor_name_other) p.vendor_name = p.vendor_name_other
+      delete p.vendor_name_other
       for (const k of ['total_value','po_amount','tds','gst','net_amount','advance_paid','balance_outstanding']) {
         if (p[k]) p[k] = parseFloat(p[k]); else delete p[k]
       }
@@ -216,7 +220,7 @@ function ProjectForm({ accounts, users, onClose, onSaved, initialAccountId }) {
     if (dir === 'OUT') {
       setForm({ ...form, account_id: '' })
     } else {
-      setForm({ ...form, vendor_name: '', po_template: '', approval_status: 'Pending', send_method: '', advance_paid: '', balance_outstanding: '' })
+      setForm({ ...form, vendor_name: '', vendor_name_other: '', po_template: '', approval_status: 'Pending', send_method: '', advance_paid: '', balance_outstanding: '' })
     }
   }
 
@@ -268,7 +272,15 @@ function ProjectForm({ accounts, users, onClose, onSaved, initialAccountId }) {
               /* ---- PO OUT Fields ---- */
               <div className="grid grid-cols-3 gap-5">
                 <div className="col-span-3"><label className="block text-sm font-medium text-slate-700 mb-1.5">Project Title <span className="text-red-500">*</span></label><input value={form.title} onChange={e => f('title', e.target.value)} required className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" placeholder="e.g., Network Equipment Supply for Client XYZ" /></div>
-                <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Vendor / Supplier <span className="text-red-500">*</span></label><input value={form.vendor_name} onChange={e => f('vendor_name', e.target.value)} required className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" placeholder="Vendor name" /></div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Vendor / Supplier <span className="text-red-500">*</span></label>
+                  <select value={form.vendor_name} onChange={e => f('vendor_name', e.target.value)} required className="w-full px-4 py-3 border border-slate-300 text-sm outline-none">
+                    <option value="">-- Select Vendor --</option>
+                    {vendors.map(v => <option key={v.id} value={v.name}>{v.name}</option>)}
+                    <option value="__custom__">+ Other (type new)</option>
+                  </select>
+                  {form.vendor_name === '__custom__' && <input value={form.vendor_name_other} onChange={e => f('vendor_name_other', e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none mt-2" placeholder="Enter vendor name" />}
+                </div>
                 <div><label className="block text-sm font-medium text-slate-700 mb-1.5">PO Number</label><input value={form.po_number} onChange={e => f('po_number', e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" placeholder="Auto or manual" /></div>
                 <div><label className="block text-sm font-medium text-slate-700 mb-1.5">PO Date</label><input type="date" value={form.po_date} onChange={e => f('po_date', e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" /></div>
                 <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Amount (₹)</label><input type="number" value={form.po_amount} onChange={e => onPoAmountChange(e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" placeholder="e.g., 200000" /></div>
