@@ -524,9 +524,11 @@ def send_po_mail(current_user, pid):
         from flask import current_app
         from email_utils import mail
         app = current_app._get_current_object()
+        if not app.config.get('MAIL_SERVER'):
+            return jsonify({'error': 'Mail server not configured. Set MAIL_SERVER, MAIL_USERNAME, and MAIL_PASSWORD in .env'}), 500
         with app.app_context():
             msg = Message(subject, recipients=[vendor_email], cc=['accounts@infocus-it.com'], html=html)
-            with app.open_resource(path) as fp:
+            with open(path, 'rb') as fp:
                 msg.attach(f"{project.po_number or 'PO'}.pdf", 'application/pdf', fp.read())
             mail.send(msg)
         return jsonify({'message': f'Email sent to {vendor_email}'})

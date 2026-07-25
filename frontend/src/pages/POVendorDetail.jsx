@@ -159,14 +159,17 @@ export default function POVendorDetail() {
   }
 
   const handleSendMail = async () => {
-    const email = po.vendor_email
-    if (!email) return alert('Vendor email is missing. Please update vendor email first.')
+    let email = po.vendor_email
+    if (!email) {
+      email = prompt('Vendor email is missing. Enter email to send:')
+      if (!email) return
+    }
     setMailStatus('sending...')
     try {
-      await api.post(`/api/po-out/${id}/send-mail`, {})
+      await api.post(`/api/po-out/${id}/send-mail`, { vendor_email: email })
       setMailStatus('Mail sent!')
       setTimeout(() => setMailStatus(''), 3000)
-    } catch (e) { setMailStatus('Failed'); setTimeout(() => setMailStatus(''), 3000) }
+    } catch (e) { setMailStatus(e.response?.data?.error || 'Failed'); setTimeout(() => setMailStatus(''), 5000) }
   }
 
   const [showRevForm, setShowRevForm] = useState(false)
