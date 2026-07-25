@@ -190,10 +190,16 @@ export default function POVendorDetail() {
             <ActionBtn icon={Send} label="Submit PO" color={C.blue} onClick={() => handleAction('submit')} />
           )}
           {po.po_out_status === 'PO ISSUED' && (
-            <ActionBtn icon={Play} label="Start Work" color="#7C3AED" onClick={() => handleAction('start-work')} />
+            <>
+              <ActionBtn icon={Play} label="Start Work" color="#7C3AED" onClick={() => handleAction('start-work')} />
+              <ActionBtn icon={Plus} label="Record Payment" color={C.blue} onClick={() => setShowPayForm(true)} />
+            </>
           )}
           {po.po_out_status === 'WORK IN PROGRESS' && (
-            <ActionBtn icon={CheckCircle} label="Complete Work" color="#059669" onClick={() => setShowCompleteForm(true)} />
+            <>
+              <ActionBtn icon={CheckCircle} label="Complete Work" color="#059669" onClick={() => setShowCompleteForm(true)} />
+              <ActionBtn icon={Plus} label="Record Payment" color={C.blue} onClick={() => setShowPayForm(true)} />
+            </>
           )}
           {po.po_out_status === 'WORK COMPLETED' && (
             <ActionBtn icon={Plus} label="Record Payment" color={C.blue} onClick={() => setShowPayForm(true)} />
