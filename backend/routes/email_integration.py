@@ -358,6 +358,7 @@ def delete_account(current_user, aid):
     account = EmailAccount.query.filter_by(id=aid, user_id=current_user.id).first()
     if not account:
         return jsonify({'error': 'Not found'}), 404
+    from models.email_integration import EmailFolder, EmailAuthState
     EmailActivity.query.filter(EmailActivity.email_id.in_(
         db.session.query(EmailMessage.id).filter_by(email_account_id=aid)
     )).delete(synchronize_session=False)
@@ -365,6 +366,8 @@ def delete_account(current_user, aid):
         db.session.query(EmailMessage.id).filter_by(email_account_id=aid)
     )).delete(synchronize_session=False)
     EmailMessage.query.filter_by(email_account_id=aid).delete()
+    EmailFolder.query.filter_by(email_account_id=aid).delete()
+    EmailAuthState.query.filter_by(user_id=current_user.id).delete()
     db.session.delete(account)
     db.session.commit()
     return jsonify({'message': 'Disconnected'})
