@@ -81,6 +81,26 @@ class Project(db.Model):
     po_work_completed = db.Column(db.Boolean, default=False)
     po_work_completed_at = db.Column(db.DateTime)
     po_next_due_date = db.Column(db.Date)
+    vendor_email = db.Column(db.String(255))
+    vendor_gstin = db.Column(db.String(50))
+    vendor_pan = db.Column(db.String(20))
+    vendor_address = db.Column(db.Text)
+    vendor_contact_person = db.Column(db.String(255))
+    vendor_phone = db.Column(db.String(20))
+    vendor_bank_account_no = db.Column(db.String(50))
+    vendor_bank_ifsc = db.Column(db.String(20))
+    po_delivery_period = db.Column(db.Text)
+    po_expected_completion_date = db.Column(db.Date)
+    po_special_terms = db.Column(db.Text)
+    po_gst_type = db.Column(db.String(20), default='CGST+SGST')
+    po_amount_in_words = db.Column(db.String(500))
+    po_revision_number = db.Column(db.Integer, default=0)
+    po_parent_id = db.Column(db.Integer, db.ForeignKey('projects.id'))
+    completion_date = db.Column(db.Date)
+    deliverables_received = db.Column(db.Text)
+    acceptance_remarks = db.Column(db.Text)
+    vendor_invoice_no = db.Column(db.String(100))
+    vendor_invoice_date = db.Column(db.Date)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -91,6 +111,7 @@ class Project(db.Model):
     creator = db.relationship('User', foreign_keys=[created_by])
     po_approver = db.relationship('User', foreign_keys=[po_approver_id])
     po_payments = db.relationship('PoPayment', back_populates='project', order_by='PoPayment.date.desc()', cascade='all, delete-orphan')
+    line_items = db.relationship('POLineItem', back_populates='project', order_by='POLineItem.id', cascade='all, delete-orphan')
     remarks = db.relationship('ProjectRemark', back_populates='project', order_by='ProjectRemark.created_at.desc()', cascade='all, delete-orphan')
     documents = db.relationship('ProjectDocument', foreign_keys='ProjectDocument.project_id', back_populates='project', order_by='ProjectDocument.uploaded_at.desc()', cascade='all, delete-orphan')
     team = db.relationship('ProjectTeam', back_populates='project', cascade='all, delete-orphan')
@@ -151,6 +172,27 @@ class Project(db.Model):
             'po_work_completed': self.po_work_completed,
             'po_work_completed_at': self.po_work_completed_at.isoformat() if self.po_work_completed_at else None,
             'po_next_due_date': self.po_next_due_date.isoformat() if self.po_next_due_date else None,
+            'vendor_email': self.vendor_email,
+            'vendor_gstin': self.vendor_gstin,
+            'vendor_pan': self.vendor_pan,
+            'vendor_address': self.vendor_address,
+            'vendor_contact_person': self.vendor_contact_person,
+            'vendor_phone': self.vendor_phone,
+            'vendor_bank_account_no': self.vendor_bank_account_no,
+            'vendor_bank_ifsc': self.vendor_bank_ifsc,
+            'po_delivery_period': self.po_delivery_period,
+            'po_expected_completion_date': self.po_expected_completion_date.isoformat() if self.po_expected_completion_date else None,
+            'po_special_terms': self.po_special_terms,
+            'po_gst_type': self.po_gst_type,
+            'po_amount_in_words': self.po_amount_in_words,
+            'po_revision_number': self.po_revision_number,
+            'po_parent_id': self.po_parent_id,
+            'completion_date': self.completion_date.isoformat() if self.completion_date else None,
+            'deliverables_received': self.deliverables_received,
+            'acceptance_remarks': self.acceptance_remarks,
+            'vendor_invoice_no': self.vendor_invoice_no,
+            'vendor_invoice_date': self.vendor_invoice_date.isoformat() if self.vendor_invoice_date else None,
+            'line_items': [li.to_dict() for li in self.line_items] if self.line_items else [],
             'team_count': len(self.team),
             'team_names': ', '.join(tm.user.full_name for tm in self.team if tm.user) if self.team else '',
             'creator_name': self.creator.full_name if self.creator else None,
@@ -336,6 +378,14 @@ class PoPayment(db.Model):
     amount = db.Column(db.Float, nullable=False)
     date = db.Column(db.Date, nullable=False)
     mode = db.Column(db.String(50))
+    tds_section = db.Column(db.String(20))
+    tds_percent = db.Column(db.Float, default=0)
+    tds_amount = db.Column(db.Float, default=0)
+    net_paid = db.Column(db.Float)
+    payment_mode = db.Column(db.String(30))
+    utr_no = db.Column(db.String(100))
+    vendor_invoice_no = db.Column(db.String(100))
+    vendor_invoice_date = db.Column(db.Date)
     remarks = db.Column(db.Text)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -350,6 +400,14 @@ class PoPayment(db.Model):
             'amount': self.amount,
             'date': self.date.isoformat() if self.date else None,
             'mode': self.mode,
+            'tds_section': self.tds_section,
+            'tds_percent': self.tds_percent,
+            'tds_amount': self.tds_amount,
+            'net_paid': self.net_paid,
+            'payment_mode': self.payment_mode,
+            'utr_no': self.utr_no,
+            'vendor_invoice_no': self.vendor_invoice_no,
+            'vendor_invoice_date': self.vendor_invoice_date.isoformat() if self.vendor_invoice_date else None,
             'remarks': self.remarks,
             'created_by_name': self.creator.full_name if self.creator else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
