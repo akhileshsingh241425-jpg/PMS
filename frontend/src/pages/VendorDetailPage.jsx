@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ChevronLeft, Building2, Briefcase, DollarSign, FileText, User, Phone, Mail, Globe, MapPin, Hash, Tag, Calendar, ArrowUpRight } from 'lucide-react'
+import { ChevronLeft, Building2, Briefcase, DollarSign, FileText, User, Phone, Mail, Globe, MapPin, Hash, Tag, Calendar, ArrowUpRight, Plus } from 'lucide-react'
 import api from '../services/api'
 
 const formatDate = (d) => {
@@ -16,13 +16,13 @@ const formatCurrency = (v) => {
 }
 
 const PO_STATUS_COLORS = {
-  'Draft': { bg: '#F3F4F6', text: '#6B7280' },
-  'Pending': { bg: '#FEF3C7', text: '#92400E' },
-  'Sent': { bg: '#DBEAFE', text: '#1E40AF' },
-  'Approved': { bg: '#D1FAE5', text: '#065F46' },
-  'Rejected': { bg: '#FEE2E2', text: '#991B1B' },
-  'Work Started': { bg: '#EDE9FE', text: '#5B21B6' },
-  'Work Completed': { bg: '#D1FAE5', text: '#065F46' },
+  'DRAFT': { bg: '#F3F4F6', text: '#6B7280' },
+  'PO ISSUED': { bg: '#DBEAFE', text: '#1E40AF' },
+  'WORK IN PROGRESS': { bg: '#EDE9FE', text: '#5B21B6' },
+  'WORK COMPLETED': { bg: '#D1FAE5', text: '#065F46' },
+  'PARTIALLY PAID': { bg: '#FEF3C7', text: '#92400E' },
+  'PAID & CLOSED': { bg: '#059669', text: '#fff' },
+  'CANCELLED': { bg: '#FEE2E2', text: '#991B1B' },
 }
 
 export default function VendorDetailPage() {
@@ -132,9 +132,14 @@ export default function VendorDetailPage() {
         </div>
 
         <div style={{ background: '#fff', borderRadius: '14px', boxShadow: '0 8px 24px rgba(0,0,0,.05)', border: '1px solid #ECECEC' }}>
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid #ECECEC', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Briefcase className="w-4 h-4" style={{ color: '#F59E0B' }} />
-            <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#1F2937', margin: 0 }}>Projects / Purchase Orders</h3>
+                <div style={{ padding: '16px 20px', borderBottom: '1px solid #ECECEC', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Briefcase className="w-4 h-4" style={{ color: '#F59E0B' }} />
+              <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#1F2937', margin: 0 }}>Purchase Orders</h3>
+            </div>
+            <Link to={`/po-out?vendor=${vendor.name}`} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '5px 12px', background: '#0052CC', color: '#fff', borderRadius: '6px', fontSize: '11px', fontWeight: 600, textDecoration: 'none' }}>
+              <Plus className="w-3.5 h-3.5" /> Issue Vendor PO
+            </Link>
           </div>
           {projects.length === 0 ? (
             <div style={{ padding: '40px 20px', textAlign: 'center', color: '#9CA3AF' }}>
@@ -180,7 +185,7 @@ export default function VendorDetailPage() {
                         </td>
                         <td style={{ padding: '8px 12px', color: '#6B7280' }}>{formatDate(p.created_at)}</td>
                         <td style={{ padding: '8px 12px' }}>
-                          <Link to={`/projects/${p.id}`} style={{ color: '#5B3DF5', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 600, textDecoration: 'none' }}>
+                          <Link to={p.direction === 'OUT' ? `/po-out/${p.id}` : `/projects/${p.id}`} style={{ color: '#5B3DF5', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 600, textDecoration: 'none' }}>
                             View <ArrowUpRight className="w-3 h-3" />
                           </Link>
                         </td>
