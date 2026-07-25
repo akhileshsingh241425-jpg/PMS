@@ -22,11 +22,17 @@ TDS_SECTIONS = {
 }
 
 
-def gen_po_number():
+def gen_po_number(vendor_id=None):
     now = datetime.utcnow()
     fy = f'{now.year}-{str(now.year+1)[2:]}' if now.month >= 4 else f'{now.year-1}-{str(now.year)[2:]}'
-    prefix = f'INFOCUS-IT/PO/{fy}/'
-    last = db.session.query(db.func.max(Project.po_number)).scalar()
+    code = 'XX'
+    if vendor_id:
+        from models.client import Client
+        c = Client.query.get(vendor_id)
+        if c and c.client_code:
+            code = c.client_code
+    prefix = f'INFOCUS-IT/PO/{fy}/{code}/'
+    last = db.session.query(db.func.max(Project.po_number)).filter(Project.po_number.like(f'{prefix}%')).scalar()
     last_serial = 0
     if last and prefix in last:
         try:
@@ -64,7 +70,8 @@ def amount_to_words(n):
 @po_out_bp.route('/next-po-number', methods=['GET'])
 @login_required
 def next_po_number(current_user):
-    return jsonify({'po_number': gen_po_number()})
+    vid = request.args.get('vendor_id', type=int)
+    return jsonify({'po_number': gen_po_number(vid)})
 
 
 @po_out_bp.route('', methods=['GET'])
@@ -90,7 +97,8 @@ def list_po_out(current_user):
 @login_required
 def create_po_out(current_user):
     data = request.get_json()
-    po_number = data.get('po_number') or gen_po_number()
+    vendor_id = data.get('vendor_id')
+    po_number = data.get('po_number') or gen_po_number(vendor_id)
 
     vendor_name = data.get('vendor_name')
     if not vendor_name:
@@ -113,6 +121,7 @@ def create_po_out(current_user):
         proj_id=generate_id(Project, 'PO-'),
         title=title,
         direction='OUT',
+        client_id=vendor_id,
         po_number=po_number,
         po_date=po_date or datetime.utcnow().date(),
         po_amount=po_amount,

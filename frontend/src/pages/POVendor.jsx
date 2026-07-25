@@ -176,7 +176,6 @@ export default function POVendorPage() {
           rate: parseFloat(i.rate) || 0, gst_rate: parseFloat(i.gst_rate) || 18,
         })),
       }
-      delete payload.vendor_id
       await api.post('/api/po-out', payload)
       setShowForm(false); load()
     } catch (e) { setError(e.response?.data?.error || 'Failed to create PO') }
