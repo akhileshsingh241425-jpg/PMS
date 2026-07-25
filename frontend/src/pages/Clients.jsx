@@ -77,7 +77,7 @@ export default function Clients() {
     <div style={{ minHeight: '100vh', fontFamily: C.font, color: C.text, WebkitFontSmoothing: 'antialiased', background: C.bg }}>
       <div style={{ padding: 0 }}>
         {/* ── Header + Filter Tabs (single compact row) ── */}
-        <div style={{ padding: '4px 24px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
             <h1 style={{ fontSize: 15, fontWeight: 700, color: C.text, margin: 0, lineHeight: 1.2 }}>Clients</h1>
             <span style={{ fontSize: 11, color: C.secondary }}>
@@ -111,7 +111,7 @@ export default function Clients() {
         </div>
 
         {/* ── Search + Filter Bar ── */}
-        <div style={{ padding: '4px 24px 6px', display: 'flex', gap: 5, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ padding: '6px 0', display: 'flex', gap: 5, alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ position: 'relative', flex: '1 1 140px', minWidth: 140 }}>
             <Search className="w-3 h-3" style={{ position: 'absolute', left: 7, top: '50%', transform: 'translateY(-50%)', color: C.secondary, pointerEvents: 'none' }} />
             <input
@@ -181,7 +181,7 @@ export default function Clients() {
         </div>
 
         {/* ── Table ── */}
-        <div style={{ padding: '0 24px 8px' }}>
+        <div>
           {loading ? (
             <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, boxShadow: C.shadow, padding: 20 }}>
               <TableSkeleton rows={6} cols={5} />

@@ -9,7 +9,6 @@ const nav = [
   { to: '/my-workspace', icon: UserCircle, label: 'My Workspace' },
   { to: '/leads', icon: FileText, label: 'Leads' },
   { to: '/clients', icon: Building2, label: 'Clients' },
-  { to: '/email', icon: Mail, label: 'Email' },
   { to: '/projects', icon: Briefcase, label: 'Projects' },
   { to: '/teams', icon: Users, label: 'Teams' },
   { to: '/attendance', icon: Clock, label: 'Attendance' },
@@ -138,7 +137,7 @@ export default function Layout({ children }) {
       }}>
         {/* Logo */}
         <div style={{
-          height: 56, display: 'flex', alignItems: 'center', gap: 10,
+          height: 44, display: 'flex', alignItems: 'center', gap: 10,
           padding: collapsed ? '0 14px' : '0 20px',
           borderBottom: '1px solid #E2E8F0',
         }}>
@@ -224,9 +223,9 @@ export default function Layout({ children }) {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         {/* Header */}
         <header style={{
-          height: 56, background: '#fff', borderBottom: '1px solid #E2E8F0',
+          height: 44, background: '#fff', borderBottom: '1px solid #E2E8F0',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '0 24px', flexShrink: 0,
+          padding: '0 16px', flexShrink: 0,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <button onClick={() => setCollapsed(!collapsed)} title={collapsed ? 'Show sidebar' : 'Hide sidebar'} style={{
@@ -265,11 +264,14 @@ export default function Layout({ children }) {
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Link to="/email" className="relative p-2 rounded-xl hover:bg-slate-100 text-slate-400 transition-colors" style={{ display: 'flex' }}>
+              <Mail className="w-4 h-4" />
+            </Link>
             <NotifBell />
           </div>
         </header>
 
-        <main style={{ flex: 1, overflow: 'auto', padding: '20px 24px' }}>
+        <main style={{ flex: 1, overflow: 'auto', padding: '10px 16px' }}>
           {children}
         </main>
       </div>
