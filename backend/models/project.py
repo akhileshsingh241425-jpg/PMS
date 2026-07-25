@@ -69,7 +69,7 @@ class Project(db.Model):
     send_method = db.Column(db.String(30))
     advance_paid = db.Column(db.Float, default=0)
     balance_outstanding = db.Column(db.Float, default=0)
-    po_out_status = db.Column(db.String(30), default='Draft')
+    po_out_status = db.Column(db.String(30), default='DRAFT')
     po_approver_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
     po_approved_at = db.Column(db.DateTime)
     po_rejected_reason = db.Column(db.Text)
