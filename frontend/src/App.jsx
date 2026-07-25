@@ -131,6 +131,7 @@ export default function App() {
                 <Route path="profile" element={<EmployeePortal activeTab="profile" />} />
                 <Route path="face-register" element={<FaceRegisterPage />} />
                 <Route path="chat" element={<ChatPage />} />
+                <Route path="email" element={<EmailInbox />} />
               </Route>
               <Route path="/pm" element={<Protected><PMRoute><PMAppLayout /></PMRoute></Protected>}>
                 <Route path="face-register" element={<FaceRegisterPage />} />
@@ -141,6 +142,7 @@ export default function App() {
                 <Route path="meetings" element={<PMMeetings />} />
                 <Route path="reports" element={<PMReports />} />
                 <Route path="chat" element={<ChatPage />} />
+                <Route path="email" element={<EmailInbox />} />
               </Route>
               <Route path="/vulnerabilities" element={<Protected><Layout><VulnerabilityDashboard /></Layout></Protected>} />
               <Route path="*" element={<Navigate to="/login" replace />} />

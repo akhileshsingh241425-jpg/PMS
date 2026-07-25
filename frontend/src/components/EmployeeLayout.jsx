@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import {
   LayoutDashboard, FolderOpen, ListChecks, Calendar, FileText,
   Users, Bell, UserCircle, ArrowLeft, LogOut, Menu, X,
-  CheckSquare, Clock, Settings, MessageSquare
+  CheckSquare, Clock, Settings, MessageSquare, Mail
 } from 'lucide-react'
 
 const NAV_ITEMS = [
@@ -16,7 +16,8 @@ const NAV_ITEMS = [
   { key: 'calendar', label: 'Calendar', icon: Clock, path: '/employee/calendar' },
   { key: 'team', label: 'Team', icon: Users, path: '/employee/team' },
   { key: 'performance', label: 'Performance', icon: CheckSquare, path: '/employee/performance' },
-  { key: 'chat', label: 'Chat', icon: MessageSquare, path: '/employee/chat' },  
+  { key: 'chat', label: 'Chat', icon: MessageSquare, path: '/employee/chat' },
+  { key: 'email', label: 'Email', icon: Mail, path: '/employee/email' },
   { key: 'notifications', label: 'Notifications', icon: Bell, path: '/employee/notifications' },
   { key: 'profile', label: 'Profile', icon: UserCircle, path: '/employee/profile' },
 ]

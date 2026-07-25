@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import {
   LayoutDashboard, FolderOpen, ListChecks, Calendar,
   Users, FileText, BarChart3, ArrowLeft, LogOut, Menu, X,
-  UserCircle, MessageSquare
+  UserCircle, MessageSquare, Mail
 } from 'lucide-react'
 
 const NAV_ITEMS = [
@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { key: 'meetings', label: 'Meetings', icon: Calendar, path: '/pm/meetings' },
   { key: 'reports', label: 'Reports', icon: BarChart3, path: '/pm/reports' },
   { key: 'chat', label: 'Chat', icon: MessageSquare, path: '/pm/chat' },
+  { key: 'email', label: 'Email', icon: Mail, path: '/pm/email' },
 ]
 
 export default function PMLayout({ children }) {
