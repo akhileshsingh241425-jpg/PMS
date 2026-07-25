@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { Info, ClipboardList, MessageSquare, Paperclip, Users, Search, Bell } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../contexts/ToastContext'
@@ -541,145 +541,14 @@ export default function ProjectsDetailPage() {
         {/* ═══ PO OUT WORKFLOW ═══ */}
         {p.direction === 'OUT' && (
           <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 9, padding: '12px 16px', marginBottom: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, marginBottom: 10 }}>📋 PO Out Workflow</div>
-            {p.po_next_due_date && p.balance_outstanding > 0 && new Date(p.po_next_due_date) <= new Date() && (
-              <div style={{ padding: '10px 16px', background: '#FEF3C7', borderRadius: 8, fontSize: 13, fontWeight: 600, color: '#92400E', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span>⏰</span> Payment due: {new Date(p.po_next_due_date).toLocaleDateString()} — Balance: ₹{(p.balance_outstanding || 0).toLocaleString()}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>📋 Vendor Purchase Order</div>
+                <div style={{ fontSize: 11, color: '#6b7280' }}>{p.po_number || 'No PO number'} — {p.vendor_name || '—'}</div>
               </div>
-            )}
-            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center', background: '#F8FAFC', borderRadius: 9, padding: '14px 18px', border: '1px solid #F1F5F9', marginBottom: 10 }}>
-              <div><span style={{ fontSize: 10, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em' }}>PO #</span><div style={{ fontSize: 15, fontWeight: 700, color: '#1c1f2b', marginTop: 1 }}>{p.po_number || '—'}</div></div>
-              <div style={{ width: 1, height: 30, background: '#E5E7EB' }} />
-              <div><span style={{ fontSize: 10, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em' }}>Vendor</span><div style={{ fontSize: 15, fontWeight: 600, color: '#1c1f2b', marginTop: 1 }}>{p.vendor_name || '—'}</div></div>
-              <div style={{ width: 1, height: 30, background: '#E5E7EB' }} />
-              <div><span style={{ fontSize: 10, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em' }}>Amount</span><div style={{ fontSize: 15, fontWeight: 700, color: '#16a34a', marginTop: 1 }}>₹{(p.net_amount || p.po_amount || 0).toLocaleString()}</div></div>
-              <div style={{ flex: 1 }} />
-              <span style={{ padding: '4px 12px', borderRadius: 20, fontSize: 11, fontWeight: 600,
-                background: p.po_out_status === 'Draft' ? '#F3F4F6' : p.po_out_status === 'Pending Approval' ? '#FEF3C7' : p.po_out_status === 'Rejected' ? '#FEE2E2' : p.po_out_status === 'Approved' ? '#D1FAE5' : p.po_out_status === 'Sent' ? '#DBEAFE' : p.po_out_status === 'In Progress' ? '#EDE9FE' : p.po_out_status === 'Payment Pending' ? '#FFEDD5' : p.po_out_status === 'Closed' ? '#D1FAE5' : '#F3F4F6',
-                color: p.po_out_status === 'Draft' ? '#6B7280' : p.po_out_status === 'Pending Approval' ? '#92400E' : p.po_out_status === 'Rejected' ? '#991B1B' : p.po_out_status === 'Approved' ? '#065F46' : p.po_out_status === 'Sent' ? '#1E40AF' : p.po_out_status === 'In Progress' ? '#6D28D9' : p.po_out_status === 'Payment Pending' ? '#9A3412' : p.po_out_status === 'Closed' ? '#065F46' : '#6B7280',
-              }}>{p.po_out_status || 'Draft'}</span>
-            </div>
-            {p.po_out_status === 'Draft' && (
-              <button onClick={async () => { try { await api.put(`/api/projects/${p.id}`, { po_out_status: 'Pending Approval' }); toast('Submitted for approval'); fetchData() } catch (e) { toast(e.response?.data?.error || 'Error', 'error') } }}
-                  style={{ padding: '8px 20px', borderRadius: 6, border: 'none', background: C.primary, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Submit for Approval</button>
-            )}
-            {p.po_out_status === 'Pending Approval' && (
-              <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-                <button onClick={async () => { try { await api.post(`/api/projects/${p.id}/po-out/approve`); toast('Approved'); fetchData() } catch (e) { toast(e.response?.data?.error || 'Error', 'error') } }}
-                  style={{ padding: '8px 20px', borderRadius: 6, border: 'none', background: '#16a34a', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>✓ Approve</button>
-                <button onClick={async () => { const reason = prompt('Rejection reason:'); if (!reason) return; try { await api.post(`/api/projects/${p.id}/po-out/reject`, { reason }); toast('Rejected'); fetchData() } catch (e) { toast(e.response?.data?.error || 'Error', 'error') } }}
-                  style={{ padding: '8px 20px', borderRadius: 6, border: '1px solid #FCA5A5', background: '#FEF2F2', color: '#991B1B', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>✕ Reject</button>
-              </div>
-            )}
-            {p.po_out_status === 'Approved' && p.po_approver_name && (
-              <div style={{ padding: '8px 14px', background: '#F0FDF4', borderRadius: 6, fontSize: 12, color: '#065F46', fontWeight: 500, marginTop: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span>✓</span> Approved by {p.po_approver_name}{p.po_approved_at ? ` on ${new Date(p.po_approved_at).toLocaleDateString()}` : ''}
-              </div>
-            )}
-            {p.po_out_status === 'Rejected' && (
-              <div style={{ padding: '10px 16px', background: '#FEF2F2', borderRadius: 6, fontSize: 12, color: '#991B1B', marginTop: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
-                <strong>Rejected:</strong> {p.po_rejected_reason || 'No reason given'}
-                <button onClick={async () => { try { await api.post(`/api/projects/${p.id}/po-out/resubmit`); toast('Resubmitted for approval'); fetchData() } catch (e) { toast(e.response?.data?.error || 'Error', 'error') } }}
-                  style={{ padding: '5px 14px', borderRadius: 5, border: '1px solid #D1D5DB', background: '#fff', color: '#374151', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Resubmit</button>
-              </div>
-            )}
-            {p.po_out_status === 'Approved' && (
-              <div style={{ display: 'flex', gap: 10, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#6b7280' }}>Send PO:</span>
-                <button onClick={async () => { try { await api.post(`/api/projects/${p.id}/po-out/send`, { send_via: 'Mail' }); toast('PO sent via Email'); fetchData() } catch (e) { toast(e.response?.data?.error || 'Error', 'error') } }}
-                  style={{ padding: '7px 18px', borderRadius: 6, border: 'none', background: '#3B82F6', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>✉ Mail</button>
-                <button onClick={async () => { try { await api.post(`/api/projects/${p.id}/po-out/send`, { send_via: 'Download PDF' }); toast('PO ready for download'); fetchData() } catch (e) { toast(e.response?.data?.error || 'Error', 'error') } }}
-                  style={{ padding: '7px 18px', borderRadius: 6, border: '1px solid #D1D5DB', background: '#fff', color: '#374151', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>⬇ PDF</button>
-              </div>
-            )}
-            {p.po_sent_via && p.po_sent_date && (
-              <div style={{ padding: '7px 12px', background: '#EFF6FF', borderRadius: 6, fontSize: 12, color: '#1E40AF', fontWeight: 500, marginTop: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span>✉</span> Sent via {p.po_sent_via} on {new Date(p.po_sent_date).toLocaleDateString()}
-              </div>
-            )}
-            {(p.po_out_status === 'Sent' || p.po_out_status === 'In Progress' || p.po_out_status === 'Payment Pending' || p.po_out_status === 'Closed') && (
-              <div style={{ display: 'flex', gap: 10, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                {!p.po_work_started ? (
-                  <button onClick={async () => { try { await api.post(`/api/projects/${p.id}/po-out/work-start`); toast('Work started'); fetchData() } catch (e) { toast(e.response?.data?.error || 'Error', 'error') } }}
-                    style={{ padding: '7px 18px', borderRadius: 6, border: 'none', background: C.primary, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Start Work</button>
-                ) : (
-                  <span style={{ fontSize: 12, color: C.primary, fontWeight: 600, padding: '6px 14px', background: '#F5F3FF', borderRadius: 6 }}>Started{p.po_work_started_at ? ` ${new Date(p.po_work_started_at).toLocaleDateString()}` : ''}</span>
-                )}
-                {p.po_work_started && !p.po_work_completed && (
-                  <button onClick={async () => { try { await api.post(`/api/projects/${p.id}/po-out/work-complete`); toast('Work completed'); fetchData() } catch (e) { toast(e.response?.data?.error || 'Error', 'error') } }}
-                    style={{ padding: '7px 18px', borderRadius: 6, border: '1px solid #16a34a', background: '#F0FDF4', color: '#065F46', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>✓ Complete</button>
-                )}
-                {p.po_work_completed && (
-                  <span style={{ fontSize: 12, color: '#065F46', fontWeight: 600, padding: '6px 14px', background: '#F0FDF4', borderRadius: 6 }}>✓ Done{p.po_work_completed_at ? ` ${new Date(p.po_work_completed_at).toLocaleDateString()}` : ''}</span>
-                )}
-              </div>
-            )}
-            <div style={{ marginTop: 14 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>📄 Deliverables ({documents.filter(d => d.category === 'Deliverable').length})</div>
-              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 6, border: `1px solid #E5E7EB`, background: '#FAFBFC', cursor: 'pointer', fontSize: 12, fontWeight: 500, color: '#475569' }}>
-                📎 Upload
-                <input type="file" style={{ display: 'none' }} onChange={async (e) => {
-                  const file = e.target.files?.[0]; if (!file) return;
-                  const fd = new FormData(); fd.append('file', file); fd.append('category', 'Deliverable');
-                  try { await api.post(`/api/projects/${id}/documents`, fd); toast('Uploaded'); fetchData() } catch (err) { toast('Upload failed', 'error') }
-                  e.target.value = ''
-                }} />
-              </label>
-              {documents.filter(d => d.category === 'Deliverable').length === 0 ? (
-                <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 8 }}>No deliverables uploaded yet.</div>
-              ) : (
-                <div style={{ marginTop: 8 }}>
-                  {documents.filter(d => d.category === 'Deliverable').map(d => (
-                    <div key={`del-${d.id}`} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '8px 14px', background: '#FAFBFC', borderRadius: 8, marginBottom: 4, border: '1px solid #F1F5F9', fontSize: 12 }}>
-                      <span style={{ flex: 1, fontWeight: 600 }}>{d.file_name}</span>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', color: d.is_verified ? '#16a34a' : '#6b7280', fontWeight: 600 }}>
-                        <input type="checkbox" checked={!!d.is_verified} onChange={async () => { try { await api.post(`/api/projects/documents/${d.id}/verify`, { is_verified: !d.is_verified }); fetchData() } catch (e) { toast('Error', 'error') } }} style={{ width: 14, height: 14 }} />
-                        {d.is_verified ? 'Verified' : 'Verify'}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div style={{ marginTop: 14 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>💰 Payment Tracking</div>
-              <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 10 }}>
-                <div style={{ background: '#F0FDF4', borderRadius: 8, padding: '10px 18px', flex: 1, minWidth: 140, border: '1px solid #D1FAE5' }}>
-                  <div style={{ fontSize: 10, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase' }}>Advance Paid</div>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: '#16a34a', marginTop: 1 }}>₹{(p.advance_paid || 0).toLocaleString()}</div>
-                </div>
-                <div style={{ background: '#FEF2F2', borderRadius: 8, padding: '10px 18px', flex: 1, minWidth: 140, border: '1px solid #FECACA' }}>
-                  <div style={{ fontSize: 10, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase' }}>Balance Out.</div>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: p.balance_outstanding > 0 ? '#EF4444' : '#16a34a', marginTop: 1 }}>₹{(p.balance_outstanding || 0).toLocaleString()}</div>
-                </div>
-              </div>
-              {poPayments.length > 0 && poPayments.map(pay => (
-                <div key={`pay-${pay.id}`} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '8px 14px', background: '#FAFBFC', borderRadius: 6, marginBottom: 4, fontSize: 12, border: '1px solid #F1F5F9' }}>
-                  <span style={{ fontWeight: 600, flex: 1 }}>{pay.date ? new Date(pay.date).toLocaleDateString() : '—'}</span>
-                  <span style={{ fontWeight: 700, color: '#16a34a' }}>₹{pay.amount.toLocaleString()}</span>
-                  <span style={{ color: '#6b7280' }}>{pay.mode || '—'}</span>
-                  <button onClick={async () => { if (!confirm('Delete?')) return; try { await api.delete(`/api/projects/po-out/payments/${pay.id}`); toast('Deleted'); fetchData() } catch (e) { toast('Error', 'error') } }}
-                    style={{ border: 'none', background: 'none', color: '#EF4444', cursor: 'pointer', fontSize: 14, padding: 2 }}>✕</button>
-                </div>
-              ))}
-              {p.po_out_status !== 'Closed' && (
-                <details style={{ marginTop: 6 }}>
-                  <summary style={{ fontSize: 12, fontWeight: 600, color: C.primary, cursor: 'pointer', padding: '4px 0', display: 'flex', alignItems: 'center', gap: 4 }}>+ Record Payment</summary>
-                  <form onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); try { await api.post(`/api/projects/${p.id}/po-out/payments`, { amount: parseFloat(fd.get('pay_amount')), date: fd.get('pay_date'), mode: fd.get('pay_mode'), remarks: fd.get('pay_remarks') }); toast('Recorded'); fetchData(); e.target.reset() } catch (err) { toast('Error', 'error') } }}
-                    style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap', alignItems: 'end' }}>
-                    <div><label style={{ fontSize: 10, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 2 }}>Amount</label><input name="pay_amount" type="number" step="0.01" required style={{ padding: '6px 10px', borderRadius: 5, border: `1px solid #E5E7EB`, fontSize: 12, width: 100, fontFamily: C.font }} /></div>
-                    <div><label style={{ fontSize: 10, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 2 }}>Date</label><input name="pay_date" type="date" required style={{ padding: '6px 10px', borderRadius: 5, border: `1px solid #E5E7EB`, fontSize: 12, fontFamily: C.font }} /></div>
-                    <div><label style={{ fontSize: 10, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 2 }}>Mode</label><select name="pay_mode" style={{ padding: '6px 10px', borderRadius: 5, border: `1px solid #E5E7EB`, fontSize: 12, fontFamily: C.font }}><option>Bank Transfer</option><option>Cheque</option><option>Cash</option><option>UPI</option></select></div>
-                    <div><label style={{ fontSize: 10, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 2 }}>Remarks</label><input name="pay_remarks" style={{ padding: '6px 10px', borderRadius: 5, border: `1px solid #E5E7EB`, fontSize: 12, fontFamily: C.font }} /></div>
-                    <button type="submit" style={{ padding: '6px 16px', borderRadius: 5, border: 'none', background: C.primary, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Add</button>
-                  </form>
-                </details>
-              )}
-              {p.po_out_status === 'Closed' && (
-                <div style={{ padding: '10px 16px', background: '#D1FAE5', borderRadius: 8, fontSize: 13, fontWeight: 700, color: '#065F46', textAlign: 'center', border: '1px solid #A7F3D0', marginTop: 8 }}>
-                  ✅ PO Out Closed
-                </div>
-              )}
+              <Link to={`/po-out/${p.id}`} style={{ padding: '8px 18px', borderRadius: 6, border: 'none', background: '#0052CC', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', textDecoration: 'none' }}>
+                Open in PO Module →
+              </Link>
             </div>
           </div>
         )}
