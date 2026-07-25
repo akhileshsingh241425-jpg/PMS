@@ -119,9 +119,12 @@ export default function POVendorDetail() {
     setPdfStatus('generating...')
     try {
       await api.post(`/api/po-out/${id}/generate-pdf`)
+      const r = await api.get(`/api/po-out/${id}/pdf`, { responseType: 'blob' })
+      const url = URL.createObjectURL(r.data)
+      window.open(url, '_blank')
+      setTimeout(() => URL.revokeObjectURL(url), 60000)
       setPdfStatus('PDF ready')
       setTimeout(() => setPdfStatus(''), 3000)
-      window.open(`/api/po-out/${id}/pdf`, '_blank')
     } catch (e) { setPdfStatus('Failed'); setTimeout(() => setPdfStatus(''), 3000) }
   }
 
