@@ -5,7 +5,7 @@ import { C } from './styleConstants'
 const rowStyle = {
   display: 'flex',
   alignItems: 'center',
-  padding: '3px 12px',
+  padding: '5px 12px',
   borderBottom: '1px solid #F1F5F9',
   cursor: 'pointer',
   transition: 'background 0.1s',
@@ -13,6 +13,7 @@ const rowStyle = {
   fontFamily: C.font,
   boxSizing: 'border-box',
   color: C.text,
+  minHeight: 30,
 }
 
 const avatarMain = {
@@ -80,18 +81,14 @@ export default function ClientRow({ client, onNavigate }) {
           <div style={avatarMain}>
             {(client.name || '?')[0].toUpperCase()}
           </div>
-          <div style={{ minWidth: 0, lineHeight: 1.3 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-              <span style={{ fontWeight: 600, fontSize: 12, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 160 }}>
-                {client.name}
-              </span>
-              <span style={idBadge}>{client.client_code}</span>
-              <span style={statusBadge(client.status)}>{client.status}</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap' }}>
-              {client.location && <span style={{ fontSize: 10, color: C.secondary }}>{client.location}</span>}
-              {client.gst_number && <span style={{ fontSize: 10, color: '#6B7280' }}>GST: {client.gst_number}</span>}
-            </div>
+          <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+            <span style={{ fontWeight: 600, fontSize: 12, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 160 }}>
+              {client.name}
+            </span>
+            <span style={idBadge}>{client.client_code}</span>
+            <span style={statusBadge(client.status)}>{client.status}</span>
+            {client.location && <span style={{ fontSize: 10, color: C.secondary, whiteSpace: 'nowrap' }}>{client.location}</span>}
+            {client.gst_number && <span style={{ fontSize: 10, color: '#6B7280', whiteSpace: 'nowrap' }}>GST: {client.gst_number}</span>}
           </div>
         </div>
 
@@ -150,14 +147,12 @@ export default function ClientRow({ client, onNavigate }) {
                 <div style={avatarSub}>
                   {(sub.name || '?')[0].toUpperCase()}
                 </div>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-                    <span style={{ fontWeight: 500, fontSize: 11, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 140 }}>
-                      {sub.name}
-                    </span>
-                    <span style={{ fontSize: 10, color: C.secondary }}>{sub.client_code}</span>
-                  </div>
-                  {sub.location && <div style={{ fontSize: 10, color: C.secondary }}>{sub.location}</div>}
+                <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+                  <span style={{ fontWeight: 500, fontSize: 11, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 140 }}>
+                    {sub.name}
+                  </span>
+                  <span style={{ fontSize: 10, color: C.secondary }}>{sub.client_code}</span>
+                  {sub.location && <span style={{ fontSize: 10, color: C.secondary, whiteSpace: 'nowrap' }}>{sub.location}</span>}
                 </div>
               </div>
 

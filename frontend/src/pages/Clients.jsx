@@ -76,21 +76,23 @@ export default function Clients() {
   return (
     <div style={{ minHeight: '100vh', fontFamily: C.font, color: C.text, WebkitFontSmoothing: 'antialiased', background: C.bg }}>
       <div style={{ padding: 0 }}>
-        {/* ── Header ── */}
-          <div style={{ padding: '10px 24px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div>
-              <h1 style={{ fontSize: 18, fontWeight: 700, color: C.text, margin: 0, lineHeight: 1.2 }}>Clients</h1>
-              <p style={{ fontSize: 11, color: C.secondary, margin: '1px 0 0' }}>
-                {summary.total} clients &middot; {totalProjects} projects
-              </p>
-            </div>
+        {/* ── Header + Filter Tabs (single compact row) ── */}
+        <div style={{ padding: '4px 24px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+            <h1 style={{ fontSize: 15, fontWeight: 700, color: C.text, margin: 0, lineHeight: 1.2 }}>Clients</h1>
+            <span style={{ fontSize: 11, color: C.secondary }}>
+              {summary.total} clients &middot; {totalProjects} projects
+            </span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <ClientFilterTabs summary={summary} activeFilter={activeFilter} onFilterChange={setActiveFilter} />
             <button
               onClick={() => setShowModal(true)}
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: 4,
-                padding: '5px 12px',
+                padding: '4px 12px',
                 borderRadius: 6,
                 border: 'none',
                 background: C.blue,
@@ -100,17 +102,16 @@ export default function Clients() {
                 cursor: 'pointer',
                 fontFamily: C.font,
                 boxShadow: '0 1px 3px rgba(0,82,204,0.3)',
+                flexShrink: 0,
               }}
             >
               <Plus className="w-3 h-3" /> New
             </button>
           </div>
-
-        {/* ── Filter Tabs ── */}
-        <ClientFilterTabs summary={summary} activeFilter={activeFilter} onFilterChange={setActiveFilter} />
+        </div>
 
         {/* ── Search + Filter Bar ── */}
-        <div style={{ padding: '3px 24px 8px', display: 'flex', gap: 5, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ padding: '4px 24px 6px', display: 'flex', gap: 5, alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ position: 'relative', flex: '1 1 140px', minWidth: 140 }}>
             <Search className="w-3 h-3" style={{ position: 'absolute', left: 7, top: '50%', transform: 'translateY(-50%)', color: C.secondary, pointerEvents: 'none' }} />
             <input
@@ -210,7 +211,10 @@ export default function Clients() {
 
               {/* Rows */}
               {filteredClients.map(client => (
-                <ClientRow key={client.id} client={client} onNavigate={id => navigate(`/accounts/${id}`)} />
+                <ClientRow key={client.id} client={client} onNavigate={id => {
+                  if (client.client_type === 'vendor') navigate(`/vendors/${id}`)
+                  else navigate(`/accounts/${id}`)
+                }} />
               ))}
             </div>
           )}

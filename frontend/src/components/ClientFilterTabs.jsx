@@ -19,10 +19,11 @@ export default function ClientFilterTabs({ summary, activeFilter, onFilterChange
     { key: 'active', label: 'Active', count: summary.active },
     { key: 'main', label: 'Main', count: summary.main },
     { key: 'sub', label: 'Sub', count: summary.sub },
+    { key: 'vendor', label: 'Vendors', count: summary.vendor || 0 },
   ]
 
   return (
-    <div style={{ padding: '6px 24px 2px', display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
       {items.map(item => {
         const isActive = activeFilter === item.key
         return (
