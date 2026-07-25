@@ -163,25 +163,21 @@ function ProjectForm({ accounts, users, vendors, onClose, onSaved, initialAccoun
   const [error, setError] = useState('')
   const f = (k, v) => setForm({ ...form, [k]: v })
 
-  const calcNet = (amount, tds, gst) => {
+  const calcNet = (amount, gst, tds) => {
     const a = parseFloat(amount) || 0
-    const t = parseFloat(tds) || 0
     const g = parseFloat(gst) || 0
+    const t = parseFloat(tds) || 0
     return a + g - t
   }
 
   const onPoAmountChange = (val) => {
-    const net = calcNet(val, form.tds, form.gst)
-    setForm({ ...form, po_amount: val, net_amount: net })
-  }
-
-  const onTdsChange = (val) => {
-    const net = calcNet(form.po_amount, val, form.gst)
-    setForm({ ...form, tds: val, net_amount: net })
+    const gst = direction === 'IN' ? (parseFloat(val) || 0) * 0.18 : (parseFloat(form.gst) || 0)
+    const net = calcNet(val, gst, form.tds)
+    setForm({ ...form, po_amount: val, gst: direction === 'IN' ? gst : form.gst, net_amount: net })
   }
 
   const onGstChange = (val) => {
-    const net = calcNet(form.po_amount, form.tds, val)
+    const net = calcNet(form.po_amount, val, form.tds)
     setForm({ ...form, gst: val, net_amount: net })
   }
 
@@ -193,7 +189,7 @@ function ProjectForm({ accounts, users, vendors, onClose, onSaved, initialAccoun
       delete p.service_type_other
       if (p.vendor_name === '__custom__' && p.vendor_name_other) p.vendor_name = p.vendor_name_other
       delete p.vendor_name_other
-      for (const k of ['total_value','po_amount','tds','gst','net_amount','advance_paid','balance_outstanding']) {
+      for (const k of ['total_value','po_amount','gst','net_amount','advance_paid','balance_outstanding']) {
         if (p[k]) p[k] = parseFloat(p[k]); else delete p[k]
       }
       if (!p.pm_id) { setError('Project Manager is required'); setSaving(false); return }
@@ -220,7 +216,7 @@ function ProjectForm({ accounts, users, vendors, onClose, onSaved, initialAccoun
     if (dir === 'OUT') {
       setForm({ ...form, account_id: '' })
     } else {
-      setForm({ ...form, vendor_name: '', vendor_name_other: '', po_template: '', approval_status: 'Pending', send_method: '', advance_paid: '', balance_outstanding: '' })
+      setForm({ ...form, vendor_name: '', vendor_name_other: '', po_template: '', approval_status: 'Pending', send_method: '', advance_paid: '', balance_outstanding: '', tds: '' })
     }
   }
 
@@ -263,8 +259,7 @@ function ProjectForm({ accounts, users, vendors, onClose, onSaved, initialAccoun
                 <div><label className="block text-sm font-medium text-slate-700 mb-1.5">PO Document</label><label className="flex items-center gap-2 px-4 py-3 border border-slate-300 text-sm outline-none cursor-pointer hover:bg-slate-50"><Upload className="w-4 h-4 text-slate-400" /><span className={`${poDocument ? 'text-slate-900' : 'text-slate-400'}`}>{poDocument ? poDocument.name : 'Upload PO file...'}</span><input type="file" className="hidden" onChange={e => { const f2 = e.target.files?.[0]; if (f2) setPoDocument(f2) }} /></label></div>
                 <div><label className="block text-sm font-medium text-slate-700 mb-1.5">PO Date</label><input type="date" value={form.po_date} onChange={e => f('po_date', e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" /></div>
                 <div><label className="block text-sm font-medium text-slate-700 mb-1.5">PO Amount / Project Cost (₹)</label><input type="number" value={form.po_amount} onChange={e => onPoAmountChange(e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" placeholder="e.g., 500000" /></div>
-                <div><label className="block text-sm font-medium text-slate-700 mb-1.5">TDS (₹)</label><input type="number" value={form.tds} onChange={e => onTdsChange(e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" placeholder="0" /></div>
-                <div><label className="block text-sm font-medium text-slate-700 mb-1.5">GST @18% (₹)</label><input type="number" value={form.gst} onChange={e => onGstChange(e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" placeholder="Auto-calc or manual" /></div>
+                <div><label className="block text-sm font-medium text-slate-700 mb-1.5">GST @18% (₹) <span className="text-[10px] text-blue-500 font-normal">auto-calc</span></label><input type="number" value={form.gst} onChange={e => onGstChange(e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" placeholder="Auto-calculated" /></div>
                 <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Net Amount (₹)</label><input type="number" value={form.net_amount} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none font-bold text-emerald-700" readOnly style={{ background: '#F9FAFB' }} /></div>
                 <div className="col-span-3"><label className="block text-sm font-medium text-slate-700 mb-1.5">Terms & Conditions</label><textarea value={form.po_terms} onChange={e => f('po_terms', e.target.value)} rows={2} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none resize-none" placeholder="Payment terms, delivery conditions..." /></div>
               </div>
@@ -284,7 +279,7 @@ function ProjectForm({ accounts, users, vendors, onClose, onSaved, initialAccoun
                 <div><label className="block text-sm font-medium text-slate-700 mb-1.5">PO Number</label><input value={form.po_number} onChange={e => f('po_number', e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" placeholder="Auto or manual" /></div>
                 <div><label className="block text-sm font-medium text-slate-700 mb-1.5">PO Date</label><input type="date" value={form.po_date} onChange={e => f('po_date', e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" /></div>
                 <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Amount (₹)</label><input type="number" value={form.po_amount} onChange={e => onPoAmountChange(e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" placeholder="e.g., 200000" /></div>
-                <div><label className="block text-sm font-medium text-slate-700 mb-1.5">TDS (₹)</label><input type="number" value={form.tds} onChange={e => onTdsChange(e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" placeholder="0" /></div>
+                <div><label className="block text-sm font-medium text-slate-700 mb-1.5">TDS (₹)</label><input type="number" value={form.tds} onChange={e => { const t = e.target.value; const g = parseFloat(form.gst)||0; const a = parseFloat(form.po_amount)||0; const net = a + g - (parseFloat(t)||0); setForm({...form, tds: t, net_amount: net}) }} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" placeholder="0" /></div>
                 <div><label className="block text-sm font-medium text-slate-700 mb-1.5">GST @18% (₹)</label><input type="number" value={form.gst} onChange={e => onGstChange(e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" placeholder="Auto-calc or manual" /></div>
                 <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Net Amount (₹)</label><input type="number" value={form.net_amount} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none font-bold text-emerald-700" readOnly style={{ background: '#F9FAFB' }} /></div>
                 <div><label className="block text-sm font-medium text-slate-700 mb-1.5">PO Template</label><select value={form.po_template} onChange={e => f('po_template', e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none"><option value="">-- Select Template --</option><option value="Standard">Standard</option><option value="Detailed">Detailed</option><option value="Framework Agreement">Framework Agreement</option><option value="Service Contract">Service Contract</option></select></div>
