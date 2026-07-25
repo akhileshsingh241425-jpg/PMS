@@ -163,7 +163,7 @@ export default function POVendorDetail() {
     if (!email) return alert('Vendor email is missing. Please update vendor email first.')
     setMailStatus('sending...')
     try {
-      await api.post(`/api/po-out/${id}/send-mail`)
+      await api.post(`/api/po-out/${id}/send-mail`, {})
       setMailStatus('Mail sent!')
       setTimeout(() => setMailStatus(''), 3000)
     } catch (e) { setMailStatus('Failed'); setTimeout(() => setMailStatus(''), 3000) }
