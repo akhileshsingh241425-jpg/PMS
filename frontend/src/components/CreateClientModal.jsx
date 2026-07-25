@@ -9,6 +9,7 @@ export default function CreateClientModal({ onClose, onSaved }) {
   const [form, setForm] = useState({
     name: '',
     gst_number: '',
+    pan_no: '',
     client_type: 'main',
     parent_client_id: '',
     location: '',
@@ -17,6 +18,10 @@ export default function CreateClientModal({ onClose, onSaved }) {
     contact_phone: '',
     industry: '',
     status: 'Active',
+    bank_account_no: '',
+    bank_ifsc: '',
+    msme_status: '',
+    default_tds_section: '',
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -49,6 +54,12 @@ export default function CreateClientModal({ onClose, onSaved }) {
 
     if (form.gst_number && !validateGST(form.gst_number)) {
       setError('Invalid GST format')
+      setSaving(false)
+      return
+    }
+
+    if (form.pan_no && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(form.pan_no)) {
+      setError('Invalid PAN format (e.g. AAAAA0000A)')
       setSaving(false)
       return
     }
@@ -183,6 +194,43 @@ export default function CreateClientModal({ onClose, onSaved }) {
               </div>
             </div>
           </div>
+
+          {form.client_type === 'vendor' && (
+            <div style={{ marginBottom: 20 }}>
+              <h3 style={{ fontSize: 12, fontWeight: 600, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 14px' }}>Vendor Details</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 16px' }}>
+                <div>
+                  <Label>PAN Number</Label>
+                  <input value={form.pan_no} onChange={e => set('pan_no', e.target.value.toUpperCase())} style={inputStyle} placeholder="AAAAA0000A" />
+                </div>
+                <div>
+                  <Label>MSME / UDYAM</Label>
+                  <input value={form.msme_status} onChange={e => set('msme_status', e.target.value)} style={inputStyle} placeholder="e.g. UDYAM-XX-00-0000000" />
+                </div>
+                <div>
+                  <Label>Bank A/c No.</Label>
+                  <input value={form.bank_account_no} onChange={e => set('bank_account_no', e.target.value)} style={inputStyle} placeholder="Account number" />
+                </div>
+                <div>
+                  <Label>IFSC Code</Label>
+                  <input value={form.bank_ifsc} onChange={e => set('bank_ifsc', e.target.value.toUpperCase())} style={inputStyle} placeholder="SBIN0001234" />
+                </div>
+                <div>
+                  <Label>Default TDS Section</Label>
+                  <select value={form.default_tds_section} onChange={e => set('default_tds_section', e.target.value)} style={inputStyle}>
+                    <option value="">-- Select --</option>
+                    <option value="194J">194J — Professional / Technical (10%)</option>
+                    <option value="194C">194C — Contract (1% / 2%)</option>
+                    <option value="194H">194H — Commission (5%)</option>
+                    <option value="194I">194I — Rent (10% / 24%)</option>
+                    <option value="194IA">194IA — Property (1%)</option>
+                    <option value="195">195 — NRO Payment</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, borderTop: `1px solid ${C.border}`, paddingTop: 16 }}>
             <button type="button" onClick={onClose} style={{ padding: '8px 18px', borderRadius: 8, border: `1px solid ${C.border}`, background: '#fff', fontSize: 13, cursor: 'pointer', fontFamily: C.font, color: C.text, fontWeight: 500 }}>

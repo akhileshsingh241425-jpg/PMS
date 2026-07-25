@@ -16,6 +16,11 @@ class Client(db.Model):
     status = db.Column(db.String(20), default='Active')
     client_type = db.Column(db.String(20), default='main')
     parent_client_id = db.Column(db.Integer, db.ForeignKey('clients.id'))
+    pan_no = db.Column(db.String(20))
+    bank_account_no = db.Column(db.String(50))
+    bank_ifsc = db.Column(db.String(20))
+    msme_status = db.Column(db.String(20))
+    default_tds_section = db.Column(db.String(20))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -35,6 +40,11 @@ class Client(db.Model):
             'status': self.status,
             'client_type': self.client_type,
             'parent_client_id': self.parent_client_id,
+            'pan_no': self.pan_no,
+            'bank_account_no': self.bank_account_no,
+            'bank_ifsc': self.bank_ifsc,
+            'msme_status': self.msme_status,
+            'default_tds_section': self.default_tds_section,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
         if include_sub:

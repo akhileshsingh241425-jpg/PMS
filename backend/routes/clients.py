@@ -53,10 +53,11 @@ def list_clients(current_user):
     active = Client.query.filter_by(status='Active').count()
     main = Client.query.filter_by(client_type='main').count()
     sub = Client.query.filter_by(client_type='sub').count()
+    vendor = Client.query.filter_by(client_type='vendor').count()
 
     return jsonify({
         'clients': result,
-        'summary': {'total': total, 'active': active, 'main': main, 'sub': sub},
+        'summary': {'total': total, 'active': active, 'main': main, 'sub': sub, 'vendor': vendor},
     })
 
 
@@ -106,6 +107,11 @@ def create_client(current_user):
         status=data.get('status', 'Active'),
         client_type=client_type,
         parent_client_id=parent_client_id or None,
+        pan_no=data.get('pan_no'),
+        bank_account_no=data.get('bank_account_no'),
+        bank_ifsc=data.get('bank_ifsc'),
+        msme_status=data.get('msme_status'),
+        default_tds_section=data.get('default_tds_section'),
     )
     db.session.add(client)
     db.session.commit()
@@ -118,7 +124,8 @@ def update_client(current_user, cid):
     client = Client.query.get_or_404(cid)
     data = request.get_json()
     for f in ['name', 'gst_number', 'location', 'contact_name', 'contact_email',
-              'contact_phone', 'industry', 'status', 'client_type', 'parent_client_id']:
+              'contact_phone', 'industry', 'status', 'client_type', 'parent_client_id',
+              'pan_no', 'bank_account_no', 'bank_ifsc', 'msme_status', 'default_tds_section']:
         if f in data:
             setattr(client, f, data[f] or None)
     db.session.commit()
