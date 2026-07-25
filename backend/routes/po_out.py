@@ -182,8 +182,8 @@ def update_po_out(current_user, pid):
     project = Project.query.filter_by(id=pid, direction='OUT').first_or_404()
     data = request.get_json()
 
-    if project.po_out_status not in ('DRAFT',):
-        return jsonify({'error': 'Can only edit PO in DRAFT status'}), 400
+    if project.po_out_status in ('PAID & CLOSED', 'CANCELLED'):
+        return jsonify({'error': 'Cannot edit a closed or cancelled PO'}), 400
 
     for f in ['title', 'vendor_name', 'vendor_email', 'vendor_gstin', 'vendor_pan',
               'vendor_address', 'vendor_contact_person', 'vendor_phone',

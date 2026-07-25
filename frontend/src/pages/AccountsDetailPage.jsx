@@ -186,7 +186,11 @@ export default function AccountsDetailPage() {
     try {
       const response = await api.get(`/api/accounts/${id}`)
       setData(response.data)
-    } catch (error) {}
+    } catch (error) {
+      if (error.response?.status === 404) {
+        setData({ notFound: true })
+      }
+    }
     finally { setLoading(false) }
   }
 
@@ -306,6 +310,18 @@ export default function AccountsDetailPage() {
     </div>
   )
   if (!data) return null
+  if (data.notFound) {
+    return (
+      <div style={{ background: '#F6F8FC', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '48px', fontWeight: 700, color: '#D1D5DB', marginBottom: '8px' }}>404</div>
+          <p style={{ fontSize: '16px', color: '#6B7280', margin: '0 0 4px' }}>Client not found</p>
+          <p style={{ fontSize: '13px', color: '#9CA3AF', margin: '0 0 20px' }}>The client account you are looking for does not exist.</p>
+          <button onClick={() => navigate('/accounts')} style={{ padding: '8px 20px', borderRadius: '8px', border: 'none', background: '#5B3DF5', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>Back to Clients</button>
+        </div>
+      </div>
+    )
+  }
 
   const { account: acc, sub_accounts = [], contacts = [], opportunities = [], leads = [], referral_leads = [], projects = [], documents = [], tasks = [], meetings = [], notes = [], meeting_requests = [], finding_queries = [], client_users = [] } = data
 

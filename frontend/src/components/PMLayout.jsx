@@ -15,7 +15,6 @@ const NAV_ITEMS = [
   { key: 'meetings', label: 'Meetings', icon: Calendar, path: '/pm/meetings' },
   { key: 'reports', label: 'Reports', icon: BarChart3, path: '/pm/reports' },
   { key: 'chat', label: 'Chat', icon: MessageSquare, path: '/pm/chat' },
-  { key: 'email', label: 'Email', icon: Mail, path: '/pm/email' },
 ]
 
 export default function PMLayout({ children }) {

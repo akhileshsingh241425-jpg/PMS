@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, FileText, Building2, Calendar, CheckCircle, Clock, XCircle, Ban, Send, Play, Download, Mail, Plus, RefreshCw, History } from 'lucide-react'
+import { ArrowLeft, FileText, Building2, Calendar, CheckCircle, Clock, XCircle, Ban, Send, Play, Download, Mail, Plus, RefreshCw, History, Pencil } from 'lucide-react'
 import api from '../services/api'
 import { C } from '../components/styleConstants'
 
@@ -40,6 +40,8 @@ export default function POVendorDetail() {
   const [showCompleteForm, setShowCompleteForm] = useState(false)
   const [cancelReason, setCancelReason] = useState('')
   const [showCancel, setShowCancel] = useState(false)
+  const [showEditVendor, setShowEditVendor] = useState(false)
+  const [editVendorForm, setEditVendorForm] = useState({})
 
   const load = async () => {
     try {
@@ -60,6 +62,34 @@ export default function POVendorDetail() {
       await api.post(`/api/po-out/${id}/${action}`, body)
       await load()
     } catch (e) { alert(e.response?.data?.error || 'Failed') }
+  }
+
+  const openEditVendor = () => {
+    setEditVendorForm({
+      vendor_name: po.vendor_name || '',
+      vendor_email: po.vendor_email || '',
+      vendor_gstin: po.vendor_gstin || '',
+      vendor_pan: po.vendor_pan || '',
+      vendor_address: po.vendor_address || '',
+      vendor_contact_person: po.vendor_contact_person || '',
+      vendor_phone: po.vendor_phone || '',
+      vendor_bank_account_no: po.vendor_bank_account_no || '',
+      vendor_bank_ifsc: po.vendor_bank_ifsc || '',
+      po_terms: po.po_terms || '',
+      po_delivery_period: po.po_delivery_period || '',
+      po_date: po.po_date || '',
+      po_expected_completion_date: po.po_expected_completion_date || '',
+    })
+    setShowEditVendor(true)
+  }
+
+  const handleEditVendorSave = async (e) => {
+    e.preventDefault()
+    try {
+      await api.put(`/api/po-out/${id}`, editVendorForm)
+      setShowEditVendor(false)
+      await load()
+    } catch (err) { alert(err.response?.data?.error || 'Failed') }
   }
 
   // payment calc
@@ -237,6 +267,11 @@ export default function POVendorDetail() {
         <div style={{ background: '#fff', borderRadius: 12, border: `1px solid ${C.border}`, padding: 16 }}>
           <h3 style={{ fontSize: 13, fontWeight: 700, color: C.text, margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
             <Building2 className="w-4 h-4" style={{ color: C.muted }} /> Vendor
+            {!['PAID & CLOSED', 'CANCELLED'].includes(po.po_out_status) && (
+              <button onClick={openEditVendor} style={{ marginLeft: 'auto', border: 'none', background: '#F3F4F6', borderRadius: 4, padding: '3px 6px', cursor: 'pointer', color: '#6B7280', display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 600 }}>
+                <Pencil className="w-3 h-3" /> Edit
+              </button>
+            )}
           </h3>
           <div style={{ fontSize: 12, lineHeight: 1.8 }}>
             <p style={{ margin: 0, fontWeight: 600 }}>{po.vendor_name}</p>
@@ -379,6 +414,35 @@ export default function POVendorDetail() {
             ))}
           </div>
         </div>
+      )}
+
+      {/* Edit Vendor Modal */}
+      {showEditVendor && (
+        <Modal title="Edit PO Details" onClose={() => setShowEditVendor(false)}>
+          <form onSubmit={handleEditVendorSave}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div style={{ gridColumn: 'span 2' }}><Label>Vendor Name</Label><input value={editVendorForm.vendor_name} onChange={e => setEditVendorForm(f => ({ ...f, vendor_name: e.target.value }))} style={inputS} /></div>
+              <div><Label>GSTIN</Label><input value={editVendorForm.vendor_gstin} onChange={e => setEditVendorForm(f => ({ ...f, vendor_gstin: e.target.value }))} style={inputS} /></div>
+              <div><Label>PAN</Label><input value={editVendorForm.vendor_pan} onChange={e => setEditVendorForm(f => ({ ...f, vendor_pan: e.target.value }))} style={inputS} /></div>
+              <div style={{ gridColumn: 'span 2' }}><Label>Address</Label><textarea value={editVendorForm.vendor_address} onChange={e => setEditVendorForm(f => ({ ...f, vendor_address: e.target.value }))} style={{ ...inputS, minHeight: 50, resize: 'vertical' }} /></div>
+              <div><Label>Contact Person</Label><input value={editVendorForm.vendor_contact_person} onChange={e => setEditVendorForm(f => ({ ...f, vendor_contact_person: e.target.value }))} style={inputS} /></div>
+              <div><Label>Phone</Label><input value={editVendorForm.vendor_phone} onChange={e => setEditVendorForm(f => ({ ...f, vendor_phone: e.target.value }))} style={inputS} /></div>
+              <div style={{ gridColumn: 'span 2' }}><Label>Email</Label><input value={editVendorForm.vendor_email} onChange={e => setEditVendorForm(f => ({ ...f, vendor_email: e.target.value }))} style={inputS} /></div>
+              <div><Label>Bank A/c No.</Label><input value={editVendorForm.vendor_bank_account_no} onChange={e => setEditVendorForm(f => ({ ...f, vendor_bank_account_no: e.target.value }))} style={inputS} /></div>
+              <div><Label>IFSC</Label><input value={editVendorForm.vendor_bank_ifsc} onChange={e => setEditVendorForm(f => ({ ...f, vendor_bank_ifsc: e.target.value }))} style={inputS} /></div>
+              <div style={{ gridColumn: 'span 2', borderTop: `1px solid ${C.border}`, paddingTop: 10, marginTop: 4 }}>
+                <Label>PO Terms</Label><textarea value={editVendorForm.po_terms} onChange={e => setEditVendorForm(f => ({ ...f, po_terms: e.target.value }))} style={{ ...inputS, minHeight: 40, resize: 'vertical' }} />
+              </div>
+              <div><Label>Delivery Period</Label><input value={editVendorForm.po_delivery_period} onChange={e => setEditVendorForm(f => ({ ...f, po_delivery_period: e.target.value }))} style={inputS} /></div>
+              <div><Label>PO Date</Label><input type="date" value={editVendorForm.po_date} onChange={e => setEditVendorForm(f => ({ ...f, po_date: e.target.value }))} style={inputS} /></div>
+              <div style={{ gridColumn: 'span 2' }}><Label>Expected Completion</Label><input type="date" value={editVendorForm.po_expected_completion_date} onChange={e => setEditVendorForm(f => ({ ...f, po_expected_completion_date: e.target.value }))} style={inputS} /></div>
+            </div>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 14 }}>
+              <button type="button" onClick={() => setShowEditVendor(false)} style={{ padding: '7px 16px', border: `1px solid ${C.border}`, borderRadius: 6, background: '#fff', fontSize: 12, cursor: 'pointer' }}>Cancel</button>
+              <button type="submit" style={{ padding: '7px 16px', border: 'none', borderRadius: 6, background: '#0052CC', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Save Changes</button>
+            </div>
+          </form>
+        </Modal>
       )}
 
       {/* Work Complete Form Modal */}
