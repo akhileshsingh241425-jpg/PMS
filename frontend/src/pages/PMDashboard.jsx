@@ -14,7 +14,7 @@ const formatDT = (ds) => {
 
 function StatCard({ icon: Icon, label, value, color, bg }) {
   return (
-    <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: '20px', display: 'flex', alignItems: 'center', gap: 16 }}>
+    <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: '14px', display: 'flex', alignItems: 'center', gap: 10 }}>
       <div style={{ width: 48, height: 48, borderRadius: 12, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Icon className="w-5 h-5" style={{ color }} />
       </div>
@@ -39,7 +39,7 @@ export default function PMDashboard() {
   }, [])
 
   if (loading) return (
-    <div style={{ textAlign: 'center', padding: '80px' }}>
+    <div style={{ textAlign: 'center', padding: '40px' }}>
       <div style={{ width: 32, height: 32, border: '3px solid #E5E7EB', borderTopColor: '#5B3DF5', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
     </div>
   )
@@ -49,10 +49,10 @@ export default function PMDashboard() {
 
   return (
     <div>
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0F172A', margin: '0 0 24px' }}>PM Dashboard</h1>
+      <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0F172A', margin: '0 0 10px' }}>PM Dashboard</h1>
 
       {/* Stats Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10, marginBottom: 10 }}>
         <StatCard icon={FolderOpen} label="Active Projects" value={s.active_projects || 0} color="#3B82F6" bg="#EFF6FF" />
         <StatCard icon={ListChecks} label="Total Tasks" value={s.total_tasks || 0} color="#8B5CF6" bg="#F5F3FF" />
         <StatCard icon={Users} label="Team Members" value={s.team_members || 0} color="#10B981" bg="#F0FDF4" />
@@ -60,8 +60,8 @@ export default function PMDashboard() {
       </div>
 
       {/* Project Health */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
-        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 10 }}>
+        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: '14px' }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
             <Activity className="w-4 h-4" /> Project Health
           </h3>
@@ -82,7 +82,7 @@ export default function PMDashboard() {
         </div>
 
         {/* Overdue Tasks */}
-        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: '20px' }}>
+        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: '14px' }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
             <AlertCircle className="w-4 h-4" style={{ color: '#DC2626' }} /> Overdue Tasks
           </h3>
@@ -106,8 +106,8 @@ export default function PMDashboard() {
       </div>
 
       {/* Bottom Row: Pending Approvals + Upcoming Meetings */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: '14px' }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
             <Clock className="w-4 h-4" style={{ color: '#F59E0B' }} /> Pending Approvals
           </h3>
@@ -125,7 +125,7 @@ export default function PMDashboard() {
           )}
         </div>
 
-        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: '20px' }}>
+        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: '14px' }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
             <Calendar className="w-4 h-4" style={{ color: '#3B82F6' }} /> Upcoming Meetings
           </h3>
@@ -147,7 +147,7 @@ export default function PMDashboard() {
 
       {/* Notifications */}
       {data?.notifications?.length > 0 && (
-        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: '20px', marginTop: 20 }}>
+        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: '14px', marginTop: 20 }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
             <Bell className="w-4 h-4" style={{ color: '#F59E0B' }} /> Alerts
           </h3>

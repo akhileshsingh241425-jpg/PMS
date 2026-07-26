@@ -78,7 +78,7 @@ export default function PMApprovalQueue() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Approval Queue</h1>
           <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748B' }}>
@@ -120,7 +120,7 @@ export default function PMApprovalQueue() {
                       <span style={{ fontSize: 11, color: '#94A3B8' }}>{t.project_name}</span>
                     </div>
                     <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: '#0F172A' }}>{t.title}</h3>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 6, fontSize: 12, color: '#64748B' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6, fontSize: 12, color: '#64748B' }}>
                       {t.assigned_name && (
                         <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                           <User className="w-3 h-3" /> {t.assigned_name}

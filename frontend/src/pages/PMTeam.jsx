@@ -20,13 +20,13 @@ export default function PMTeam() {
   ) : team
 
   if (loading) return (
-    <div style={{ textAlign: 'center', padding: '80px' }}>
+    <div style={{ textAlign: 'center', padding: '40px' }}>
       <div style={{ width: 32, height: 32, border: '3px solid #E5E7EB', borderTopColor: '#5B3DF5', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
     </div>
   )
 
   if (team.length === 0) return (
-    <div style={{ textAlign: 'center', padding: '80px', color: '#9CA3AF' }}>
+    <div style={{ textAlign: 'center', padding: '40px', color: '#9CA3AF' }}>
       <Users className="w-16 h-16" style={{ margin: '0 auto 12px', color: '#D1D5DB' }} />
       <p style={{ fontSize: 15, margin: 0 }}>No team members assigned yet</p>
     </div>
@@ -34,7 +34,7 @@ export default function PMTeam() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0F172A', margin: 0 }}>Team ({filtered.length})</h1>
         <div style={{ position: 'relative' }}>
           <Search className="w-4 h-4" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
@@ -50,7 +50,7 @@ export default function PMTeam() {
           const hasCapacity = m.active_tasks < 3
           return (
             <div key={m.id} style={{
-              background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: '18px',
+              background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: '12px',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
                 <div style={{

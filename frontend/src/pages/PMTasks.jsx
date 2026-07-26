@@ -111,7 +111,7 @@ export default function PMTasks() {
   }
 
   if (loading) return (
-    <div style={{ textAlign: 'center', padding: '80px' }}>
+    <div style={{ textAlign: 'center', padding: '40px' }}>
       <div style={{ width: 32, height: 32, border: '3px solid #E5E7EB', borderTopColor: '#5B3DF5', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
     </div>
   )
@@ -156,7 +156,7 @@ export default function PMTasks() {
 
       {/* Task List */}
       {tasks.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '80px', color: '#9CA3AF' }}>
+        <div style={{ textAlign: 'center', padding: '40px', color: '#9CA3AF' }}>
           <p style={{ fontSize: 15, margin: 0 }}>No tasks found</p>
         </div>
       ) : (
@@ -165,7 +165,7 @@ export default function PMTasks() {
             const pc = PRIORITY_COLORS[t.priority] || { bg: '#F3F4F6', text: '#6B7280' }
             return (
               <div key={t.id} style={{
-                background: '#fff', borderRadius: 10, border: '1px solid #E5E7EB', padding: '14px 18px',
+                background: '#fff', borderRadius: 10, border: '1px solid #E5E7EB', padding: '10px 14px',
                 display: 'flex', alignItems: 'center', gap: 14,
               }}>
                 <select value={t.status} onChange={e => updateStatus(t, e.target.value)}

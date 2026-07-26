@@ -19,30 +19,30 @@ export default function PMReports() {
   const overallCompletion = totalTasks > 0 ? Math.round((totalCompleted / totalTasks) * 100) : 0
 
   if (loading) return (
-    <div style={{ textAlign: 'center', padding: '80px' }}>
+    <div style={{ textAlign: 'center', padding: '40px' }}>
       <div style={{ width: 32, height: 32, border: '3px solid #E5E7EB', borderTopColor: '#5B3DF5', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
     </div>
   )
 
   return (
     <div>
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0F172A', margin: '0 0 24px' }}>Reports</h1>
+      <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0F172A', margin: '0 0 10px' }}>Reports</h1>
 
       {/* Overall Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 14, marginBottom: 28 }}>
-        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: '18px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 14, marginBottom: 12 }}>
+        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: '12px' }}>
           <p style={{ fontSize: 28, fontWeight: 700, color: '#0F172A', margin: 0 }}>{totalTasks}</p>
           <p style={{ fontSize: 13, color: '#6B7280', margin: '2px 0 0' }}>Total Tasks</p>
         </div>
-        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: '18px' }}>
+        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: '12px' }}>
           <p style={{ fontSize: 28, fontWeight: 700, color: '#10B981', margin: 0 }}>{totalCompleted}</p>
           <p style={{ fontSize: 13, color: '#6B7280', margin: '2px 0 0' }}>Completed</p>
         </div>
-        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: '18px' }}>
+        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: '12px' }}>
           <p style={{ fontSize: 28, fontWeight: 700, color: '#DC2626', margin: 0 }}>{totalOverdue}</p>
           <p style={{ fontSize: 13, color: '#6B7280', margin: '2px 0 0' }}>Overdue</p>
         </div>
-        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: '18px' }}>
+        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: '12px' }}>
           <p style={{ fontSize: 28, fontWeight: 700, color: '#5B21B6', margin: 0 }}>{overallCompletion}%</p>
           <p style={{ fontSize: 13, color: '#6B7280', margin: '2px 0 0' }}>Completion Rate</p>
         </div>
@@ -50,7 +50,7 @@ export default function PMReports() {
 
       {/* Per-Project Breakdown */}
       {projects.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px', color: '#9CA3AF' }}>
+        <div style={{ textAlign: 'center', padding: '30px', color: '#9CA3AF' }}>
           <BarChart3 className="w-16 h-16" style={{ margin: '0 auto 12px', color: '#D1D5DB' }} />
           <p style={{ fontSize: 15, margin: 0 }}>No project data available</p>
         </div>

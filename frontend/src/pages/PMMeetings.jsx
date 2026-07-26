@@ -41,17 +41,17 @@ export default function PMMeetings() {
   ].sort((a, b) => new Date(b.meeting_date || b.created_at) - new Date(a.meeting_date || a.created_at))
 
   if (loading) return (
-    <div style={{ textAlign: 'center', padding: '80px' }}>
+    <div style={{ textAlign: 'center', padding: '40px' }}>
       <div style={{ width: 32, height: 32, border: '3px solid #E5E7EB', borderTopColor: '#5B3DF5', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
     </div>
   )
 
   return (
     <div>
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0F172A', margin: '0 0 24px' }}>Meetings ({allMeetings.length})</h1>
+      <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0F172A', margin: '0 0 10px' }}>Meetings ({allMeetings.length})</h1>
 
       {allMeetings.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '80px', color: '#9CA3AF' }}>
+        <div style={{ textAlign: 'center', padding: '40px', color: '#9CA3AF' }}>
           <Calendar className="w-16 h-16" style={{ margin: '0 auto 12px', color: '#D1D5DB' }} />
           <p style={{ fontSize: 15, margin: 0 }}>No meetings scheduled</p>
         </div>
@@ -63,7 +63,7 @@ export default function PMMeetings() {
             return (
               <div key={`${m._type}-${m.id}`} onClick={() => navigate(`/meetings?id=${m.id}&type=${m._type}`)}
                 style={{
-                  background: '#fff', borderRadius: 10, border: '1px solid #E5E7EB', padding: '14px 18px',
+                  background: '#fff', borderRadius: 10, border: '1px solid #E5E7EB', padding: '10px 14px',
                   cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14,
                   transition: 'all 0.12s',
                 }}
