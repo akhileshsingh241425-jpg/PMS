@@ -195,7 +195,7 @@ export default function POVendorPage() {
 
   return (
     <div style={{ padding: '0 0 32px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 700, color: C.text, margin: 0 }}>Vendor Purchase Orders</h1>
           <p style={{ fontSize: 13, color: C.muted, marginTop: 2 }}>POs issued to vendors — track, dispatch, pay & close</p>
@@ -555,7 +555,7 @@ function POPreview({ form, totals, onBack, onSave, saving }) {
   return (
     <div>
       <div style={{ border: `1px solid ${C.border}`, borderRadius: 10, padding: 24, marginBottom: 16, fontFamily: C.font }}>
-        <div style={{ textAlign: 'center', marginBottom: 20 }}>
+        <div style={{ textAlign: 'center', marginBottom: 10 }}>
           <h2 style={{ fontSize: 18, fontWeight: 800, color: C.text, margin: '0 0 4px' }}>INFOCUS IT CONSULTING PVT LTD</h2>
           <p style={{ fontSize: 11, color: C.muted, margin: 0 }}>A-19, Yadav Park, Rohtak Road, Nangloi, New Delhi – 110041</p>
           <p style={{ fontSize: 11, color: C.muted, margin: 0 }}>GSTIN: 07AAGCI4467G1ZF | Email: info@infocus-it.com</p>
