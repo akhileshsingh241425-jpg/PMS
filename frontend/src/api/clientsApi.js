@@ -40,6 +40,11 @@ export async function exportClients(params = {}) {
   return res.data
 }
 
+export async function exportClient(id) {
+  const res = await api.get(`/api/clients/${id}/export`, { responseType: 'blob' })
+  return res.data
+}
+
 export async function fetchClientContacts(cid) {
   const res = await api.get(`/api/clients/${cid}/contacts`)
   return res.data
@@ -127,5 +132,10 @@ export async function createClientReference(cid, data) {
 
 export async function deleteClientReference(cid, rid) {
   const res = await api.delete(`/api/clients/${cid}/references/${rid}`)
+  return res.data
+}
+
+export async function exportClient(cid) {
+  const res = await api.get(`/api/clients/${cid}/export`, { responseType: 'blob' })
   return res.data
 }
