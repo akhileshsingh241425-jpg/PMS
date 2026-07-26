@@ -23,6 +23,7 @@ import AttendancePage from './pages/AttendancePage'
 import FaceRegisterPage from './pages/FaceRegisterPage'
 import EmployeeLayout from './components/EmployeeLayout'
 import EmployeePortal from './pages/EmployeePortal'
+import MyDayPage from './pages/MyDayPage'
 import PMLayout from './components/PMLayout'
 import PMDashboard from './pages/PMDashboard'
 import PMProjects from './pages/PMProjects'
@@ -125,7 +126,7 @@ export default function App() {
                 <Route path="chat" element={<ChatPage />} />
               </Route>
               <Route path="/employee" element={<Protected><EmployeeRoute><EmployeeAppLayout /></EmployeeRoute></Protected>}>
-                <Route index element={<EmployeePortal activeTab="dashboard" />} />
+                <Route index element={<MyDayPage />} />
                 <Route path="projects" element={<EmployeePortal activeTab="projects" />} />
                 <Route path="tasks" element={<EmployeePortal activeTab="tasks" />} />
                 <Route path="meetings" element={<EmployeePortal activeTab="meetings" />} />
