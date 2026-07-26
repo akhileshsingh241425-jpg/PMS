@@ -84,7 +84,7 @@ export default function Admin() {
   if (loading) return <div className="flex items-center justify-center h-64"><p className="text-slate-400 animate-pulse">Loading employees...</p></div>
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-serif font-bold text-slate-900">Admin Panel</h1>

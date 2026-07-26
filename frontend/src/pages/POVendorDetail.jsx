@@ -199,7 +199,7 @@ export default function POVendorDetail() {
   const sc = STATUS_COLORS[po.po_out_status] || STATUS_COLORS['DRAFT']
 
   return (
-    <div style={{ maxWidth: 960, margin: '0 auto' }}>
+    <div>
       <button onClick={() => navigate('/po-out')} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 0', border: 'none', background: 'none', color: C.muted, fontSize: 13, cursor: 'pointer', marginBottom: 12 }}>
         <ArrowLeft className="w-4 h-4" /> Back to POs
       </button>
