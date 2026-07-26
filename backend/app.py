@@ -44,9 +44,9 @@ def create_app():
         return jsonify({'error': 'Internal server error'}), 500
 
     from routes import auth_bp, account_bp, project_bp, activity_bp, portal_bp, queries_bp, dash_bp, meeting_req_bp, notif_bp, leads_bp, opp_bp, contact_bp, enterprise_bp, admin_bp, search_bp, team_bp, me_bp, employee_bp, pm_bp, vuln_bp, attendance_bp, backlog_bp, client_bp, vendor_bp, email_bp, po_out_bp
-from routes.push_routes import push_bp
-from routes.chat import chat_bp
-from routes.myday import myday_bp
+    from routes.push_routes import push_bp
+    from routes.chat import chat_bp
+    from routes.myday import myday_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(account_bp)
     app.register_blueprint(project_bp)
