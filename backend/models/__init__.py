@@ -23,7 +23,7 @@ from .location_log import LocationLog
 from .chat_message import ChatMessage
 from .conversation import ChatConversation, ChatConversationParticipant, ConversationMessage, ChatMessageStatus
 from .backlog import Epic, Sprint, Issue
-from .client import Client
+from .client import Client, ClientContact, ClientRemark, ClientFollowUp, ClientChangeLog, ClientReference, SectorMaster, VendorCategoryMaster
 from .po_out import POLineItem, TDSRecord, POVersion
 from .email_integration import EmailAccount, EmailMessage, EmailFolder, EmailAuthState, EmailActivity, EmailNote, EmailAutoRule, EmailFollowUp, EmailTemplate, CATEGORIES, EMAIL_STATUSES, PRIORITIES, TAGS_PRESET
 from .finding import Finding
