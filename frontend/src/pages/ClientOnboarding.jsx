@@ -10,15 +10,15 @@ const REFERENCE_SOURCES = ['Google', 'LinkedIn', 'Referral', 'Cold Call', 'Email
 const PAYMENT_TERMS = ['Advance', '7 Days', '15 Days', '30 Days', '45 Days', '60 Days', 'Milestone Based', 'Other']
 
 const inputCls = {
-  width: '100%', padding: '8px 12px', border: `1px solid ${C.border}`,
-  borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: C.font,
+  width: '100%', padding: '5px 8px', border: `1px solid ${C.border}`,
+  borderRadius: 6, fontSize: 12, outline: 'none', fontFamily: C.font,
   background: '#fff', boxSizing: 'border-box', color: C.text,
   transition: 'border-color 0.15s',
 }
 
 const selectCls = { ...inputCls, cursor: 'pointer' }
 
-const labelCls = { fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 4, display: 'block' }
+const labelCls = { fontSize: 10, fontWeight: 700, color: C.muted, marginBottom: 2, display: 'block', textTransform: 'uppercase', letterSpacing: '0.3px' }
 
 function Label({ children, required }) {
   return (
@@ -105,28 +105,28 @@ export default function ClientOnboarding() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', fontFamily: C.font, color: C.text, WebkitFontSmoothing: 'antialiased', background: C.bg, padding: '24px 32px' }}>
-      <div style={{ maxWidth: 900, margin: '0 auto' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-          <button onClick={() => navigate('/clients')} style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${C.border}`, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.text }}>
-            <ArrowLeft className="w-4 h-4" />
+    <div style={{ minHeight: '100vh', fontFamily: C.font, color: C.text, WebkitFontSmoothing: 'antialiased', background: C.bg, padding: '14px 20px 24px' }}>
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+          <button onClick={() => navigate('/clients')} style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${C.border}`, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.text, flexShrink: 0 }}>
+            <ArrowLeft className="w-3.5 h-3.5" />
           </button>
           <div>
-            <h1 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: C.text }}>New Client Onboarding</h1>
-            <p style={{ fontSize: 12, color: C.secondary, margin: '2px 0 0' }}>Complete all required fields to register a new client or vendor</p>
+            <h1 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: C.text }}>New Client Onboarding</h1>
+            <p style={{ fontSize: 11, color: C.secondary, margin: '1px 0 0' }}>Complete all required fields to register a new client or vendor</p>
           </div>
         </div>
 
         <form onSubmit={handleSubmit}>
           {error && (
-            <div style={{ marginBottom: 20, padding: '12px 16px', borderRadius: 10, background: '#FEF2F2', border: '1px solid #FECACA', fontSize: 13, fontWeight: 500, color: '#B91C1C', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <AlertCircle className="w-4 h-4" /> {error}
+            <div style={{ marginBottom: 10, padding: '8px 12px', borderRadius: 8, background: '#FEF2F2', border: '1px solid #FECACA', fontSize: 12, fontWeight: 500, color: '#B91C1C', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <AlertCircle className="w-3.5 h-3.5" /> {error}
             </div>
           )}
 
           {dupStatus?.is_duplicate && (
-            <div style={{ marginBottom: 20, padding: '12px 16px', borderRadius: 10, background: '#FFF7ED', border: '1px solid #FED7AA', fontSize: 13, color: '#9A3412', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <AlertCircle className="w-4 h-4" />
+            <div style={{ marginBottom: 10, padding: '8px 12px', borderRadius: 8, background: '#FFF7ED', border: '1px solid #FED7AA', fontSize: 12, color: '#9A3412', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <AlertCircle className="w-3.5 h-3.5" />
               Similar client found: <strong>{dupStatus.match?.name}</strong> ({dupStatus.match?.client_code})
             </div>
           )}
@@ -152,7 +152,7 @@ export default function ClientOnboarding() {
               </select>
             </Field>
             {form.client_type === 'sub' && (
-              <Field gridCol="span 2">
+              <Field gridCol="span 4">
                 <Label required>Parent Client</Label>
                 <select value={form.parent_client_id} onChange={e => set('parent_client_id', e.target.value)} style={selectCls}>
                   <option value="">-- Select Parent --</option>
@@ -181,9 +181,9 @@ export default function ClientOnboarding() {
               </select>
             </Field>
             {form.status === 'BLACKLISTED' && (
-              <Field gridCol="span 2">
+              <Field gridCol="span 4">
                 <Label required>Blacklist Reason</Label>
-                <textarea value={form.blacklist_reason} onChange={e => set('blacklist_reason', e.target.value)} style={{ ...inputCls, minHeight: 60, resize: 'vertical' }} placeholder="Reason for blacklisting" />
+                <textarea value={form.blacklist_reason} onChange={e => set('blacklist_reason', e.target.value)} style={{ ...inputCls, minHeight: 44, resize: 'vertical' }} placeholder="Reason for blacklisting" />
               </Field>
             )}
           </Section>
@@ -211,7 +211,7 @@ export default function ClientOnboarding() {
             </Field>
             <Field gridCol="span 2">
               <Label>Registered Address</Label>
-              <textarea value={form.registered_address} onChange={e => set('registered_address', e.target.value)} style={{ ...inputCls, minHeight: 60, resize: 'vertical' }} placeholder="Full registered address" />
+              <textarea value={form.registered_address} onChange={e => set('registered_address', e.target.value)} style={{ ...inputCls, minHeight: 44, resize: 'vertical' }} placeholder="Full registered address" />
             </Field>
             <Field>
               <Label>State</Label>
@@ -221,7 +221,7 @@ export default function ClientOnboarding() {
               <Label>State Code</Label>
               <input value={form.state_code} onChange={e => set('state_code', e.target.value)} style={inputCls} placeholder="e.g. 27" />
             </Field>
-            <Field gridCol="span 2">
+            <Field gridCol="span 4">
               <Label>Website</Label>
               <input value={form.website} onChange={e => set('website', e.target.value)} style={inputCls} placeholder="https://example.com" />
             </Field>
@@ -319,9 +319,9 @@ export default function ClientOnboarding() {
               <Label>First Follow-Up Date</Label>
               <input type="date" value={form.first_follow_up_date} onChange={e => set('first_follow_up_date', e.target.value)} style={inputCls} />
             </Field>
-            <Field gridCol="span 2">
+            <Field gridCol="span 4">
               <Label>Onboarding Remarks</Label>
-              <textarea value={form.onboarding_remarks} onChange={e => set('onboarding_remarks', e.target.value)} style={{ ...inputCls, minHeight: 60, resize: 'vertical' }} placeholder="Any notes about this client" />
+              <textarea value={form.onboarding_remarks} onChange={e => set('onboarding_remarks', e.target.value)} style={{ ...inputCls, minHeight: 44, resize: 'vertical' }} placeholder="Any notes about this client" />
             </Field>
           </Section>
 
@@ -338,7 +338,7 @@ export default function ClientOnboarding() {
           </Section>
 
           {/* Submit */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 24, paddingBottom: 40 }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 12, paddingBottom: 20 }}>
             <button type="button" onClick={() => navigate('/clients')} style={{ padding: '10px 24px', borderRadius: 10, border: `1px solid ${C.border}`, background: '#fff', fontSize: 14, cursor: 'pointer', fontFamily: C.font, color: C.text, fontWeight: 500 }}>
               Cancel
             </button>
@@ -354,9 +354,9 @@ export default function ClientOnboarding() {
 
 function Section({ title, children }) {
   return (
-    <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, boxShadow: C.shadow, padding: '20px 24px', marginBottom: 16 }}>
-      <h3 style={{ fontSize: 13, fontWeight: 600, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 16px', paddingBottom: 12, borderBottom: `1px solid ${C.border}` }}>{title}</h3>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px 20px' }}>
+    <div style={{ background: C.card, borderRadius: 8, border: `1px solid ${C.border}`, padding: '10px 14px', marginBottom: 8 }}>
+      <h3 style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.4px', margin: '0 0 8px', paddingBottom: 6, borderBottom: `1px solid ${C.border}` }}>{title}</h3>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '6px 12px' }}>
         {children}
       </div>
     </div>
