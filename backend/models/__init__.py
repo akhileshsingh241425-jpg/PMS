@@ -26,4 +26,9 @@ from .backlog import Epic, Sprint, Issue
 from .client import Client
 from .po_out import POLineItem, TDSRecord, POVersion
 from .email_integration import EmailAccount, EmailMessage, EmailFolder, EmailAuthState, EmailActivity, EmailNote, EmailAutoRule, EmailFollowUp, EmailTemplate, CATEGORIES, EMAIL_STATUSES, PRIORITIES, TAGS_PRESET
+from .finding import Finding
+from .leave import LeaveRequest
+from .expense import ExpenseEntry
+from .day_end_log import DayEndLog
+from .task_activity import TaskActivity
 
