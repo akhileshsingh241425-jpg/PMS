@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import db, SectorMaster, VendorCategoryMaster
+from models import db, SectorMaster, VendorCategoryMaster, AppSetting, DEFAULT_SETTINGS
 from middleware.auth import login_required
 
 masters_bp = Blueprint('masters', __name__, url_prefix='/api/masters')
@@ -111,3 +111,30 @@ def delete_vendor_category(current_user, cid):
     db.session.delete(cat)
     db.session.commit()
     return jsonify({'message': 'Deleted'})
+
+
+# ─── APP SETTINGS ──────────────────────────────────────────
+
+@masters_bp.route('/settings', methods=['GET'])
+@login_required
+def list_settings(current_user):
+    if not _require_admin(current_user):
+        return jsonify({'error': 'Admin access required'}), 403
+    settings = AppSetting.query.order_by(AppSetting.key).all()
+    return jsonify({'settings': [s.to_dict() for s in settings]})
+
+
+@masters_bp.route('/settings/<int:sid>', methods=['PUT'])
+@login_required
+def update_setting(current_user, sid):
+    if not _require_admin(current_user):
+        return jsonify({'error': 'Admin access required'}), 403
+    setting = AppSetting.query.get_or_404(sid)
+    data = request.get_json()
+    if 'value' in data:
+        setting.value = data['value']
+    if 'description' in data:
+        setting.description = data['description']
+    setting.updated_by = current_user.id
+    db.session.commit()
+    return jsonify({'setting': setting.to_dict()})

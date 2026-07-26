@@ -41,6 +41,7 @@ import POVendorPage from './pages/POVendor'
 import POVendorDetail from './pages/POVendorDetail'
 import POInPage from './pages/POInPage'
 import POInDetail from './pages/POInDetail'
+import Settings from './pages/Settings'
 import EmailInbox from './pages/EmailInbox'
 import ChatPage from './pages/ChatPage'
 import FloatingChat from './components/FloatingChat'
@@ -132,6 +133,7 @@ export default function App() {
                 <Route path="attendance" element={<AttendancePage />} />
                 <Route path="attendance/face-register" element={<FaceRegisterPage />} />
                 <Route path="users" element={<AdminRoute><UsersPage /></AdminRoute>} />
+                <Route path="settings" element={<AdminRoute><Settings /></AdminRoute>} />
                 <Route path="chat" element={<ChatPage />} />
               </Route>
               <Route path="/employee" element={<Protected><EmployeeRoute><EmployeeAppLayout /></EmployeeRoute></Protected>}>

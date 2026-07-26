@@ -4,6 +4,7 @@ from datetime import datetime
 from models import db, Project, Client, POLineItem, TDSRecord, POVersion, PoPayment
 from middleware.auth import login_required
 from utils import generate_id
+from numbering_utils import gen_po_number as configurable_gen_po_number
 from pdf_utils import generate_po_pdf
 from email_utils import send_email_async
 
@@ -23,23 +24,7 @@ TDS_SECTIONS = {
 
 
 def gen_po_number(vendor_id=None):
-    now = datetime.utcnow()
-    fy = f'{now.year}-{str(now.year+1)[2:]}' if now.month >= 4 else f'{now.year-1}-{str(now.year)[2:]}'
-    code = 'XX'
-    if vendor_id:
-        from models.client import Client
-        c = Client.query.get(vendor_id)
-        if c and c.client_code:
-            code = c.client_code
-    prefix = f'INFOCUS-IT/PO/{fy}/{code}/'
-    last = db.session.query(db.func.max(Project.po_number)).filter(Project.po_number.like(f'{prefix}%')).scalar()
-    last_serial = 0
-    if last and prefix in last:
-        try:
-            last_serial = int(last.replace(prefix, ''))
-        except ValueError:
-            pass
-    return f'{prefix}{str(last_serial + 1).zfill(3)}'
+    return configurable_gen_po_number(vendor_id)
 
 
 def amount_to_words(n):

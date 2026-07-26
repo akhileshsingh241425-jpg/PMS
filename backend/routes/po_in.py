@@ -3,7 +3,7 @@ from flask import Blueprint, request, jsonify
 from datetime import datetime
 from models import db, Project, Client, POLineItem
 from middleware.auth import login_required
-from utils import generate_id
+from numbering_utils import gen_proj_id as configurable_gen_proj_id
 
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'uploads', 'po_in_docs')
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -16,17 +16,7 @@ PO_IN_STATUSES = [
 ]
 
 def gen_proj_id():
-    now = datetime.utcnow()
-    fy = f'{now.year}-{str(now.year+1)[2:]}' if now.month >= 4 else f'{now.year-1}-{str(now.year)[2:]}'
-    prefix = f'INF/PRJ/{fy}/'
-    last = db.session.query(db.func.max(Project.proj_id)).filter(Project.proj_id.like(f'{prefix}%')).scalar()
-    last_serial = 0
-    if last and prefix in last:
-        try:
-            last_serial = int(last.replace(prefix, ''))
-        except ValueError:
-            pass
-    return f'{prefix}{str(last_serial + 1).zfill(3)}'
+    return configurable_gen_proj_id()
 
 def amount_to_words(n):
     if n is None:

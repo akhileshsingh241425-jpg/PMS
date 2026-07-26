@@ -93,6 +93,8 @@ def create_app():
 
     with app.app_context():
         db.create_all()
+        from numbering_utils import init_default_settings
+        init_default_settings()
 
     return app
 
