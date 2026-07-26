@@ -1,6 +1,6 @@
 from datetime import datetime, date
 from flask import Blueprint, request, jsonify
-from models import db, User, Project, ProjectTeam, Task, Meeting, MeetingRequest, MeetingShare, MeetingRequestShare
+from models import db, User, Project, ProjectTeam, Task, TaskActivity, Meeting, MeetingRequest, MeetingShare, MeetingRequestShare, Notification
 from middleware.auth import login_required
 
 pm_bp = Blueprint('pm', __name__, url_prefix='/api/pm')
@@ -271,3 +271,107 @@ def pm_reports(current_user):
         })
 
     return jsonify({'projects': report_data})
+
+
+# ─── APPROVAL QUEUE ──────────────────────────────────────────
+
+@pm_bp.route('/approvals', methods=['GET'])
+@login_required
+def pm_approvals(current_user):
+    if not _require_pm(current_user):
+        return jsonify({'error': 'Access denied'}), 403
+    pids = _pm_project_ids(current_user)
+    if not pids:
+        return jsonify({'approvals': [], 'stats': {}})
+
+    tasks = Task.query.filter(
+        Task.project_id.in_(pids),
+        Task.status == 'SENT FOR APPROVAL'
+    ).order_by(Task.updated_at.desc().nullslast(), Task.created_at.desc()).all()
+
+    # Group by project for stats
+    by_project = {}
+    for t in tasks:
+        pname = t.project.title if t.project else 'Unknown'
+        by_project.setdefault(pname, []).append(t)
+
+    return jsonify({
+        'approvals': [t.to_dict() for t in tasks],
+        'stats': {
+            'total': len(tasks),
+            'by_project': [{'project': k, 'count': len(v)} for k, v in sorted(by_project.items(), key=lambda x: -len(x[1]))],
+        },
+    })
+
+
+@pm_bp.route('/approvals/<int:tid>/approve', methods=['POST'])
+@login_required
+def pm_approve_task(current_user, tid):
+    if not _require_pm(current_user):
+        return jsonify({'error': 'Access denied'}), 403
+    task = Task.query.get_or_404(tid)
+    pids = _pm_project_ids(current_user)
+    if task.project_id not in pids:
+        return jsonify({'error': 'Access denied'}), 403
+    if task.status != 'SENT FOR APPROVAL':
+        return jsonify({'error': 'Task is not in SENT FOR APPROVAL status'}), 400
+
+    old_status = task.status
+    task.status = 'APPROVED'
+    task.completed_at = datetime.utcnow()
+    db.session.flush()
+
+    act = TaskActivity(task_id=tid, user_id=current_user.id, action='status_change',
+                       old_value=old_status, new_value='APPROVED',
+                       description='Approved by PM')
+    db.session.add(act)
+
+    if task.assigned_to:
+        n = Notification(
+            user_id=task.assigned_to,
+            title='Task Approved',
+            message=f'Your task "{task.title}" has been approved by {current_user.full_name}',
+            module_type='task', module_id=tid,
+        )
+        db.session.add(n)
+
+    db.session.commit()
+    return jsonify({'task': task.to_dict()})
+
+
+@pm_bp.route('/approvals/<int:tid>/rework', methods=['POST'])
+@login_required
+def pm_rework_task(current_user, tid):
+    if not _require_pm(current_user):
+        return jsonify({'error': 'Access denied'}), 403
+    task = Task.query.get_or_404(tid)
+    pids = _pm_project_ids(current_user)
+    if task.project_id not in pids:
+        return jsonify({'error': 'Access denied'}), 403
+    if task.status != 'SENT FOR APPROVAL':
+        return jsonify({'error': 'Task is not in SENT FOR APPROVAL status'}), 400
+
+    data = request.get_json() or {}
+    if not data.get('remarks'):
+        return jsonify({'error': 'Remarks are required for rework'}), 400
+
+    old_status = task.status
+    task.status = 'REWORK'
+    db.session.flush()
+
+    act = TaskActivity(task_id=tid, user_id=current_user.id, action='status_change',
+                       old_value=old_status, new_value='REWORK',
+                       description=f'Returned for rework: {data["remarks"]}')
+    db.session.add(act)
+
+    if task.assigned_to:
+        n = Notification(
+            user_id=task.assigned_to,
+            title='Task Returned for Rework',
+            message=f'{current_user.full_name} returned "{task.title}" for rework. Remarks: {data["remarks"]}',
+            module_type='task', module_id=tid,
+        )
+        db.session.add(n)
+
+    db.session.commit()
+    return jsonify({'task': task.to_dict(), 'remarks': data['remarks']})

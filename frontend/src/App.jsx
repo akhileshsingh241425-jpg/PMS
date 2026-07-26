@@ -31,6 +31,7 @@ import PMTasks from './pages/PMTasks'
 import PMTeam from './pages/PMTeam'
 import PMMeetings from './pages/PMMeetings'
 import PMReports from './pages/PMReports'
+import PMApprovalQueue from './pages/PMApprovalQueue'
 import VulnerabilityDashboard from './pages/VulnerabilityDashboard'
 import Clients from './pages/Clients'
 import VendorDetailPage from './pages/VendorDetailPage'
@@ -147,6 +148,7 @@ export default function App() {
                 <Route path="tasks" element={<PMTasks />} />
                 <Route path="team" element={<PMTeam />} />
                 <Route path="meetings" element={<PMMeetings />} />
+                <Route path="approvals" element={<PMApprovalQueue />} />
                 <Route path="reports" element={<PMReports />} />
                 <Route path="chat" element={<ChatPage />} />
                 <Route path="email" element={<EmailInbox />} />
