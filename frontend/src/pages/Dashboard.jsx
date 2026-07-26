@@ -42,14 +42,14 @@ export default function Dashboard() {
   return (
     <div>
       {/* Welcome */}
-      <div className="mb-6">
+      <div className="mb-3">
         <h1 className="text-2xl font-serif font-bold text-slate-900">Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, {user?.first_name}</h1>
         <p className="text-slate-500 text-sm mt-1">Here's your pipeline overview</p>
       </div>
 
       {/* Stats */}
       {loading ? <StatCardSkeleton /> : (
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
         {cards.map(c => (
           <Link key={c.label} to={c.to} className="border border-slate-300 p-4 hover:bg-slate-50 bg-white">
             <p className="text-2xl font-bold text-slate-900">{c.value}</p>
@@ -60,7 +60,7 @@ export default function Dashboard() {
       )}
 
       {/* Quick start */}
-      <div className="border border-slate-300 p-5 bg-slate-50">
+      <div className="border border-slate-300 p-3 bg-slate-50">
         <h2 className="text-sm font-bold text-slate-700 border-b border-slate-200 pb-1 mb-3">Quick Start</h2>
         <p className="text-xs text-slate-500 mb-3">Begin your workflow — create a lead, track through stages, and manage projects.</p>
         <div className="flex gap-2">
