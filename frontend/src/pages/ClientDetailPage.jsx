@@ -773,7 +773,7 @@ function ReferencesTab({ client, loadDetail, showReferenceModal, setShowReferenc
   )
 }
 
-/* ─────────── EDIT MODAL ─────────── */
+/* ─────────── EDIT MODAL (ALL FIELDS) ─────────── */
 
 function EditClientModal({ client, editForm, setEditForm, onClose, onSaved, sectors, vendorCategories, users, allClients }) {
   const { addToast } = useToast()
@@ -785,8 +785,14 @@ function EditClientModal({ client, editForm, setEditForm, onClose, onSaved, sect
   const handleSave = async () => {
     setSaving(true)
     setError('')
+    const payload = { ...editForm }
+    if (payload.parent_client_id) payload.parent_client_id = parseInt(payload.parent_client_id)
+    if (payload.referring_client_id) payload.referring_client_id = parseInt(payload.referring_client_id)
+    if (payload.account_owner_id) payload.account_owner_id = parseInt(payload.account_owner_id)
+    if (payload.credit_limit) payload.credit_limit = parseFloat(payload.credit_limit)
+    if (payload.business_value) payload.business_value = parseFloat(payload.business_value)
     try {
-      await clientApi.updateClient(client.id, editForm)
+      await clientApi.updateClient(client.id, payload)
       addToast('Client updated', 'success')
       onSaved()
     } catch (e) { setError(e.response?.data?.error || 'Failed to update') } finally { setSaving(false) }
@@ -794,17 +800,17 @@ function EditClientModal({ client, editForm, setEditForm, onClose, onSaved, sect
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(15,23,42,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={onClose}>
-      <div style={{ background: '#fff', borderRadius: 12, width: 680, maxWidth: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: C.shadowMd, fontFamily: C.font }} onClick={e => e.stopPropagation()}>
-        <div style={{ padding: '18px 24px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h2 style={{ fontSize: 17, fontWeight: 700, margin: 0 }}>Edit Client</h2>
+      <div style={{ background: '#fff', borderRadius: 12, width: 760, maxWidth: '100%', maxHeight: '95vh', display: 'flex', flexDirection: 'column', boxShadow: C.shadowMd, fontFamily: C.font }} onClick={e => e.stopPropagation()}>
+        <div style={{ padding: '16px 24px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h2 style={{ fontSize: 17, fontWeight: 700, margin: 0 }}>Edit Client — {client.client_code}</h2>
           <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.secondary }}><X className="w-4 h-4" /></button>
         </div>
         <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1 }}>
           {error && <div style={{ marginBottom: 16, padding: '10px 14px', borderRadius: 8, background: '#FEF2F2', border: '1px solid #FECACA', fontSize: 13, fontWeight: 500, color: '#B91C1C', display: 'flex', alignItems: 'center', gap: 8 }}><AlertCircle className="w-4 h-4" /> {error}</div>}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px 20px' }}>
-            <EditField label="Name" span={2}>
-              <input value={editForm.name || ''} onChange={e => set('name', e.target.value)} style={inputStyle} />
-            </EditField>
+
+          <SectionTitle>Basic</SectionTitle>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 20px', marginBottom: 20 }}>
+            <EditField label="Name" span={2}><input value={editForm.name || ''} onChange={e => set('name', e.target.value)} style={inputStyle} /></EditField>
             <EditField label="Business Type">
               <select value={editForm.business_type || ''} onChange={e => set('business_type', e.target.value)} style={inputStyle}>
                 <option value="">—</option>
@@ -826,82 +832,115 @@ function EditClientModal({ client, editForm, setEditForm, onClose, onSaved, sect
                 {sectors.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
               </select>
             </EditField>
-            {editForm.client_type === 'vendor' && (
-              <EditField label="Vendor Category">
-                <select value={editForm.vendor_category || ''} onChange={e => set('vendor_category', e.target.value)} style={inputStyle}>
-                  <option value="">—</option>
-                  {vendorCategories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+            <EditField label="Vendor Category">
+              <select value={editForm.vendor_category || ''} onChange={e => set('vendor_category', e.target.value)} style={inputStyle}>
+                <option value="">—</option>
+                {vendorCategories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+              </select>
+            </EditField>
+            {editForm.client_type === 'sub' && (
+              <EditField label="Parent Client" span={2}>
+                <select value={editForm.parent_client_id || ''} onChange={e => set('parent_client_id', e.target.value)} style={inputStyle}>
+                  <option value="">— Select Parent —</option>
+                  {allClients.filter(c => c.client_type === 'main' && c.id !== client.id).map(c => (
+                    <option key={c.id} value={c.id}>{c.name} ({c.client_code})</option>
+                  ))}
                 </select>
               </EditField>
             )}
-            <EditField label="GST Number">
-              <input value={editForm.gst_number || ''} onChange={e => set('gst_number', e.target.value)} style={inputStyle} />
-            </EditField>
+          </div>
+
+          <SectionTitle>Contact</SectionTitle>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 20px', marginBottom: 20 }}>
+            <EditField label="Contact Person"><input value={editForm.contact_name || ''} onChange={e => set('contact_name', e.target.value)} style={inputStyle} /></EditField>
+            <EditField label="Contact Email"><input type="email" value={editForm.contact_email || ''} onChange={e => set('contact_email', e.target.value)} style={inputStyle} /></EditField>
+            <EditField label="Contact Phone"><input value={editForm.contact_phone || ''} onChange={e => set('contact_phone', e.target.value)} style={inputStyle} /></EditField>
+            <EditField label="Location"><input value={editForm.location || ''} onChange={e => set('location', e.target.value)} style={inputStyle} /></EditField>
+            <EditField label="Registered Address" span={2}><textarea value={editForm.registered_address || ''} onChange={e => set('registered_address', e.target.value)} style={{ ...inputStyle, minHeight: 50, resize: 'vertical' }} /></EditField>
+            <EditField label="State"><input value={editForm.state || ''} onChange={e => set('state', e.target.value)} style={inputStyle} /></EditField>
+            <EditField label="State Code"><input value={editForm.state_code || ''} onChange={e => set('state_code', e.target.value)} style={inputStyle} /></EditField>
+            <EditField label="Website"><input value={editForm.website || ''} onChange={e => set('website', e.target.value)} style={inputStyle} /></EditField>
+            <EditField label="Industry"><input value={editForm.industry || ''} onChange={e => set('industry', e.target.value)} style={inputStyle} /></EditField>
+          </div>
+
+          <SectionTitle>Tax & Registration</SectionTitle>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 20px', marginBottom: 20 }}>
+            <EditField label="GST Number"><input value={editForm.gst_number || ''} onChange={e => set('gst_number', e.target.value)} style={inputStyle} /></EditField>
             <EditField label="GST Unregistered">
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, paddingTop: 4 }}>
                 <input type="checkbox" checked={editForm.gst_unregistered || false} onChange={e => set('gst_unregistered', e.target.checked)} style={{ accentColor: C.blue }} />
                 Not registered
               </label>
             </EditField>
-            <EditField label="PAN Number">
-              <input value={editForm.pan_no || ''} onChange={e => set('pan_no', e.target.value.toUpperCase())} style={inputStyle} />
+            <EditField label="PAN Number"><input value={editForm.pan_no || ''} onChange={e => set('pan_no', e.target.value.toUpperCase())} style={inputStyle} /></EditField>
+            <EditField label="CIN Number"><input value={editForm.cin_number || ''} onChange={e => set('cin_number', e.target.value.toUpperCase())} style={inputStyle} /></EditField>
+            <EditField label="MSME / UDYAM"><input value={editForm.msme_status || ''} onChange={e => set('msme_status', e.target.value)} style={inputStyle} /></EditField>
+            <EditField label="Default TDS Section">
+              <select value={editForm.default_tds_section || ''} onChange={e => set('default_tds_section', e.target.value)} style={inputStyle}>
+                <option value="">—</option>
+                <option value="194J">194J — Professional / Technical (10%)</option>
+                <option value="194C">194C — Contract (1% / 2%)</option>
+                <option value="194H">194H — Commission (5%)</option>
+                <option value="194I">194I — Rent (10% / 24%)</option>
+                <option value="194IA">194IA — Property (1%)</option>
+                <option value="195">195 — NRO Payment</option>
+                <option value="other">Other</option>
+              </select>
             </EditField>
-            <EditField label="Contact Person">
-              <input value={editForm.contact_name || ''} onChange={e => set('contact_name', e.target.value)} style={inputStyle} />
-            </EditField>
-            <EditField label="Contact Email">
-              <input value={editForm.contact_email || ''} onChange={e => set('contact_email', e.target.value)} style={inputStyle} />
-            </EditField>
-            <EditField label="Contact Phone">
-              <input value={editForm.contact_phone || ''} onChange={e => set('contact_phone', e.target.value)} style={inputStyle} />
-            </EditField>
-            <EditField label="Location">
-              <input value={editForm.location || ''} onChange={e => set('location', e.target.value)} style={inputStyle} />
-            </EditField>
-            <EditField label="State">
-              <input value={editForm.state || ''} onChange={e => set('state', e.target.value)} style={inputStyle} />
-            </EditField>
-            <EditField label="State Code">
-              <input value={editForm.state_code || ''} onChange={e => set('state_code', e.target.value)} style={inputStyle} />
-            </EditField>
-            <EditField label="Website">
-              <input value={editForm.website || ''} onChange={e => set('website', e.target.value)} style={inputStyle} />
-            </EditField>
-            <EditField label="Industry">
-              <input value={editForm.industry || ''} onChange={e => set('industry', e.target.value)} style={inputStyle} />
-            </EditField>
+          </div>
+
+          <SectionTitle>NDA & Financial</SectionTitle>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 20px', marginBottom: 20 }}>
+            <EditField label="NDA File Path"><input value={editForm.nda_file_path || ''} onChange={e => set('nda_file_path', e.target.value)} style={inputStyle} placeholder="File path or URL" /></EditField>
+            <EditField label="NDA Validity"><input type="date" value={editForm.nda_validity || ''} onChange={e => set('nda_validity', e.target.value)} style={inputStyle} /></EditField>
             <EditField label="Payment Terms">
               <select value={editForm.payment_terms || ''} onChange={e => set('payment_terms', e.target.value)} style={inputStyle}>
                 <option value="">—</option>
                 {PAYMENT_TERMS.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </EditField>
-            <EditField label="Credit Limit">
-              <input type="number" value={editForm.credit_limit || ''} onChange={e => set('credit_limit', e.target.value)} style={inputStyle} />
-            </EditField>
-            <EditField label="Account Owner" span={1}>
-              <select value={editForm.account_owner_id || ''} onChange={e => set('account_owner_id', e.target.value)} style={inputStyle}>
-                <option value="">—</option>
-                {users.map(u => <option key={u.id} value={u.id}>{u.full_name || u.email}</option>)}
-              </select>
-            </EditField>
-            <EditField label="Reference Source" span={1}>
+            <EditField label="Credit Limit (INR)"><input type="number" value={editForm.credit_limit || ''} onChange={e => set('credit_limit', e.target.value)} style={inputStyle} /></EditField>
+            <EditField label="Bank Account No."><input value={editForm.bank_account_no || ''} onChange={e => set('bank_account_no', e.target.value)} style={inputStyle} /></EditField>
+            <EditField label="IFSC Code"><input value={editForm.bank_ifsc || ''} onChange={e => set('bank_ifsc', e.target.value.toUpperCase())} style={inputStyle} /></EditField>
+            <EditField label="Bank Cheque Path"><input value={editForm.bank_cheque_path || ''} onChange={e => set('bank_cheque_path', e.target.value)} style={inputStyle} placeholder="File path or URL" /></EditField>
+          </div>
+
+          <SectionTitle>Business Value</SectionTitle>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 20px', marginBottom: 20 }}>
+            <EditField label="Business Value (INR)"><input type="number" value={editForm.business_value || ''} onChange={e => set('business_value', e.target.value)} style={inputStyle} /></EditField>
+            <EditField label="Last Business Date"><input type="date" value={editForm.last_business_date || ''} onChange={e => set('last_business_date', e.target.value)} style={inputStyle} /></EditField>
+          </div>
+
+          <SectionTitle>Reference & Assignment</SectionTitle>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 20px', marginBottom: 20 }}>
+            <EditField label="Reference Source">
               <select value={editForm.reference_source || ''} onChange={e => set('reference_source', e.target.value)} style={inputStyle}>
                 <option value="">—</option>
                 {REFERENCE_SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </EditField>
-            <EditField label="Onboarding Remarks" span={2}>
-              <textarea value={editForm.onboarding_remarks || ''} onChange={e => set('onboarding_remarks', e.target.value)} style={{ ...inputStyle, minHeight: 50, resize: 'vertical' }} />
+            <EditField label="Referring Client">
+              <select value={editForm.referring_client_id || ''} onChange={e => set('referring_client_id', e.target.value)} style={inputStyle}>
+                <option value="">—</option>
+                {allClients.filter(c => c.id !== client.id).map(c => (
+                  <option key={c.id} value={c.id}>{c.name} ({c.client_code})</option>
+                ))}
+              </select>
             </EditField>
+            <EditField label="Account Owner">
+              <select value={editForm.account_owner_id || ''} onChange={e => set('account_owner_id', e.target.value)} style={inputStyle}>
+                <option value="">—</option>
+                {users.map(u => <option key={u.id} value={u.id}>{u.full_name || u.email}</option>)}
+              </select>
+            </EditField>
+            <EditField label="First Follow-up Date"><input type="date" value={editForm.first_follow_up_date || ''} onChange={e => set('first_follow_up_date', e.target.value)} style={inputStyle} /></EditField>
+            <EditField label="Onboarding Remarks" span={2}><textarea value={editForm.onboarding_remarks || ''} onChange={e => set('onboarding_remarks', e.target.value)} style={{ ...inputStyle, minHeight: 60, resize: 'vertical' }} /></EditField>
             {editForm.status === 'BLACKLISTED' && (
-              <EditField label="Blacklist Reason" span={2}>
-                <textarea value={editForm.blacklist_reason || ''} onChange={e => set('blacklist_reason', e.target.value)} style={{ ...inputStyle, minHeight: 50, resize: 'vertical' }} />
-              </EditField>
+              <EditField label="Blacklist Reason" span={2}><textarea value={editForm.blacklist_reason || ''} onChange={e => set('blacklist_reason', e.target.value)} style={{ ...inputStyle, minHeight: 60, resize: 'vertical' }} /></EditField>
             )}
           </div>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, padding: '16px 24px', borderTop: `1px solid ${C.border}` }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, padding: '14px 24px', borderTop: `1px solid ${C.border}` }}>
           <button onClick={onClose} style={{ padding: '8px 18px', borderRadius: 8, border: `1px solid ${C.border}`, background: '#fff', fontSize: 13, cursor: 'pointer', fontFamily: C.font, color: C.text, fontWeight: 500 }}>Cancel</button>
           <button onClick={handleSave} disabled={saving} style={{ padding: '8px 20px', borderRadius: 8, border: 'none', background: C.blue, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: saving ? 0.6 : 1, fontFamily: C.font, display: 'flex', alignItems: 'center', gap: 6 }}>
             <Save className="w-4 h-4" /> {saving ? 'Saving...' : 'Save Changes'}
@@ -909,6 +948,12 @@ function EditClientModal({ client, editForm, setEditForm, onClose, onSaved, sect
         </div>
       </div>
     </div>
+  )
+}
+
+function SectionTitle({ children }) {
+  return (
+    <h4 style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 10px', paddingBottom: 6, borderBottom: `1px solid ${C.border}` }}>{children}</h4>
   )
 }
 

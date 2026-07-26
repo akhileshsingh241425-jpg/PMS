@@ -199,7 +199,8 @@ def update_client(current_user, cid):
         'contact_name', 'contact_email', 'contact_phone', 'industry', 'status', 'client_type',
         'parent_client_id', 'pan_no', 'cin_number', 'msme_status', 'payment_terms', 'credit_limit',
         'bank_account_no', 'bank_ifsc', 'default_tds_section', 'reference_source',
-        'account_owner_id', 'onboarding_remarks']
+        'account_owner_id', 'onboarding_remarks', 'nda_file_path', 'bank_cheque_path',
+        'referring_client_id', 'blacklist_reason', 'business_value', 'last_business_date']
     for f in allowed:
         if f in data:
             old_val = getattr(client, f)
