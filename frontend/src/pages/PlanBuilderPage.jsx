@@ -1,10 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import axios from 'axios'
+import api from '../services/api'
 import toast from 'react-hot-toast'
-
-
-const API = 'http://93.127.194.235:5010/api'
 
 export default function PlanBuilderPage() {
   const { id: pid } = useParams()
@@ -30,9 +27,9 @@ export default function PlanBuilderPage() {
 
   useEffect(() => {
     Promise.all([
-      axios.get(`${API}/projects/${pid}`, { withCredentials: true }),
-      axios.get(`${API}/plan-builder/projects/${pid}/plan`, { withCredentials: true }),
-      axios.get(`${API}/admin/users`, { withCredentials: true }),
+      api.get(`/projects/${pid}`, { withCredentials: true }),
+      api.get(`/plan-builder/projects/${pid}/plan`, { withCredentials: true }),
+      api.get(`/admin/users`, { withCredentials: true }),
     ]).then(([projRes, planRes, usersRes]) => {
       const proj = projRes.data.project || projRes.data
       setProject(proj)
@@ -157,7 +154,7 @@ export default function PlanBuilderPage() {
   async function handleSave() {
     setSaving(true)
     try {
-      await axios.post(`${API}/plan-builder/projects/${pid}/plan/save`, { phases: getPhasePayload() }, { withCredentials: true })
+      await api.post(`/plan-builder/projects/${pid}/plan/save`, { phases: getPhasePayload() })
       toast.success('Plan saved as draft')
     } catch (e) {
       toast.error(e.response?.data?.error || 'Save failed')
@@ -169,7 +166,7 @@ export default function PlanBuilderPage() {
   async function handleValidate() {
     try {
       setShowValidation(true)
-      const res = await axios.post(`${API}/plan-builder/projects/${pid}/plan/validate`, { phases: getPhasePayload() }, { withCredentials: true })
+      const res = await api.post(`/plan-builder/projects/${pid}/plan/validate`, { phases: getPhasePayload() })
       setValidationResult(res.data)
     } catch (e) {
       toast.error('Validation failed')
@@ -179,10 +176,10 @@ export default function PlanBuilderPage() {
   async function handlePublish() {
     setSaving(true)
     try {
-      const res = await axios.post(`${API}/plan-builder/projects/${pid}/plan/publish`, {
+      const res = await api.post(`/plan-builder/projects/${pid}/plan/publish`, {
         phases: getPhasePayload(),
         change_summary: changeLog || `Plan v${planVersion + 1} published`,
-      }, { withCredentials: true })
+      })
       toast.success(res.data.message)
       setPlanVersion(res.data.version)
       setPlanGenerated(true)
@@ -198,7 +195,7 @@ export default function PlanBuilderPage() {
 
   async function loadBaseline() {
     try {
-      const res = await axios.get(`${API}/plan-builder/projects/${pid}/plan/baseline`, { withCredentials: true })
+      const res = await api.get(`/plan-builder/projects/${pid}/plan/baseline`)
       setBaselineView(res.data)
     } catch (e) {
       toast.error('Failed to load baseline')
