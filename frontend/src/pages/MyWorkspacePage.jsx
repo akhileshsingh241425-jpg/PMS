@@ -35,12 +35,12 @@ export default function MyWorkspacePage() {
 
   return (
     <div>
-      <h1 style={{ fontSize: 20, fontWeight: 700, color: '#1A1A2E', marginBottom: 24 }}>My Workspace</h1>
+      <h1 style={{ fontSize: 20, fontWeight: 700, color: '#1A1A2E', marginBottom: 10 }}>My Workspace</h1>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
         {/* My Projects */}
-        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
             <Briefcase className="w-4 h-4" style={{ color: '#5B21B6' }} />
             <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1A1A2E' }}>My Projects</h2>
             <span style={{ marginLeft: 'auto', fontSize: 12, color: '#9CA3AF' }}>{projects.length}</span>
@@ -72,8 +72,8 @@ export default function MyWorkspacePage() {
         </div>
 
         {/* My Tasks */}
-        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
             <CheckSquare className="w-4 h-4" style={{ color: '#059669' }} />
             <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1A1A2E' }}>My Tasks</h2>
             <span style={{ marginLeft: 'auto', fontSize: 12, color: '#9CA3AF' }}>{tasks.length}</span>
@@ -103,8 +103,8 @@ export default function MyWorkspacePage() {
         </div>
 
         {/* My Meetings */}
-        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: 16, gridColumn: '1 / -1' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: 12, gridColumn: '1 / -1' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
             <Calendar className="w-4 h-4" style={{ color: '#DB2777' }} />
             <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1A1A2E' }}>Upcoming Meetings</h2>
             <span style={{ marginLeft: 'auto', fontSize: 12, color: '#9CA3AF' }}>{allMeetings.length}</span>
