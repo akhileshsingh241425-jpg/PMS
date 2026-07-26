@@ -193,7 +193,7 @@ export default function AttendancePage() {
   return (
     <><style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
           <h1 style={{ fontSize: 20, fontWeight: 700, color: '#1A1A2E' }}>Attendance</h1>
           <a href="/attendance/face-register" style={{ fontSize: 12, color: '#5B21B6', fontWeight: 600, textDecoration: 'none' }}>
             {faceRequired ? '✅ Face On' : '📸 Register Face'}
@@ -201,7 +201,7 @@ export default function AttendancePage() {
         </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: `1px solid ${C.border}`, paddingBottom: 8 }}>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 10, borderBottom: `1px solid ${C.border}`, paddingBottom: 8 }}>
         {[
           { key: 'today', label: 'Today', icon: Clock },
           { key: 'active', label: 'Active Now', icon: Users },
