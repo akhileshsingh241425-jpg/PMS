@@ -351,6 +351,28 @@ class ProjectReport(db.Model):
         }
 
 
+class ProjectAsset(db.Model):
+    __tablename__ = 'project_assets'
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete='CASCADE'), nullable=False, index=True)
+    name = db.Column(db.String(255), nullable=False)
+    asset_type = db.Column(db.String(50))
+    description = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    project = db.relationship('Project', backref=db.backref('assets', lazy='dynamic', cascade='all, delete-orphan'))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'project_id': self.project_id,
+            'name': self.name,
+            'asset_type': self.asset_type,
+            'description': self.description,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+
 class ProjectPhase(db.Model):
     __tablename__ = 'project_phases'
     id = db.Column(db.Integer, primary_key=True)

@@ -218,16 +218,21 @@ function RequestItem({ icon, title, subtitle, status, date, onClick }) {
 // ─── FINDING FORM MODAL ────────────────────────────────────
 
 function AddFindingModal({ task, phases, onClose, onSaved }) {
-  const [form, setForm] = useState({ phase_id: '', title: '', severity: 'MEDIUM', cvss_score: '', affected_asset: '', description: '', impact: '', recommendation: '', cwe_ref: '' })
+  const [form, setForm] = useState({ phase_id: '', title: '', severity: 'MEDIUM', cvss_score: '', affected_asset: '', finding_type: '', clause_ref: '', asset_id: '', description: '', impact: '', recommendation: '', cwe_ref: '' })
+  const [assets, setAssets] = useState([])
   const [pocFiles, setPocFiles] = useState([])
   const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    api.get(`/api/my-day/tasks/${task.id}/assets`).then(r => setAssets(r.data.assets || [])).catch(() => {})
+  }, [task.id])
 
   const handleSubmit = async () => {
     if (!form.title) return
     setSaving(true)
     try {
       const fd = new FormData()
-      Object.entries(form).forEach(([k, v]) => { if (v) fd.append(k, v) })
+      Object.entries(form).forEach(([k, v]) => { if (v !== '' && v !== null) fd.append(k, v) })
       pocFiles.forEach(f => fd.append('poc_files', f))
       await api.post(`/api/my-day/tasks/${task.id}/findings`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
       onSaved()
@@ -280,9 +285,32 @@ function AddFindingModal({ task, phases, onClose, onSaved }) {
           </div>
 
           <div>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Finding Type</label>
+            <select value={form.finding_type} onChange={e => setForm({ ...form, finding_type: e.target.value })}
+              style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #E5E7EB', fontSize: 13 }}>
+              <option value="">Standard (VAPT)</option>
+              <option value="NC Major">NC Major</option>
+              <option value="NC Minor">NC Minor</option>
+              <option value="Observation">Observation</option>
+              <option value="OFI">OFI</option>
+            </select>
+          </div>
+
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Clause Reference</label>
+            <input value={form.clause_ref} onChange={e => setForm({ ...form, clause_ref: e.target.value })}
+              style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #E5E7EB', fontSize: 13 }} placeholder="e.g. ISO 27001:2022 A.8.2" />
+          </div>
+
+          <div>
             <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Affected Asset</label>
-            <input value={form.affected_asset} onChange={e => setForm({ ...form, affected_asset: e.target.value })}
-              style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #E5E7EB', fontSize: 13 }} placeholder="URL / IP / endpoint" />
+            <select value={form.asset_id} onChange={e => setForm({ ...form, asset_id: e.target.value, affected_asset: e.target.options[e.target.selectedIndex]?.dataset?.name || '' })}
+              style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #E5E7EB', fontSize: 13 }}>
+              <option value="">Select asset (or type manually below)</option>
+              {assets.map(a => <option key={a.id} value={a.id} data-name={a.name}>{a.name}{a.asset_type ? ` (${a.asset_type})` : ''}</option>)}
+            </select>
+            <input value={form.affected_asset} onChange={e => setForm({ ...form, affected_asset: e.target.value, asset_id: '' })}
+              style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #E5E7EB', fontSize: 13, marginTop: 6 }} placeholder="Or type manually: URL / IP / endpoint" />
           </div>
 
           <div>
@@ -785,6 +813,11 @@ function TaskDetailPanel({ task, onBack, onFindingAdded, onStatusChange }) {
                         <p style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>{f.title}</p>
                         <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: (SEVERITY_STYLES[f.severity] || SEVERITY_STYLES.MEDIUM).bg, color: (SEVERITY_STYLES[f.severity] || SEVERITY_STYLES.MEDIUM).text }}>{f.severity}</span>
                       </div>
+                      {(f.finding_type || f.clause_ref) && (
+                        <p style={{ margin: '0 0 4px', fontSize: 11, color: '#6B7280' }}>
+                          {[f.finding_type, f.clause_ref].filter(Boolean).join(' · ')}
+                        </p>
+                      )}
                       {f.affected_asset && <p style={{ margin: '0 0 4px', fontSize: 11, color: '#6B7280' }}>Asset: {f.affected_asset}</p>}
                       {f.description && <p style={{ margin: 0, fontSize: 12, color: '#475569', lineHeight: 1.4 }}>{f.description}</p>}
                       {f.status && <span style={{ fontSize: 10, color: '#94A3B8', marginTop: 4, display: 'inline-block' }}>Status: {f.status}</span>}

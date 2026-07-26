@@ -3,6 +3,7 @@ from datetime import datetime
 
 FINDING_SEVERITIES = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFO']
 FINDING_STATUSES = ['Open', 'Submitted', 'Fix Pending', 'Retested-Closed', 'Retested-Open']
+FINDING_TYPES = ['NC Major', 'NC Minor', 'Observation', 'OFI']
 
 
 class Finding(db.Model):
@@ -15,6 +16,9 @@ class Finding(db.Model):
     severity = db.Column(db.String(20), default='MEDIUM')
     cvss_score = db.Column(db.Float)
     affected_asset = db.Column(db.String(500))
+    finding_type = db.Column(db.String(20))
+    clause_ref = db.Column(db.String(100))
+    asset_id = db.Column(db.Integer, db.ForeignKey('project_assets.id', ondelete='SET NULL'), index=True)
     description = db.Column(db.Text)
     impact = db.Column(db.Text)
     poc_data = db.Column(db.JSON)
@@ -29,6 +33,7 @@ class Finding(db.Model):
     project = db.relationship('Project', foreign_keys=[project_id])
     phase = db.relationship('ProjectPhase', foreign_keys=[phase_id])
     creator = db.relationship('User', foreign_keys=[created_by])
+    asset = db.relationship('ProjectAsset', foreign_keys=[asset_id])
 
     def to_dict(self):
         return {
@@ -42,6 +47,10 @@ class Finding(db.Model):
             'severity': self.severity,
             'cvss_score': self.cvss_score,
             'affected_asset': self.affected_asset,
+            'finding_type': self.finding_type,
+            'clause_ref': self.clause_ref,
+            'asset_id': self.asset_id,
+            'asset_name': self.asset.name if self.asset else None,
             'description': self.description,
             'impact': self.impact,
             'poc_data': self.poc_data,

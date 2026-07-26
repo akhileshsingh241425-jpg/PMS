@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, date
 from flask import Blueprint, request, jsonify, current_app
-from models import db, User, Project, ProjectPhase, Task, TaskActivity, Finding, LeaveRequest, ExpenseEntry, DayEndLog, Attendance, ProjectReport, Notification
+from models import db, User, Project, ProjectPhase, ProjectAsset, Task, TaskActivity, Finding, LeaveRequest, ExpenseEntry, DayEndLog, Attendance, ProjectReport, Notification
 from middleware.auth import login_required
 from werkzeug.utils import secure_filename
 
@@ -43,11 +43,18 @@ def status(current_user):
     day_end_log = DayEndLog.query.filter_by(user_id=current_user.id, date=today).first() if att else None
 
     # Check if yesterday's check-out was missed
-    yesterday = date(2026, 7, 25)  # FIXME: use real yesterday
     from datetime import timedelta
     yesterday = today - timedelta(days=1)
     prev_att = Attendance.query.filter_by(user_id=current_user.id, date=yesterday).order_by(Attendance.clock_in.desc()).first()
     missed_checkout = prev_att is not None and prev_att.clock_out is None
+
+    # Zero-progress check: no task activity in 3+ days
+    three_days_ago = today - timedelta(days=3)
+    recent_activity = TaskActivity.query.filter(
+        TaskActivity.user_id == current_user.id,
+        db.func.date(TaskActivity.created_at) >= three_days_ago
+    ).first()
+    zero_progress_warning = recent_activity is None
 
     return jsonify({
         'checked_in': checked_in,
@@ -57,6 +64,7 @@ def status(current_user):
         'day_end_log_submitted': day_end_log is not None,
         'day_end_log_id': day_end_log.id if day_end_log else None,
         'missed_yesterday_checkout': missed_checkout,
+        'zero_progress_warning': zero_progress_warning,
     })
 
 
@@ -181,6 +189,18 @@ def update_task_status(current_user, tid):
     return jsonify({'task': task.to_dict()})
 
 
+# ─── PROJECT ASSETS ───────────────────────────────────────────────
+
+@myday_bp.route('/tasks/<int:tid>/assets', methods=['GET'])
+@login_required
+def list_task_assets(current_user, tid):
+    task = Task.query.get_or_404(tid)
+    if task.assigned_to != current_user.id:
+        return jsonify({'error': 'Access denied'}), 403
+    assets = ProjectAsset.query.filter_by(project_id=task.project_id).order_by(ProjectAsset.name).all()
+    return jsonify({'assets': [a.to_dict() for a in assets]})
+
+
 # ─── FINDINGS ─────────────────────────────────────────────────────
 
 @myday_bp.route('/tasks/<int:tid>/findings', methods=['GET'])
@@ -207,6 +227,12 @@ def create_finding(current_user, tid):
         path = _save_file('poc', f)
         poc_data.append({'file_name': f.filename, 'path': path, 'evidence_id': f'EV{len(poc_data) + 1}'})
 
+    asset_id = data.get('asset_id', type=int)
+    affected_asset = data.get('affected_asset')
+    if asset_id and not affected_asset:
+        asset = ProjectAsset.query.get(asset_id)
+        affected_asset = asset.name if asset else affected_asset
+
     finding = Finding(
         task_id=tid,
         project_id=task.project_id,
@@ -214,7 +240,10 @@ def create_finding(current_user, tid):
         title=data['title'],
         severity=data.get('severity', 'MEDIUM'),
         cvss_score=float(data['cvss_score']) if data.get('cvss_score') else None,
-        affected_asset=data.get('affected_asset'),
+        affected_asset=affected_asset,
+        finding_type=data.get('finding_type'),
+        clause_ref=data.get('clause_ref'),
+        asset_id=asset_id,
         description=data.get('description'),
         impact=data.get('impact'),
         poc_data=poc_data or None,
@@ -235,7 +264,7 @@ def update_finding(current_user, fid):
     if task and task.assigned_to != current_user.id:
         return jsonify({'error': 'Access denied'}), 403
     data = request.get_json() or {}
-    for f in ('title', 'severity', 'cvss_score', 'affected_asset', 'description', 'impact', 'recommendation', 'cwe_ref', 'status'):
+    for f in ('title', 'severity', 'cvss_score', 'affected_asset', 'finding_type', 'clause_ref', 'asset_id', 'description', 'impact', 'recommendation', 'cwe_ref', 'status'):
         if f in data:
             setattr(finding, f, data[f])
     db.session.commit()
@@ -477,6 +506,34 @@ def submit_day_end_log(current_user):
 
     data = request.get_json() or {}
     entries = data.get('entries', [])
+
+    # Auto-insert short-leave entry if approved Short Leave exists today
+    short_leave = LeaveRequest.query.filter(
+        LeaveRequest.user_id == current_user.id,
+        LeaveRequest.leave_type == 'Short Leave',
+        LeaveRequest.status == 'Approved',
+        LeaveRequest.from_date <= today,
+        LeaveRequest.to_date >= today,
+    ).first()
+    if short_leave:
+        sl_hours = 0
+        if short_leave.from_time and short_leave.to_time:
+            try:
+                fh, fm = map(int, short_leave.from_time.split(':'))
+                th, tm = map(int, short_leave.to_time.split(':'))
+                sl_hours = (th * 60 + tm - fh * 60 - fm) / 60
+            except (ValueError, TypeError):
+                sl_hours = 0
+        if sl_hours > 0:
+            has_sl_entry = any(e.get('type') == 'short_leave' for e in entries)
+            if not has_sl_entry:
+                entries.append({
+                    'type': 'short_leave',
+                    'task_id': None,
+                    'description': f'Short Leave ({short_leave.from_time}-{short_leave.to_time})',
+                    'hours': sl_hours,
+                })
+
     if not entries:
         return jsonify({'error': 'At least one entry required'}), 400
 
