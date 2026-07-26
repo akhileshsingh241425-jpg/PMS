@@ -245,14 +245,14 @@ function ProjectForm({ accounts, users, vendors, onClose, onSaved, initialAccoun
           {error && <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 text-sm text-red-700">{error}</div>}
 
           {/* PO Section */}
-          <div className="mb-8">
+          <div className="mb-3">
             <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
               {direction === 'IN' ? <><Briefcase className="w-4 h-4 text-indigo-500" /> Purchase Order (PO In)</> : <><FileText className="w-4 h-4 text-emerald-500" /> Purchase Order (PO Out)</>}
             </h3>
 
             {direction === 'IN' ? (
               /* ---- PO IN Fields ---- */
-              <div className="grid grid-cols-3 gap-5">
+              <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-3"><label className="block text-sm font-medium text-slate-700 mb-1.5">Project Title <span className="text-red-500">*</span></label><input value={form.title} onChange={e => f('title', e.target.value)} required className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" placeholder="e.g., IFCI Cloud Security Audit 2026" /></div>
                 <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Client Account <span className="text-red-500">*</span></label><select value={form.account_id} onChange={e => f('account_id', e.target.value)} required className="w-full px-4 py-3 border border-slate-300 text-sm outline-none"><option value="">-- Select Client --</option>{accounts.map(a => <option key={a.id} value={a.id}>{a.company_name} ({a.acc_id})</option>)}</select></div>
                 <div><label className="block text-sm font-medium text-slate-700 mb-1.5">PO Number</label><input value={form.po_number} onChange={e => f('po_number', e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" placeholder="Client PO #" /></div>
@@ -265,7 +265,7 @@ function ProjectForm({ accounts, users, vendors, onClose, onSaved, initialAccoun
               </div>
             ) : (
               /* ---- PO OUT Fields ---- */
-              <div className="grid grid-cols-3 gap-5">
+              <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-3"><label className="block text-sm font-medium text-slate-700 mb-1.5">Project Title <span className="text-red-500">*</span></label><input value={form.title} onChange={e => f('title', e.target.value)} required className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" placeholder="e.g., Network Equipment Supply for Client XYZ" /></div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">Vendor / Supplier <span className="text-red-500">*</span></label>
@@ -293,9 +293,9 @@ function ProjectForm({ accounts, users, vendors, onClose, onSaved, initialAccoun
           </div>
 
           {/* Project Details Section */}
-          <div className="mb-8">
+          <div className="mb-3">
             <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2"><Briefcase className="w-4 h-4 text-indigo-500" /> Project Details</h3>
-            <div className="grid grid-cols-2 gap-5">
+            <div className="grid grid-cols-2 gap-3">
               <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Project Type <span className="text-red-500">*</span></label><select value={form.project_type} onChange={e => f('project_type', e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none"><option value="">-- Select Plan Template --</option><option value="VAPT">VAPT</option><option value="IS Audit">IS Audit</option><option value="ISMS Implementation">ISMS Implementation</option></select></div>
               <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Service Type</label><select value={form.service_type} onChange={e => f('service_type', e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none"><option value="">-- Select --</option>{SERVICES.map(s => <option key={s}>{s}</option>)}</select>{form.service_type === 'Other' && <input type="text" value={form.service_type_other || ''} onChange={e => f('service_type_other', e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none mt-2" placeholder="Enter service type..." />}</div>
               <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Project Manager <span className="text-red-500">*</span></label><select value={form.pm_id} onChange={e => f('pm_id', e.target.value)} required className="w-full px-4 py-3 border border-slate-300 text-sm outline-none"><option value="">-- Select PM --</option>{users.filter(u => u.is_active).map(u => <option key={u.id} value={u.id}>{u.full_name} ({u.designation || ''})</option>)}</select></div>
@@ -313,10 +313,10 @@ function ProjectForm({ accounts, users, vendors, onClose, onSaved, initialAccoun
           </div>
 
           <div className="flex justify-between pt-5 border-t border-slate-200">
-            <button type="button" onClick={onClose} className="px-5 py-2.5 text-sm bg-slate-100 font-medium">Cancel</button>
+            <button type="button" onClick={onClose} className="px-4 py-1.5 text-sm bg-slate-100 font-medium">Cancel</button>
             <div className="flex items-center gap-3">
               {direction === 'OUT' && <span className="text-xs text-slate-400"><CheckCircle className="w-3.5 h-3.5 inline mr-1 -mt-0.5" /> PO Out workflow steps after creation</span>}
-              <button type="submit" disabled={saving} className="px-8 py-2.5 text-sm text-white bg-blue-600 font-medium disabled:opacity-50">{saving ? 'Creating...' : `Create ${direction === 'IN' ? 'Project' : 'PO Out'}`}</button>
+              <button type="submit" disabled={saving} className="px-6 py-1.5 text-sm text-white bg-blue-600 font-medium disabled:opacity-50">{saving ? 'Creating...' : `Create ${direction === 'IN' ? 'Project' : 'PO Out'}`}</button>
             </div>
           </div>
         </form>
