@@ -88,7 +88,7 @@ function CheckInGate({ onCheckIn }) {
         <p style={{ fontSize: 14, color: '#64748B', margin: '0 0 24px' }}>Tap check-in to start your day</p>
 
         {missed && (
-          <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 8, padding: '12px 16px', marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 10, textAlign: 'left' }}>
+          <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 8, padding: '12px 16px', marginBottom: 10, display: 'flex', alignItems: 'flex-start', gap: 10, textAlign: 'left' }}>
             <AlertTriangle className="w-5 h-5" style={{ color: '#D97706', flexShrink: 0, marginTop: 1 }} />
             <div>
               <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#92400E' }}>Missed check-out yesterday</p>
@@ -97,7 +97,7 @@ function CheckInGate({ onCheckIn }) {
           </div>
         )}
 
-        <div style={{ marginBottom: 20, textAlign: 'left' }}>
+        <div style={{ marginBottom: 10, textAlign: 'left' }}>
           <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Work Mode</label>
           <div style={{ display: 'flex', gap: 8 }}>
             {['Office', 'Remote', 'Client Site'].map(m => (
@@ -239,7 +239,7 @@ function AddFindingModal({ task, phases, onClose, onSaved }) {
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <div style={{ background: '#fff', borderRadius: 16, padding: 24, maxWidth: 640, width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
           <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Add Finding</h2>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}><X className="w-5 h-5" /></button>
         </div>
@@ -362,7 +362,7 @@ function DayEndLogPanel({ touchedTasks, existingLog, onSave, onBack }) {
 
   return (
     <div style={{ background: '#fff', borderRadius: 16, padding: 24, boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <div>
           <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Day-End Log</h2>
           <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748B' }}>Log activity for each task you worked on today</p>
@@ -473,7 +473,7 @@ function LeaveFormModal({ onClose, onSaved }) {
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <div style={{ background: '#fff', borderRadius: 16, padding: 24, maxWidth: 480, width: '100%' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
           <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Leave Request</h2>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X className="w-5 h-5" /></button>
         </div>
@@ -566,7 +566,7 @@ function ExpenseFormModal({ onClose, onSaved }) {
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <div style={{ background: '#fff', borderRadius: 16, padding: 24, maxWidth: 480, width: '100%' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
           <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Expense Entry</h2>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X className="w-5 h-5" /></button>
         </div>
@@ -960,7 +960,7 @@ export default function MyDayPage() {
         {showExpenseForm && <ExpenseFormModal onClose={() => setShowExpenseForm(false)} onSaved={handleExpenseSaved} />}
 
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
           <div>
             <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>My Day</h1>
             <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748B' }}>
@@ -987,14 +987,14 @@ export default function MyDayPage() {
         </div>
 
         {/* Stats */}
-        <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 12, marginBottom: 10, flexWrap: 'wrap' }}>
           <StatCard icon={<ListChecks className="w-5 h-5" style={{ color: '#3B82F6' }} />} label="Pending Tasks" value={stats.pending_tasks} color="#3B82F6" />
           <StatCard icon={<Send className="w-5 h-5" style={{ color: '#8B5CF6' }} />} label="Sent for Approval" value={stats.sent_for_approval} color="#8B5CF6" />
           <StatCard icon={<AlertCircle className="w-5 h-5" style={{ color: '#EF4444' }} />} label="Overdue" value={stats.overdue_tasks} color="#EF4444" />
           <StatCard icon={<Ban className="w-5 h-5" style={{ color: '#F97316' }} />} label="Blocked" value={stats.blocked_tasks} color="#F97316" />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 12 }}>
           {/* Left: Tasks */}
           <div>
             {/* Task tabs */}
