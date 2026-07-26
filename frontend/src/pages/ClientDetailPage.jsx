@@ -5,7 +5,7 @@ import {
   UserPlus, MessageSquare, Calendar, History, Link2, ChevronRight,
   Plus, Pencil, Trash2, CheckCircle, X, Save, AlertCircle, Pin,
   PinOff, Loader2, Clock, Ban, UserCheck, Users, ChevronDown,
-  MoreVertical, Play, Pause, Archive, AlertTriangle
+  MoreVertical, Play, Pause, Archive, AlertTriangle, Download
 } from 'lucide-react'
 import { C } from '../components/styleConstants'
 import * as clientApi from '../api/clientsApi'
@@ -57,6 +57,7 @@ export default function ClientDetailPage() {
   const [sectors, setSectors] = useState([])
   const [vendorCategories, setVendorCategories] = useState([])
   const [showActions, setShowActions] = useState(false)
+  const [exporting, setExporting] = useState(false)
   const actionsRef = useRef(null)
 
   const loadDetail = useCallback(async () => {
@@ -98,8 +99,21 @@ export default function ClientDetailPage() {
       await clientApi.updateClient(client.id, { status })
       addToast(`Status changed to ${status}`, 'success')
       loadDetail()
-    } catch (e) { addToast('Failed to update status', 'error') }
+    } catch (e) { addToast(e?.response?.data?.error || e?.message || 'Failed to update status', 'error') }
     setShowActions(false)
+  }
+
+  const handleExport = async () => {
+    setExporting(true)
+    try {
+      const blob = await clientApi.exportClient(client.id)
+      const url = window.URL.createObjectURL(new Blob([blob]))
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${client.client_code}-${client.name}.csv`.replace(/\s+/g, '_')
+      a.click()
+      window.URL.revokeObjectURL(url)
+    } catch (e) { addToast('Failed to export', 'error') } finally { setExporting(false) }
   }
 
   const deleteClient = async () => {
@@ -108,7 +122,7 @@ export default function ClientDetailPage() {
       await clientApi.deleteClient(client.id)
       addToast('Client deleted', 'success')
       navigate('/clients', { replace: true })
-    } catch (e) { addToast(e.response?.data?.error || 'Failed to delete', 'error') }
+    } catch (e) { addToast(e?.response?.data?.error || e?.message || 'Failed to delete', 'error') }
     setShowActions(false)
   }
 
@@ -127,10 +141,10 @@ export default function ClientDetailPage() {
   const sc = STATUS_COLORS[client.status] || { bg: '#F1F5F9', text: '#475569' }
 
   return (
-    <div style={{ minHeight: '100vh', fontFamily: C.font, color: C.text, WebkitFontSmoothing: 'antialiased', background: C.bg, padding: '24px 32px 60px' }}>
+    <div style={{ minHeight: '100vh', fontFamily: C.font, color: C.text, WebkitFontSmoothing: 'antialiased', background: C.bg, padding: '14px 20px 24px' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         {/* Compact Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
             <button onClick={() => navigate('/clients')} style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${C.border}`, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.text, flexShrink: 0 }}>
               <ArrowLeft className="w-4 h-4" />
@@ -148,6 +162,9 @@ export default function ClientDetailPage() {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 6, flexShrink: 0, position: 'relative' }} ref={actionsRef}>
+            <button onClick={handleExport} disabled={exporting} style={{ padding: '6px 12px', borderRadius: 6, border: `1px solid ${C.border}`, background: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: C.font, display: 'flex', alignItems: 'center', gap: 4, color: C.text, opacity: exporting ? 0.6 : 1 }}>
+              <Download className="w-3 h-3" /> {exporting ? 'Exporting...' : 'Export'}
+            </button>
             <button onClick={() => { setEditForm(client); setShowEditModal(true) }} style={{ padding: '6px 12px', borderRadius: 6, border: `1px solid ${C.border}`, background: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: C.font, display: 'flex', alignItems: 'center', gap: 4, color: C.text }}>
               <Pencil className="w-3 h-3" /> Edit
             </button>
@@ -175,13 +192,12 @@ export default function ClientDetailPage() {
         </div>
 
         {/* Compact KPI row */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
           <CompactKpi label="Projects" value={client.project_count || 0} color={C.blue} />
           <CompactKpi label="Contacts" value={client.contacts?.length || 0} color="#7C3AED" />
           <CompactKpi label="Remarks" value={client.remark_count || 0} color="#D97706" />
           <CompactKpi label="Follow-ups" value={client.follow_up_count || 0} color="#16A34A" />
           <CompactKpi label="Changes" value={client.change_logs?.length || 0} color="#DC2626" />
-          <CompactKpi label="Projects" value={client.project_count || 0} color={C.blue} />
         </div>
 
         {/* Tab Bar */}
@@ -205,7 +221,7 @@ export default function ClientDetailPage() {
         </div>
 
         {/* Tab Content */}
-        <div style={{ marginTop: 20 }}>
+        <div style={{ marginTop: 12 }}>
           {activeTab === 'overview' && <OverviewTab client={client} />}
           {activeTab === 'contacts' && (
             <ContactsTab
@@ -283,16 +299,16 @@ export default function ClientDetailPage() {
 function OverviewTab({ client }) {
   const label = { fontSize: 9, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: 1 }
   const val = { fontSize: 12, fontWeight: 500, color: C.text }
-  const sec = { padding: '8px 0', borderBottom: `1px solid ${C.border}` }
-  const g = { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 1fr', gap: '4px 12px' }
-  const g4 = { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '4px 12px' }
-  const g2 = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px' }
+  const sec = { padding: '6px 0', borderBottom: `1px solid ${C.border}` }
+  const g = { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 1fr', gap: '3px 12px' }
+  const g4 = { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '3px 12px' }
+  const g2 = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px 12px' }
 
   return (
     <div style={{ background: C.card, borderRadius: 10, border: `1px solid ${C.border}`, boxShadow: C.shadow, overflow: 'hidden', fontSize: 12 }}>
       {/* Row 1: Company */}
       <div style={sec}>
-        <div style={{ padding: '0 14px', marginBottom: 6 }}>
+        <div style={{ padding: '0 14px', marginBottom: 4 }}>
           <span style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.3px' }}>Company</span>
         </div>
         <div style={{ padding: '0 14px', ...g }}>
@@ -307,7 +323,7 @@ function OverviewTab({ client }) {
 
       {/* Row 2: Contact */}
       <div style={sec}>
-        <div style={{ padding: '0 14px', marginBottom: 6 }}>
+        <div style={{ padding: '0 14px', marginBottom: 4 }}>
           <span style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.3px' }}>Contact</span>
         </div>
         <div style={{ padding: '0 14px', ...g }}>
@@ -326,7 +342,7 @@ function OverviewTab({ client }) {
 
       {/* Row 3: Tax */}
       <div style={sec}>
-        <div style={{ padding: '0 14px', marginBottom: 6 }}>
+        <div style={{ padding: '0 14px', marginBottom: 4 }}>
           <span style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.3px' }}>Tax &amp; Registration</span>
         </div>
         <div style={{ padding: '0 14px', ...g }}>
@@ -340,7 +356,7 @@ function OverviewTab({ client }) {
 
       {/* Row 4: Financial */}
       <div style={sec}>
-        <div style={{ padding: '0 14px', marginBottom: 6 }}>
+        <div style={{ padding: '0 14px', marginBottom: 4 }}>
           <span style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.3px' }}>NDA &amp; Financial</span>
         </div>
         <div style={{ padding: '0 14px', ...g }}>
@@ -355,7 +371,7 @@ function OverviewTab({ client }) {
 
       {/* Row 5: Reference */}
       <div style={sec}>
-        <div style={{ padding: '0 14px', marginBottom: 6 }}>
+        <div style={{ padding: '0 14px', marginBottom: 4 }}>
           <span style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.3px' }}>Reference &amp; Business</span>
         </div>
         <div style={{ padding: '0 14px', ...g }}>

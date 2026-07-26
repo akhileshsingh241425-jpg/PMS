@@ -189,6 +189,78 @@ def get_client(current_user, cid):
     return jsonify({'client': data})
 
 
+@client_bp.route('/<int:cid>/export', methods=['GET'])
+@login_required
+def export_client(current_user, cid):
+    import csv, io
+    client = Client.query.get_or_404(cid)
+    output = io.StringIO()
+    w = csv.writer(output)
+
+    w.writerow(['Field', 'Value'])
+    for field, value in [
+        ('Client Code', client.client_code),
+        ('Name', client.name),
+        ('Type', 'Vendor' if client.client_type == 'vendor' else (client.business_type or '')),
+        ('Category', client.client_category or ''),
+        ('Vendor Category', client.vendor_category or ''),
+        ('Industry', client.industry or ''),
+        ('Status', client.status),
+        ('Contact Person', client.contact_name or ''),
+        ('Contact Email', client.contact_email or ''),
+        ('Contact Phone', client.contact_phone or ''),
+        ('Location', client.location or ''),
+        ('State', client.state or ''),
+        ('State Code', client.state_code or ''),
+        ('Registered Address', client.registered_address or ''),
+        ('Website', client.website or ''),
+        ('GST Number', client.gst_number or ('Unregistered' if client.gst_unregistered else '')),
+        ('PAN', client.pan_no or ''),
+        ('CIN', client.cin_number or ''),
+        ('MSME Status', client.msme_status or ''),
+        ('Default TDS Section', client.default_tds_section or ''),
+        ('NDA Valid Till', client.nda_validity.isoformat() if client.nda_validity else ''),
+        ('Payment Terms', client.payment_terms or ''),
+        ('Credit Limit', client.credit_limit or ''),
+        ('Bank Account No', client.bank_account_no or ''),
+        ('Bank IFSC', client.bank_ifsc or ''),
+        ('Reference Source', client.reference_source or ''),
+        ('Referring Client', client.referring_client.name if client.referring_client else ''),
+        ('Account Owner', client.account_owner.full_name if client.account_owner else ''),
+        ('First Follow-up Date', client.first_follow_up_date.isoformat() if client.first_follow_up_date else ''),
+        ('Business Value', client.business_value or 0),
+        ('Last Business Date', client.last_business_date.isoformat() if client.last_business_date else ''),
+    ]:
+        w.writerow([field, value])
+
+    contacts = client.contacts.order_by(ClientContact.is_primary.desc()).all()
+    if contacts:
+        w.writerow([])
+        w.writerow(['Contacts'])
+        w.writerow(['Name', 'Designation', 'Email', 'Phone', 'Role', 'Primary'])
+        for c in contacts:
+            w.writerow([c.name, c.designation or '', c.email or '', c.mobile or '', c.role or '', 'Yes' if c.is_primary else ''])
+
+    remarks = client.remarks.order_by(ClientRemark.created_at.desc()).all()
+    if remarks:
+        w.writerow([])
+        w.writerow(['Remarks'])
+        w.writerow(['Date', 'Author', 'Text'])
+        for r in remarks:
+            w.writerow([r.created_at.strftime('%Y-%m-%d %H:%M') if r.created_at else '', r.author.full_name if r.author else '', r.text])
+
+    follow_ups = client.follow_ups.all()
+    if follow_ups:
+        w.writerow([])
+        w.writerow(['Follow-ups'])
+        w.writerow(['Date', 'Purpose', 'Assignee', 'Status', 'Outcome'])
+        for f in follow_ups:
+            w.writerow([f.date.isoformat() if f.date else '', f.purpose, f.assignee.full_name if f.assignee else '', f.status, f.outcome_remark or ''])
+
+    filename = f'{client.client_code}-{client.name}'.replace(' ', '_').replace('/', '-') + '.csv'
+    return output.getvalue(), 200, {'Content-Type': 'text/csv', 'Content-Disposition': f'attachment; filename="{filename}"'}
+
+
 @client_bp.route('/<int:cid>', methods=['PATCH'])
 @login_required
 def update_client(current_user, cid):
@@ -213,8 +285,12 @@ def update_client(current_user, cid):
         client.nda_validity = datetime.strptime(data['nda_validity'], '%Y-%m-%d').date() if data.get('nda_validity') else None
     if 'first_follow_up_date' in data:
         client.first_follow_up_date = datetime.strptime(data['first_follow_up_date'], '%Y-%m-%d').date() if data.get('first_follow_up_date') else None
-    db.session.commit()
-    return jsonify({'client': client.to_dict()})
+    try:
+        db.session.commit()
+        return jsonify({'client': client.to_dict()})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
 
 @client_bp.route('/<int:cid>', methods=['DELETE'])
@@ -223,9 +299,15 @@ def delete_client(current_user, cid):
     if current_user.role not in ('admin', 'super_admin'):
         return jsonify({'error': 'Admin access required'}), 403
     client = Client.query.get_or_404(cid)
+    Client.query.filter_by(parent_client_id=cid).update({Client.parent_client_id: None})
+    Client.query.filter_by(referring_client_id=cid).update({Client.referring_client_id: None})
     db.session.delete(client)
-    db.session.commit()
-    return jsonify({'message': 'Deleted'})
+    try:
+        db.session.commit()
+        return jsonify({'message': 'Deleted'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
 
 @client_bp.route('/<int:cid>/merge', methods=['POST'])
