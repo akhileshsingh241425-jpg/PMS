@@ -6,12 +6,13 @@ import Pagination from '../components/Pagination'
 import { fetchClients, fetchClientSummary, exportClients } from '../api/clientsApi'
 import { TableSkeleton } from '../components/LoadingSkeleton'
 
-const STATUSES = ['', 'ACTIVE', 'PROSPECT', 'DORMANT', 'BLACKLISTED', 'ARCHIVED']
+const STATUSES = ['', 'ACTIVE', 'PROSPECT', 'DORMANT', 'HOLD', 'BLACKLISTED', 'ARCHIVED']
 const CLIENT_TYPES = ['', 'main', 'sub', 'vendor']
 const STATUS_COLORS = {
   ACTIVE: { bg: '#DCFCE7', text: '#166534' },
   PROSPECT: { bg: '#DBEAFE', text: '#1E40AF' },
   DORMANT: { bg: '#FEF3C7', text: '#92400E' },
+  HOLD: { bg: '#F3E8FF', text: '#7C3AED' },
   BLACKLISTED: { bg: '#FEE2E2', text: '#991B1B' },
   ARCHIVED: { bg: '#F1F5F9', text: '#475569' },
 }

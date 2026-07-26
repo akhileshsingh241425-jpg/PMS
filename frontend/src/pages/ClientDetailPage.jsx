@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, Building2, Phone, Mail, MapPin, Globe, FileText, Shield,
   UserPlus, MessageSquare, Calendar, History, Link2, ChevronRight,
   Plus, Pencil, Trash2, CheckCircle, X, Save, AlertCircle, Pin,
-  PinOff, Loader2, Clock, Ban, UserCheck, Users, ChevronDown
+  PinOff, Loader2, Clock, Ban, UserCheck, Users, ChevronDown,
+  MoreVertical, Play, Pause, Archive, AlertTriangle
 } from 'lucide-react'
 import { C } from '../components/styleConstants'
 import * as clientApi from '../api/clientsApi'
@@ -14,6 +15,7 @@ const STATUS_COLORS = {
   PROSPECT: { bg: '#DBEAFE', text: '#1E40AF' },
   ACTIVE: { bg: '#DCFCE7', text: '#166534' },
   DORMANT: { bg: '#FEF3C7', text: '#92400E' },
+  HOLD: { bg: '#F3E8FF', text: '#7C3AED' },
   BLACKLISTED: { bg: '#FEE2E2', text: '#991B1B' },
   ARCHIVED: { bg: '#F1F5F9', text: '#475569' },
 }
@@ -54,6 +56,8 @@ export default function ClientDetailPage() {
   const [users, setUsers] = useState([])
   const [sectors, setSectors] = useState([])
   const [vendorCategories, setVendorCategories] = useState([])
+  const [showActions, setShowActions] = useState(false)
+  const actionsRef = useRef(null)
 
   const loadDetail = useCallback(async () => {
     setLoading(true)
@@ -81,6 +85,33 @@ export default function ClientDetailPage() {
     }
   }, [showEditModal])
 
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (actionsRef.current && !actionsRef.current.contains(e.target)) setShowActions(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  const changeStatus = async (status) => {
+    try {
+      await clientApi.updateClient(client.id, { status })
+      addToast(`Status changed to ${status}`, 'success')
+      loadDetail()
+    } catch (e) { addToast('Failed to update status', 'error') }
+    setShowActions(false)
+  }
+
+  const deleteClient = async () => {
+    if (!confirm(`Delete client "${client.name}" (${client.client_code})? This cannot be undone.`)) return
+    try {
+      await clientApi.deleteClient(client.id)
+      addToast('Client deleted', 'success')
+      navigate('/clients', { replace: true })
+    } catch (e) { addToast(e.response?.data?.error || 'Failed to delete', 'error') }
+    setShowActions(false)
+  }
+
   if (loading) return <LoadingState />
   if (notFound || !client) return <NotFoundState />
 
@@ -98,42 +129,59 @@ export default function ClientDetailPage() {
   return (
     <div style={{ minHeight: '100vh', fontFamily: C.font, color: C.text, WebkitFontSmoothing: 'antialiased', background: C.bg, padding: '24px 32px 60px' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <button onClick={() => navigate('/clients')} style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${C.border}`, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.text }}>
+        {/* Compact Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+            <button onClick={() => navigate('/clients')} style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${C.border}`, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.text, flexShrink: 0 }}>
               <ArrowLeft className="w-4 h-4" />
             </button>
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: C.blueLight, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Building2 className="w-5 h-5" style={{ color: C.blue }} />
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: C.blueLight, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Building2 className="w-4 h-4" style={{ color: C.blue }} />
             </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>{client.name}</h1>
-                <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 10px', borderRadius: 12, background: sc.bg, color: sc.text }}>{client.status}</span>
-                <span style={{ fontSize: 11, color: C.muted, background: '#F1F5F9', padding: '2px 8px', borderRadius: 6 }}>{client.client_code}</span>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                <h1 style={{ fontSize: 16, fontWeight: 700, margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{client.name}</h1>
+                <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 8px', borderRadius: 10, background: sc.bg, color: sc.text, whiteSpace: 'nowrap' }}>{client.status}</span>
+                <span style={{ fontSize: 10, color: C.muted, background: '#F1F5F9', padding: '1px 6px', borderRadius: 4 }}>{client.client_code}</span>
+                <span style={{ fontSize: 10, color: C.secondary }}>{client.client_type === 'vendor' ? 'Vendor' : client.business_type || ''}{client.client_category && ` · ${client.client_category}`}</span>
               </div>
-              <p style={{ fontSize: 12, color: C.secondary, margin: '2px 0 0' }}>
-                {client.client_type === 'vendor' ? 'Vendor' : `${client.business_type || ''} Client`}
-                {client.client_category && ` · ${client.client_category}`}
-                {client.industry && ` · ${client.industry}`}
-              </p>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={() => { setEditForm(client); setShowEditModal(true) }} style={{ padding: '8px 16px', borderRadius: 8, border: `1px solid ${C.border}`, background: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: C.font, display: 'flex', alignItems: 'center', gap: 6, color: C.text }}>
-              <Pencil className="w-3.5 h-3.5" /> Edit
+          <div style={{ display: 'flex', gap: 6, flexShrink: 0, position: 'relative' }} ref={actionsRef}>
+            <button onClick={() => { setEditForm(client); setShowEditModal(true) }} style={{ padding: '6px 12px', borderRadius: 6, border: `1px solid ${C.border}`, background: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: C.font, display: 'flex', alignItems: 'center', gap: 4, color: C.text }}>
+              <Pencil className="w-3 h-3" /> Edit
             </button>
+            <button onClick={() => setShowActions(!showActions)} style={{ width: 32, height: 32, borderRadius: 6, border: `1px solid ${C.border}`, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.secondary }}>
+              <MoreVertical className="w-4 h-4" />
+            </button>
+            {showActions && (
+              <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: 4, background: '#fff', borderRadius: 10, border: `1px solid ${C.border}`, boxShadow: C.shadowMd, zIndex: 100, minWidth: 180, padding: 4, fontSize: 12 }}>
+                <div style={{ padding: '6px 10px', fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.3px' }}>Change Status</div>
+                {['ACTIVE', 'HOLD', 'DORMANT', 'PROSPECT', 'ARCHIVED', 'BLACKLISTED'].filter(s => s !== client.status).map(s => (
+                  <button key={s} onClick={() => changeStatus(s)} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '7px 10px', border: 'none', background: 'transparent', cursor: 'pointer', borderRadius: 6, fontSize: 12, fontFamily: C.font, color: C.text, textAlign: 'left' }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#F1F5F9'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: STATUS_COLORS[s]?.bg || '#F1F5F9', border: `2px solid ${STATUS_COLORS[s]?.text || '#475569'}` }} />
+                    {s.charAt(0) + s.slice(1).toLowerCase()}
+                  </button>
+                ))}
+                <div style={{ borderTop: `1px solid ${C.border}`, margin: '4px 0' }} />
+                <button onClick={deleteClient} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '7px 10px', border: 'none', background: 'transparent', cursor: 'pointer', borderRadius: 6, fontSize: 12, fontFamily: C.font, color: '#DC2626', textAlign: 'left' }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#FEF2F2'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                  <Trash2 className="w-3.5 h-3.5" /> Delete Client
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* KPI Cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10, marginBottom: 20 }}>
-          <KpiCard icon={Building2} label="Projects" value={client.project_count || 0} color={C.blue} bg="#EFF6FF" />
-          <KpiCard icon={Users} label="Contacts" value={client.contacts?.length || 0} color="#7C3AED" bg="#F5F3FF" />
-          <KpiCard icon={MessageSquare} label="Remarks" value={client.remark_count || 0} color="#D97706" bg="#FFFBEB" />
-          <KpiCard icon={Calendar} label="Follow-ups" value={client.follow_up_count || 0} color="#16A34A" bg="#F0FDF4" />
-          <KpiCard icon={History} label="Changes" value={client.change_logs?.length || 0} color="#DC2626" bg="#FEF2F2" />
+        {/* Compact KPI row */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+          <CompactKpi label="Projects" value={client.project_count || 0} color={C.blue} />
+          <CompactKpi label="Contacts" value={client.contacts?.length || 0} color="#7C3AED" />
+          <CompactKpi label="Remarks" value={client.remark_count || 0} color="#D97706" />
+          <CompactKpi label="Follow-ups" value={client.follow_up_count || 0} color="#16A34A" />
+          <CompactKpi label="Changes" value={client.change_logs?.length || 0} color="#DC2626" />
+          <CompactKpi label="Projects" value={client.project_count || 0} color={C.blue} />
         </div>
 
         {/* Tab Bar */}
@@ -233,97 +281,134 @@ export default function ClientDetailPage() {
 /* ─────────── TAB COMPONENTS ─────────── */
 
 function OverviewTab({ client }) {
+  const label = { fontSize: 9, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: 1 }
+  const val = { fontSize: 12, fontWeight: 500, color: C.text }
+  const sec = { padding: '8px 0', borderBottom: `1px solid ${C.border}` }
+  const g = { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 1fr', gap: '4px 12px' }
+  const g4 = { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '4px 12px' }
+  const g2 = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px' }
+
   return (
-    <div>
-      {/* Info Grid */}
-      <SectionCard title="Company Information">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px 24px' }}>
-          <InfoField label="Client Code" value={client.client_code} />
-          <InfoField label="Business Type" value={client.business_type || '—'} />
-          <InfoField label="Client Category" value={client.client_category || '—'} />
-          <InfoField label="Vendor Category" value={client.vendor_category || '—'} />
-          <InfoField label="Industry / Sector" value={client.industry || '—'} />
-          <InfoField label="Status" value={client.status} />
+    <div style={{ background: C.card, borderRadius: 10, border: `1px solid ${C.border}`, boxShadow: C.shadow, overflow: 'hidden', fontSize: 12 }}>
+      {/* Row 1: Company */}
+      <div style={sec}>
+        <div style={{ padding: '0 14px', marginBottom: 6 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.3px' }}>Company</span>
         </div>
-      </SectionCard>
-
-      <SectionCard title="Contact Details">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px 24px' }}>
-          <InfoField label="Contact Person" value={client.contact_name || '—'} icon={<UserPlus className="w-3 h-3" />} />
-          <InfoField label="Email" value={client.contact_email || '—'} icon={<Mail className="w-3 h-3" />} />
-          <InfoField label="Phone" value={client.contact_phone || '—'} icon={<Phone className="w-3 h-3" />} />
-          <InfoField label="Location" value={client.location || '—'} icon={<MapPin className="w-3 h-3" />} />
-          <InfoField label="State" value={client.state || '—'} />
-          <InfoField label="State Code" value={client.state_code || '—'} />
-          <InfoField label="Registered Address" value={client.registered_address || '—'} gridCol="span 3" />
-          <InfoField label="Website" value={client.website || '—'} icon={<Globe className="w-3 h-3" />} />
+        <div style={{ padding: '0 14px', ...g }}>
+          <div><div style={label}>Code</div><div style={val}>{client.client_code}</div></div>
+          <div><div style={label}>Type</div><div style={val}>{client.client_type === 'vendor' ? 'Vendor' : client.business_type || '—'}</div></div>
+          <div><div style={label}>Category</div><div style={val}>{client.client_category || '—'}</div></div>
+          <div><div style={label}>Vendor Cat</div><div style={val}>{client.vendor_category || '—'}</div></div>
+          <div><div style={label}>Industry</div><div style={val}>{client.industry || '—'}</div></div>
+          <div><div style={label}>Status</div><div style={val}>{client.status}</div></div>
         </div>
-      </SectionCard>
+      </div>
 
-      <SectionCard title="Tax & Registration">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px 24px' }}>
-          <InfoField label="GST Number" value={client.gst_number || (client.gst_unregistered ? 'Unregistered' : '—')} />
-          <InfoField label="PAN Number" value={client.pan_no || '—'} />
-          <InfoField label="CIN Number" value={client.cin_number || '—'} />
-          <InfoField label="MSME / UDYAM" value={client.msme_status || '—'} />
-          <InfoField label="Default TDS Section" value={client.default_tds_section || '—'} />
+      {/* Row 2: Contact */}
+      <div style={sec}>
+        <div style={{ padding: '0 14px', marginBottom: 6 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.3px' }}>Contact</span>
         </div>
-      </SectionCard>
-
-      <SectionCard title="NDA & Financial">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px 24px' }}>
-          <InfoField label="NDA File" value={client.nda_file_path || '—'} />
-          <InfoField label="NDA Validity" value={client.nda_validity || '—'} />
-          <InfoField label="Payment Terms" value={client.payment_terms || '—'} />
-          <InfoField label="Credit Limit" value={client.credit_limit ? `₹${Number(client.credit_limit).toLocaleString()}` : '—'} />
-          <InfoField label="Bank Account" value={client.bank_account_no || '—'} />
-          <InfoField label="IFSC Code" value={client.bank_ifsc || '—'} />
+        <div style={{ padding: '0 14px', ...g }}>
+          <div><div style={label}>Person</div><div style={val}>{client.contact_name || '—'}</div></div>
+          <div><div style={label}>Email</div><div style={val}>{client.contact_email || '—'}</div></div>
+          <div><div style={label}>Phone</div><div style={val}>{client.contact_phone || '—'}</div></div>
+          <div><div style={label}>Location</div><div style={val}>{client.location || '—'}</div></div>
+          <div><div style={label}>State</div><div style={val}>{client.state || '—'}</div></div>
+          <div><div style={label}>State Code</div><div style={val}>{client.state_code || '—'}</div></div>
         </div>
-      </SectionCard>
-
-      <SectionCard title="Reference & Assignment">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px 24px' }}>
-          <InfoField label="Reference Source" value={client.reference_source || '—'} />
-          <InfoField label="Referring Client" value={client.referring_client_name || '—'} />
-          <InfoField label="Account Owner" value={client.account_owner_name || '—'} />
-          <InfoField label="First Follow-up Date" value={client.first_follow_up_date || '—'} />
-          <InfoField label="Business Value" value={client.business_value ? `₹${Number(client.business_value).toLocaleString()}` : '—'} />
-          <InfoField label="Last Business Date" value={client.last_business_date || '—'} />
-          <InfoField label="Onboarding Remarks" value={client.onboarding_remarks || '—'} gridCol="span 3" />
-          {client.status === 'BLACKLISTED' && (
-            <InfoField label="Blacklist Reason" value={client.blacklist_reason || '—'} gridCol="span 3" />
-          )}
+        <div style={{ padding: '4px 14px 0', ...g2 }}>
+          <div style={{ gridColumn: 'span 2' }}><div style={label}>Address</div><div style={val}>{client.registered_address || '—'}</div></div>
+          <div><div style={label}>Website</div><div style={val}>{client.website || '—'}</div></div>
         </div>
-      </SectionCard>
+      </div>
 
-      {/* Sub-clients */}
-      {client.sub_clients?.length > 0 && (
-        <SectionCard title={`Sub-Clients (${client.sub_clients.length})`}>
-          {client.sub_clients.map(sub => (
-            <div key={sub.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${C.border}`, fontSize: 13 }}>
-              <div>
-                <strong>{sub.name}</strong>
-                <span style={{ color: C.muted, marginLeft: 8, fontSize: 11 }}>{sub.client_code}</span>
-              </div>
-              <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: STATUS_COLORS[sub.status]?.bg || '#F1F5F9', color: STATUS_COLORS[sub.status]?.text || '#475569' }}>{sub.status}</span>
-            </div>
-          ))}
-        </SectionCard>
+      {/* Row 3: Tax */}
+      <div style={sec}>
+        <div style={{ padding: '0 14px', marginBottom: 6 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.3px' }}>Tax &amp; Registration</span>
+        </div>
+        <div style={{ padding: '0 14px', ...g }}>
+          <div><div style={label}>GST</div><div style={val}>{client.gst_number || (client.gst_unregistered ? 'Unregistered' : '—')}</div></div>
+          <div><div style={label}>PAN</div><div style={val}>{client.pan_no || '—'}</div></div>
+          <div><div style={label}>CIN</div><div style={val}>{client.cin_number || '—'}</div></div>
+          <div><div style={label}>MSME</div><div style={val}>{client.msme_status || '—'}</div></div>
+          <div><div style={label}>TDS Section</div><div style={val}>{client.default_tds_section || '—'}</div></div>
+        </div>
+      </div>
+
+      {/* Row 4: Financial */}
+      <div style={sec}>
+        <div style={{ padding: '0 14px', marginBottom: 6 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.3px' }}>NDA &amp; Financial</span>
+        </div>
+        <div style={{ padding: '0 14px', ...g }}>
+          <div><div style={label}>NDA File</div><div style={val}>{client.nda_file_path || '—'}</div></div>
+          <div><div style={label}>NDA Valid Till</div><div style={val}>{client.nda_validity || '—'}</div></div>
+          <div><div style={label}>Payment Terms</div><div style={val}>{client.payment_terms || '—'}</div></div>
+          <div><div style={label}>Credit Limit</div><div style={val}>{client.credit_limit ? `₹${Number(client.credit_limit).toLocaleString()}` : '—'}</div></div>
+          <div><div style={label}>Bank A/c</div><div style={val}>{client.bank_account_no || '—'}</div></div>
+          <div><div style={label}>IFSC</div><div style={val}>{client.bank_ifsc || '—'}</div></div>
+        </div>
+      </div>
+
+      {/* Row 5: Reference */}
+      <div style={sec}>
+        <div style={{ padding: '0 14px', marginBottom: 6 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.3px' }}>Reference &amp; Business</span>
+        </div>
+        <div style={{ padding: '0 14px', ...g }}>
+          <div><div style={label}>Source</div><div style={val}>{client.reference_source || '—'}</div></div>
+          <div><div style={label}>Referring Client</div><div style={val}>{client.referring_client_name || '—'}</div></div>
+          <div><div style={label}>Account Owner</div><div style={val}>{client.account_owner_name || '—'}</div></div>
+          <div><div style={label}>First Follow-up</div><div style={val}>{client.first_follow_up_date || '—'}</div></div>
+          <div><div style={label}>Business Value</div><div style={val}>{client.business_value ? `₹${Number(client.business_value).toLocaleString()}` : '—'}</div></div>
+          <div><div style={label}>Last Business</div><div style={val}>{client.last_business_date || '—'}</div></div>
+        </div>
+      </div>
+
+      {/* Remarks row if present */}
+      {(client.onboarding_remarks || client.status === 'BLACKLISTED') && (
+        <div style={sec}>
+          <div style={{ padding: '0 14px', ...g2 }}>
+            {client.onboarding_remarks && <div style={{ gridColumn: 'span 2' }}><div style={label}>Onboarding Remarks</div><div style={val}>{client.onboarding_remarks}</div></div>}
+            {client.status === 'BLACKLISTED' && client.blacklist_reason && <div style={{ gridColumn: 'span 2' }}><div style={label}>Blacklist Reason</div><div style={val}>{client.blacklist_reason}</div></div>}
+          </div>
+        </div>
       )}
 
-      {/* Projects */}
+      {/* Sub-clients inline */}
+      {client.sub_clients?.length > 0 && (
+        <div style={sec}>
+          <div style={{ padding: '0 14px', marginBottom: 4 }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.3px' }}>Sub-Clients ({client.sub_clients.length})</span>
+          </div>
+          <div style={{ padding: '0 14px' }}>
+            {client.sub_clients.map(sub => (
+              <span key={sub.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, margin: '2px 8px 2px 0', padding: '2px 8px', background: '#F1F5F9', borderRadius: 6, fontSize: 11 }}>
+                {sub.name} <span style={{ fontSize: 9, color: C.muted }}>{sub.client_code}</span>
+                <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 4, background: STATUS_COLORS[sub.status]?.bg || '#F1F5F9', color: STATUS_COLORS[sub.status]?.text || '#475569' }}>{sub.status}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Projects inline */}
       {client.projects?.length > 0 && (
-        <SectionCard title={`Projects (${client.projects.length})`}>
-          {client.projects.map(p => (
-            <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${C.border}`, fontSize: 13 }}>
-              <div>
-                <strong>{p.name}</strong>
-                <span style={{ color: C.muted, marginLeft: 8, fontSize: 11 }}>{p.status}</span>
-              </div>
-              <span style={{ fontSize: 11, color: C.secondary }}>{p.start_date || ''}</span>
-            </div>
-          ))}
-        </SectionCard>
+        <div style={{ padding: '8px 0 4px' }}>
+          <div style={{ padding: '0 14px', marginBottom: 4 }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.3px' }}>Projects ({client.projects.length})</span>
+          </div>
+          <div style={{ padding: '0 14px' }}>
+            {client.projects.map(p => (
+              <span key={p.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, margin: '2px 8px 2px 0', padding: '2px 8px', background: '#F1F5F9', borderRadius: 6, fontSize: 11 }}>
+                {p.name} <span style={{ fontSize: 9, color: C.muted }}>{p.status}</span>
+              </span>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   )
@@ -822,6 +907,7 @@ function EditClientModal({ client, editForm, setEditForm, onClose, onSaved, sect
                 <option value="PROSPECT">Prospect</option>
                 <option value="ACTIVE">Active</option>
                 <option value="DORMANT">Dormant</option>
+                <option value="HOLD">Hold</option>
                 <option value="BLACKLISTED">Blacklisted</option>
                 <option value="ARCHIVED">Archived</option>
               </select>
@@ -979,16 +1065,11 @@ function InfoField({ label, value, icon, gridCol }) {
   )
 }
 
-function KpiCard({ icon: Icon, label, value, color, bg }) {
+function CompactKpi({ label, value, color }) {
   return (
-    <div style={{ background: C.card, borderRadius: 10, border: `1px solid ${C.border}`, padding: '14px 16px', boxShadow: C.shadow }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-        <div style={{ width: 30, height: 30, borderRadius: 8, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Icon className="w-3.5 h-3.5" style={{ color }} />
-        </div>
-      </div>
-      <div style={{ fontSize: 22, fontWeight: 700, lineHeight: 1.2 }}>{value}</div>
-      <div style={{ fontSize: 11, color: C.secondary, fontWeight: 500 }}>{label}</div>
+    <div style={{ background: C.card, borderRadius: 8, border: `1px solid ${C.border}`, padding: '6px 12px', flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ fontSize: 16, fontWeight: 700, color, lineHeight: 1 }}>{value}</div>
+      <div style={{ fontSize: 10, color: C.secondary, whiteSpace: 'nowrap' }}>{label}</div>
     </div>
   )
 }

@@ -175,6 +175,7 @@ export default function ClientOnboarding() {
                 <option value="PROSPECT">Prospect</option>
                 <option value="ACTIVE">Active</option>
                 <option value="DORMANT">Dormant</option>
+                <option value="HOLD">Hold</option>
                 <option value="BLACKLISTED">Blacklisted</option>
                 <option value="ARCHIVED">Archived</option>
               </select>
