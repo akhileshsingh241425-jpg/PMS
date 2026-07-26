@@ -33,6 +33,7 @@ with app.app_context():
         ('blacklist_reason', 'TEXT'),
         ('business_value', 'FLOAT DEFAULT 0'),
         ('last_business_date', 'DATE'),
+        ('created_by', 'INTEGER'),
     ]:
         try:
             db.session.execute(text(f'ALTER TABLE clients ADD COLUMN {col} {typ}'))

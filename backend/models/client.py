@@ -68,6 +68,7 @@ class Client(db.Model):
     blacklist_reason = db.Column(db.Text)
     business_value = db.Column(db.Float, default=0)
     last_business_date = db.Column(db.Date)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
