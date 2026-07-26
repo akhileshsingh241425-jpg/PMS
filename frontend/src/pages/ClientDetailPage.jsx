@@ -142,7 +142,7 @@ export default function ClientDetailPage() {
 
   return (
     <div style={{ minHeight: '100vh', fontFamily: C.font, color: C.text, WebkitFontSmoothing: 'antialiased', background: C.bg, padding: '14px 20px 24px' }}>
-      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+      <div>
         {/* Compact Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
