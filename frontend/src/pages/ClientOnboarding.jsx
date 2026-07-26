@@ -32,7 +32,7 @@ export default function ClientOnboarding() {
   const navigate = useNavigate()
   const [form, setForm] = useState({
     name: '', client_type: 'main', business_type: 'B2B', client_category: '',
-    parent_client_id: '', gst_number: '', gst_unregistered: false, pan_no: '',
+    parent_client_id: '', is_independent: false, gst_number: '', gst_unregistered: false, pan_no: '',
     registered_address: '', state: '', state_code: '', website: '', cin_number: '',
     industry: '', vendor_category: '', nda_file_path: '', nda_validity: '',
     payment_terms: '', credit_limit: '', bank_account_no: '', bank_ifsc: '',
@@ -40,6 +40,7 @@ export default function ClientOnboarding() {
     reference_source: '', referring_client_id: '', account_owner_id: '',
     first_follow_up_date: '', onboarding_remarks: '', status: 'ACTIVE',
     blacklist_reason: '', business_value: '', last_business_date: '',
+    b2c_mobile: '', b2c_id_proof_type: '', b2c_id_proof_number: '',
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -63,19 +64,31 @@ export default function ClientOnboarding() {
 
   const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }))
 
-  const handleNameBlur = async () => {
-    if (!form.name.trim()) return
+  const handleDupCheck = async (fields) => {
+    const payload = {}
+    for (const f of fields) {
+      if (form[f] && form[f].trim) payload[f] = form[f].trim()
+      else if (form[f]) payload[f] = form[f]
+    }
+    if (Object.keys(payload).length === 0) return
     try {
-      const res = await checkDuplicate({ name: form.name })
+      const res = await checkDuplicate(payload)
       setDupStatus(res)
     } catch { setDupStatus(null) }
   }
+
+  const handleNameBlur = () => handleDupCheck(['name'])
+  const handleGstBlur = () => handleDupCheck(['gst_number'])
+  const handlePanBlur = () => handleDupCheck(['pan_no'])
+  const handlePhoneBlur = () => handleDupCheck(['contact_phone'])
 
   const validate = () => {
     if (!form.name.trim()) return 'Company name is required'
     if (form.gst_number && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(form.gst_number)) return 'Invalid GST format'
     if (form.pan_no && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(form.pan_no)) return 'Invalid PAN format'
     if (form.client_type === 'sub' && !form.parent_client_id) return 'Please select a parent client for sub-client'
+    if (form.business_type === 'B2B' && form.client_type !== 'vendor' && !form.reference_source) return 'Reference source is required for B2B clients'
+    if (form.business_type === 'B2B' && form.client_type !== 'vendor' && !form.parent_client_id && !form.is_independent) return 'Please select a parent client or mark as Independent'
     return null
   }
 
@@ -88,6 +101,9 @@ export default function ClientOnboarding() {
     const payload = { ...form }
     if (!payload.parent_client_id) delete payload.parent_client_id
     if (payload.parent_client_id) payload.parent_client_id = parseInt(payload.parent_client_id)
+    if (!payload.b2c_mobile) delete payload.b2c_mobile
+    if (!payload.b2c_id_proof_type) delete payload.b2c_id_proof_type
+    if (!payload.b2c_id_proof_number) delete payload.b2c_id_proof_number
     if (payload.referring_client_id) payload.referring_client_id = parseInt(payload.referring_client_id)
     if (payload.account_owner_id) payload.account_owner_id = parseInt(payload.account_owner_id)
     if (payload.credit_limit) payload.credit_limit = parseFloat(payload.credit_limit)
@@ -124,10 +140,10 @@ export default function ClientOnboarding() {
             </div>
           )}
 
-          {dupStatus?.is_duplicate && (
+          {dupStatus?.match && (
             <div style={{ marginBottom: 10, padding: '8px 12px', borderRadius: 8, background: '#FFF7ED', border: '1px solid #FED7AA', fontSize: 12, color: '#9A3412', display: 'flex', alignItems: 'center', gap: 8 }}>
               <AlertCircle className="w-3.5 h-3.5" />
-              Similar client found: <strong>{dupStatus.match?.name}</strong> ({dupStatus.match?.client_code})
+              <span>Similar client found: {dupStatus.matches?.slice(0, 3).map(m => `${m.name} (${m.client_code})`).join(', ')}</span>
             </div>
           )}
 
@@ -143,6 +159,7 @@ export default function ClientOnboarding() {
                 <option value="main">Main Client</option>
                 <option value="sub">Sub-Client</option>
                 <option value="vendor">Vendor</option>
+                <option value="both">Both (Client + Vendor)</option>
               </select>
             </Field>
             <Field>
@@ -151,15 +168,21 @@ export default function ClientOnboarding() {
                 {BUSINESS_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </Field>
-            {form.client_type === 'sub' && (
+            {form.business_type === 'B2B' && form.client_type !== 'vendor' && (
               <Field gridCol="span 4">
                 <Label required>Parent Client</Label>
-                <select value={form.parent_client_id} onChange={e => set('parent_client_id', e.target.value)} style={selectCls}>
-                  <option value="">-- Select Parent --</option>
-                  {parentClients.filter(c => c.client_type === 'main').map(c => (
-                    <option key={c.id} value={c.id}>{c.name} ({c.client_code})</option>
-                  ))}
-                </select>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <select value={form.parent_client_id} onChange={e => set('parent_client_id', e.target.value)} style={{ ...selectCls, flex: 1 }} disabled={form.is_independent}>
+                    <option value="">-- Select Parent --</option>
+                    {parentClients.filter(c => c.client_type === 'main').map(c => (
+                      <option key={c.id} value={c.id}>{c.name} ({c.client_code})</option>
+                    ))}
+                  </select>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: C.muted, whiteSpace: 'nowrap', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={form.is_independent} onChange={e => { set('is_independent', e.target.checked); if (e.target.checked) set('parent_client_id', '') }} style={{ width: 14, height: 14, accentColor: C.blue }} />
+                    Independent
+                  </label>
+                </div>
               </Field>
             )}
             <Field>
@@ -227,8 +250,33 @@ export default function ClientOnboarding() {
             </Field>
           </Section>
 
-          {/* Section 3: Classification */}
-          {form.client_type === 'vendor' && (
+          {/* Section 3: B2C Specific */}
+          {form.business_type === 'B2C' && (
+            <Section title="Individual Details (B2C)">
+              <Field>
+                <Label required>Mobile Number</Label>
+                <input value={form.b2c_mobile} onChange={e => set('b2c_mobile', e.target.value)} style={inputCls} placeholder="e.g. 9876543210" />
+              </Field>
+              <Field>
+                <Label>ID Proof Type</Label>
+                <select value={form.b2c_id_proof_type} onChange={e => set('b2c_id_proof_type', e.target.value)} style={selectCls}>
+                  <option value="">-- Select --</option>
+                  <option value="Aadhaar">Aadhaar</option>
+                  <option value="PAN">PAN</option>
+                  <option value="Voter ID">Voter ID</option>
+                  <option value="Driving License">Driving License</option>
+                  <option value="Passport">Passport</option>
+                </select>
+              </Field>
+              <Field>
+                <Label>ID Proof Number</Label>
+                <input value={form.b2c_id_proof_number} onChange={e => set('b2c_id_proof_number', e.target.value)} style={inputCls} placeholder="ID number" />
+              </Field>
+            </Section>
+          )}
+
+          {/* Section 4: Classification */}
+          {(form.client_type === 'vendor' || form.client_type === 'both') && (
             <Section title="Vendor Classification">
               <Field>
                 <Label>Vendor Category</Label>
@@ -291,7 +339,7 @@ export default function ClientOnboarding() {
           {/* Section 5: Reference & Assignment */}
           <Section title="Reference & Assignment">
             <Field>
-              <Label>Reference Source</Label>
+              <Label required={form.business_type === 'B2B'}>Reference Source</Label>
               <select value={form.reference_source} onChange={e => set('reference_source', e.target.value)} style={selectCls}>
                 <option value="">-- Select --</option>
                 {REFERENCE_SOURCES.map(s => <option key={s} value={s}>{s}</option>)}

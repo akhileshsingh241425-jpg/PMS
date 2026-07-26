@@ -30,8 +30,8 @@ export async function deleteClient(id) {
   return res.data
 }
 
-export async function checkDuplicate(params) {
-  const res = await api.get('/api/clients/check-duplicate', { params })
+export async function checkDuplicate(data) {
+  const res = await api.post('/api/clients/check-duplicate', data)
   return res.data
 }
 

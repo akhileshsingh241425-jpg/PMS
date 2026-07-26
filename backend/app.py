@@ -95,6 +95,8 @@ def create_app():
         db.create_all()
         from numbering_utils import init_default_settings
         init_default_settings()
+        from scheduler import init_scheduler
+        init_scheduler(app)
 
     return app
 

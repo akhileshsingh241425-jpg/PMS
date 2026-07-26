@@ -155,6 +155,14 @@ def create_po_out(current_user):
         )
         db.session.add(li)
 
+    # Auto-transition vendor/client: PROSPECT → ACTIVE on first PO
+    if vendor_id:
+        v = Client.query.get(vendor_id)
+        if v and v.status == 'PROSPECT':
+            v.status = 'ACTIVE'
+            v.status_changed_at = datetime.utcnow()
+            v.last_business_date = datetime.utcnow().date()
+
     db.session.commit()
     return jsonify({'message': 'PO created', 'po': project.to_dict()}), 201
 

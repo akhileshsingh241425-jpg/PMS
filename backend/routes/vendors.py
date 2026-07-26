@@ -9,7 +9,7 @@ vendor_bp = Blueprint('vendors', __name__, url_prefix='/api/vendors')
 @vendor_bp.route('', methods=['GET'])
 @login_required
 def list_vendors(current_user):
-    query = Client.query.filter_by(client_type='vendor')
+    query = Client.query.filter(Client.client_type.in_(['vendor', 'both']))
     if s := request.args.get('search'):
         query = query.filter(db.or_(
             Client.name.ilike(f'%{s}%'), Client.client_code.ilike(f'%{s}%'),

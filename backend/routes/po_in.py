@@ -175,6 +175,12 @@ def create_po_in(current_user):
         )
         db.session.add(li)
 
+    # Auto-transition client: PROSPECT → ACTIVE on first PO
+    if client and client.status == 'PROSPECT':
+        client.status = 'ACTIVE'
+        client.status_changed_at = datetime.utcnow()
+        client.last_business_date = datetime.utcnow().date()
+
     db.session.commit()
     return jsonify({'message': 'Work Order created', 'po': project.to_dict()}), 201
 

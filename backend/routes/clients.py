@@ -24,13 +24,15 @@ def list_clients(current_user):
     query = Client.query
     filter_param = request.args.get('filter', 'all')
     if filter_param == 'vendor':
-        query = query.filter_by(client_type='vendor')
+        query = query.filter(Client.client_type.in_(['vendor', 'both']))
     elif filter_param == 'client':
-        query = query.filter(Client.client_type.in_(['main', 'sub']))
+        query = query.filter(Client.client_type.in_(['main', 'sub', 'both']))
     elif filter_param == 'main':
         query = query.filter_by(client_type='main')
     elif filter_param == 'sub':
         query = query.filter_by(client_type='sub')
+    elif filter_param == 'both':
+        query = query.filter_by(client_type='both')
 
     if s := request.args.get('search'):
         query = query.filter(db.or_(
@@ -65,7 +67,7 @@ def list_clients(current_user):
     result = []
     for c in clients:
         data = c.to_dict()
-        po_count = Project.query.filter(Project.vendor_name == c.name, Project.direction == 'OUT').count() if c.client_type == 'vendor' else 0
+        po_count = Project.query.filter(Project.vendor_name == c.name, Project.direction == 'OUT').count() if c.client_type in ('vendor', 'both') else 0
         data['project_count'] = proj_counts.get(c.id, 0) + po_count
         result.append(data)
 
@@ -77,7 +79,7 @@ def list_clients(current_user):
             'prospect': Client.query.filter_by(status='PROSPECT').count(),
             'dormant': Client.query.filter_by(status='DORMANT').count(),
             'client': Client.query.filter(Client.client_type.in_(['main', 'sub'])).count(),
-            'vendor': Client.query.filter_by(client_type='vendor').count(),
+            'vendor': Client.query.filter(Client.client_type.in_(['vendor', 'both'])).count(),
         },
         'sectors': [s.name for s in SectorMaster.query.filter_by(is_active=True).all()],
     })
@@ -92,7 +94,7 @@ def client_summary(current_user):
         'prospect': Client.query.filter_by(status='PROSPECT').count(),
         'dormant': Client.query.filter_by(status='DORMANT').count(),
         'blacklisted': Client.query.filter_by(status='BLACKLISTED').count(),
-        'vendors': Client.query.filter_by(client_type='vendor').count(),
+        'vendors': Client.query.filter(Client.client_type.in_(['vendor', 'both'])).count(),
     })
 
 
@@ -122,9 +124,22 @@ def create_client(current_user):
     if not data.get('name'):
         return jsonify({'error': 'name required'}), 400
 
+    business_type = data.get('business_type', 'B2B')
+    client_type = data.get('client_type', 'main')
+
+    # Reference mandatory for B2B
+    if business_type == 'B2B' and not data.get('reference_source'):
+        return jsonify({'error': 'reference_source is required for B2B clients'}), 400
+
+    # Parent mandatory for non-independent B2B
+    parent_client_id = data.get('parent_client_id') or None
+    is_independent = data.get('is_independent', False)
+    if business_type == 'B2B' and client_type != 'vendor' and not parent_client_id and not is_independent:
+        return jsonify({'error': 'parent_client_id or is_independent=true required for B2B clients'}), 400
+
     client = Client(
         name=data['name'], client_code=None,
-        business_type=data.get('business_type', 'B2B'),
+        business_type=business_type,
         client_category=data.get('client_category'),
         vendor_category=data.get('vendor_category'),
         gst_number=data.get('gst_number'),
@@ -136,8 +151,9 @@ def create_client(current_user):
         contact_name=data.get('contact_name'), contact_email=data.get('contact_email'),
         contact_phone=data.get('contact_phone'), industry=data.get('industry'),
         status=data.get('status', 'PROSPECT'),
-        client_type=data.get('client_type', 'main'),
-        parent_client_id=data.get('parent_client_id') or None,
+        client_type=client_type,
+        parent_client_id=parent_client_id,
+        is_independent=is_independent,
         pan_no=data.get('pan_no'), cin_number=data.get('cin_number'),
         msme_status=data.get('msme_status'),
         nda_file_path=data.get('nda_file_path'),
@@ -149,6 +165,9 @@ def create_client(current_user):
         reference_source=data.get('reference_source'),
         referring_client_id=data.get('referring_client_id') or None,
         account_owner_id=data.get('account_owner_id') or current_user.id,
+        b2c_mobile=data.get('b2c_mobile'),
+        b2c_id_proof_type=data.get('b2c_id_proof_type'),
+        b2c_id_proof_number=data.get('b2c_id_proof_number'),
         first_follow_up_date=datetime.strptime(data['first_follow_up_date'], '%Y-%m-%d').date() if data.get('first_follow_up_date') else None,
         onboarding_remarks=data.get('onboarding_remarks'),
     )
@@ -177,7 +196,7 @@ def create_client(current_user):
 def get_client(current_user, cid):
     client = Client.query.get_or_404(cid)
     data = client.to_dict()
-    po_count = Project.query.filter(Project.vendor_name == client.name, Project.direction == 'OUT').count() if client.client_type == 'vendor' else 0
+    po_count = Project.query.filter(Project.vendor_name == client.name, Project.direction == 'OUT').count() if client.client_type in ('vendor', 'both') else 0
     data['project_count'] = Project.query.filter_by(client_id=cid).count() + po_count
     data['projects'] = [p.to_dict() for p in Project.query.filter_by(client_id=cid).order_by(Project.updated_at.desc()).all()]
     data['contacts'] = [c.to_dict() for c in client.contacts.order_by(ClientContact.is_primary.desc()).all()]
@@ -201,7 +220,7 @@ def export_client(current_user, cid):
     for field, value in [
         ('Client Code', client.client_code),
         ('Name', client.name),
-        ('Type', 'Vendor' if client.client_type == 'vendor' else (client.business_type or '')),
+        ('Type', 'Both' if client.client_type == 'both' else ('Vendor' if client.client_type == 'vendor' else (client.business_type or ''))),
         ('Category', client.client_category or ''),
         ('Vendor Category', client.vendor_category or ''),
         ('Industry', client.industry or ''),
@@ -269,10 +288,12 @@ def update_client(current_user, cid):
     allowed = ['name', 'business_type', 'client_category', 'vendor_category', 'gst_number',
         'gst_unregistered', 'location', 'registered_address', 'state', 'state_code', 'website',
         'contact_name', 'contact_email', 'contact_phone', 'industry', 'status', 'client_type',
-        'parent_client_id', 'pan_no', 'cin_number', 'msme_status', 'payment_terms', 'credit_limit',
+        'parent_client_id', 'is_independent', 'pan_no', 'cin_number', 'msme_status',
+        'payment_terms', 'credit_limit',
         'bank_account_no', 'bank_ifsc', 'default_tds_section', 'reference_source',
         'account_owner_id', 'onboarding_remarks', 'nda_file_path', 'bank_cheque_path',
-        'referring_client_id', 'blacklist_reason', 'business_value', 'last_business_date']
+        'referring_client_id', 'blacklist_reason', 'business_value', 'last_business_date',
+        'b2c_mobile', 'b2c_id_proof_type', 'b2c_id_proof_number']
     for f in allowed:
         if f in data:
             old_val = getattr(client, f)
@@ -281,6 +302,8 @@ def update_client(current_user, cid):
                 needs_approval = f in SENSITIVE_FIELDS and current_user.role not in ('admin', 'super_admin')
                 _log_change(client, f, old_val, new_val, current_user, needs_approval)
                 setattr(client, f, new_val)
+                if f == 'status':
+                    client.status_changed_at = datetime.utcnow()
     if 'nda_validity' in data:
         client.nda_validity = datetime.strptime(data['nda_validity'], '%Y-%m-%d').date() if data.get('nda_validity') else None
     if 'first_follow_up_date' in data:

@@ -940,14 +940,20 @@ function EditClientModal({ client, editForm, setEditForm, onClose, onSaved, sect
                 {vendorCategories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
               </select>
             </EditField>
-            {editForm.client_type === 'sub' && (
+            {editForm.business_type === 'B2B' && editForm.client_type !== 'vendor' && (
               <EditField label="Parent Client" span={2}>
-                <select value={editForm.parent_client_id || ''} onChange={e => set('parent_client_id', e.target.value)} style={inputStyle}>
-                  <option value="">— Select Parent —</option>
-                  {allClients.filter(c => c.client_type === 'main' && c.id !== client.id).map(c => (
-                    <option key={c.id} value={c.id}>{c.name} ({c.client_code})</option>
-                  ))}
-                </select>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <select value={editForm.parent_client_id || ''} onChange={e => set('parent_client_id', e.target.value)} style={{ ...inputStyle, flex: 1 }} disabled={editForm.is_independent}>
+                    <option value="">— Select Parent —</option>
+                    {allClients.filter(c => c.client_type === 'main' && c.id !== client.id).map(c => (
+                      <option key={c.id} value={c.id}>{c.name} ({c.client_code})</option>
+                    ))}
+                  </select>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, whiteSpace: 'nowrap', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={editForm.is_independent || false} onChange={e => { set('is_independent', e.target.checked); if (e.target.checked) set('parent_client_id', '') }} style={{ accentColor: C.blue }} />
+                    Independent
+                  </label>
+                </div>
               </EditField>
             )}
           </div>
@@ -990,6 +996,26 @@ function EditClientModal({ client, editForm, setEditForm, onClose, onSaved, sect
               </select>
             </EditField>
           </div>
+
+          {editForm.business_type === 'B2C' && (
+            <>
+              <SectionTitle>Individual Details (B2C)</SectionTitle>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 20px', marginBottom: 20 }}>
+                <EditField label="Mobile Number"><input value={editForm.b2c_mobile || ''} onChange={e => set('b2c_mobile', e.target.value)} style={inputStyle} /></EditField>
+                <EditField label="ID Proof Type">
+                  <select value={editForm.b2c_id_proof_type || ''} onChange={e => set('b2c_id_proof_type', e.target.value)} style={inputStyle}>
+                    <option value="">—</option>
+                    <option value="Aadhaar">Aadhaar</option>
+                    <option value="PAN">PAN</option>
+                    <option value="Voter ID">Voter ID</option>
+                    <option value="Driving License">Driving License</option>
+                    <option value="Passport">Passport</option>
+                  </select>
+                </EditField>
+                <EditField label="ID Proof Number"><input value={editForm.b2c_id_proof_number || ''} onChange={e => set('b2c_id_proof_number', e.target.value)} style={inputStyle} /></EditField>
+              </div>
+            </>
+          )}
 
           <SectionTitle>NDA & Financial</SectionTitle>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 20px', marginBottom: 20 }}>

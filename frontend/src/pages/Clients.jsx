@@ -7,7 +7,7 @@ import { fetchClients, fetchClientSummary, exportClients } from '../api/clientsA
 import { TableSkeleton } from '../components/LoadingSkeleton'
 
 const STATUSES = ['', 'ACTIVE', 'PROSPECT', 'DORMANT', 'HOLD', 'BLACKLISTED', 'ARCHIVED']
-const CLIENT_TYPES = ['', 'main', 'sub', 'vendor']
+const CLIENT_TYPES = ['', 'main', 'sub', 'vendor', 'both']
 const STATUS_COLORS = {
   ACTIVE: { bg: '#DCFCE7', text: '#166534' },
   PROSPECT: { bg: '#DBEAFE', text: '#1E40AF' },
@@ -163,6 +163,7 @@ export default function Clients() {
           <option value="main">Main Client</option>
           <option value="sub">Sub-Client</option>
           <option value="vendor">Vendor</option>
+          <option value="both">Both</option>
         </select>
         <select value={sectorFilter} onChange={e => { setSectorFilter(e.target.value); setPage(1) }} style={{ padding: '7px 10px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12, outline: 'none', fontFamily: C.font, background: '#fff', cursor: 'pointer', color: C.text, maxWidth: 160 }}>
           <option value="">All Sectors</option>
@@ -213,7 +214,9 @@ export default function Clients() {
                   {client.name}
                   {client.client_type === 'sub' && <span style={{ fontSize: 10, color: C.muted, marginLeft: 6 }}>(sub)</span>}
                 </div>
-                <div style={{ width: 80, textAlign: 'center', fontSize: 11, color: C.secondary }}>{client.client_type === 'vendor' ? 'Vendor' : client.business_type || '—'}</div>
+                <div style={{ width: 80, textAlign: 'center', fontSize: 11, color: C.secondary }}>
+                  {client.client_type === 'vendor' ? 'Vendor' : client.client_type === 'both' ? 'Both' : client.business_type || '—'}
+                </div>
                 <div style={{ width: 90, textAlign: 'center' }}>
                   <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: 12, fontSize: 10, fontWeight: 600, background: sc.bg, color: sc.text }}>
                     {client.status}

@@ -24,7 +24,8 @@ class VendorCategoryMaster(db.Model):
         return {'id': self.id, 'name': self.name, 'is_active': self.is_active}
 
 
-CLIENT_STATUSES = ['PROSPECT', 'ACTIVE', 'DORMANT', 'BLACKLISTED', 'ARCHIVED']
+CLIENT_STATUSES = ['PROSPECT', 'ACTIVE', 'DORMANT', 'HOLD', 'BLACKLISTED', 'ARCHIVED']
+CLIENT_TYPES = ['main', 'sub', 'vendor', 'both']
 
 
 class Client(db.Model):
@@ -63,6 +64,11 @@ class Client(db.Model):
     reference_source = db.Column(db.String(50))
     referring_client_id = db.Column(db.Integer, db.ForeignKey('clients.id'))
     account_owner_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    is_independent = db.Column(db.Boolean, default=False)
+    b2c_mobile = db.Column(db.String(20))
+    b2c_id_proof_type = db.Column(db.String(30))
+    b2c_id_proof_number = db.Column(db.String(50))
+    status_changed_at = db.Column(db.DateTime)
     first_follow_up_date = db.Column(db.Date)
     onboarding_remarks = db.Column(db.Text)
     blacklist_reason = db.Column(db.Text)
@@ -86,6 +92,8 @@ class Client(db.Model):
     def generate_cid(self):
         if self.client_type == 'vendor':
             prefix = 'VN-'
+        elif self.client_type == 'both':
+            prefix = 'CID-BOTH-'
         elif self.business_type == 'B2C':
             prefix = 'CID-B2C-'
         else:
@@ -138,6 +146,11 @@ class Client(db.Model):
             'referring_client_name': self.referring_client.name if self.referring_client else None,
             'account_owner_id': self.account_owner_id,
             'account_owner_name': self.account_owner.full_name if self.account_owner else None,
+            'is_independent': self.is_independent,
+            'b2c_mobile': self.b2c_mobile,
+            'b2c_id_proof_type': self.b2c_id_proof_type,
+            'b2c_id_proof_number': self.b2c_id_proof_number,
+            'status_changed_at': self.status_changed_at.isoformat() if self.status_changed_at else None,
             'first_follow_up_date': self.first_follow_up_date.isoformat() if self.first_follow_up_date else None,
             'onboarding_remarks': self.onboarding_remarks,
             'blacklist_reason': self.blacklist_reason,
