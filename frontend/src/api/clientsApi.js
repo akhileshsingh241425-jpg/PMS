@@ -29,3 +29,13 @@ export async function deleteClient(id) {
   const res = await api.delete(`/api/clients/${id}`)
   return res.data
 }
+
+export async function checkDuplicate(params) {
+  const res = await api.get('/api/clients/check-duplicate', { params })
+  return res.data
+}
+
+export async function exportClients(params = {}) {
+  const res = await api.get('/api/clients/export', { params, responseType: 'blob' })
+  return res.data
+}
