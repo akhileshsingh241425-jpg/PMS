@@ -1163,10 +1163,8 @@ export default function MeetingDetailView({ meetingId, meetingType = 'meeting', 
 
       {/* ═══════════ MAIN CONTENT ═══════════ */}
       <div style={{
-        display: 'flex', gap: 24,
-        padding: '24px 28px',
-        maxWidth: sidebarOpen ? undefined : 960,
-        margin: '0 auto',
+        display: 'flex', gap: 14,
+        padding: '14px 20px',
       }}>
         {/* Left - Main Content */}
         <div style={{ flex: 1, minWidth: 0 }}>
