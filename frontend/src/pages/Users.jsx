@@ -144,7 +144,7 @@ const [showForm, setShowForm] = useState(false)
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-2">
         <div><h1 className="text-2xl font-serif font-bold">Team & Permissions</h1><p className="text-gray-500 text-sm mt-1">Manage team members, roles, project assignments & module access</p></div>
         <div className="flex items-center gap-2">
           <button onClick={()=>{load();if(hasRole('admin'))loadPerms()}} className="flex items-center gap-2 px-4 py-2 bg-slate-100 border border-slate-300 text-sm hover:bg-slate-200"><RefreshCw className="w-4 h-4" /> Refresh</button>
@@ -154,13 +154,13 @@ const [showForm, setShowForm] = useState(false)
 
       {/* Add/Edit Modal */}
       {showForm&&(<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={()=>setShowForm(false)}><div className="bg-white w-full max-w-3xl max-h-[90vh] overflow-y-auto m-4" onClick={e=>e.stopPropagation()}>
-        <div className="flex items-center justify-between p-5 border-b">
+        <div className="flex items-center justify-between p-3 border-b">
           <h2 className="font-semibold">{editUser?'Edit User':'Add User'}</h2>
           <button onClick={()=>setShowForm(false)}><X className="w-5 h-5"/></button>
         </div>
 
         {/* User Type Tabs */}
-        {!editUser&&<div className="flex border-b mx-5 mt-5">
+        {!editUser&&<div className="flex border-b mx-3 mt-3">
           <button type="button" onClick={()=>setUserType('employee')}
             className={`px-5 py-2.5 text-sm font-medium border-b-2 transition -mb-px ${userType==='employee'?'border-blue-700 text-blue-700':'border-transparent text-gray-500 hover:text-gray-700'}`}>
             Employee
@@ -171,7 +171,7 @@ const [showForm, setShowForm] = useState(false)
           </button>
         </div>}
 
-        <form onSubmit={save} className="p-5 space-y-5">
+        <form onSubmit={save} className="p-3 space-y-3">
           {error&&<p className="text-sm text-red-600 bg-red-50 px-3 py-2 ">{error}</p>}
 
           {/* Common Fields */}
@@ -267,7 +267,7 @@ const [showForm, setShowForm] = useState(false)
 
               {/* Expanded Content */}
               {isExpanded && (
-                <div className="border-t border-slate-100 bg-slate-50 p-4 space-y-5">
+                <div className="border-t border-slate-100 bg-slate-50 p-4 space-y-3">
                   {/* Info Row */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div><p className="text-xs text-slate-400">Email</p><p className="font-medium">{u.email}</p></div>
