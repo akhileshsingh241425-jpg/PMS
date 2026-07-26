@@ -410,9 +410,9 @@ export default function LeadsDetailPage() {
 
   return (
     <div style={{ background: C.bg, minHeight: '100vh', fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif", color: C.text, fontSize: 14 }}>
-      <div style={{ padding: '0 0 40px', width: '100%', maxWidth: 'none' }}>
+      <div style={{ padding: '0 0 20px', width: '100%', maxWidth: 'none' }}>
         {/* ═══ HEADER CARD ═══ */}
-        <div style={{ background: C.card, borderRadius: 14, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 16 }}>
+        <div style={{ background: C.card, borderRadius: 14, border: `1px solid ${C.border}`, padding: '12px 16px', marginBottom: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1 }}>
               <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#E8E4FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 800, color: C.primary, flexShrink: 0 }}>
@@ -487,7 +487,7 @@ export default function LeadsDetailPage() {
         </div>
 
         {/* ═══ KPI CARDS ═══ */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12, marginBottom: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12, marginBottom: 10 }}>
           <KPICard icon={<MoneyIcon />} bg="#ECFDF5" color="#059669" label="Est. Revenue" value={l.estimated_value ? `₹${(l.estimated_value / 100000).toFixed(1)}L` : '—'} />
           <KPICard icon={<TargetIcon />} bg="#F5F3FF" color={C.primary} label="Win Probability" value={`${winProb}%`} />
           <KPICard icon={<CalendarIcon />} bg="#FFF7ED" color="#D97706" label="Days Open" value={`${daysOpen(l.created_at)}d`} />
@@ -498,7 +498,7 @@ export default function LeadsDetailPage() {
 
         {/* ═══ LEAD SOURCE CARD (for referred leads) ═══ */}
         {(l.referring_account_id || l.referring_account_name) && (
-          <div style={{ background: '#F0FDF4', borderRadius: 12, border: '1.5px solid #86EFAC', padding: '16px 20px', marginBottom: 16 }}>
+          <div style={{ background: '#F0FDF4', borderRadius: 12, border: '1.5px solid #86EFAC', padding: '16px 20px', marginBottom: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
               <span style={{ fontSize: 18 }}>🟢</span>
               <span style={{ fontSize: 14, fontWeight: 800, color: '#065F46' }}>Referred by Existing Customer</span>
@@ -513,7 +513,7 @@ export default function LeadsDetailPage() {
         )}
 
         {/* ═══ PIPELINE / STAGE TABS ═══ */}
-        <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '8px 12px', marginBottom: 16 }}>
+        <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '8px 12px', marginBottom: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', overflowX: 'auto', gap: 0 }}>
             {STAGE_TABS.map((tab, i) => (
               <StageTab key={tab.key} tab={tab} isActive={tab.key === l.stage}
@@ -527,9 +527,9 @@ export default function LeadsDetailPage() {
         <div>
           <div>
             {/* ═══ TITLE (COMPANY NAME) + DESCRIPTION ═══ */}
-            <div style={{ background: C.card, borderRadius: 14, border: `1px solid ${C.border}`, overflow: 'hidden', marginBottom: 16 }}>
+            <div style={{ background: C.card, borderRadius: 14, border: `1px solid ${C.border}`, overflow: 'hidden', marginBottom: 10 }}>
               {/* Title / Company Name */}
-              <div style={{ padding: '20px 24px', borderBottom: `1px solid ${C.border}` }}>
+              <div style={{ padding: '12px 16px', borderBottom: `1px solid ${C.border}` }}>
                 {editingCompany ? (
                   <div>
                     <label style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6, display: 'block' }}>Lead Title / Company Name</label>
@@ -563,7 +563,7 @@ export default function LeadsDetailPage() {
               </div>
 
               {/* Description - Notepad Style */}
-              <div style={{ padding: '20px 24px' }}>
+              <div style={{ padding: '12px 16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{ width: 32, height: 32, borderRadius: 8, background: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -627,7 +627,7 @@ export default function LeadsDetailPage() {
               </div>
             </div>
             {/* LEAD INFO */}
-            <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 12 }}>
+            <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '12px 16px', marginBottom: 12 }}>
               <SectionTitle icon={<UserIcon />} text="Lead Information" />
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginTop: 14 }}>
                 <InfoField icon={<PersonIcon />} label="Name" value={l.contact_name || '—'} />
@@ -651,7 +651,7 @@ export default function LeadsDetailPage() {
 
             {/* PROPOSALS */}
             {recordType === 'lead' && (
-            <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 12 }}>
+            <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '12px 16px', marginBottom: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                 <SectionTitle icon={<FileIcon />} text={`Proposals (${(proposals || []).length})`} />
                 <button onClick={async () => {
@@ -688,7 +688,7 @@ export default function LeadsDetailPage() {
             )}
 
             {/* REMARKS */}
-            <div style={{ background: C.card, borderRadius: 14, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 12 }}>
+            <div style={{ background: C.card, borderRadius: 14, border: `1px solid ${C.border}`, padding: '12px 16px', marginBottom: 12 }}>
               <SectionTitle icon={<ChatIcon />} text={`Remarks (${(remarks || []).length})`} />
               <div style={{ marginTop: 14, marginBottom: 20 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
@@ -837,9 +837,9 @@ export default function LeadsDetailPage() {
             </div>
 
             {/* NOTES */}
-            <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 12 }}>
+            <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '12px 16px', marginBottom: 12 }}>
               <SectionTitle icon={<NoteIcon />} text={`Notes (${(notes || []).length})`} />
-              <form onSubmit={addNote} style={{ display: 'flex', gap: 8, marginTop: 14, marginBottom: 16 }}>
+              <form onSubmit={addNote} style={{ display: 'flex', gap: 8, marginTop: 14, marginBottom: 10 }}>
                 <input value={noteText} onChange={e => setNoteText(e.target.value)} placeholder="Add a note..."
                   onKeyDown={e => { if ((e.key === 'Enter' && !e.shiftKey) || (e.key === 'Enter' && e.ctrlKey)) { e.preventDefault(); addNote(e) } }}
                   style={{ flex: 1, padding: '10px 14px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', background: '#FAFAFA' }} />
@@ -858,7 +858,7 @@ export default function LeadsDetailPage() {
             </div>
 
             {/* AUDIT LOG */}
-            <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '20px 24px' }}>
+            <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, padding: '12px 16px' }}>
               <SectionTitle icon={<FileIcon />} text={`Audit Log (${(audit_logs || []).length})`} />
               <div style={{ marginTop: 14 }}>
                 {(!audit_logs || audit_logs.length === 0) ? (
@@ -884,14 +884,14 @@ export default function LeadsDetailPage() {
       {showConvertModal && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={() => setShowConvertModal(false)}>
           <div style={{ background: '#fff', borderRadius: 16, width: 520, maxWidth: '100%', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,.15)' }} onClick={e => e.stopPropagation()}>
-            <div style={{ padding: '20px 24px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ padding: '12px 16px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
                 <span style={{ fontSize: 16, fontWeight: 700, color: '#1A1A2E' }}>{convertMode === 'lead' ? 'Convert to Lead' : 'Create Account'}</span>
                 <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>{convertMode === 'lead' ? 'Create a new lead from this referral' : 'Convert to a client account'}</div>
               </div>
               <button onClick={() => setShowConvertModal(false)} style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', background: '#F0F2F8', cursor: 'pointer', fontSize: 14, color: '#6B7280', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
             </div>
-            <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1 }}>
+            <div style={{ padding: '12px 16px', overflowY: 'auto', flex: 1 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                 <div style={{ gridColumn: '1 / -1' }}>
                   <label style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 4, display: 'block' }}>Company Name <span style={{ color: '#DC2626' }}>*</span></label>
@@ -1093,11 +1093,11 @@ export default function LeadsDetailPage() {
       {showProjectForm && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, overflowY: 'auto' }} onClick={() => setShowProjectForm(false)}>
           <div style={{ background: '#fff', borderRadius: 16, width: 580, maxWidth: '100%', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,.15)' }} onClick={e => e.stopPropagation()}>
-            <div style={{ padding: '20px 24px', borderBottom: `1px solid #E5E7EB`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ padding: '12px 16px', borderBottom: `1px solid #E5E7EB`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div><span style={{ fontSize: 16, fontWeight: 700, color: '#1A1A2E' }}>Create Project from Lead</span><div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>Fill project details to start tracking</div></div>
               <button onClick={() => setShowProjectForm(false)} style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', background: '#F0F2F8', cursor: 'pointer', fontSize: 14, color: '#6B7280', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
             </div>
-            <form onSubmit={createProject} style={{ padding: '20px 24px', overflowY: 'auto', flex: 1 }}>
+            <form onSubmit={createProject} style={{ padding: '12px 16px', overflowY: 'auto', flex: 1 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                 <div style={{ gridColumn: '1 / -1' }}>
                   <label style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 4, display: 'block' }}>Project Title <span style={{ color: '#DC2626' }}>*</span></label>
@@ -1151,7 +1151,7 @@ export default function LeadsDetailPage() {
       {editRemark && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={() => setEditRemark(null)}>
           <div style={{ background: '#fff', borderRadius: 16, width: 640, maxWidth: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,.15)' }} onClick={e => e.stopPropagation()}>
-            <div style={{ padding: '20px 24px', borderBottom: `1px solid #E5E7EB`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ padding: '12px 16px', borderBottom: `1px solid #E5E7EB`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span style={{ fontSize: 16, fontWeight: 700, color: '#1A1A2E' }}>Edit Remark</span>
               <button onClick={() => setEditRemark(null)} style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', background: '#F0F2F8', cursor: 'pointer', fontSize: 14, color: '#6B7280', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
             </div>
@@ -1193,11 +1193,11 @@ export default function LeadsDetailPage() {
       {viewRemark && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={() => setViewRemark(null)}>
           <div style={{ background: '#fff', borderRadius: 16, width: 560, maxWidth: '100%', maxHeight: '80vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,.15)' }} onClick={e => e.stopPropagation()}>
-            <div style={{ padding: '20px 24px', borderBottom: `1px solid #E5E7EB`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ padding: '12px 16px', borderBottom: `1px solid #E5E7EB`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span style={{ fontSize: 16, fontWeight: 700, color: '#1A1A2E' }}>Remark</span>
               <button onClick={() => setViewRemark(null)} style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', background: '#F0F2F8', cursor: 'pointer', fontSize: 14, color: '#6B7280', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
             </div>
-            <div style={{ flex: 1, padding: '20px 24px', overflowY: 'auto', fontSize: 14, lineHeight: 1.7, color: '#374151' }} dangerouslySetInnerHTML={{ __html: viewRemark.text || '' }} />
+            <div style={{ flex: 1, padding: '12px 16px', overflowY: 'auto', fontSize: 14, lineHeight: 1.7, color: '#374151' }} dangerouslySetInnerHTML={{ __html: viewRemark.text || '' }} />
             <div style={{ padding: '12px 24px', borderTop: `1px solid #E5E7EB`, display: 'flex', justifyContent: 'flex-end' }}>
               <button onClick={() => { setViewRemark(null); setEditRemark(viewRemark); setTimeout(() => { if (remarkEditorRef.current) remarkEditorRef.current.innerHTML = viewRemark.text || '' }, 50) }}
                 style={{ padding: '8px 20px', borderRadius: 8, border: 'none', background: C.primary, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Edit</button>
@@ -1210,7 +1210,7 @@ export default function LeadsDetailPage() {
       {editActivity && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={() => setEditActivity(null)}>
           <div style={{ background: '#fff', borderRadius: 16, width: 640, maxWidth: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,.15)' }} onClick={e => e.stopPropagation()}>
-            <div style={{ padding: '20px 24px', borderBottom: `1px solid #E5E7EB`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ padding: '12px 16px', borderBottom: `1px solid #E5E7EB`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
                 <span style={{ fontSize: 11, fontWeight: 700, color: C.primary, background: '#F0EBFF', padding: '2px 10px', borderRadius: 99, marginRight: 8 }}>{editActivity.activity_type}</span>
                 <span style={{ fontSize: 16, fontWeight: 700, color: '#1A1A2E' }}>{editActivity.title}</span>
@@ -1263,14 +1263,14 @@ export default function LeadsDetailPage() {
       {viewActivity && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={() => setViewActivity(null)}>
           <div style={{ background: '#fff', borderRadius: 16, width: 560, maxWidth: '100%', maxHeight: '80vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,.15)' }} onClick={e => e.stopPropagation()}>
-            <div style={{ padding: '20px 24px', borderBottom: `1px solid #E5E7EB`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ padding: '12px 16px', borderBottom: `1px solid #E5E7EB`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
                 <span style={{ fontSize: 11, fontWeight: 700, color: C.primary, background: '#F0EBFF', padding: '2px 10px', borderRadius: 99, marginRight: 8 }}>{viewActivity.activity_type}</span>
                 <span style={{ fontSize: 16, fontWeight: 700, color: '#1A1A2E' }}>{viewActivity.title}</span>
               </div>
               <button onClick={() => setViewActivity(null)} style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', background: '#F0F2F8', cursor: 'pointer', fontSize: 14, color: '#6B7280', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
             </div>
-            <div style={{ flex: 1, padding: '20px 24px', overflowY: 'auto', fontSize: 14, lineHeight: 1.7, color: '#374151' }} dangerouslySetInnerHTML={{ __html: viewActivity.description || '' }} />
+            <div style={{ flex: 1, padding: '12px 16px', overflowY: 'auto', fontSize: 14, lineHeight: 1.7, color: '#374151' }} dangerouslySetInnerHTML={{ __html: viewActivity.description || '' }} />
             <div style={{ padding: '12px 24px', borderTop: `1px solid #E5E7EB`, display: 'flex', justifyContent: 'flex-end' }}>
               <button onClick={() => { setViewActivity(null); setEditActivity(viewActivity); setActivityDesc(viewActivity.description || ''); setTimeout(() => { if (editorRef.current) editorRef.current.innerHTML = viewActivity.description || '' }, 50) }}
                 style={{ padding: '8px 20px', borderRadius: 8, border: 'none', background: C.primary, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Edit</button>
@@ -1475,7 +1475,7 @@ function Modal({ children, onClose }) {
   )
 }
 function ModalIcon({ children, bg }) {
-  return <div style={{ width: 48, height: 48, borderRadius: '50%', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>{children}</div>
+  return <div style={{ width: 48, height: 48, borderRadius: '50%', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>{children}</div>
 }
 function ModalTitle({ children }) {
   return <div style={{ fontSize: 18, fontWeight: 700, color: '#1A1A2E', marginBottom: 4 }}>{children}</div>
