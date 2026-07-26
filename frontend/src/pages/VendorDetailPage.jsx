@@ -71,13 +71,13 @@ export default function VendorDetailPage() {
 
   return (
     <div style={{ background: '#F6F8FC', minHeight: '100vh', padding: '0 24px 32px' }}>
-      <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+      <div>
         <button onClick={() => navigate('/clients')} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 0', border: 'none', background: 'none', color: '#6B7280', fontSize: '13px', fontWeight: 500, cursor: 'pointer', marginBottom: '12px' }}>
           <ChevronLeft className="w-4 h-4" /> Back to Clients
         </button>
 
-        <div style={{ background: '#fff', borderRadius: '14px', boxShadow: '0 8px 24px rgba(0,0,0,.05)', border: '1px solid #ECECEC', marginBottom: '20px', overflow: 'hidden' }}>
-          <div style={{ padding: '24px 28px' }}>
+        <div style={{ background: '#fff', borderRadius: '14px', boxShadow: '0 8px 24px rgba(0,0,0,.05)', border: '1px solid #ECECEC', marginBottom: '10px', overflow: 'hidden' }}>
+          <div style={{ padding: '14px 18px' }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
               <div style={{ width: '60px', height: '60px', borderRadius: '14px', background: 'linear-gradient(135deg, #F59E0B, #F97316)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 4px 12px rgba(245,158,11,.2)' }}>
                 <span style={{ color: '#fff', fontSize: '24px', fontWeight: 700 }}>{(vendor.name || '?')[0]}</span>
@@ -112,7 +112,7 @@ export default function VendorDetailPage() {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '10px' }}>
           <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #ECECEC', padding: '16px', textAlign: 'center' }}>
             <div style={{ fontSize: '11px', fontWeight: 600, color: '#9CA3AF', marginBottom: '4px' }}>Projects</div>
             <div style={{ fontSize: '24px', fontWeight: 700, color: '#1F2937' }}>{projects.length}</div>
