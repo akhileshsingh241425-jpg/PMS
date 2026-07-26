@@ -83,6 +83,19 @@ def list_clients(current_user):
     })
 
 
+@client_bp.route('/summary', methods=['GET'])
+@login_required
+def client_summary(current_user):
+    return jsonify({
+        'total': Client.query.count(),
+        'active': Client.query.filter_by(status='ACTIVE').count(),
+        'prospect': Client.query.filter_by(status='PROSPECT').count(),
+        'dormant': Client.query.filter_by(status='DORMANT').count(),
+        'blacklisted': Client.query.filter_by(status='BLACKLISTED').count(),
+        'vendors': Client.query.filter_by(client_type='vendor').count(),
+    })
+
+
 @client_bp.route('/check-duplicate', methods=['POST'])
 @login_required
 def check_duplicate(current_user):
