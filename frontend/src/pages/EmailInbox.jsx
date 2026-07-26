@@ -128,7 +128,7 @@ export default function EmailInbox() {
     <div style={{ minHeight: '100vh', fontFamily: C.font, color: C.text, background: C.bg }}>
       <div style={{ maxWidth: '100%' }}>
 
-        <div style={{ padding: '24px 28px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '12px 20px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h1 style={{ fontSize: 26, fontWeight: 700, margin: 0, letterSpacing: '-0.5px' }}>Email Inbox</h1>
             <p style={{ fontSize: 13, color: C.secondary, margin: '4px 0 0', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -167,13 +167,13 @@ export default function EmailInbox() {
           </div>
         </div>
 
-        <div style={{ padding: '18px 28px 0', display: 'flex', gap: 12 }}>
+        <div style={{ padding: '10px 20px 0', display: 'flex', gap: 12 }}>
           {dashes.map(d => {
             const Icon = d.icon
             return (
               <div key={d.label} style={{
                 flex: 1, background: C.card, borderRadius: 12, border: `1px solid ${C.border}`,
-                padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14,
+                padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 14,
                 boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
               }}>
                 <div style={{
@@ -193,7 +193,7 @@ export default function EmailInbox() {
           {followups.overdue.length > 0 && (
             <div style={{
               flex: 1, background: '#FFF5F5', borderRadius: 12, border: '1px solid #FECACA',
-              padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14,
+              padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 14,
             }}>
               <div style={{ width: 40, height: 40, borderRadius: 10, background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <AlertTriangle className="w-4.5 h-4.5" style={{ color: '#DC2626' }} />
@@ -341,7 +341,7 @@ export default function EmailInbox() {
                         return (
                           <div key={msg.id} onClick={() => setSelectedMsg(msg)}
                             style={{
-                              display: 'flex', gap: 12, padding: '14px 18px', cursor: 'pointer',
+                              display: 'flex', gap: 12, padding: '10px 14px', cursor: 'pointer',
                               borderBottom: '1px solid #F1F5F9', transition: 'background 0.12s',
                               background: selectedMsg?.id === msg.id ? '#EEF2FF' : msg.is_read ? '#fff' : '#F8FAFC',
                             }}
