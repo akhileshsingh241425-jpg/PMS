@@ -71,7 +71,7 @@ export default function TeamsPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
         <h1 style={{ fontSize: 20, fontWeight: 700, color: '#1A1A2E' }}>Teams</h1>
         <button onClick={openCreate} style={{
           display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px',
@@ -81,7 +81,7 @@ export default function TeamsPage() {
       </div>
 
       {teams.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: 60, color: '#9CA3AF' }}>
+        <div style={{ textAlign: 'center', padding: 30, color: '#9CA3AF' }}>
           <Users className="w-12 h-12 mx-auto mb-3" style={{ opacity: 0.3 }} />
           <p style={{ fontWeight: 600 }}>No teams yet</p>
           <p style={{ fontSize: 13, marginTop: 4 }}>Create your first team to organize members</p>
@@ -137,11 +137,11 @@ export default function TeamsPage() {
             background: '#fff', borderRadius: 16, width: 480, maxHeight: '90vh', overflow: 'auto',
             boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px', borderBottom: '1px solid #E5E7EB' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #E5E7EB' }}>
               <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1A1A2E' }}>{editTeam ? 'Edit Team' : 'New Team'}</h2>
               <button onClick={() => setShowForm(false)} style={{ padding: 4, border: 'none', background: 'none', cursor: 'pointer', color: '#9CA3AF' }}><X className="w-5 h-5" /></button>
             </div>
-            <form onSubmit={save} style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <form onSubmit={save} style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 4 }}>Team Name *</label>
                 <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
