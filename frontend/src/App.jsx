@@ -35,6 +35,7 @@ import PMApprovalQueue from './pages/PMApprovalQueue'
 import VulnerabilityDashboard from './pages/VulnerabilityDashboard'
 import Clients from './pages/Clients'
 import ClientOnboarding from './pages/ClientOnboarding'
+import ClientDetailPage from './pages/ClientDetailPage'
 import VendorDetailPage from './pages/VendorDetailPage'
 import POVendorPage from './pages/POVendor'
 import POVendorDetail from './pages/POVendorDetail'
@@ -106,6 +107,7 @@ export default function App() {
                 <Route path="accounts/:id" element={<AccountsDetailPage />} />
                 <Route path="clients" element={<Clients />} />
                 <Route path="clients/new" element={<ClientOnboarding />} />
+                <Route path="clients/:id" element={<ClientDetailPage />} />
                 <Route path="po-out" element={<POVendorPage />} />
                 <Route path="po-out/:id" element={<POVendorDetail />} />
                 <Route path="vendors/:id" element={<VendorDetailPage />} />
