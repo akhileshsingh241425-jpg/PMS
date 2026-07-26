@@ -39,6 +39,8 @@ import ClientDetailPage from './pages/ClientDetailPage'
 import VendorDetailPage from './pages/VendorDetailPage'
 import POVendorPage from './pages/POVendor'
 import POVendorDetail from './pages/POVendorDetail'
+import POInPage from './pages/POInPage'
+import POInDetail from './pages/POInDetail'
 import EmailInbox from './pages/EmailInbox'
 import ChatPage from './pages/ChatPage'
 import FloatingChat from './components/FloatingChat'
@@ -110,6 +112,8 @@ export default function App() {
                 <Route path="clients/:id" element={<ClientDetailPage />} />
                 <Route path="po-out" element={<POVendorPage />} />
                 <Route path="po-out/:id" element={<POVendorDetail />} />
+                <Route path="po-in" element={<POInPage />} />
+                <Route path="po-in/:id" element={<POInDetail />} />
                 <Route path="vendors/:id" element={<VendorDetailPage />} />
                 <Route path="email" element={<EmailInbox />} />
                 <Route path="projects" element={<Projects />} />

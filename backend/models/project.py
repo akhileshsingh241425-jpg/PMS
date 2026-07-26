@@ -70,6 +70,10 @@ class Project(db.Model):
     advance_paid = db.Column(db.Float, default=0)
     balance_outstanding = db.Column(db.Float, default=0)
     po_out_status = db.Column(db.String(30), default='DRAFT')
+    po_in_status = db.Column(db.String(30), default='WORK ORDER RECEIVED')
+    po_acknowledged = db.Column(db.Boolean, default=False)
+    po_acknowledged_at = db.Column(db.DateTime)
+    po_acknowledgement_sent_to = db.Column(db.String(255))
     po_approver_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
     po_approved_at = db.Column(db.DateTime)
     po_rejected_reason = db.Column(db.Text)
@@ -160,6 +164,10 @@ class Project(db.Model):
             'advance_paid': self.advance_paid,
             'balance_outstanding': self.balance_outstanding,
             'po_out_status': self.po_out_status,
+            'po_in_status': self.po_in_status,
+            'po_acknowledged': self.po_acknowledged,
+            'po_acknowledged_at': self.po_acknowledged_at.isoformat() if self.po_acknowledged_at else None,
+            'po_acknowledgement_sent_to': self.po_acknowledgement_sent_to,
             'po_approver_id': self.po_approver_id,
             'po_approver_name': self.po_approver.full_name if self.po_approver else None,
             'po_approved_at': self.po_approved_at.isoformat() if self.po_approved_at else None,

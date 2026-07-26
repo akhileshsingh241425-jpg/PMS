@@ -24,5 +24,6 @@ from .clients import client_bp
 from .vendors import vendor_bp
 from .email_integration import email_bp
 from .po_out import po_out_bp
+from .po_in import po_in_bp
 from .myday import myday_bp
 from .masters import masters_bp
