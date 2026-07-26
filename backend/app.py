@@ -44,6 +44,7 @@ def create_app():
         return jsonify({'error': 'Internal server error'}), 500
 
     from routes import auth_bp, account_bp, project_bp, activity_bp, portal_bp, queries_bp, dash_bp, meeting_req_bp, notif_bp, leads_bp, opp_bp, contact_bp, enterprise_bp, admin_bp, search_bp, team_bp, me_bp, employee_bp, pm_bp, vuln_bp, attendance_bp, backlog_bp, client_bp, vendor_bp, email_bp, po_out_bp, po_in_bp, myday_bp, masters_bp
+    from routes.plan_builder import plan_bp
     from routes.push_routes import push_bp
     from routes.chat import chat_bp
     app.register_blueprint(auth_bp)
@@ -77,6 +78,7 @@ def create_app():
     app.register_blueprint(po_in_bp)
     app.register_blueprint(myday_bp)
     app.register_blueprint(masters_bp)
+    app.register_blueprint(plan_bp)
 
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')
@@ -97,6 +99,8 @@ def create_app():
         init_default_settings()
         from scheduler import init_scheduler
         init_scheduler(app)
+        from routes.plan_builder import seed_default_templates
+        seed_default_templates()
 
     return app
 

@@ -758,9 +758,15 @@ export default function ProjectsDetailPage() {
             ))}
           </div>
 
-          {!p.plan_generated && p.project_type && (
-            <ActionBtn icon={<FileTextIcon />} label={generatingPlan ? 'Generating...' : `Generate from ${p.project_type} Template`} onClick={generatePlan} disabled={generatingPlan} primary />
-          )}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {!p.plan_generated && p.project_type && (
+              <ActionBtn icon={<FileTextIcon />} label={generatingPlan ? 'Generating...' : `Generate from ${p.project_type} Template`} onClick={generatePlan} disabled={generatingPlan} primary />
+            )}
+            <Link to={`/projects/${id}/plan`}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, fontSize: 11.5, fontWeight: 600, background: p.plan_generated ? '#f1ecff' : '#fff', color: '#6c3ef4', border: '1px solid #d4c8f5', textDecoration: 'none' }}>
+              Open Plan Builder {p.plan_generated ? `(v${p.plan_version || 1})` : ''} →
+            </Link>
+          </div>
 
           <TaskTrackerPanel
             projectId={id}

@@ -11,29 +11,121 @@ PROJECT_STAGES = [
     'Awaiting Client Response', 'Awaiting Documents', 'Awaiting Payment',
 ]
 
-PLAN_TEMPLATES = {
-    'VAPT': [
-        {'phase': 'Scoping & Asset List', 'tasks': ['Scope confirmation with client', 'Asset list compilation', 'Environment access setup', 'Rules of engagement document']},
-        {'phase': 'Vulnerability Assessment', 'tasks': ['Automated vulnerability scanning', 'Port & service enumeration', 'Configuration review', 'Vulnerability validation']},
-        {'phase': 'Penetration Testing', 'tasks': ['Web application testing', 'Network penetration testing', 'Exploitation & post-exploitation', 'Privilege escalation testing']},
-        {'phase': 'Draft Report & Review', 'tasks': ['Findings documentation', 'Risk rating & classification', 'Remediation recommendations', 'Internal review & quality check']},
-        {'phase': 'Retest & Final Report', 'tasks': ['Remediation retesting', 'Final report preparation', 'Management summary', 'Report delivery & closure']},
-    ],
-    'IS Audit': [
-        {'phase': 'Audit Scope & Checklist', 'tasks': ['Audit scope finalization', 'Checklist preparation (ISO 27001 / standards)', 'Audit team assignment', 'Opening meeting scheduling']},
-        {'phase': 'Document Review', 'tasks': ['Policy & procedure review', 'Risk assessment documentation review', 'Compliance evidence review', 'Gap identification']},
-        {'phase': 'Onsite / Remote Audit', 'tasks': ['Site visit / remote session', 'Control testing & sampling', 'Personnel interviews', 'Evidence collection & verification']},
-        {'phase': 'Findings & NC Report', 'tasks': ['Non-conformity identification', 'Draft audit report', 'Management presentation', 'Corrective action plan discussion']},
-        {'phase': 'Compliance Verification', 'tasks': ['Corrective action verification', 'Closure of NCs', 'Final audit report submission', 'Certificate recommendation']},
-    ],
-    'ISMS Implementation': [
-        {'phase': 'Gap Assessment', 'tasks': ['Current state assessment', 'ISMS gap analysis', 'Stakeholder interviews', 'Gap report preparation']},
-        {'phase': 'Risk Assessment & SoA', 'tasks': ['Asset identification & classification', 'Risk assessment methodology', 'Risk analysis & evaluation', 'Statement of Applicability (SoA) preparation']},
-        {'phase': 'Policy & Control Implementation', 'tasks': ['ISMS policy framework', 'Control implementation planning', 'Control deployment', 'Awareness training & documentation']},
-        {'phase': 'Internal Audit & MRM', 'tasks': ['Internal audit planning', 'Internal audit execution', 'Management Review Meeting (MRM)', 'Corrective actions tracking']},
-        {'phase': 'Certification Support', 'tasks': ['Stage 1 audit preparation', 'Stage 1 audit support', 'Stage 2 audit preparation', 'Stage 2 audit support & certification']},
-    ],
-}
+PROJECT_TYPES = ['VAPT', 'IS Audit', 'ISMS Implementation', 'Technical Assessment', 'GRC', 'CS Framework Implementation']
+
+
+class PlanTemplateMaster(db.Model):
+    __tablename__ = 'plan_template_masters'
+    id = db.Column(db.Integer, primary_key=True)
+    project_type = db.Column(db.String(50), nullable=False, index=True)
+    name = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text)
+    is_active = db.Column(db.Boolean, default=True)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    modules = db.relationship('PlanTemplateModule', back_populates='template', order_by='PlanTemplateModule.order', cascade='all, delete-orphan')
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'project_type': self.project_type, 'name': self.name,
+            'description': self.description, 'is_active': self.is_active,
+            'modules': [m.to_dict() for m in self.modules],
+        }
+
+
+class PlanTemplateModule(db.Model):
+    __tablename__ = 'plan_template_modules'
+    id = db.Column(db.Integer, primary_key=True)
+    template_id = db.Column(db.Integer, db.ForeignKey('plan_template_masters.id', ondelete='CASCADE'), nullable=False, index=True)
+    name = db.Column(db.String(255), nullable=False)
+    order = db.Column(db.Integer, default=0)
+    is_active = db.Column(db.Boolean, default=True)
+
+    template = db.relationship('PlanTemplateMaster', back_populates='modules')
+    submodules = db.relationship('PlanTemplateSubmodule', back_populates='module', order_by='PlanTemplateSubmodule.order', cascade='all, delete-orphan')
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'template_id': self.template_id, 'name': self.name,
+            'order': self.order, 'submodules': [s.to_dict() for s in self.submodules],
+        }
+
+
+class PlanTemplateSubmodule(db.Model):
+    __tablename__ = 'plan_template_submodules'
+    id = db.Column(db.Integer, primary_key=True)
+    module_id = db.Column(db.Integer, db.ForeignKey('plan_template_modules.id', ondelete='CASCADE'), nullable=False, index=True)
+    name = db.Column(db.String(255), nullable=False)
+    default_deliverable = db.Column(db.String(255))
+    order = db.Column(db.Integer, default=0)
+
+    module = db.relationship('PlanTemplateModule', back_populates='submodules')
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'module_id': self.module_id, 'name': self.name,
+            'default_deliverable': self.default_deliverable, 'order': self.order,
+        }
+
+
+class PlanVersion(db.Model):
+    __tablename__ = 'plan_versions'
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete='CASCADE'), nullable=False, index=True)
+    version_number = db.Column(db.Integer, nullable=False)
+    change_summary = db.Column(db.Text)
+    plan_data = db.Column(db.JSON, nullable=False)
+    is_baseline = db.Column(db.Boolean, default=False)
+    changed_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    project = db.relationship('Project', backref=db.backref('plan_versions', lazy='dynamic', order_by='PlanVersion.version_number.desc()', cascade='all, delete-orphan'))
+    changer = db.relationship('User', foreign_keys=[changed_by])
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'project_id': self.project_id, 'version_number': self.version_number,
+            'change_summary': self.change_summary, 'is_baseline': self.is_baseline,
+            'changed_by_name': self.changer.full_name if self.changer else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class PlanSubmodule(db.Model):
+    __tablename__ = 'plan_submodules'
+    id = db.Column(db.Integer, primary_key=True)
+    phase_id = db.Column(db.Integer, db.ForeignKey('project_phases.id', ondelete='CASCADE'), nullable=False, index=True)
+    name = db.Column(db.String(255), nullable=False)
+    deliverable = db.Column(db.String(255))
+    start_date = db.Column(db.Date)
+    end_date = db.Column(db.Date)
+    owner_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
+    support_ids = db.Column(db.JSON)
+    effort_days = db.Column(db.Float)
+    dependency_id = db.Column(db.Integer, db.ForeignKey('plan_submodules.id', ondelete='SET NULL'))
+    milestone_flag = db.Column(db.Boolean, default=False)
+    order = db.Column(db.Integer, default=0)
+    status = db.Column(db.String(30), default='Pending')
+    progress = db.Column(db.Float, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    phase = db.relationship('ProjectPhase', backref=db.backref('submodules', lazy='dynamic', order_by='PlanSubmodule.order', cascade='all, delete-orphan'))
+    owner = db.relationship('User', foreign_keys=[owner_id])
+    dependency = db.relationship('PlanSubmodule', foreign_keys=[dependency_id], remote_side='PlanSubmodule.id')
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'phase_id': self.phase_id, 'name': self.name,
+            'deliverable': self.deliverable,
+            'start_date': self.start_date.isoformat() if self.start_date else None,
+            'end_date': self.end_date.isoformat() if self.end_date else None,
+            'owner_id': self.owner_id, 'owner_name': self.owner.full_name if self.owner else None,
+            'support_ids': self.support_ids or [],
+            'effort_days': self.effort_days, 'dependency_id': self.dependency_id,
+            'milestone_flag': self.milestone_flag, 'order': self.order,
+            'status': self.status, 'progress': self.progress,
+        }
 
 
 class Project(db.Model):
@@ -380,9 +472,18 @@ class ProjectPhase(db.Model):
     name = db.Column(db.String(255), nullable=False)
     order = db.Column(db.Integer, default=0)
     status = db.Column(db.String(30), default='Pending')
+    deliverable = db.Column(db.String(255))
+    start_date = db.Column(db.Date)
+    end_date = db.Column(db.Date)
+    owner_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
+    weight = db.Column(db.Float, default=0)
+    milestone_flag = db.Column(db.Boolean, default=False)
+    plan_version = db.Column(db.Integer, default=1)
+    progress = db.Column(db.Float, default=0)
 
     project = db.relationship('Project', back_populates='phases')
     tasks = db.relationship('Task', backref='phase', lazy='dynamic')
+    phase_owner = db.relationship('User', foreign_keys=[owner_id])
 
     def to_dict(self):
         parent_tasks = self.tasks.filter_by(parent_task_id=None).order_by(Task.created_at.asc()).all()
@@ -391,13 +492,24 @@ class ProjectPhase(db.Model):
             td = t.to_dict()
             td['subtasks'] = [s.to_dict() for s in t.subtasks.order_by(Task.created_at.asc()).all()]
             task_dicts.append(td)
+        sub = self.submodules.order_by(PlanSubmodule.order).all() if hasattr(self, 'submodules') else []
         return {
             'id': self.id,
             'project_id': self.project_id,
             'name': self.name,
             'order': self.order,
             'status': self.status,
+            'deliverable': self.deliverable,
+            'start_date': self.start_date.isoformat() if self.start_date else None,
+            'end_date': self.end_date.isoformat() if self.end_date else None,
+            'owner_id': self.owner_id,
+            'owner_name': self.phase_owner.full_name if self.phase_owner else None,
+            'weight': self.weight,
+            'milestone_flag': self.milestone_flag,
+            'plan_version': self.plan_version,
+            'progress': self.progress,
             'tasks': task_dicts,
+            'submodules': [s.to_dict() for s in sub],
         }
 
 

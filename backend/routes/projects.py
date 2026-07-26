@@ -1,7 +1,7 @@
 from datetime import datetime
 from flask import Blueprint, request, jsonify
 import os
-from models import db, Project, ProjectRemark, ProjectRemarkReaction, ProjectDocument, ProjectReport, ProjectTeam, ProjectPhase, Task, Meeting, Note, User, ProjectRisk, ProjectIssue, ProjectMilestone, ProjectInvoice, ProjectTimesheet, ProjectChangeRequest, ApprovalHistory, PoPayment
+from models import db, Project, ProjectRemark, ProjectRemarkReaction, ProjectDocument, ProjectReport, ProjectTeam, ProjectPhase, Task, Meeting, Note, User, ProjectRisk, ProjectIssue, ProjectMilestone, ProjectInvoice, ProjectTimesheet, ProjectChangeRequest, ApprovalHistory, PoPayment, PlanSubmodule
 from models.client_portal import MeetingRequest, FindingQuery
 from middleware.auth import login_required, role_required
 from utils import validate_file, safe_filename, generate_id, paginate
@@ -176,23 +176,36 @@ def update_project(current_user, pid):
 @project_bp.route('/<int:pid>/generate-plan', methods=['POST'])
 @login_required
 def generate_plan(current_user, pid):
-    from models.project import PLAN_TEMPLATES
+    from models.project import PlanTemplateMaster, PlanTemplateModule, PlanTemplateSubmodule
     proj = Project.query.get_or_404(pid)
     if proj.plan_generated:
         return jsonify({'error': 'Plan already generated'}), 400
-    ptype = proj.project_type
+
+    TYPE_ALIAS = {
+        'VAPT': 'Technical Assessment',
+        'IS Audit': 'GRC',
+        'ISMS Implementation': 'CS Framework Implementation',
+    }
+    ptype = TYPE_ALIAS.get(proj.project_type, proj.project_type)
     if not ptype:
-        return jsonify({'error': 'Project type not set. Set project_type (VAPT, IS Audit, ISMS Implementation)'}), 400
-    template = PLAN_TEMPLATES.get(ptype)
-    if not template:
-        return jsonify({'error': f'No template found for project type: {ptype}'}), 400
-    for i, phase_data in enumerate(template):
-        phase = ProjectPhase(project_id=pid, name=phase_data['phase'], order=i, status='Pending')
+        return jsonify({'error': 'Project type not set'}), 400
+
+    tmpl = PlanTemplateMaster.query.filter_by(project_type=ptype, is_active=True).first()
+    if not tmpl:
+        return jsonify({'error': f'No template found for project type: {proj.project_type}'}), 400
+
+    for mod in tmpl.modules.order_by(PlanTemplateModule.order).all():
+        phase = ProjectPhase(project_id=pid, name=mod.name, order=mod.order, status='Pending',
+                             deliverable=mod.deliverable)
         db.session.add(phase)
         db.session.flush()
-        for task_title in phase_data['tasks']:
+        for sm in mod.submodules.order_by(PlanTemplateSubmodule.order).all():
+            PlanSubmodule(
+                phase_id=phase.id, name=sm.name, order=sm.order,
+                deliverable=sm.default_deliverable,
+            )
             task = Task(
-                title=task_title,
+                title=sm.name,
                 project_id=pid,
                 phase_id=phase.id,
                 status='Open',

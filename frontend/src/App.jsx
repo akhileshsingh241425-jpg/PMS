@@ -44,6 +44,7 @@ import POInDetail from './pages/POInDetail'
 import Settings from './pages/Settings'
 import EmailInbox from './pages/EmailInbox'
 import ChatPage from './pages/ChatPage'
+import PlanBuilderPage from './pages/PlanBuilderPage'
 import FloatingChat from './components/FloatingChat'
 
 function Protected({ children }) {
@@ -127,6 +128,7 @@ export default function App() {
                 <Route path="projects/:id/project-pages" element={<ProjectsDetailPage />} />
                 <Route path="projects/:id/team" element={<ProjectsDetailPage />} />
                 <Route path="projects/:id/calendar" element={<ProjectsDetailPage />} />
+                <Route path="projects/:id/plan" element={<PlanBuilderPage />} />
                 <Route path="teams" element={<TeamsPage />} />
                 <Route path="my-workspace" element={<MyWorkspacePage />} />
                 <Route path="meetings" element={<MeetingDetailPage />} />

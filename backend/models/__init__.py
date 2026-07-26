@@ -6,7 +6,7 @@ bcrypt = Bcrypt()
 
 from .user import User
 from .account import Account
-from .project import Project, ProjectPhase, ProjectAsset, ProjectRemark, ProjectRemarkReaction, ProjectDocument, ProjectTeam, ProjectReport, PoPayment
+from .project import Project, ProjectPhase, ProjectAsset, ProjectRemark, ProjectRemarkReaction, ProjectDocument, ProjectTeam, ProjectReport, PoPayment, PlanTemplateMaster, PlanTemplateModule, PlanTemplateSubmodule, PlanVersion, PlanSubmodule
 from .activity import Task, TaskChecklistItem, TaskComment, Meeting, MeetingShare, MeetingActivity, MeetingDocument, MeetingRequestDocument, Note
 from .client_portal import MeetingRequest, MeetingRequestShare, MeetingRequestActivity, ClientUpload, FindingQuery
 from .lead import Lead, LeadRemark, LeadRemarkReaction, LeadDocument, LeadActivity, LeadNote, LeadAuditLog, LeadProposal
