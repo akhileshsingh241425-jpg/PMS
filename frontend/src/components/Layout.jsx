@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { LayoutDashboard, Target, FileText, Building2, Briefcase, Users, LogOut, Bell, Search, ChevronLeft, ChevronRight, UserCircle, AlertTriangle, Clock, Mail, MessageSquare, ClipboardList, Settings } from 'lucide-react'
+import { LayoutDashboard, Target, FileText, Building2, Briefcase, Users, LogOut, Bell, Search, ChevronLeft, ChevronRight, UserCircle, AlertTriangle, Clock, Mail, MessageSquare, ClipboardList } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import api from '../services/api'
 
@@ -153,7 +153,7 @@ export default function Layout({ children }) {
 
         {/* Nav */}
         <nav style={{ flex: 1, padding: '12px 8px', display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto' }}>
-          {[...nav, ...(user?.role === 'admin' ? [{ to: '/users', icon: Users, label: 'Users' }, { to: '/settings', icon: Settings, label: 'Settings' }] : [])].map(item => {
+          {[...nav, ...(user?.role === 'admin' ? [{ to: '/users', icon: Users, label: 'Users' }] : [])].map(item => {
             const active = pathname === item.to || (item.to !== '/' && pathname.startsWith(item.to))
             const Icon = item.icon
             return (

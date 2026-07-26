@@ -37,7 +37,6 @@ import POVendorPage from './pages/POVendor'
 import POVendorDetail from './pages/POVendorDetail'
 import EmailInbox from './pages/EmailInbox'
 import ChatPage from './pages/ChatPage'
-import SettingsPage from './pages/Settings'
 import FloatingChat from './components/FloatingChat'
 
 function Protected({ children }) {
@@ -123,7 +122,6 @@ export default function App() {
                 <Route path="attendance" element={<AttendancePage />} />
                 <Route path="attendance/face-register" element={<FaceRegisterPage />} />
                 <Route path="users" element={<AdminRoute><UsersPage /></AdminRoute>} />
-                <Route path="settings" element={<AdminRoute><SettingsPage /></AdminRoute>} />
                 <Route path="chat" element={<ChatPage />} />
               </Route>
               <Route path="/employee" element={<Protected><EmployeeRoute><EmployeeAppLayout /></EmployeeRoute></Protected>}>

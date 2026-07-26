@@ -24,4 +24,3 @@ from .clients import client_bp
 from .vendors import vendor_bp
 from .email_integration import email_bp
 from .po_out import po_out_bp
-from .settings import settings_bp
