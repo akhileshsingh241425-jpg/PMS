@@ -95,7 +95,7 @@ function Dashboard({ data }) {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <div>
           <h1 style={pageTitle}>Dashboard</h1>
           <p style={pageSubtitle}>Here's what's happening with your work today</p>
@@ -106,7 +106,7 @@ function Dashboard({ data }) {
       </div>
 
       {/* Stat Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 28 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10, marginBottom: 10 }}>
         {statCards.map((s, i) => {
           const Icon = s.icon
           return (
@@ -218,13 +218,13 @@ function Dashboard({ data }) {
 function MyProjects({ projects, onSelect }) {
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <div>
           <h1 style={pageTitle}>My Projects</h1>
           <p style={pageSubtitle}>{projects.length} project{projects.length !== 1 ? 's' : ''} assigned to you</p>
         </div>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 10 }}>
         {projects.map(p => {
           const st = STATUS_STYLES[p.stage] || STATUS_STYLES['Created']
           return (
@@ -290,7 +290,7 @@ function ProjectDetail({ data, onBack }) {
         <ChevronLeft className="w-4 h-4" /> Back to Projects
       </button>
       <div style={{ ...card, overflow: 'hidden' }}>
-        <div style={{ padding: '24px', borderBottom: '1px solid #E2E8F0', background: 'linear-gradient(135deg, #F8FAFC, #FAFAFA)' }}>
+        <div style={{ padding: '14px', borderBottom: '1px solid #E2E8F0', background: 'linear-gradient(135deg, #F8FAFC, #FAFAFA)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <div style={{ width: 52, height: 52, borderRadius: 16, background: st.bg, ...flexCenter }}>
               <FolderOpen className="w-6 h-6" style={{ color: st.text }} />
@@ -454,13 +454,13 @@ function MyTasks({ data }) {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <div>
           <h1 style={pageTitle}>My Tasks</h1>
           <p style={pageSubtitle}>{tasks.length} total · {tasks.filter(t => t.status === 'Completed').length} completed</p>
         </div>
       </div>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
         {filters.map(f => (
           <button key={f.key} onClick={() => setFilter(f.key)}
             style={{ padding: '8px 16px', borderRadius: 10, border: filter === f.key ? '2px solid #7C3AED' : '1.5px solid #E2E8F0', background: filter === f.key ? '#F5F3FF' : '#fff', color: filter === f.key ? '#7C3AED' : '#64748B', fontSize: 12, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.15s' }}>
@@ -542,7 +542,7 @@ function TaskDetail({ taskId, onBack }) {
         <ChevronLeft className="w-4 h-4" /> Back to Tasks
       </button>
       <div style={{ ...card, overflow: 'hidden' }}>
-        <div style={{ padding: '24px', borderBottom: '1px solid #E2E8F0', background: 'linear-gradient(135deg, #FAFAFA, #fff)' }}>
+        <div style={{ padding: '14px', borderBottom: '1px solid #E2E8F0', background: 'linear-gradient(135deg, #FAFAFA, #fff)' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
             <div style={{ flex: 1 }}>
               <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0F172A', margin: '0 0 6px' }}>{task.title}</h2>
@@ -627,7 +627,7 @@ function MeetingsView({ meetings, meetingRequests }) {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <div>
           <h1 style={pageTitle}>Meetings</h1>
           <p style={pageSubtitle}>{all.length} meeting{all.length !== 1 ? 's' : ''}</p>
@@ -679,7 +679,7 @@ function MeetingsView({ meetings, meetingRequests }) {
 function DocumentsView({ docs }) {
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <div>
           <h1 style={pageTitle}>Documents</h1>
           <p style={pageSubtitle}>{docs.length} file{docs.length !== 1 ? 's' : ''}</p>
@@ -732,7 +732,7 @@ function CalendarView({ events }) {
       <h1 style={pageTitle}>Calendar</h1>
       <p style={pageSubtitle}>{events.length} event{events.length !== 1 ? 's' : ''} this month</p>
       <div style={{ ...card, padding: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
           <button onClick={() => { if (month === 0) { setMonth(11); setYear(y-1) } else setMonth(month-1) }}
             style={{ padding: '8px 14px', borderRadius: 10, border: '1.5px solid #E2E8F0', background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 500, color: '#64748B' }}>← Prev</button>
           <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0F172A', margin: 0 }}>{monthName} {year}</h3>
@@ -771,7 +771,7 @@ function TeamView({ teamData }) {
       <h1 style={pageTitle}>Team Collaboration</h1>
       <p style={pageSubtitle}>Your team members and reporting manager</p>
       {teamData?.reporting_manager && (
-        <div style={{ padding: 20, background: 'linear-gradient(135deg, #F5F3FF, #EDE9FE)', border: '1px solid #DDD6FE', borderRadius: 16, marginBottom: 20 }}>
+        <div style={{ padding: 12, background: 'linear-gradient(135deg, #F5F3FF, #EDE9FE)', border: '1px solid #DDD6FE', borderRadius: 16, marginBottom: 10 }}>
           <p style={{ fontSize: 11, color: '#7C3AED', fontWeight: 600, margin: '0 0 10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Reporting Manager</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg, #7C3AED, #A78BFA)', ...flexCenter, color: '#fff', fontWeight: 700, fontSize: 18 }}>
@@ -809,7 +809,7 @@ function PerformanceView({ data }) {
     <div>
       <h1 style={pageTitle}>Performance</h1>
       <p style={pageSubtitle}>Your work stats and task completion rate</p>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
         <div style={{ ...card, padding: 24, background: 'linear-gradient(135deg, #F0FDF4, #DCFCE7)' }}>
           <p style={{ fontSize: 11, color: '#15803D', fontWeight: 600, margin: '0 0 4px' }}>Task Completion Rate</p>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
@@ -832,7 +832,7 @@ function PerformanceView({ data }) {
         </div>
       </div>
       <div style={{ ...card, padding: 24 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, textAlign: 'center' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, textAlign: 'center' }}>
           {[
             { label: 'Total', value: data.total_tasks, color: '#0F172A', bg: '#F1F5F9' },
             { label: 'Completed', value: data.completed_tasks, color: '#16A34A', bg: '#F0FDF4' },
@@ -860,7 +860,7 @@ function NotificationsView({ data }) {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <div>
           <h1 style={pageTitle}>Notifications</h1>
           <p style={pageSubtitle}>{unread > 0 ? `${unread} unread` : 'All caught up!'}</p>
@@ -1049,7 +1049,7 @@ export default function EmployeePortal({ activeTab }) {
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: 6, marginBottom: 28, overflowX: 'auto', paddingBottom: 4 }}>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 12, overflowX: 'auto', paddingBottom: 4 }}>
         {TABS.map(t => {
           const active = t.key === tab
           return (
