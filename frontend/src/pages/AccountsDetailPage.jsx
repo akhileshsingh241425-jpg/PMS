@@ -344,7 +344,7 @@ export default function AccountsDetailPage() {
         {/* ═══ ACTIVITY TICKER ═══ */}
         <div style={{
           background: '#F8FAFC', borderRadius: '14px', borderLeft: '4px solid #5B3DF5',
-          boxShadow: '0 2px 10px rgba(0,0,0,.04)', marginBottom: '16px', height: '52px',
+          boxShadow: '0 2px 10px rgba(0,0,0,.04)', marginBottom: '10px', height: '52px',
           display: 'flex', alignItems: 'center', overflow: 'hidden', border: '1px solid #E8EAF2',
           borderLeftWidth: '4px',
         }}
@@ -439,9 +439,9 @@ export default function AccountsDetailPage() {
         </div>
 
         {/* ═══ 1. HEADER ═══ */}
-        <div style={{ background: '#fff', borderRadius: '14px', boxShadow: '0 8px 24px rgba(0,0,0,.05)', border: '1px solid #ECECEC', marginBottom: '20px', overflow: 'hidden' }}>
-          <div style={{ padding: '28px 32px' }}>
-            <div className="flex items-start justify-between gap-6" style={{ marginBottom: '16px' }}>
+        <div style={{ background: '#fff', borderRadius: '14px', boxShadow: '0 8px 24px rgba(0,0,0,.05)', border: '1px solid #ECECEC', marginBottom: '10px', overflow: 'hidden' }}>
+          <div style={{ padding: '16px 20px' }}>
+            <div className="flex items-start justify-between gap-6" style={{ marginBottom: '10px' }}>
               <div className="flex items-start gap-5">
                 <div style={{ width: '72px', height: '72px', borderRadius: '14px', background: 'linear-gradient(135deg, #5B3DF5, #7C5CFC)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 4px 12px rgba(91,61,245,.2)' }}>
                   <span style={{ color: '#fff', fontSize: '28px', fontWeight: 700 }}>{(acc.company_name || '?')[0]}</span>
@@ -510,7 +510,7 @@ export default function AccountsDetailPage() {
         </div>
 
         {/* ═══ TABS ═══ */}
-        <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderBottom: '2px solid #E5E7EB' }}>
+        <div style={{ display: 'flex', gap: 0, marginBottom: 10, borderBottom: '2px solid #E5E7EB' }}>
           {[
             { key: 'overview', label: 'Overview', icon: Building2 },
             { key: 'referrals', label: 'Referrals', icon: Target, count: opportunities.length },
@@ -544,7 +544,7 @@ export default function AccountsDetailPage() {
         {activeTab === 'overview' && (
         <div>
         {/* ═══ KPI CARDS ═══ */}
-        <div className="stat-cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 20 }}>
+        <div className="stat-cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10, marginBottom: 10 }}>
           <KpiCard icon={Target} bg="#EDE9FE" color="#5B21B6" label="Total Projects" value={projects.length} onClick={() => setActiveTab('projects')} />
           <KpiCard icon={DollarSign} bg="#D1FAE5" color="#059669" label="Revenue" value={projects.reduce((s,p) => s + (p.total_value || 0), 0) ? `₹${(projects.reduce((s,p) => s + (p.total_value || 0), 0) / 100000).toFixed(1)}L` : ''} />
           <KpiCard icon={TrendingUp} bg="#FEF3C7" color="#D97706" label="Opportunities" value={opportunities.length + referral_leads.length} />
@@ -553,7 +553,7 @@ export default function AccountsDetailPage() {
         </div>
 
         {/* ═══ FULL-WIDTH: ACCOUNT INFO & ACTIVITY TIMELINE ═══ */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 24, marginBottom: 32 }} className="account-layout">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 14 }} className="account-layout">
 
           {/* Client Information */}
           <div style={{ background: '#fff', borderRadius: '14px', boxShadow: '0 8px 24px rgba(0,0,0,.05)', border: '1px solid #ECECEC' }}>
@@ -656,7 +656,7 @@ export default function AccountsDetailPage() {
                     const validDate = d && !isNaN(d.getTime())
                     const title = isNote ? (item.content || '') : (item.title || '')
                     return (
-                      <div key={item.id || idx} style={{ position: 'relative', marginBottom: '16px' }}>
+                      <div key={item.id || idx} style={{ position: 'relative', marginBottom: '10px' }}>
                         <div style={{ position: 'absolute', left: '-22px', top: '4px', width: '28px', height: '28px', borderRadius: '8px', background: iconDef.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1, transition: 'all .2s' }}
                           onMouseOver={e => { e.currentTarget.style.transform = 'scale(1.1)'; e.currentTarget.style.boxShadow = `0 0 0 3px ${iconDef.bg}` }}
                           onMouseOut={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}>
@@ -797,11 +797,11 @@ export default function AccountsDetailPage() {
         {showContactForm && (
           <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={() => setShowContactForm(false)}>
             <div style={{ background: '#fff', borderRadius: 16, width: 500, maxWidth: '100%', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,.15)' }} onClick={e => e.stopPropagation()}>
-              <div style={{ padding: '20px 24px', borderBottom: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ padding: '12px 16px', borderBottom: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: 16, fontWeight: 700, color: '#1A1A2E' }}>{editContact ? 'Edit Contact' : 'Add Contact'}</span>
                 <button onClick={() => setShowContactForm(false)} style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', background: '#F0F2F8', cursor: 'pointer', fontSize: 14, color: '#6B7280' }}>✕</button>
               </div>
-              <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1 }}>
+              <div style={{ padding: '12px 16px', overflowY: 'auto', flex: 1 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 12, marginBottom: 12 }}>
                   <div>
                     <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Salutation</label>
@@ -870,11 +870,11 @@ export default function AccountsDetailPage() {
         {showEditForm && editForm && (
           <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={() => setShowEditForm(false)}>
             <div style={{ background: '#fff', borderRadius: 16, width: 600, maxWidth: '100%', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,.15)' }} onClick={e => e.stopPropagation()}>
-              <div style={{ padding: '20px 24px', borderBottom: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ padding: '12px 16px', borderBottom: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: 16, fontWeight: 700, color: '#1A1A2E' }}>Edit Client</span>
                 <button onClick={() => setShowEditForm(false)} style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', background: '#F0F2F8', cursor: 'pointer', fontSize: 14, color: '#6B7280' }}>✕</button>
               </div>
-              <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1 }}>
+              <div style={{ padding: '12px 16px', overflowY: 'auto', flex: 1 }}>
                 <div style={{ marginBottom: 16 }}>
                   <h3 style={{ fontSize: 13, fontWeight: 700, color: '#374151', borderBottom: '1px solid #E5E7EB', paddingBottom: 8, marginBottom: 14 }}>Company Information</h3>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -1227,8 +1227,8 @@ export default function AccountsDetailPage() {
               <Bookmark className="w-4 h-4" style={{ color: '#8B5CF6' }} />
               <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#1F2937', margin: 0 }}>Notes ({notes.length})</h3>
             </div>
-            <div style={{ padding: '20px 24px' }}>
-              <div style={{ marginBottom: '20px' }}>
+            <div style={{ padding: '12px 16px' }}>
+              <div style={{ marginBottom: '10px' }}>
                 <textarea value={noteText} onChange={e => setNoteText(e.target.value)}
                   style={{ width: '100%', padding: '12px 14px', border: '1px solid #ECECEC', borderRadius: '10px', fontSize: '13px', outline: 'none', minHeight: '100px', resize: 'none', transition: 'all .2s', fontFamily: 'inherit', lineHeight: 1.6, boxSizing: 'border-box' }}
                   placeholder="Write a note..." />
@@ -1274,8 +1274,8 @@ export default function AccountsDetailPage() {
               <Paperclip className="w-4 h-4" style={{ color: '#6B7280' }} />
               <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#1F2937', margin: 0 }}>Documents ({documents.length})</h3>
             </div>
-            <div style={{ padding: '20px 24px' }}>
-              <div onClick={() => fileRef.current?.click()} style={{ border: '2px dashed #D1D5DB', borderRadius: '12px', padding: '28px 20px', textAlign: 'center', background: '#FAFAFA', cursor: 'pointer', transition: 'all .2s', marginBottom: '16px' }}
+            <div style={{ padding: '12px 16px' }}>
+              <div onClick={() => fileRef.current?.click()} style={{ border: '2px dashed #D1D5DB', borderRadius: '12px', padding: '28px 20px', textAlign: 'center', background: '#FAFAFA', cursor: 'pointer', transition: 'all .2s', marginBottom: '10px' }}
                 onMouseOver={e => e.currentTarget.style.borderColor = '#5B3DF5'}
                 onMouseOut={e => e.currentTarget.style.borderColor = '#D1D5DB'}>
                 <Upload className="w-8 h-8 mx-auto mb-2" style={{ color: '#9CA3AF' }} />
@@ -1427,11 +1427,11 @@ export default function AccountsDetailPage() {
       {showOppForm && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={() => setShowOppForm(false)}>
           <div style={{ background: '#fff', borderRadius: 16, width: 500, maxWidth: '100%', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,.15)' }} onClick={e => e.stopPropagation()}>
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ padding: '12px 16px', borderBottom: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span style={{ fontSize: 16, fontWeight: 700, color: '#1A1A2E' }}>Refer a Client from {acc.company_name}</span>
               <button onClick={() => setShowOppForm(false)} style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', background: '#F0F2F8', cursor: 'pointer', fontSize: 14, color: '#6B7280' }}>✕</button>
             </div>
-            <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1 }}>
+            <div style={{ padding: '12px 16px', overflowY: 'auto', flex: 1 }}>
               <div style={{ marginBottom: 12 }}>
                 <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Referred Company Name <span style={{ color: '#DC2626' }}>*</span></label>
                 <input value={oppForm.company_name} onChange={e => setOppForm({ ...oppForm, company_name: e.target.value })} placeholder="Enter referred company name"
@@ -1513,7 +1513,7 @@ export default function AccountsDetailPage() {
                 <XCircle className="w-5 h-5" />
               </button>
             </div>
-            <div style={{ padding: '20px 24px' }}>
+            <div style={{ padding: '12px 16px' }}>
               {client_users.length > 0 ? (
                 <p style={{ fontSize: 12, color: '#6B7280', margin: '0 0 16px' }}>
                   Portal access is already active for <strong>{client_users[0].email}</strong>. You can reset their password below.
