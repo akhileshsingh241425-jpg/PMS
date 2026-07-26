@@ -205,7 +205,7 @@ export default function POVendorDetail() {
       </button>
 
       {/* Header */}
-      <div style={{ background: '#fff', borderRadius: 12, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 16 }}>
+      <div style={{ background: '#fff', borderRadius: 12, border: `1px solid ${C.border}`, padding: '12px 16px', marginBottom: 10 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
