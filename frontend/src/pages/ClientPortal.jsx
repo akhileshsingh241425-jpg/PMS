@@ -174,7 +174,7 @@ export function ClientPortalDashboard() {
     <div style={{ minHeight: '100vh', background: '#F1F5F9', fontFamily: "'Inter', system-ui, sans-serif" }}>
       {/* Header */}
       <header style={{ background: 'linear-gradient(135deg, #0F172A 0%, #1E3A5F 100%)', padding: '0 24px', position: 'sticky', top: 0, zIndex: 50, boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '60px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '60px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Shield className="w-4 h-4" style={{ color: '#93C5FD' }} />
@@ -199,7 +199,7 @@ export function ClientPortalDashboard() {
 
       {/* Tabs */}
       <div style={{ background: '#fff', borderBottom: '1px solid #E2E8F0', padding: '0 24px' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', gap: '4px', overflowX: 'auto' }}>
+        <div style={{ display: 'flex', gap: '4px', overflowX: 'auto' }}>
           {tabs.map(t => {
             const active = tab === t.id
             return (
@@ -219,7 +219,7 @@ export function ClientPortalDashboard() {
       </div>
 
       {/* Content */}
-      <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px' }}>
+      <main style={{ padding: '14px 20px' }}>
         {/* DASHBOARD */}
         {tab === 'dashboard' && dashboard && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
