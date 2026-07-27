@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { Plus, Search, X, FileText, Building2, DollarSign, Calendar, ChevronDown, Trash2, Eye, ArrowUpRight, RefreshCw, Download, Mail, CheckCircle, Clock, AlertTriangle, Ban } from 'lucide-react'
 import api from '../services/api'
 import { C } from '../components/styleConstants'
+import { useToast } from '../contexts/ToastContext'
 
 const STATUS_COLORS = {
   'DRAFT': { bg: '#F3F4F6', text: '#6B7280' },
@@ -56,6 +57,7 @@ const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-dig
 
 export default function POVendorPage() {
   const navigate = useNavigate()
+  const { addToast } = useToast()
   const [poList, setPoList] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -87,7 +89,7 @@ export default function POVendorPage() {
       if (search) params.search = search
       const r = await api.get('/api/po-out', { params })
       setPoList(r.data.po_list || [])
-    } catch (e) { console.error(e) }
+    } catch (e) { addToast('PO list load failed', 'error') }
     finally { setLoading(false) }
   }
 
@@ -95,7 +97,7 @@ export default function POVendorPage() {
     try {
       const r = await api.get('/api/clients', { params: { filter: 'vendor', per_page: 500 } })
       setVendors(r.data.clients || [])
-    } catch (e) {}
+    } catch (e) { addToast('Vendor list load failed', 'error') }
   }
 
   useEffect(() => { load(); loadVendors() }, [])
@@ -104,7 +106,7 @@ export default function POVendorPage() {
     try {
       const r = await api.get('/api/po-out/report/tds-quarterly')
       setTdsReport(r.data)
-    } catch (e) {}
+    } catch (e) { addToast('TDS report load failed', 'error') }
     setShowTDSReport(true)
   }
 
@@ -113,7 +115,7 @@ export default function POVendorPage() {
     try {
       const r = await api.get('/api/po-out/next-po-number')
       setForm(f => ({ ...f, po_number: r.data.po_number, po_date: new Date().toISOString().split('T')[0], line_items: [{ ...defaultItem }] }))
-    } catch (e) {}
+    } catch (e) { addToast('PO number generation failed', 'error') }
     setShowForm(true)
   }
 
@@ -186,7 +188,7 @@ export default function POVendorPage() {
     try {
       await api.post(`/api/po-out/${po.id}/submit`)
       load()
-    } catch (e) { alert(e.response?.data?.error || 'Failed') }
+    } catch (e) { addToast(e.response?.data?.error || 'Failed', 'error') }
   }
 
   const totals = calcTotals()
@@ -226,11 +228,14 @@ export default function POVendorPage() {
       </div>
 
       {/* PO List */}
-      {loading ? <p style={{ color: C.muted, fontSize: 13 }}>Loading...</p> : filtered.length === 0 ? (
+      {loading ? <p style={{ color: C.muted, fontSize: 13 }}>Loading POs...</p> : filtered.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 60, color: C.muted }}>
           <FileText className="w-12 h-12 mx-auto" style={{ opacity: 0.2, marginBottom: 8 }} />
           <p style={{ fontWeight: 600, color: C.text }}>No Purchase Orders yet</p>
-          <p style={{ fontSize: 13 }}>Click "Issue Vendor PO" to create the first one</p>
+          <p style={{ fontSize: 13, marginBottom: 14 }}>Click "Issue Vendor PO" to create the first one</p>
+          <button onClick={openCreate} style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: C.blue, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Plus className="w-4 h-4" /> Issue Vendor PO
+          </button>
         </div>
       ) : (
         <div style={{ background: '#fff', borderRadius: 12, border: `1px solid ${C.border}`, overflow: 'hidden' }}>

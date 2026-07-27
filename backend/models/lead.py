@@ -65,7 +65,6 @@ class Lead(db.Model):
     closer = db.relationship('User', foreign_keys=[closed_by])
     approver = db.relationship('User', foreign_keys=[approved_by])
     account_creator = db.relationship('User', foreign_keys=[account_created_by])
-    referral_opportunity = db.relationship('Opportunity', foreign_keys=[referral_opportunity_id])
     referring_client = db.relationship('Client', foreign_keys=[referring_client_id])
 
     def to_dict(self):

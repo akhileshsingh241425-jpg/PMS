@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import { FolderOpen, Search, Filter } from 'lucide-react'
+import Breadcrumb from '../components/Breadcrumb'
 
 const STAGES = ['Initiated','Planning','Information Gathering','Execution','Internal Review','Client Review','Remediation Support','Final Delivery','Invoice Raised','Payment Pending','Partial Payment Received','Full Payment Received','Closed','On Hold','Delayed','Cancelled','Escalated','Awaiting Client Response','Awaiting Documents','Awaiting Payment']
 
@@ -43,6 +44,7 @@ export default function PMProjects() {
 
   return (
     <div>
+      <Breadcrumb items={[{ label: 'PM Dashboard', to: '/pm' }, { label: 'Projects' }]} />
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0F172A', margin: 0 }}>Projects ({filtered.length})</h1>
         <select value={stageFilter} onChange={e => setStageFilter(e.target.value)}

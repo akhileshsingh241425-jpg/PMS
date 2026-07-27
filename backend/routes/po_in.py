@@ -69,7 +69,7 @@ def check_duplicate_po(current_user):
 @po_in_bp.route('', methods=['GET'])
 @login_required
 def list_po_in(current_user):
-    query = Project.query.filter_by(direction='IN')
+    query = Project.query.filter(Project.direction == 'IN', Project.po_in_status.isnot(None))
     if s := request.args.get('status'):
         query = query.filter(Project.po_in_status == s.upper())
     if q := request.args.get('search'):
@@ -189,6 +189,9 @@ def get_po_in(current_user, pid):
     project = Project.query.filter_by(id=pid, direction='IN').first_or_404()
     data = project.to_dict()
     data['client'] = project.client.to_dict() if project.client else None
+    linked = Project.query.filter_by(source_po_id=pid).first()
+    if linked:
+        data['linked_project'] = {'id': linked.id, 'proj_id': linked.proj_id, 'title': linked.title}
     data['po_document_url'] = None
     if project.po_document_id:
         from models.project import ProjectDocument

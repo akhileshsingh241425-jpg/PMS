@@ -7,6 +7,7 @@ import EmailDetailPanel from '../components/EmailDetailPanel'
 import EmailRulesPanel from '../components/EmailRulesPanel'
 import EmailTemplatesPanel from '../components/EmailTemplatesPanel'
 import EmailKanban from '../components/EmailKanban'
+import { useToast } from '../contexts/ToastContext'
 
 const CATEGORIES = ['Lead', 'Client', 'Follow-up', 'Support', 'Task', 'Meeting', 'Invoice', 'Other']
 const PRIORITIES = ['Low', 'Medium', 'High', 'Urgent']
@@ -20,6 +21,7 @@ const FOLDER_ICONS = {
 const WELL_KNOWN_ORDER = ['inbox', 'sentitems', 'drafts', 'archive', 'deleteditems']
 
 export default function EmailInbox() {
+  const { addToast } = useToast()
   const [messages, setMessages] = useState([])
   const [counts, setCounts] = useState({})
   const [employees, setEmployees] = useState([])
@@ -90,8 +92,8 @@ export default function EmailInbox() {
     try {
       const res = await connectEmail()
       if (res.auth_url) window.location.href = res.auth_url
-      else if (res.error) alert(res.error)
-    } catch (e) { alert(e.response?.data?.error || 'Connection failed') } finally { setConnecting(false) }
+      else if (res.error) addToast(res.error, 'error')
+    } catch (e) { addToast(e.response?.data?.error || 'Connection failed', 'error') } finally { setConnecting(false) }
   }
 
   const handleFetch = async () => {

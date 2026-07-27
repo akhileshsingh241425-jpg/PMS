@@ -54,6 +54,10 @@ MIGRATIONS = {
         ('converted_lead_id', 'INTEGER'),
         ('conversion_date', 'DATETIME'),
     ],
+    'projects': [
+        ('linked_project_id', 'INTEGER'),
+        ('source_po_id', 'INTEGER'),
+    ],
     'lead_proposals': [
         ('html_content', 'TEXT'),
     ],

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import api from '../services/api'
+import { useToast } from '../contexts/ToastContext'
 import {
   LogIn, LogOut, Clock, CheckCircle, AlertCircle, XCircle, ListChecks,
   FileText, DollarSign, CalendarDays, Send, ChevronRight, Plus,
@@ -218,6 +219,7 @@ function RequestItem({ icon, title, subtitle, status, date, onClick }) {
 // ─── FINDING FORM MODAL ────────────────────────────────────
 
 function AddFindingModal({ task, phases, onClose, onSaved }) {
+  const { addToast } = useToast()
   const [form, setForm] = useState({ phase_id: '', title: '', severity: 'MEDIUM', cvss_score: '', affected_asset: '', finding_type: '', clause_ref: '', asset_id: '', description: '', impact: '', recommendation: '', cwe_ref: '' })
   const [assets, setAssets] = useState([])
   const [pocFiles, setPocFiles] = useState([])
@@ -237,7 +239,7 @@ function AddFindingModal({ task, phases, onClose, onSaved }) {
       await api.post(`/api/my-day/tasks/${task.id}/findings`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
       onSaved()
       onClose()
-    } catch (e) { alert(e.response?.data?.error || 'Failed to save') }
+    } catch (e) { addToast(e.response?.data?.error || 'Failed to save', 'error') }
     finally { setSaving(false) }
   }
 
@@ -480,6 +482,7 @@ function DayEndLogPanel({ touchedTasks, existingLog, onSave, onBack }) {
 // ─── LEAVE FORM MODAL ──────────────────────────────────────
 
 function LeaveFormModal({ onClose, onSaved }) {
+  const { addToast } = useToast()
   const [form, setForm] = useState({ leave_type: 'Casual', from_date: '', to_date: '', from_time: '', to_time: '', reason: '' })
   const [saving, setSaving] = useState(false)
 
@@ -494,7 +497,7 @@ function LeaveFormModal({ onClose, onSaved }) {
       await api.post('/api/my-day/leave', fd)
       onSaved()
       onClose()
-    } catch (e) { alert(e.response?.data?.error || 'Failed') }
+    } catch (e) { addToast(e.response?.data?.error || 'Failed', 'error') }
     finally { setSaving(false) }
   }
 
@@ -565,6 +568,7 @@ function LeaveFormModal({ onClose, onSaved }) {
 // ─── EXPENSE FORM MODAL ────────────────────────────────────
 
 function ExpenseFormModal({ onClose, onSaved }) {
+  const { addToast } = useToast()
   const [form, setForm] = useState({ date: new Date().toISOString().split('T')[0], category: 'Travel', amount: '', reason: '', project_id: '' })
   const [bill, setBill] = useState(null)
   const [saving, setSaving] = useState(false)
@@ -587,7 +591,7 @@ function ExpenseFormModal({ onClose, onSaved }) {
       await api.post('/api/my-day/expenses', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
       onSaved()
       onClose()
-    } catch (e) { alert(e.response?.data?.error || 'Failed') }
+    } catch (e) { addToast(e.response?.data?.error || 'Failed', 'error') }
     finally { setSaving(false) }
   }
 
@@ -657,6 +661,7 @@ function ExpenseFormModal({ onClose, onSaved }) {
 // ─── TASK DETAIL PANEL ─────────────────────────────────────
 
 function TaskDetailPanel({ task, onBack, onFindingAdded, onStatusChange }) {
+  const { addToast } = useToast()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('activity')
@@ -679,7 +684,7 @@ function TaskDetailPanel({ task, onBack, onFindingAdded, onStatusChange }) {
       await api.put(`/api/my-day/tasks/${task.id}/status`, { status })
       onStatusChange()
       loadData()
-    } catch (e) { alert(e.response?.data?.error || 'Failed') }
+    } catch (e) { addToast(e.response?.data?.error || 'Failed', 'error') }
   }
 
   const handleUploadReport = async () => {
@@ -692,7 +697,7 @@ function TaskDetailPanel({ task, onBack, onFindingAdded, onStatusChange }) {
       setReportFile(null)
       setReportTitle('')
       loadData()
-    } catch (e) { alert(e.response?.data?.error || 'Failed') }
+    } catch (e) { addToast(e.response?.data?.error || 'Failed', 'error') }
   }
 
   const handleFindingSaved = () => {
@@ -700,7 +705,7 @@ function TaskDetailPanel({ task, onBack, onFindingAdded, onStatusChange }) {
     onFindingAdded()
   }
 
-  if (loading) return <div style={{ textAlign: 'center', padding: 40, color: '#94A3B8' }}>Loading...</div>
+  if (loading) return <div style={{ textAlign: 'center', padding: 40, color: '#94A3B8' }}>Loading your dashboard...</div>
   if (!data) return null
 
   const canTransition = task.status === 'ALLOTTED' || task.status === 'IN PROGRESS' || task.status === 'BLOCKED' || task.status === 'REWORK' || task.status === 'SENT FOR APPROVAL'
@@ -873,6 +878,7 @@ function TaskDetailPanel({ task, onBack, onFindingAdded, onStatusChange }) {
 // ─── MAIN MY DAY PAGE ──────────────────────────────────────
 
 export default function MyDayPage() {
+  const { addToast } = useToast()
   const [view, setView] = useState('loading')
   const [attendance, setAttendance] = useState(null)
   const [dashboardData, setDashboardData] = useState(null)
@@ -950,10 +956,10 @@ export default function MyDayPage() {
         setDashboardData(null)
         setView('checkin')
       } catch (e) {
-        alert(e.response?.data?.error || 'Check-out failed')
+        addToast(e.response?.data?.error || 'Check-out failed', 'error')
       }
     } catch (e) {
-      alert(e.response?.data?.error || 'Failed to save day-end log')
+      addToast(e.response?.data?.error || 'Failed to save day-end log', 'error')
     }
   }
 

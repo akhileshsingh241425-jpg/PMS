@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import api from '../services/api'
 import { Clock, MapPin, Briefcase, LogOut, History, Users, CheckCircle, XCircle, RefreshCw, Camera, CameraOff } from 'lucide-react'
+import { useToast } from '../contexts/ToastContext'
 
 const C = {
   card: '#fff',
@@ -18,6 +19,7 @@ const C = {
 }
 
 export default function AttendancePage() {
+  const { addToast } = useToast()
   const [today, setToday] = useState(null)
   const [history, setHistory] = useState([])
   const [activeSessions, setActiveSessions] = useState([])
@@ -99,7 +101,7 @@ export default function AttendancePage() {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 320, height: 240 } })
       streamRef.current = stream
       if (videoRef.current) videoRef.current.srcObject = stream
-    } catch (_) { alert('Camera access denied. Please allow camera permission.'); setFaceMode(false) }
+    } catch (_) { addToast('Camera access denied. Please allow camera permission.', 'error'); setFaceMode(false) }
   }
 
   const stopCamera = () => {
@@ -138,7 +140,7 @@ export default function AttendancePage() {
       const a = await api.get('/api/attendance/active')
       setActiveSessions(a.data.active)
     } catch (e) {
-      alert(e.response?.data?.error || 'Clock-in failed')
+      addToast(e.response?.data?.error || 'Clock-in failed', 'error')
     }
     setClocking(false)
   }
@@ -153,7 +155,7 @@ export default function AttendancePage() {
       const a = await api.get('/api/attendance/active')
       setActiveSessions(a.data.active)
     } catch (e) {
-      alert(e.response?.data?.error || 'Clock-out failed')
+      addToast(e.response?.data?.error || 'Clock-out failed', 'error')
     }
     setClocking(false)
   }
@@ -185,7 +187,7 @@ export default function AttendancePage() {
     return new Date(iso).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })
   }
 
-  if (loading) return <div style={{ textAlign: 'center', padding: 60, color: C.muted }}>Loading...</div>
+  if (loading) return <div style={{ textAlign: 'center', padding: 60, color: C.muted }}>Loading attendance records...</div>
 
   const isClockedIn = today && !today.clock_out
   const todayStart = today ? new Date(today.clock_in) : null

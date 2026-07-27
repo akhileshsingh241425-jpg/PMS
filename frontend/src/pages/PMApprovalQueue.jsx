@@ -4,6 +4,8 @@ import {
   CheckCircle, XCircle, Clock, Send, User, FileText,
   AlertCircle, ChevronRight, Loader2, MessageSquare, ExternalLink
 } from 'lucide-react'
+import { useToast } from '../contexts/ToastContext'
+import Breadcrumb from '../components/Breadcrumb'
 
 const STATUS_STYLES = {
   'ALLOTTED': { bg: '#EFF6FF', text: '#1D4ED8' },
@@ -27,6 +29,7 @@ function formatDT(ds) {
 }
 
 export default function PMApprovalQueue() {
+  const { addToast } = useToast()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [actionTask, setActionTask] = useState(null)
@@ -49,7 +52,7 @@ export default function PMApprovalQueue() {
       await api.post(`/api/pm/approvals/${tid}/approve`)
       setActionTask(null)
       loadData()
-    } catch (e) { alert(e.response?.data?.error || 'Failed') }
+    } catch (e) { addToast(e.response?.data?.error || 'Failed', 'error') }
     finally { setActing(false) }
   }
 
@@ -61,7 +64,7 @@ export default function PMApprovalQueue() {
       setActionTask(null)
       setRemarks('')
       loadData()
-    } catch (e) { alert(e.response?.data?.error || 'Failed') }
+    } catch (e) { addToast(e.response?.data?.error || 'Failed', 'error') }
     finally { setActing(false) }
   }
 
@@ -78,6 +81,7 @@ export default function PMApprovalQueue() {
 
   return (
     <div>
+      <Breadcrumb items={[{ label: 'PM Dashboard', to: '/pm' }, { label: 'Approvals' }]} />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Approval Queue</h1>

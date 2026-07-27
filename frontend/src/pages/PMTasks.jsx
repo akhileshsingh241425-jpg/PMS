@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import api from '../services/api'
 import { Plus, X, Filter } from 'lucide-react'
+import { useToast } from '../contexts/ToastContext'
+import Breadcrumb from '../components/Breadcrumb'
 
 const PRIORITY_COLORS = {
   'Low': { bg: '#F0FDF4', text: '#059669' },
@@ -23,6 +25,7 @@ function Modal({ children, onClose }) {
 }
 
 export default function PMTasks() {
+  const { addToast } = useToast()
   const [tasks, setTasks] = useState([])
   const [projects, setProjects] = useState([])
   const [teamMembers, setTeamMembers] = useState([])
@@ -88,7 +91,7 @@ export default function PMTasks() {
   }
 
   const saveTask = async () => {
-    if (!form.title.trim() || !form.project_id) return alert('Title and project are required')
+    if (!form.title.trim() || !form.project_id) return addToast('Title and project are required', 'error')
     setSaving(true)
     try {
       const body = { ...form, project_id: parseInt(form.project_id), assigned_to: form.assigned_to ? parseInt(form.assigned_to) : null }
@@ -99,7 +102,7 @@ export default function PMTasks() {
       }
       setShowForm(false)
       loadTasks()
-    } catch (e) { alert(e.response?.data?.error || 'Failed to save task') }
+    } catch (e) { addToast(e.response?.data?.error || 'Failed to save task', 'error') }
     finally { setSaving(false) }
   }
 
@@ -107,7 +110,7 @@ export default function PMTasks() {
     try {
       await api.put(`/api/pm/tasks/${task.id}`, { status })
       loadTasks()
-    } catch (e) { alert('Failed to update status') }
+    } catch (e) { addToast('Failed to update status', 'error') }
   }
 
   if (loading) return (
@@ -118,6 +121,7 @@ export default function PMTasks() {
 
   return (
     <div>
+      <Breadcrumb items={[{ label: 'PM Dashboard', to: '/pm' }, { label: 'Tasks' }]} />
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0F172A', margin: 0 }}>Tasks ({tasks.length})</h1>
         <button onClick={openCreate}

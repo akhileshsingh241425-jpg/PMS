@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useToast } from '../contexts/ToastContext'
 
 // ── COLORS ──────────────────────────────────────────────
 const B = "#1a237e"; // dark navy header
@@ -298,11 +299,12 @@ function Accounts({ accounts, setAccounts }) {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(BLANK_ACCOUNT());
   const F = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const { addToast } = useToast();
 
   const openNew = () => { setForm(BLANK_ACCOUNT()); setEditing(null); setView("form"); };
   const openEdit = (a) => { setForm({ ...a }); setEditing(a.clientId); setView("form"); };
   const save = () => {
-    if (!form.company) return alert("Company name required");
+    if (!form.company) return addToast("Company name required", 'error');
     setAccounts(p => editing ? p.map(a => a.clientId === editing ? form : a) : [...p, form]);
     setView("list");
   };
@@ -417,11 +419,12 @@ function Leads({ leads, setLeads }) {
   const [form, setForm] = useState(BLANK_LEAD());
   const [search, setSearch] = useState("");
   const F = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const { addToast } = useToast();
 
   const openNew = () => { setForm(BLANK_LEAD()); setEditing(null); setView("form"); };
   const openEdit = (l) => { setForm({ ...l }); setEditing(l.id); setView("form"); };
   const save = () => {
-    if (!form.name) return alert("Name required");
+    if (!form.name) return addToast("Name required", 'error');
     setLeads(p => editing ? p.map(l => l.id === editing ? form : l) : [...p, form]);
     setView("list");
   };
@@ -517,11 +520,12 @@ function Opportunities({ opps, setOpps }) {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(BLANK_OPP());
   const F = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const { addToast } = useToast();
 
   const openNew = () => { setForm(BLANK_OPP()); setEditing(null); setView("form"); };
   const openEdit = (o) => { setForm({ ...o }); setEditing(o.id); setView("form"); };
   const save = () => {
-    if (!form.name) return alert("Name required");
+    if (!form.name) return addToast("Name required", 'error');
     setOpps(p => editing ? p.map(o => o.id === editing ? form : o) : [...p, form]);
     setView("list");
   };
@@ -609,11 +613,12 @@ function Projects({ projects, setProjects }) {
   const [form, setForm] = useState(BLANK_PROJECT());
   const [search, setSearch] = useState("");
   const F = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const { addToast } = useToast();
 
   const openNew = () => { setForm(BLANK_PROJECT()); setEditing(null); setView("form"); };
   const openEdit = (p) => { setForm({ ...p }); setEditing(p.id); setView("form"); };
   const save = () => {
-    if (!form.name) return alert("Name required");
+    if (!form.name) return addToast("Name required", 'error');
     setProjects(p => editing ? p.map(pr => pr.id === editing ? form : pr) : [...p, form]);
     setView("list");
   };
@@ -711,11 +716,12 @@ function Tasks({ tasks, setTasks }) {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(BLANK_TASK());
   const F = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const { addToast } = useToast();
 
   const openNew = () => { setForm(BLANK_TASK()); setEditing(null); setView("form"); };
   const openEdit = (t) => { setForm({ ...t }); setEditing(t.id); setView("form"); };
   const save = () => {
-    if (!form.task) return alert("Task required");
+    if (!form.task) return addToast("Task required", 'error');
     setTasks(p => editing ? p.map(t => t.id === editing ? form : t) : [...p, form]);
     setView("list");
   };

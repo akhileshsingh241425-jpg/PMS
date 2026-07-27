@@ -4,6 +4,7 @@ import { Info, ClipboardList, MessageSquare, Paperclip, Users, Search, Bell } fr
 import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../contexts/ToastContext'
 import api from '../services/api'
+import Breadcrumb from '../components/Breadcrumb'
 import TaskTrackerPanel from '../components/task-tracker/TaskTrackerPanel'
 
 const C = {
@@ -427,11 +428,14 @@ export default function ProjectsDetailPage() {
         @keyframes spin { to { transform: rotate(360deg) } }
       `}</style>
       <div style={{ padding: '0 0 16px', width: '100%', maxWidth: '100%' }}>
+        <Breadcrumb items={[
+          { label: 'Projects', to: '/projects' },
+          { label: p.title || 'Project' },
+        ]} />
 
         {/* ═══ DARK HEADER ═══ */}
         <div style={{ minHeight: 46, background: '#1c1f2b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 16px', gap: 16, marginBottom: 10, borderRadius: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-            <div style={{ width: 26, height: 26, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#c9cdf0', cursor: 'pointer', fontSize: 15, flexShrink: 0, background: '#2a2d3d' }} onClick={() => navigate(-1)}>‹</div>
             <div style={{ width: 26, height: 26, borderRadius: 7, background: `linear-gradient(135deg,${C.primary},#9b7bff)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12.5, flexShrink: 0, color: '#fff' }}>{(p.title || 'P')[0].toUpperCase()}</div>
             <div>
               <div style={{ fontSize: 13, fontWeight: 600, color: '#fff', display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -465,6 +469,7 @@ export default function ProjectsDetailPage() {
             <input placeholder="Search anything..." style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: 11.5, width: '100%', color: '#fff', fontFamily: C.font }} />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            <Link to={`/po-out/new?linked_project_id=${p.id}`} style={{ padding: '4px 11px', borderRadius: 6, fontSize: 10.5, fontWeight: 600, background: '#059669', color: '#fff', textDecoration: 'none', whiteSpace: 'nowrap' }}>+ Vendor PO</Link>
             {!isBlocked && !isTerminal && (
               <span style={{ padding: '4px 11px', borderRadius: 20, fontSize: 10.5, fontWeight: 600, background: C.primary, color: '#fff', whiteSpace: 'nowrap' }}>+ {getStageGroup(p.stage)}</span>
             )}
@@ -588,10 +593,11 @@ export default function ProjectsDetailPage() {
                   { label: 'Target Date', value: formatDate(p.target_date), empty: !p.target_date },
                   { label: 'End Date', value: formatDate(p.actual_end_date), empty: !p.actual_end_date },
                   { label: 'Last Updated', value: formatDate(p.updated_at), empty: !p.updated_at },
-                  { label: 'Client', value: p.client_name, empty: !p.client_name },
+                  { label: 'Client', value: p.client_name, empty: !p.client_name, link: p.client_id ? `/clients/${p.client_id}` : null },
                   { label: 'PM', value: p.pm_name, empty: !p.pm_name },
                   { label: 'Service', value: p.service_type, empty: !p.service_type },
                   { label: 'Total Value', value: p.total_value ? `₹${p.total_value.toLocaleString()}` : null, empty: !p.total_value, accent: true },
+                  { label: 'Source WO', value: p.source_po_id ? `View Work Order →` : null, empty: !p.source_po_id, link: p.source_po_id ? `/po-in/${p.source_po_id}` : null },
                   { label: 'Stage Group', value: getStageGroup(p.stage), badge: true },
                   { label: 'Client Review', value: p.is_client_review_enabled ? 'Enabled' : 'Off' },
                   { label: 'Team Size', value: p.team_count || '0' },
@@ -603,6 +609,8 @@ export default function ProjectsDetailPage() {
                       <span style={{ display: 'inline-block', background: '#f1ecff', color: C.primary, fontSize: 10.5, fontWeight: 700, padding: '2px 8px', borderRadius: 5 }}>{f.value}</span>
                     ) : f.empty ? (
                       <div style={{ fontSize: 12, fontWeight: 500, color: '#c3c6d4', fontStyle: 'italic' }}>Not set</div>
+) : f.link ? (
+                      <Link to={f.link} style={{ fontSize: 12, fontWeight: f.accent ? 700 : 600, color: C.blue, textDecoration: 'none' }}>{f.value}</Link>
                     ) : (
                       <div style={{ fontSize: 12, fontWeight: f.accent ? 700 : 600, color: f.violet ? C.primary : f.accent ? '#16a34a' : '#1c1f2b' }}>{f.value}</div>
                     )}
@@ -724,20 +732,18 @@ export default function ProjectsDetailPage() {
           </div>
 
           {/* Finding Queries */}
-          {queries.length > 0 && (
-            <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 9, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
+          <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 9, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
               <div style={{ padding: '9px 14px', borderBottom: '1px solid #E5E7EB', fontSize: 11.5, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>💬 Finding Queries ({queries.length})</div>
               <div style={{ padding: '9px 14px' }}>
-                {queries.map(q => (
+                {queries.length > 0 ? queries.map(q => (
                   <div key={q.id} style={{ padding: '10px 14px', background: '#FAFBFC', borderRadius: 8, marginBottom: 6, border: '1px solid #F1F5F9', fontSize: 12 }}>
                     <div style={{ fontWeight: 600 }}>{q.subject}</div>
                     <div style={{ color: '#6b7280', marginTop: 2 }}>{q.question}</div>
                     {q.response && <div style={{ marginTop: 6, padding: '8px 12px', background: '#F5F3FF', borderRadius: 6, border: '1px solid #EDE9FE' }}><strong style={{ fontSize: 10, color: C.primary }}>Response:</strong> <span style={{ color: '#475569' }}>{q.response}</span></div>}
                   </div>
-                ))}
+                )) : <p style={{ fontSize: 12, color: C.muted, fontStyle: 'italic', margin: 0 }}>No queries recorded</p>}
               </div>
             </div>
-          )}
         </div>}
 
         {/* ═══──────────────────────────────────────────────────╗ */}

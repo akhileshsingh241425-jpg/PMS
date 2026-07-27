@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
+import { useToast } from '../contexts/ToastContext'
 import {
   LayoutDashboard, FolderOpen, ListChecks, Calendar, FileText,
   Users, Bell, UserCircle, CheckSquare, Clock, MessageSquare,
@@ -516,16 +517,17 @@ function TaskDetail({ taskId, onBack }) {
   const [loading, setLoading] = useState(true)
   const [newCheckItem, setNewCheckItem] = useState('')
   const [newComment, setNewComment] = useState('')
+  const { addToast } = useToast()
 
   const load = () => { setLoading(true); api.get(`/api/employee/tasks/${taskId}`).then(r => { setData(r.data); setLoading(false) }).catch(() => setLoading(false)) }
   useEffect(load, [taskId])
 
-  const updateStatus = async (status) => { try { await api.put(`/api/employee/tasks/${taskId}/status`, { status }); load() } catch(e) { alert('Failed to update status') } }
-  const addChecklist = async () => { if (!newCheckItem.trim()) return; try { await api.post(`/api/employee/tasks/${taskId}/checklist`, { text: newCheckItem }); setNewCheckItem(''); load() } catch(e) { alert('Failed') } }
-  const toggleChecklist = async (item) => { try { await api.put(`/api/employee/checklist/${item.id}`, { is_completed: !item.is_completed }); load() } catch(e) { alert('Failed') } }
-  const addComment = async () => { if (!newComment.trim()) return; try { await api.post(`/api/employee/tasks/${taskId}/comments`, { text: newComment }); setNewComment(''); load() } catch(e) { alert('Failed') } }
+  const updateStatus = async (status) => { try { await api.put(`/api/employee/tasks/${taskId}/status`, { status }); load() } catch(e) { addToast('Failed to update status', 'error') } }
+  const addChecklist = async () => { if (!newCheckItem.trim()) return; try { await api.post(`/api/employee/tasks/${taskId}/checklist`, { text: newCheckItem }); setNewCheckItem(''); load() } catch(e) { addToast('Failed', 'error') } }
+  const toggleChecklist = async (item) => { try { await api.put(`/api/employee/checklist/${item.id}`, { is_completed: !item.is_completed }); load() } catch(e) { addToast('Failed', 'error') } }
+  const addComment = async () => { if (!newComment.trim()) return; try { await api.post(`/api/employee/tasks/${taskId}/comments`, { text: newComment }); setNewComment(''); load() } catch(e) { addToast('Failed', 'error') } }
 
-  if (loading) return <div style={{ padding: 80, textAlign: 'center', color: '#94A3B8' }}><div style={{ width: 36, height: 36, border: '3px solid #E2E8F0', borderTopColor: '#7C3AED', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} /><p>Loading...</p></div>
+  if (loading) return <div style={{ padding: 80, textAlign: 'center', color: '#94A3B8' }}><div style={{ width: 36, height: 36, border: '3px solid #E2E8F0', borderTopColor: '#7C3AED', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} /><p>Loading your portal...</p></div>
   if (!data) return <div style={{ padding: 80, textAlign: 'center', color: '#DC2626' }}>Failed to load</div>
   const { task, checklist, comments } = data
   const ts = STATUS_STYLES[task.status] || STATUS_STYLES['Open']
@@ -804,7 +806,7 @@ function TeamView({ teamData }) {
 
 // ===== PERFORMANCE =====
 function PerformanceView({ data }) {
-  if (!data) return <div style={{ padding: 80, textAlign: 'center', color: '#94A3B8' }}><div style={{ width: 36, height: 36, border: '3px solid #E2E8F0', borderTopColor: '#7C3AED', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} /><p>Loading...</p></div>
+  if (!data) return <div style={{ padding: 80, textAlign: 'center', color: '#94A3B8' }}><div style={{ width: 36, height: 36, border: '3px solid #E2E8F0', borderTopColor: '#7C3AED', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} /><p>Loading profile...</p></div>
   return (
     <div>
       <h1 style={pageTitle}>Performance</h1>
@@ -897,10 +899,11 @@ function ProfileView({ user, onUpdate }) {
   const [edit, setEdit] = useState(false)
   const [form, setForm] = useState({})
   const [pwForm, setPwForm] = useState({ current_password: '', new_password: '' })
+  const { addToast } = useToast()
   useEffect(() => { if (user) setForm({ first_name: user.first_name, last_name: user.last_name || '', phone: user.phone || '', designation: user.designation || '', department: user.department || '', experience_years: user.experience_years || '' }) }, [user])
 
-  const saveProfile = async () => { try { const r = await api.put('/api/employee/profile', form); onUpdate(r.data.user); setEdit(false) } catch(e) { alert('Failed') } }
-  const changePassword = async () => { if (!pwForm.current_password || !pwForm.new_password) return alert('Fill all fields'); if (pwForm.new_password.length < 8) return alert('Min 8 chars'); try { await api.put('/api/employee/profile/password', pwForm); setPwForm({ current_password: '', new_password: '' }); alert('Password changed') } catch(e) { alert(e.response?.data?.error || 'Failed') } }
+  const saveProfile = async () => { try { const r = await api.put('/api/employee/profile', form); onUpdate(r.data.user); setEdit(false) } catch(e) { addToast('Failed', 'error') } }
+  const changePassword = async () => { if (!pwForm.current_password || !pwForm.new_password) return addToast('Fill all fields', 'error'); if (pwForm.new_password.length < 8) return addToast('Min 8 chars', 'error'); try { await api.put('/api/employee/profile/password', pwForm); setPwForm({ current_password: '', new_password: '' }); addToast('Password changed', 'error') } catch(e) { addToast(e.response?.data?.error || 'Failed', 'error') } }
 
   if (!user) return null
   const initials = (user.full_name || 'U').split(' ').map(s => s[0]).join('').toUpperCase().slice(0, 2)
@@ -991,6 +994,7 @@ const TABS = [
 
 export default function EmployeePortal({ activeTab }) {
   const navigate = useNavigate()
+  const { addToast } = useToast()
   const [tab, setTab] = useState(activeTab || 'dashboard')
   const [dashboardData, setDashboardData] = useState(null)
   const [projects, setProjects] = useState([])
@@ -1027,7 +1031,7 @@ export default function EmployeePortal({ activeTab }) {
 
   const openProject = async (project) => {
     try { const r = await api.get(`/api/employee/projects/${project.id}`); setProjectDetail(r.data); setSelectedProject(project.id) }
-    catch(e) { alert('Failed to load project') }
+    catch(e) { addToast('Failed to load project', 'error') }
   }
 
   const renderContent = () => {

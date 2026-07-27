@@ -161,7 +161,8 @@ class Project(db.Model):
     advance_paid = db.Column(db.Float, default=0)
     balance_outstanding = db.Column(db.Float, default=0)
     po_out_status = db.Column(db.String(30), default='DRAFT')
-    po_in_status = db.Column(db.String(30), default='WORK ORDER RECEIVED')
+    po_in_status = db.Column(db.String(30), default=None)
+    source_po_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=True, index=True)
     po_acknowledged = db.Column(db.Boolean, default=False)
     po_acknowledged_at = db.Column(db.DateTime)
     po_acknowledgement_sent_to = db.Column(db.String(255))
@@ -203,6 +204,7 @@ class Project(db.Model):
 
     client = db.relationship('Client', foreign_keys=[client_id], backref='projects')
     linked_project = db.relationship('Project', foreign_keys=[linked_project_id], remote_side='Project.id', backref=db.backref('linked_children', lazy='dynamic'))
+    source_po = db.relationship('Project', foreign_keys=[source_po_id], remote_side='Project.id', backref=db.backref('child_projects', lazy='dynamic'))
     pm = db.relationship('User', foreign_keys=[pm_id])
     creator = db.relationship('User', foreign_keys=[created_by])
     po_approver = db.relationship('User', foreign_keys=[po_approver_id])
@@ -286,6 +288,7 @@ class Project(db.Model):
             'po_revision_number': self.po_revision_number,
             'po_parent_id': self.po_parent_id,
             'linked_project_id': self.linked_project_id,
+            'source_po_id': self.source_po_id,
             'completion_date': self.completion_date.isoformat() if self.completion_date else None,
             'deliverables_received': self.deliverables_received,
             'acceptance_remarks': self.acceptance_remarks,

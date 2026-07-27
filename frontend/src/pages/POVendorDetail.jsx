@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, FileText, Building2, Calendar, CheckCircle, Clock, XCircle, Ban, Send, Play, Download, Mail, Plus, RefreshCw, History, Pencil } from 'lucide-react'
+import { useParams, Link } from 'react-router-dom'
+import { FileText, Building2, Calendar, CheckCircle, Clock, XCircle, Ban, Send, Play, Download, Mail, Plus, RefreshCw, History, Pencil, Briefcase } from 'lucide-react'
 import api from '../services/api'
 import { C } from '../components/styleConstants'
+import Breadcrumb from '../components/Breadcrumb'
+import { useToast } from '../contexts/ToastContext'
 
 const STATUS_COLORS = {
   'DRAFT': { bg: '#F3F4F6', text: '#6B7280' },
@@ -28,7 +30,7 @@ const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-dig
 
 export default function POVendorDetail() {
   const { id } = useParams()
-  const navigate = useNavigate()
+  const { addToast } = useToast()
   const [po, setPo] = useState(null)
   const [payments, setPayments] = useState([])
   const [paySummary, setPaySummary] = useState({ total_paid: 0, total_tds: 0, balance: 0, is_settled: false })
@@ -61,7 +63,7 @@ export default function POVendorDetail() {
     try {
       await api.post(`/api/po-out/${id}/${action}`, body)
       await load()
-    } catch (e) { alert(e.response?.data?.error || 'Failed') }
+    } catch (e) { addToast(e.response?.data?.error || 'Failed', 'error') }
   }
 
   const openEditVendor = () => {
@@ -89,7 +91,7 @@ export default function POVendorDetail() {
       await api.put(`/api/po-out/${id}`, editVendorForm)
       setShowEditVendor(false)
       await load()
-    } catch (err) { alert(err.response?.data?.error || 'Failed') }
+    } catch (err) { addToast(err.response?.data?.error || 'Failed', 'error') }
   }
 
   // payment calc
@@ -126,7 +128,7 @@ export default function POVendorDetail() {
       setShowPayForm(false)
       setPayForm({ amount: '', date: new Date().toISOString().split('T')[0], payment_mode: 'NEFT', utr_no: '', tds_applicable: false, tds_section: '194J', tds_percent: '', tds_base_amount: '', tds_amount: '', net_paid: '', vendor_invoice_no: '', vendor_invoice_date: '', remarks: '' })
       await load()
-    } catch (e) { alert(e.response?.data?.error || 'Failed') }
+    } catch (e) { addToast(e.response?.data?.error || 'Failed', 'error') }
     finally { setPaySaving(false) }
   }
 
@@ -137,7 +139,7 @@ export default function POVendorDetail() {
   }
 
   const handleCancel = async () => {
-    if (!cancelReason.trim()) return alert('Please enter cancellation reason')
+    if (!cancelReason.trim()) return addToast('Please enter cancellation reason', 'error')
     await handleAction('cancel', { reason: cancelReason })
     setShowCancel(false); setCancelReason('')
   }
@@ -176,15 +178,15 @@ export default function POVendorDetail() {
   const [revReason, setRevReason] = useState('')
 
   const handleCreateRevision = async () => {
-    if (!revReason.trim()) return alert('Please enter a reason for revision')
+    if (!revReason.trim()) return addToast('Please enter a reason for revision', 'error')
     try {
       await api.post(`/api/po-out/${id}/create-revision`, { reason: revReason })
       setShowRevForm(false); setRevReason('')
       await load()
-    } catch (e) { alert(e.response?.data?.error || 'Failed') }
+    } catch (e) { addToast(e.response?.data?.error || 'Failed', 'error') }
   }
 
-  if (loading) return <div style={{ padding: 40, color: C.muted, fontSize: 14 }}>Loading...</div>
+  if (loading) return <div style={{ padding: 40, color: C.muted, fontSize: 14 }}>Loading PO...</div>
   if (!po) return null
   if (po.notFound) {
     return (
@@ -200,9 +202,10 @@ export default function POVendorDetail() {
 
   return (
     <div>
-      <button onClick={() => navigate('/po-out')} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 0', border: 'none', background: 'none', color: C.muted, fontSize: 13, cursor: 'pointer', marginBottom: 12 }}>
-        <ArrowLeft className="w-4 h-4" /> Back to POs
-      </button>
+      <Breadcrumb items={[
+        { label: 'Vendor POs', to: '/po-out' },
+        { label: po.po_number || 'PO' },
+      ]} />
 
       {/* Header */}
       <div style={{ background: '#fff', borderRadius: 12, border: `1px solid ${C.border}`, padding: '12px 16px', marginBottom: 10 }}>
@@ -277,7 +280,11 @@ export default function POVendorDetail() {
             )}
           </h3>
           <div style={{ fontSize: 12, lineHeight: 1.8 }}>
-            <p style={{ margin: 0, fontWeight: 600 }}>{po.vendor_name}</p>
+            <p style={{ margin: 0, fontWeight: 600 }}>{po.client_id ? (
+              <Link to={`/clients/${po.client_id}`} style={{ color: C.blue, textDecoration: 'none' }}>{po.vendor_name}</Link>
+            ) : (
+              po.vendor_name
+            )}</p>
             {po.vendor_address && <p style={{ margin: 0, color: C.muted }}>{po.vendor_address}</p>}
             {po.vendor_gstin && <p style={{ margin: 0, color: C.muted }}>GST: {po.vendor_gstin}</p>}
             {po.vendor_pan && <p style={{ margin: 0, color: C.muted }}>PAN: {po.vendor_pan}</p>}
@@ -308,38 +315,52 @@ export default function POVendorDetail() {
         </div>
       </div>
 
-      {/* Line Items */}
-      {po.line_items?.length > 0 && (
-        <div style={{ background: '#fff', borderRadius: 12, border: `1px solid ${C.border}`, padding: 16, marginTop: 16 }}>
-          <h3 style={{ fontSize: 13, fontWeight: 700, color: C.text, margin: '0 0 10px' }}>Line Items</h3>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-            <thead>
-              <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-                <th style={{ padding: '6px 8px', textAlign: 'left', color: C.muted, fontWeight: 600 }}>#</th>
-                <th style={{ padding: '6px 8px', textAlign: 'left', color: C.muted, fontWeight: 600 }}>Item</th>
-                <th style={{ padding: '6px 8px', textAlign: 'right', color: C.muted, fontWeight: 600 }}>SAC/HSN</th>
-                <th style={{ padding: '6px 8px', textAlign: 'right', color: C.muted, fontWeight: 600 }}>Qty</th>
-                <th style={{ padding: '6px 8px', textAlign: 'right', color: C.muted, fontWeight: 600 }}>Rate</th>
-                <th style={{ padding: '6px 8px', textAlign: 'right', color: C.muted, fontWeight: 600 }}>Taxable</th>
-                <th style={{ padding: '6px 8px', textAlign: 'right', color: C.muted, fontWeight: 600 }}>GST%</th>
-              </tr>
-            </thead>
-            <tbody>
-              {po.line_items.map((li, i) => (
-                <tr key={li.id || i} style={{ borderBottom: `1px solid #F3F4F6` }}>
-                  <td style={{ padding: '6px 8px' }}>{i + 1}</td>
-                  <td style={{ padding: '6px 8px', fontWeight: 500 }}>{li.item_name}</td>
-                  <td style={{ padding: '6px 8px', textAlign: 'right', color: C.muted }}>{li.sac_hsn || '—'}</td>
-                  <td style={{ padding: '6px 8px', textAlign: 'right' }}>{li.qty}</td>
-                  <td style={{ padding: '6px 8px', textAlign: 'right' }}>{fmtCurr(li.rate)}</td>
-                  <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 600 }}>{fmtCurr(li.taxable_value)}</td>
-                  <td style={{ padding: '6px 8px', textAlign: 'right', color: C.muted }}>{li.gst_rate}%</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* Linked Project */}
+      {po.linked_project_id && po.linked_project && (
+        <div style={{ background: '#F0FDF4', border: '1.5px solid #86EFAC', borderRadius: 12, padding: '12px 16px', marginTop: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Briefcase className="w-4 h-4" style={{ color: '#059669' }} />
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#065F46' }}>Source Project</div>
+              <div style={{ fontSize: 11, color: '#047857' }}>{po.linked_project?.proj_id} — {po.linked_project?.title}</div>
+            </div>
+          </div>
+          <Link to={`/projects/${po.linked_project_id}`} style={{ padding: '5px 12px', borderRadius: 6, border: 'none', background: '#059669', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', textDecoration: 'none' }}>Open Project →</Link>
         </div>
       )}
+
+      {/* Line Items */}
+      <div style={{ background: '#fff', borderRadius: 12, border: `1px solid ${C.border}`, padding: 16, marginTop: 16 }}>
+        <h3 style={{ fontSize: 13, fontWeight: 700, color: C.text, margin: '0 0 10px' }}>Line Items</h3>
+        {po.line_items?.length > 0 ? (
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+          <thead>
+            <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+              <th style={{ padding: '6px 8px', textAlign: 'left', color: C.muted, fontWeight: 600 }}>#</th>
+              <th style={{ padding: '6px 8px', textAlign: 'left', color: C.muted, fontWeight: 600 }}>Item</th>
+              <th style={{ padding: '6px 8px', textAlign: 'right', color: C.muted, fontWeight: 600 }}>SAC/HSN</th>
+              <th style={{ padding: '6px 8px', textAlign: 'right', color: C.muted, fontWeight: 600 }}>Qty</th>
+              <th style={{ padding: '6px 8px', textAlign: 'right', color: C.muted, fontWeight: 600 }}>Rate</th>
+              <th style={{ padding: '6px 8px', textAlign: 'right', color: C.muted, fontWeight: 600 }}>Taxable</th>
+              <th style={{ padding: '6px 8px', textAlign: 'right', color: C.muted, fontWeight: 600 }}>GST%</th>
+            </tr>
+          </thead>
+          <tbody>
+            {po.line_items.map((li, i) => (
+              <tr key={li.id || i} style={{ borderBottom: `1px solid #F3F4F6` }}>
+                <td style={{ padding: '6px 8px' }}>{i + 1}</td>
+                <td style={{ padding: '6px 8px', fontWeight: 500 }}>{li.item_name}</td>
+                <td style={{ padding: '6px 8px', textAlign: 'right', color: C.muted }}>{li.sac_hsn || '—'}</td>
+                <td style={{ padding: '6px 8px', textAlign: 'right' }}>{li.qty}</td>
+                <td style={{ padding: '6px 8px', textAlign: 'right' }}>{fmtCurr(li.rate)}</td>
+                <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 600 }}>{fmtCurr(li.taxable_value)}</td>
+                <td style={{ padding: '6px 8px', textAlign: 'right', color: C.muted }}>{li.gst_rate}%</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        ) : <p style={{ fontSize: 12, color: C.muted, fontStyle: 'italic', margin: 0 }}>No line items</p>}
+      </div>
 
       {/* Deliverables / Completion info */}
       {po.deliverables_received && (
@@ -403,21 +424,21 @@ export default function POVendorDetail() {
       </div>
 
       {/* Revisions History */}
-      {po.versions?.length > 0 && (
-        <div style={{ background: '#fff', borderRadius: 12, border: `1px solid ${C.border}`, padding: 16, marginTop: 16 }}>
-          <h3 style={{ fontSize: 13, fontWeight: 700, color: C.text, margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <History className="w-4 h-4" style={{ color: C.muted }} /> Revision History
-          </h3>
-          <div style={{ fontSize: 12 }}>
-            {po.versions.map((v, i) => (
-              <div key={v.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: i < po.versions.length - 1 ? `1px solid #F3F4F6` : 'none' }}>
-                <span><strong>Rev-{v.revision_number}</strong> — {v.reason || '—'}</span>
-                <span style={{ color: C.muted }}>{v.created_by_name} | {fmtDate(v.created_at)}</span>
-              </div>
-            ))}
-          </div>
+      <div style={{ background: '#fff', borderRadius: 12, border: `1px solid ${C.border}`, padding: 16, marginTop: 16 }}>
+        <h3 style={{ fontSize: 13, fontWeight: 700, color: C.text, margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <History className="w-4 h-4" style={{ color: C.muted }} /> Revision History
+        </h3>
+        {po.versions?.length > 0 ? (
+        <div style={{ fontSize: 12 }}>
+          {po.versions.map((v, i) => (
+            <div key={v.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: i < po.versions.length - 1 ? `1px solid #F3F4F6` : 'none' }}>
+              <span><strong>Rev-{v.revision_number}</strong> — {v.reason || '—'}</span>
+              <span style={{ color: C.muted }}>{v.created_by_name} | {fmtDate(v.created_at)}</span>
+            </div>
+          ))}
         </div>
-      )}
+        ) : <p style={{ fontSize: 12, color: C.muted, fontStyle: 'italic', margin: 0 }}>No revisions yet</p>}
+      </div>
 
       {/* Edit Vendor Modal */}
       {showEditVendor && (

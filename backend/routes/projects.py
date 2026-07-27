@@ -22,7 +22,7 @@ PROJECT_STAGES = [
 @project_bp.route('', methods=['GET'])
 @login_required
 def list_projects(current_user):
-    query = Project.query.filter_by(direction='IN')
+    query = Project.query.filter(Project.direction == 'IN', Project.po_in_status.is_(None))
     if current_user.role != 'admin':
         user_project_ids = [t.project_id for t in ProjectTeam.query.filter_by(user_id=current_user.id).all()]
         query = query.filter(db.or_(
@@ -91,6 +91,8 @@ def create_project(current_user):
         net_amount=net_amount,
         direction=direction,
         vendor_name=data.get('vendor_name'),
+        po_in_status=None,
+        source_po_id=data.get('source_po_id'),
         po_template=data.get('po_template'),
         approval_status=data.get('approval_status', 'Pending'),
         send_method=data.get('send_method'),

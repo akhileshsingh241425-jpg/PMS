@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, FileText, Building2, Calendar, CheckCircle, Clock, XCircle, Ban, Send, Upload, Download, RefreshCw, Plus, ChevronDown, Briefcase } from 'lucide-react'
+import { FileText, Building2, Calendar, CheckCircle, Clock, XCircle, Ban, Send, Upload, Download, RefreshCw, Plus, ChevronDown, Briefcase } from 'lucide-react'
 import api from '../services/api'
 import { C } from '../components/styleConstants'
+import Breadcrumb from '../components/Breadcrumb'
+import { useToast } from '../contexts/ToastContext'
 
 const STATUS_COLORS = {
   'WORK ORDER RECEIVED': { bg: '#DBEAFE', text: '#1E40AF' },
@@ -35,6 +37,7 @@ export default function POInDetail() {
   const [showEditForm, setShowEditForm] = useState(false)
   const [editForm, setEditForm] = useState({})
   const [saving, setSaving] = useState(false)
+  const { addToast } = useToast()
 
   const load = async () => {
     try {
@@ -51,7 +54,7 @@ export default function POInDetail() {
     try {
       await api.post(`/api/po-in/${id}/status`, { status })
       await load()
-    } catch (e) { alert(e.response?.data?.error || 'Failed to update status') }
+    } catch (e) { addToast(e.response?.data?.error || 'Failed to update status', 'error') }
   }
 
   const handleSendAck = async () => {
@@ -118,7 +121,7 @@ export default function POInDetail() {
       await api.put(`/api/po-in/${id}`, editForm)
       setShowEditForm(false)
       await load()
-    } catch (err) { alert(err.response?.data?.error || 'Failed to update') }
+    } catch (err) { addToast(err.response?.data?.error || 'Failed to update', 'error') }
     finally { setSaving(false) }
   }
 
@@ -137,13 +140,15 @@ export default function POInDetail() {
         start_date: po.start_date,
         target_date: po.target_date,
         description: po.description,
+        source_po_id: po.id,
       }
       const res = await api.post('/api/projects', payload)
+      load() // reload to show project link
       navigate(`/projects/${res.data.project.id}`)
-    } catch (e) { alert(e.response?.data?.error || 'Failed to create project') }
+    } catch (e) { addToast(e.response?.data?.error || 'Failed to create project', 'error') }
   }
 
-  if (loading) return <div style={{ padding: 40, color: C.muted, fontSize: 14 }}>Loading...</div>
+  if (loading) return <div style={{ padding: 40, color: C.muted, fontSize: 14 }}>Loading work order...</div>
   if (!po) return null
   if (po.notFound) {
     return (
@@ -160,9 +165,10 @@ export default function POInDetail() {
 
   return (
     <div>
-      <button onClick={() => navigate('/po-in')} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 0', border: 'none', background: 'none', color: C.muted, fontSize: 13, cursor: 'pointer', marginBottom: 12 }}>
-        <ArrowLeft className="w-4 h-4" /> Back to Work Orders
-      </button>
+      <Breadcrumb items={[
+        { label: 'Work Orders', to: '/po-in' },
+        { label: po.proj_id || 'WO' },
+      ]} />
 
       <div style={{ background: '#fff', borderRadius: 12, border: `1px solid ${C.border}`, padding: '12px 16px', marginBottom: 10 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -176,7 +182,10 @@ export default function POInDetail() {
                 </span>
               )}
             </div>
-            <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>{po.title || po.client_name}</p>
+            {po.title && <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>{po.title}</p>}
+            {po.client_name && (
+              <Link to={`/clients/${po.client_id}`} style={{ fontSize: 13, color: C.blue, margin: 0, textDecoration: 'none' }}>{po.client_name}</Link>
+            )}
           </div>
           <div style={{ fontSize: 13, textAlign: 'right' }}>
             <div style={{ fontWeight: 700, fontSize: 18, color: C.text }}>{fmtCurr(po.net_amount)}</div>
@@ -185,7 +194,7 @@ export default function POInDetail() {
         </div>
 
         <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap', alignItems: 'center' }}>
-          {po.po_in_status === 'WORK ORDER RECEIVED' && !po.project_id && (
+          {po.po_in_status === 'WORK ORDER RECEIVED' && !po.linked_project && (
             <button onClick={handleStartProject} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 14px', borderRadius: 6, border: 'none', background: '#059669', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
               <Briefcase className="w-3.5 h-3.5" /> Start Project
             </button>
@@ -224,7 +233,7 @@ export default function POInDetail() {
           </h3>
           {po.client ? (
             <div style={{ fontSize: 12, lineHeight: 1.8 }}>
-              <p style={{ margin: 0, fontWeight: 600 }}>{po.client.name}</p>
+              <Link to={`/clients/${po.client.id}`} style={{ margin: 0, fontWeight: 600, color: C.blue, textDecoration: 'none' }}>{po.client.name}</Link>
               {po.client.location && <p style={{ margin: 0, color: C.muted }}>{po.client.location}</p>}
               {po.client.gst_number && <p style={{ margin: 0, color: C.muted }}>GST: {po.client.gst_number}</p>}
               {po.client.pan_no && <p style={{ margin: 0, color: C.muted }}>PAN: {po.client.pan_no}</p>}
@@ -264,37 +273,37 @@ export default function POInDetail() {
         </div>
       </div>
 
-      {po.line_items?.length > 0 && (
-        <div style={{ background: '#fff', borderRadius: 12, border: `1px solid ${C.border}`, padding: 16, marginTop: 16 }}>
-          <h3 style={{ fontSize: 13, fontWeight: 700, color: C.text, margin: '0 0 10px' }}>Line Items / Scope of Work</h3>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-            <thead>
-              <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-                <th style={{ padding: '6px 8px', textAlign: 'left', color: C.muted, fontWeight: 600 }}>#</th>
-                <th style={{ padding: '6px 8px', textAlign: 'left', color: C.muted, fontWeight: 600 }}>Item / Service</th>
-                <th style={{ padding: '6px 8px', textAlign: 'right', color: C.muted, fontWeight: 600 }}>SAC</th>
-                <th style={{ padding: '6px 8px', textAlign: 'right', color: C.muted, fontWeight: 600 }}>Qty</th>
-                <th style={{ padding: '6px 8px', textAlign: 'right', color: C.muted, fontWeight: 600 }}>Rate</th>
-                <th style={{ padding: '6px 8px', textAlign: 'right', color: C.muted, fontWeight: 600 }}>Taxable</th>
-                <th style={{ padding: '6px 8px', textAlign: 'right', color: C.muted, fontWeight: 600 }}>GST%</th>
+      <div style={{ background: '#fff', borderRadius: 12, border: `1px solid ${C.border}`, padding: 16, marginTop: 16 }}>
+        <h3 style={{ fontSize: 13, fontWeight: 700, color: C.text, margin: '0 0 10px' }}>Line Items / Scope of Work</h3>
+        {po.line_items?.length > 0 ? (
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+          <thead>
+            <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+              <th style={{ padding: '6px 8px', textAlign: 'left', color: C.muted, fontWeight: 600 }}>#</th>
+              <th style={{ padding: '6px 8px', textAlign: 'left', color: C.muted, fontWeight: 600 }}>Item / Service</th>
+              <th style={{ padding: '6px 8px', textAlign: 'right', color: C.muted, fontWeight: 600 }}>SAC</th>
+              <th style={{ padding: '6px 8px', textAlign: 'right', color: C.muted, fontWeight: 600 }}>Qty</th>
+              <th style={{ padding: '6px 8px', textAlign: 'right', color: C.muted, fontWeight: 600 }}>Rate</th>
+              <th style={{ padding: '6px 8px', textAlign: 'right', color: C.muted, fontWeight: 600 }}>Taxable</th>
+              <th style={{ padding: '6px 8px', textAlign: 'right', color: C.muted, fontWeight: 600 }}>GST%</th>
+            </tr>
+          </thead>
+          <tbody>
+            {po.line_items.map((li, i) => (
+              <tr key={li.id || i} style={{ borderBottom: `1px solid #F3F4F6` }}>
+                <td style={{ padding: '6px 8px' }}>{i + 1}</td>
+                <td style={{ padding: '6px 8px', fontWeight: 500 }}>{li.item_name}</td>
+                <td style={{ padding: '6px 8px', textAlign: 'right', color: C.muted }}>{li.sac_hsn || '—'}</td>
+                <td style={{ padding: '6px 8px', textAlign: 'right' }}>{li.qty}</td>
+                <td style={{ padding: '6px 8px', textAlign: 'right' }}>{fmtCurr(li.rate)}</td>
+                <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 600 }}>{fmtCurr(li.taxable_value)}</td>
+                <td style={{ padding: '6px 8px', textAlign: 'right', color: C.muted }}>{li.gst_rate}%</td>
               </tr>
-            </thead>
-            <tbody>
-              {po.line_items.map((li, i) => (
-                <tr key={li.id || i} style={{ borderBottom: `1px solid #F3F4F6` }}>
-                  <td style={{ padding: '6px 8px' }}>{i + 1}</td>
-                  <td style={{ padding: '6px 8px', fontWeight: 500 }}>{li.item_name}</td>
-                  <td style={{ padding: '6px 8px', textAlign: 'right', color: C.muted }}>{li.sac_hsn || '—'}</td>
-                  <td style={{ padding: '6px 8px', textAlign: 'right' }}>{li.qty}</td>
-                  <td style={{ padding: '6px 8px', textAlign: 'right' }}>{fmtCurr(li.rate)}</td>
-                  <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 600 }}>{fmtCurr(li.taxable_value)}</td>
-                  <td style={{ padding: '6px 8px', textAlign: 'right', color: C.muted }}>{li.gst_rate}%</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+            ))}
+          </tbody>
+        </table>
+        ) : <p style={{ fontSize: 12, color: C.muted, fontStyle: 'italic', margin: 0 }}>No line items defined</p>}
+      </div>
 
       {po.po_terms && (
         <div style={{ background: '#fff', borderRadius: 12, border: `1px solid ${C.border}`, padding: 16, marginTop: 16 }}>
@@ -350,7 +359,12 @@ export default function POInDetail() {
                       <button type="button" onClick={() => setEditForm(f => ({ ...f, line_items: f.line_items.filter((_, i) => i !== idx) }))} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#EF4444', padding: 2 }}>
                         <X className="w-3.5 h-3.5" />
                       </button>
-                    )}
+)}
+          {po.linked_project && (
+            <Link to={`/projects/${po.linked_project.id}`} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 14px', borderRadius: 6, border: 'none', background: '#1E40AF', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', textDecoration: 'none' }}>
+              <Briefcase className="w-3.5 h-3.5" /> View Project — {po.linked_project.proj_id}
+            </Link>
+          )}
                   </div>
                 ))}
                 <button type="button" onClick={() => setEditForm(f => ({ ...f, line_items: [...f.line_items, { item_name: '', sac_hsn: '', qty: 1, rate: 0, gst_rate: 18 }] }))} style={{ marginTop: 6, padding: '4px 10px', border: `1px dashed ${C.border}`, borderRadius: 6, background: 'transparent', fontSize: 11, color: C.blue, cursor: 'pointer' }}>

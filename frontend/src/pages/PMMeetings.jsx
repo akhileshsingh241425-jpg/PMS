@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import { Calendar } from 'lucide-react'
+import Breadcrumb from '../components/Breadcrumb'
 
 const STATUS_STYLES = {
   'Scheduled': { bg: '#DBEAFE', text: '#1E40AF' },
@@ -48,6 +49,7 @@ export default function PMMeetings() {
 
   return (
     <div>
+      <Breadcrumb items={[{ label: 'PM Dashboard', to: '/pm' }, { label: 'Meetings' }]} />
       <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0F172A', margin: '0 0 10px' }}>Meetings ({allMeetings.length})</h1>
 
       {allMeetings.length === 0 ? (

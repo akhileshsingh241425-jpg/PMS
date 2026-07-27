@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import api from '../services/api'
 import { Users, Search } from 'lucide-react'
+import Breadcrumb from '../components/Breadcrumb'
 
 export default function PMTeam() {
   const [team, setTeam] = useState([])
@@ -34,6 +35,7 @@ export default function PMTeam() {
 
   return (
     <div>
+      <Breadcrumb items={[{ label: 'PM Dashboard', to: '/pm' }, { label: 'Team' }]} />
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0F172A', margin: 0 }}>Team ({filtered.length})</h1>
         <div style={{ position: 'relative' }}>

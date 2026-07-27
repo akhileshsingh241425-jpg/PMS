@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { Plus, Search, X, FileText, Building2, DollarSign, Calendar, RefreshCw, ArrowUpRight, CheckCircle, Clock, Ban, Send, Upload } from 'lucide-react'
 import api from '../services/api'
 import { C } from '../components/styleConstants'
+import { useToast } from '../contexts/ToastContext'
 
 const STATUS_COLORS = {
   'WORK ORDER RECEIVED': { bg: '#DBEAFE', text: '#1E40AF' },
@@ -20,6 +21,8 @@ const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-dig
 
 export default function POInPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const { addToast } = useToast()
   const [poList, setPoList] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -53,22 +56,31 @@ export default function POInPage() {
     try {
       const r = await api.get('/api/clients', { params: { per_page: 500 } })
       setClients(r.data.clients || [])
-    } catch (e) {}
+    } catch (e) { addToast('Client list load failed', 'error') }
   }
 
   useEffect(() => { load(); loadClients() }, [])
+  useEffect(() => {
+    const cid = searchParams.get('client_id')
+    if (cid && clients.length > 0) {
+      openCreate(cid)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clients, searchParams])
 
-  const openCreate = async () => {
+  const openCreate = async (prefillClientId) => {
     setError('')
     try {
       const r = await api.get('/api/po-in/next-proj-id')
+      const cid = prefillClientId || ''
+      const c = cid ? clients.find(cl => cl.id.toString() === cid) : null
       setForm(f => ({
         ...f, proj_id: r.data.proj_id, po_date: new Date().toISOString().split('T')[0],
-        line_items: [{ ...defaultItem }], client_id: '', po_number: '', title: '',
+        line_items: [{ ...defaultItem }], client_id: cid, po_number: '', title: c ? `Work Order — ${c.name}` : '',
         description: '', gst_rate: 18, delivery_period: '', expected_completion: '',
         start_date: '', target_date: '', special_terms: '', po_terms: '',
       }))
-    } catch (e) {}
+    } catch (e) { addToast('Failed to generate proj ID', 'error') }
     setShowForm(true)
   }
 
@@ -114,7 +126,7 @@ export default function POInPage() {
       } else {
         setError('')
       }
-    } catch (e) {}
+    } catch (e) { addToast('PO check failed', 'error') }
   }
 
   const handleSubmit = async (e) => {
@@ -173,11 +185,14 @@ export default function POInPage() {
         </button>
       </div>
 
-      {loading ? <p style={{ color: C.muted, fontSize: 13 }}>Loading...</p> : filtered.length === 0 ? (
+      {loading ? <p style={{ color: C.muted, fontSize: 13 }}>Loading work orders...</p> : filtered.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 60, color: C.muted }}>
           <FileText className="w-12 h-12 mx-auto" style={{ opacity: 0.2, marginBottom: 8 }} />
           <p style={{ fontWeight: 600, color: C.text }}>No Work Orders yet</p>
-          <p style={{ fontSize: 13 }}>Click "Add Work Order" to register the first one</p>
+          <p style={{ fontSize: 13, marginBottom: 14 }}>Click "Add Work Order" to register the first one</p>
+          <button onClick={openCreate} style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: C.blue, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Plus className="w-4 h-4" /> Add Work Order
+          </button>
         </div>
       ) : (
         <div style={{ background: '#fff', borderRadius: 12, border: `1px solid ${C.border}`, overflow: 'hidden' }}>

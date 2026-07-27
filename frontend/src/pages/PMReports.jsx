@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import api from '../services/api'
 import { BarChart3, CheckCircle, AlertCircle, Users, Calendar } from 'lucide-react'
+import Breadcrumb from '../components/Breadcrumb'
 
 export default function PMReports() {
   const [projects, setProjects] = useState([])
@@ -26,6 +27,7 @@ export default function PMReports() {
 
   return (
     <div>
+      <Breadcrumb items={[{ label: 'PM Dashboard', to: '/pm' }, { label: 'Reports' }]} />
       <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0F172A', margin: '0 0 10px' }}>Reports</h1>
 
       {/* Overall Stats */}

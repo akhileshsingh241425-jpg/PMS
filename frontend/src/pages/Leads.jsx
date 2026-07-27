@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import Pagination from '../components/Pagination'
 import { TableSkeleton } from '../components/LoadingSkeleton'
+import { useToast } from '../contexts/ToastContext'
 
 const STAGES = [
   { name: 'Prospecting', color: 'bg-slate-500', light: 'bg-slate-100 text-slate-700' },
@@ -29,6 +30,7 @@ const DOC_CATEGORIES = ['Proposal', 'Purchase Order', 'Agreement', 'NDA', 'RFP',
 
 export default function Leads() {
   const navigate = useNavigate()
+  const { addToast } = useToast()
   const [leads, setLeads] = useState([])
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
@@ -50,9 +52,9 @@ export default function Leads() {
     try {
       const params = { page, per_page: 25 }; if (search) params.search = search; if (stageFilter) params.stage = stageFilter
       const r = await api.get('/api/leads', { params }); setLeads(r.data.leads); setPagination(r.data.pagination)
-    } catch (e) {} finally { setLoading(false) }
+    } catch (e) { addToast('Lead list load failed', 'error') } finally { setLoading(false) }
   }
-  const loadUsers = async () => { try { const r = await api.get('/api/auth/users'); setUsers(r.data.users) } catch (e) {} }
+  const loadUsers = async () => { try { const r = await api.get('/api/auth/users'); setUsers(r.data.users) } catch (e) { addToast('User list load failed', 'error') } }
 
   const totalValue = leads.reduce((s, l) => s + (l.estimated_value || 0), 0)
 

@@ -14,13 +14,13 @@ export default function Dashboard() {
   useEffect(() => {
     Promise.all([
       api.get('/api/dashboard/overview').catch(() => ({ data: {} })),
-      api.get('/api/opportunities').catch(() => ({ data: { opportunities: [] } })),
+      api.get('/api/leads?type=opportunity').catch(() => ({ data: { leads: [] } })),
       api.get('/api/leads').catch(() => ({ data: { leads: [] } })),
       api.get('/api/clients').catch(() => ({ data: { clients: [] } })),
       api.get('/api/projects').catch(() => ({ data: { projects: [] } })),
     ]).then(([ov, o, l, a, p]) => {
       setStats({
-        opps: o.data.opportunities.length,
+        opps: o.data.leads.length,
         leads: l.data.leads.length,
         accounts: a.data.clients.length,
         projects: p.data.projects.length,

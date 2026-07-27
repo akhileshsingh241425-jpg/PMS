@@ -1,13 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
-  ArrowLeft, Building2, Phone, Mail, MapPin, Globe, FileText, Shield,
+  Building2, Phone, Mail, MapPin, Globe, FileText, Shield,
   UserPlus, MessageSquare, Calendar, History, Link2, ChevronRight,
   Plus, Pencil, Trash2, CheckCircle, X, Save, AlertCircle, Pin,
   PinOff, Loader2, Clock, Ban, UserCheck, Users, ChevronDown,
-  MoreVertical, Play, Pause, Archive, AlertTriangle, Download, Briefcase
+  MoreVertical, Play, Pause, Archive, AlertTriangle, Download, Briefcase,
+  FolderOpen, ShoppingCart
 } from 'lucide-react'
 import { C } from '../components/styleConstants'
+import Breadcrumb from '../components/Breadcrumb'
 import * as clientApi from '../api/clientsApi'
 import { useToast } from '../contexts/ToastContext'
 
@@ -129,10 +131,14 @@ export default function ClientDetailPage() {
   if (loading) return <LoadingState />
   if (notFound || !client) return <NotFoundState />
 
+  const isVendor = client.client_type === 'vendor'
+  const isBoth = client.client_type === 'both'
   const tabs = [
     { key: 'overview', label: 'Overview', icon: Building2 },
     { key: 'contacts', label: `Contacts (${client.contacts?.length || 0})`, icon: UserPlus },
-    { key: 'workorders', label: `Work Orders (${client.po_in_list?.length || 0})`, icon: Briefcase },
+    ...(!isVendor ? [{ key: 'workorders', label: `Work Orders (${client.po_in_list?.length || 0})`, icon: Briefcase }] : []),
+    ...(!isVendor ? [{ key: 'projects', label: `Projects (${client.projects?.length || 0})`, icon: FolderOpen }] : []),
+    ...(isVendor || isBoth ? [{ key: 'purchaseorders', label: `Purchase Orders (${client.po_out_list?.length || 0})`, icon: ShoppingCart }] : []),
     { key: 'remarks', label: `Remarks (${client.remark_count || 0})`, icon: MessageSquare },
     { key: 'followups', label: `Follow-ups (${client.follow_up_count || 0})`, icon: Calendar },
     { key: 'changelogs', label: `Change Logs (${client.change_logs?.length || 0})`, icon: History },
@@ -144,12 +150,13 @@ export default function ClientDetailPage() {
   return (
     <div style={{ minHeight: '100vh', fontFamily: C.font, color: C.text, WebkitFontSmoothing: 'antialiased', background: C.bg, padding: '14px 20px 24px' }}>
       <div>
+        <Breadcrumb items={[
+          { label: 'Clients', to: '/clients' },
+          { label: client.name },
+        ]} />
         {/* Compact Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-            <button onClick={() => navigate('/clients')} style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${C.border}`, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.text, flexShrink: 0 }}>
-              <ArrowLeft className="w-4 h-4" />
-            </button>
             <div style={{ width: 36, height: 36, borderRadius: 10, background: C.blueLight, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <Building2 className="w-4 h-4" style={{ color: C.blue }} />
             </div>
@@ -163,6 +170,11 @@ export default function ClientDetailPage() {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 6, flexShrink: 0, position: 'relative' }} ref={actionsRef}>
+            {!isVendor && (
+              <Link to={`/po-in/new?client_id=${client.id}`} style={{ padding: '6px 12px', borderRadius: 6, border: 'none', background: '#059669', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: C.font, display: 'flex', alignItems: 'center', gap: 4, color: '#fff', textDecoration: 'none' }}>
+                <Plus className="w-3 h-3" /> New Work Order
+              </Link>
+            )}
             <button onClick={handleExport} disabled={exporting} style={{ padding: '6px 12px', borderRadius: 6, border: `1px solid ${C.border}`, background: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: C.font, display: 'flex', alignItems: 'center', gap: 4, color: C.text, opacity: exporting ? 0.6 : 1 }}>
               <Download className="w-3 h-3" /> {exporting ? 'Exporting...' : 'Export'}
             </button>
@@ -262,6 +274,8 @@ export default function ClientDetailPage() {
             />
           )}
           {activeTab === 'workorders' && <WorkOrdersTab client={client} navigate={navigate} />}
+          {activeTab === 'projects' && <ProjectsTab client={client} navigate={navigate} />}
+          {activeTab === 'purchaseorders' && <PurchaseOrdersTab client={client} navigate={navigate} />}
           {activeTab === 'changelogs' && <ChangeLogsTab client={client} loadDetail={loadDetail} />}
           {activeTab === 'references' && (
             <ReferencesTab
@@ -414,20 +428,18 @@ function OverviewTab({ client }) {
       )}
 
       {/* Projects inline */}
-      {client.projects?.length > 0 && (
-        <div style={{ padding: '8px 0 4px' }}>
-          <div style={{ padding: '0 14px', marginBottom: 4 }}>
-            <span style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.3px' }}>Projects ({client.projects.length})</span>
-          </div>
-          <div style={{ padding: '0 14px' }}>
-            {client.projects.map(p => (
-              <span key={p.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, margin: '2px 8px 2px 0', padding: '2px 8px', background: '#F1F5F9', borderRadius: 6, fontSize: 11 }}>
-                {p.name} <span style={{ fontSize: 9, color: C.muted }}>{p.status}</span>
-              </span>
-            ))}
-          </div>
+      <div style={{ padding: '8px 0 4px' }}>
+        <div style={{ padding: '0 14px', marginBottom: 4 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.3px' }}>Projects ({client.projects?.length || 0})</span>
         </div>
-      )}
+        <div style={{ padding: '0 14px' }}>
+          {client.projects?.length > 0 ? client.projects.map(p => (
+            <Link key={p.id} to={`/projects/${p.id}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, margin: '2px 8px 2px 0', padding: '2px 8px', background: '#F1F5F9', borderRadius: 6, fontSize: 11, color: C.text, textDecoration: 'none' }}>
+              {p.title || p.proj_id} <span style={{ fontSize: 9, color: C.muted }}>{p.stage}</span>
+            </Link>
+          )) : <span style={{ fontSize: 11, color: C.muted, fontStyle: 'italic' }}>No projects yet</span>}
+        </div>
+      </div>
     </div>
   )
 }
@@ -766,6 +778,70 @@ function WorkOrdersTab({ client, navigate }) {
               <div style={{ flex: 1 }}><span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 10, background: '#DBEAFE', color: '#1E40AF' }}>{wo.po_in_status || '—'}</span></div>
               <div style={{ width: 60, textAlign: 'center' }}>
                 <button onClick={(e) => { e.stopPropagation(); navigate(`/po-in/${wo.id}`) }} style={{ padding: '4px 10px', borderRadius: 6, border: 'none', background: C.blue, color: '#fff', fontSize: 10, fontWeight: 600, cursor: 'pointer' }}>View</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ProjectsTab({ client, navigate }) {
+  return (
+    <div>
+      {(!client.projects || client.projects.length === 0) ? (
+        <EmptyState icon={FolderOpen} text="No projects yet" />
+      ) : (
+        <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, boxShadow: C.shadow, overflow: 'hidden' }}>
+          <div style={{ display: 'flex', padding: '8px 16px', borderBottom: `1px solid ${C.border}`, background: '#F8FAFC', fontSize: 10, fontWeight: 700, color: C.secondary, textTransform: 'uppercase' }}>
+            <div style={{ flex: 1 }}>ID</div>
+            <div style={{ flex: 2 }}>Title</div>
+            <div style={{ flex: 1 }}>Stage</div>
+            <div style={{ flex: 1 }}>PM</div>
+            <div style={{ flex: 1, textAlign: 'right' }}>Value</div>
+            <div style={{ width: 60, textAlign: 'center' }}>Action</div>
+          </div>
+          {client.projects.map(p => (
+            <div key={p.id} style={{ display: 'flex', alignItems: 'center', padding: '10px 16px', borderBottom: `1px solid ${C.border}`, fontSize: 13, cursor: 'pointer' }} onClick={() => navigate(`/projects/${p.id}`)}>
+              <div style={{ flex: 1, fontWeight: 600, color: C.blue }}>{p.proj_id}</div>
+              <div style={{ flex: 2, fontWeight: 500 }}>{p.title || '—'}</div>
+              <div style={{ flex: 1 }}><span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 10, background: '#D1FAE5', color: '#065F46' }}>{p.stage || '—'}</span></div>
+              <div style={{ flex: 1, color: C.secondary }}>{p.pm_name || '—'}</div>
+              <div style={{ flex: 1, textAlign: 'right', fontWeight: 600 }}>₹{(p.total_value || 0).toLocaleString('en-IN')}</div>
+              <div style={{ width: 60, textAlign: 'center' }}>
+                <button onClick={(e) => { e.stopPropagation(); navigate(`/projects/${p.id}`) }} style={{ padding: '4px 10px', borderRadius: 6, border: 'none', background: C.blue, color: '#fff', fontSize: 10, fontWeight: 600, cursor: 'pointer' }}>View</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function PurchaseOrdersTab({ client, navigate }) {
+  return (
+    <div>
+      {(!client.po_out_list || client.po_out_list.length === 0) ? (
+        <EmptyState icon={ShoppingCart} text="No purchase orders yet" />
+      ) : (
+        <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, boxShadow: C.shadow, overflow: 'hidden' }}>
+          <div style={{ display: 'flex', padding: '8px 16px', borderBottom: `1px solid ${C.border}`, background: '#F8FAFC', fontSize: 10, fontWeight: 700, color: C.secondary, textTransform: 'uppercase' }}>
+            <div style={{ flex: 1 }}>PO No.</div>
+            <div style={{ flex: 2 }}>Title</div>
+            <div style={{ flex: 1 }}>Amount</div>
+            <div style={{ flex: 1 }}>Status</div>
+            <div style={{ width: 60, textAlign: 'center' }}>Action</div>
+          </div>
+          {client.po_out_list.map(po => (
+            <div key={po.id} style={{ display: 'flex', alignItems: 'center', padding: '10px 16px', borderBottom: `1px solid ${C.border}`, fontSize: 13, cursor: 'pointer' }} onClick={() => navigate(`/po-out/${po.id}`)}>
+              <div style={{ flex: 1, fontWeight: 600, color: C.blue }}>{po.po_number || po.proj_id}</div>
+              <div style={{ flex: 2, fontWeight: 500 }}>{po.title || '—'}</div>
+              <div style={{ flex: 1, fontWeight: 600 }}>₹{(po.net_amount || 0).toLocaleString('en-IN')}</div>
+              <div style={{ flex: 1 }}><span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 10, background: '#FEF3C7', color: '#92400E' }}>{po.po_out_status || '—'}</span></div>
+              <div style={{ width: 60, textAlign: 'center' }}>
+                <button onClick={(e) => { e.stopPropagation(); navigate(`/po-out/${po.id}`) }} style={{ padding: '4px 10px', borderRadius: 6, border: 'none', background: C.blue, color: '#fff', fontSize: 10, fontWeight: 600, cursor: 'pointer' }}>View</button>
               </div>
             </div>
           ))}

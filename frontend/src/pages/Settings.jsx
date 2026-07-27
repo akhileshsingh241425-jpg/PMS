@@ -73,7 +73,9 @@ export default function Settings() {
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {settings.map(s => {
+        {settings.length === 0 ? (
+          <p style={{ fontSize: 13, color: C.muted, fontStyle: 'italic', textAlign: 'center', padding: '40px 0' }}>No settings configured</p>
+        ) : settings.map(s => {
           const m = meta[s.key] || { label: s.key, desc: s.description, icon: FileText, hint: null }
           const Icon = m.icon
           return (

@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
 
 export default function FaceRegisterPage() {
+  const navigate = useNavigate()
   const [registered, setRegistered] = useState(false)
   const [faceImage, setFaceImage] = useState(null)
   const [capturing, setCapturing] = useState(false)
@@ -67,6 +69,7 @@ export default function FaceRegisterPage() {
 
   return (
     <div style={{ maxWidth: 420, margin: '0 auto', padding: 24 }}>
+      <button onClick={() => navigate('/attendance')} style={{ padding: '6px 12px', border: 'none', background: 'none', color: '#6B7280', fontSize: 13, cursor: 'pointer', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 4 }}>← Back to Attendance</button>
       <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1A1A2E', marginBottom: 8 }}>Face Registration</h2>
       <p style={{ fontSize: 13, color: '#6B7280', marginBottom: 24 }}>
         Register your face once. Then every clock in/out will verify your identity.

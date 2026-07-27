@@ -113,6 +113,7 @@ def create_po_out(current_user):
         gst=gst,
         net_amount=net_amount,
         vendor_name=vendor_name,
+        linked_project_id=data.get('linked_project_id'),
         vendor_email=data.get('vendor_email'),
         vendor_gstin=data.get('vendor_gstin'),
         vendor_pan=data.get('vendor_pan'),
@@ -175,6 +176,10 @@ def get_po_out(current_user, pid):
     data['payments'] = [p.to_dict() for p in project.po_payments]
     data['tds_records'] = [t.to_dict() for t in project.tds_records]
     data['versions'] = [v.to_dict() for v in project.po_versions]
+    if project.linked_project_id:
+        linked = Project.query.get(project.linked_project_id)
+        if linked:
+            data['linked_project'] = {'id': linked.id, 'proj_id': linked.proj_id, 'title': linked.title, 'client_name': linked.client.name if linked.client else None}
     return jsonify({'po': data})
 
 
@@ -190,7 +195,8 @@ def update_po_out(current_user, pid):
     for f in ['title', 'vendor_name', 'vendor_email', 'vendor_gstin', 'vendor_pan',
               'vendor_address', 'vendor_contact_person', 'vendor_phone',
               'vendor_bank_account_no', 'vendor_bank_ifsc', 'po_terms',
-              'po_delivery_period', 'po_special_terms', 'po_gst_type']:
+              'po_delivery_period', 'po_special_terms', 'po_gst_type',
+              'linked_project_id']:
         if f in data:
             setattr(project, f, data[f] or None)
 

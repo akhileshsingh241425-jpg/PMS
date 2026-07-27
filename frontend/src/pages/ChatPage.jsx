@@ -194,6 +194,7 @@ export default function ChatPage() {
         {/* Sidebar Header */}
         <div style={{ padding: '14px 16px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button onClick={() => window.history.back()} style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 4, color: C.muted }}><ChevronLeft className="w-4 h-4" /></button>
             <MessageSquare size={18} color={C.primary} />
             <span style={{ fontSize: 15, fontWeight: 700 }}>Chat</span>
             {connected && <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#22C55E' }} />}
@@ -249,7 +250,7 @@ export default function ChatPage() {
         {/* Conversation List */}
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {loading ? (
-            <div style={{ textAlign: 'center', padding: 30, color: C.muted, fontSize: 12 }}>Loading...</div>
+            <div style={{ textAlign: 'center', padding: 30, color: C.muted, fontSize: 12 }}>Loading messages...</div>
           ) : filteredConvs.length === 0 ? (
             <div style={{ textAlign: 'center', padding: 40, color: C.muted, fontSize: 12 }}>
               <MessageSquare size={24} style={{ margin: '0 auto 8px', opacity: 0.4 }} />

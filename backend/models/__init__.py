@@ -9,7 +9,6 @@ from .project import Project, ProjectPhase, ProjectAsset, ProjectRemark, Project
 from .activity import Task, TaskChecklistItem, TaskComment, Meeting, MeetingShare, MeetingActivity, MeetingDocument, MeetingRequestDocument, Note
 from .client_portal import MeetingRequest, MeetingRequestShare, MeetingRequestActivity, ClientUpload, FindingQuery
 from .lead import Lead, LeadRemark, LeadRemarkReaction, LeadDocument, LeadActivity, LeadNote, LeadAuditLog, LeadProposal
-from .opportunity import Opportunity, OpportunityRemark, OpportunityDocument, OpportunityActivity, OpportunityNote
 from .notification import Notification
 from .enterprise import ProjectRisk, ProjectIssue, ProjectMilestone, ProjectInvoice, ProjectTimesheet, ProjectChangeRequest, ApprovalHistory
 from .vulnerability import Vulnerability

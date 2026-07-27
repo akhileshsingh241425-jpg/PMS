@@ -67,8 +67,7 @@ def list_clients(current_user):
     result = []
     for c in clients:
         data = c.to_dict()
-        po_count = Project.query.filter(Project.vendor_name == c.name, Project.direction == 'OUT').count() if c.client_type in ('vendor', 'both') else 0
-        data['project_count'] = proj_counts.get(c.id, 0) + po_count
+        data['project_count'] = proj_counts.get(c.id, 0)
         result.append(data)
 
     return jsonify({
@@ -196,10 +195,10 @@ def create_client(current_user):
 def get_client(current_user, cid):
     client = Client.query.get_or_404(cid)
     data = client.to_dict()
-    po_count = Project.query.filter(Project.vendor_name == client.name, Project.direction == 'OUT').count() if client.client_type in ('vendor', 'both') else 0
-    data['project_count'] = Project.query.filter_by(client_id=cid).count() + po_count
-    data['projects'] = [p.to_dict() for p in Project.query.filter(Project.client_id == cid, Project.direction == 'IN', Project.po_in_status == None).order_by(Project.updated_at.desc()).all()]
-    data['po_in_list'] = [p.to_dict() for p in Project.query.filter(Project.client_id == cid, Project.direction == 'IN', Project.po_in_status != None).order_by(Project.updated_at.desc()).all()]
+    data['project_count'] = Project.query.filter_by(client_id=cid).count()
+    data['projects'] = [p.to_dict() for p in Project.query.filter(Project.client_id == cid, Project.direction == 'IN', Project.po_in_status.is_(None)).order_by(Project.updated_at.desc()).all()]
+    data['po_in_list'] = [p.to_dict() for p in Project.query.filter(Project.client_id == cid, Project.direction == 'IN', Project.po_in_status.isnot(None)).order_by(Project.updated_at.desc()).all()]
+    data['po_out_list'] = [p.to_dict() for p in Project.query.filter(Project.client_id == cid, Project.direction == 'OUT').order_by(Project.updated_at.desc()).all()]
     data['contacts'] = [c.to_dict() for c in client.contacts.order_by(ClientContact.is_primary.desc()).all()]
     data['remarks'] = [r.to_dict() for r in client.remarks.order_by(ClientRemark.is_pinned.desc(), ClientRemark.created_at.desc()).all()]
     data['follow_ups'] = [f.to_dict() for f in client.follow_ups.all()]

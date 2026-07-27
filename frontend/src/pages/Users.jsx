@@ -227,7 +227,9 @@ const [showForm, setShowForm] = useState(false)
 
       {/* User List */}
       <div className="space-y-2">
-        {filtered.map(u => {
+        {filtered.length === 0 ? (
+          <p className="text-sm text-slate-400 italic text-center py-8">No users match your search</p>
+        ) : filtered.map(u => {
           const isSuperAdmin = hasRole('admin')
           const isExpanded = expandedUser === u.id
           return (

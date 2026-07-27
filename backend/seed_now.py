@@ -2,7 +2,7 @@
 import sys
 sys.path.insert(0, '.')
 from app import create_app
-from models import db, User, Account, Project, ProjectRemark, ProjectTeam, Task, Meeting, Note, Lead, LeadRemark, Opportunity, OpportunityRemark
+from models import db, User, Account, Project, ProjectRemark, ProjectTeam, Task, Meeting, Note, Lead, LeadRemark
 from datetime import datetime, date, timedelta
 import random
 
@@ -15,7 +15,7 @@ with app.app_context():
     for table in ['finding_queries', 'client_uploads', 'meeting_requests', 'notes', 'meetings', 'tasks',
                   'project_team', 'project_remarks', 'project_documents', 'projects',
                   'lead_notes', 'lead_activities', 'lead_documents', 'lead_remarks', 'leads',
-                  'opportunity_remarks', 'opportunities',
+                  'opportunity_remarks',
                   'accounts', 'users']:
         db.session.execute(db.text(f"DELETE FROM {table}"))
     db.session.commit()
@@ -78,16 +78,15 @@ with app.app_context():
         prob_map = {'Prospecting': 10, 'Qualification': 10, 'Needs Analysis': 20, 'Value Proposition': 50,
                     'Identify Decision Makers': 70, 'Perception Analysis': 80, 'Proposal/Price Quote': 90,
                     'Negotiation/Review': 90, 'Closed Won': 100, 'Closed Lost': 0}
-        opp = Opportunity(
-            opp_id=f'OPP{str(i+1).zfill(4)}', company_name=od['company'],
+        opp = Lead(
+            lead_id=f'OPP{str(i+1).zfill(4)}', company_name=od['company'],
             contact_name=od['contact'], contact_email=od['email'], contact_phone=od['phone'],
-            source=od['source'], service_interest=od['service'], description=od['desc'],
-            stage=od['stage'], estimated_value=od['value'], probability=prob_map.get(od['stage'], 10),
-            assigned_to=p_lead.id, created_by=admin.id, account_id=acc.id,
+            source=od['source'], service_type=od['service'], description=od['desc'],
+            type='opportunity',
+            stage=od['stage'], estimated_value=od['value'],
+            assigned_to=p_lead.id, created_by=admin.id,
         )
         db.session.add(opp)
-        db.session.flush()
-        db.session.add(OpportunityRemark(opportunity_id=opp.id, text=f"Opportunity created for {od['service']}. Client is in {od['stage']} stage.", created_by=admin.id))
     db.session.commit()
     print("OK Created 3 opportunities with remarks")
 

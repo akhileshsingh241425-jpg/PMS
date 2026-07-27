@@ -5,6 +5,7 @@ import { C } from '../components/styleConstants'
 import Pagination from '../components/Pagination'
 import { fetchClients, fetchClientSummary, exportClients } from '../api/clientsApi'
 import { TableSkeleton } from '../components/LoadingSkeleton'
+import { useToast } from '../contexts/ToastContext'
 
 const STATUSES = ['', 'ACTIVE', 'PROSPECT', 'DORMANT', 'HOLD', 'BLACKLISTED', 'ARCHIVED']
 const CLIENT_TYPES = ['', 'main', 'sub', 'vendor', 'both']
@@ -19,6 +20,7 @@ const STATUS_COLORS = {
 
 export default function Clients() {
   const navigate = useNavigate()
+  const { addToast } = useToast()
   const [clients, setClients] = useState([])
   const [summary, setSummary] = useState({ total: 0, active: 0, prospect: 0, dormant: 0, blacklisted: 0, vendors: 0 })
   const [loading, setLoading] = useState(true)
@@ -39,7 +41,7 @@ export default function Clients() {
     try {
       const res = await fetchClientSummary()
       setSummary(res || { total: 0, active: 0, prospect: 0, dormant: 0, blacklisted: 0, vendors: 0 })
-    } catch {}
+    } catch { addToast('Client summary load failed', 'error') }
   }, [])
 
   const load = useCallback(async (s, st, t, sec, state, p) => {
@@ -66,7 +68,7 @@ export default function Clients() {
         const merged = new Set([...prev, ...stList])
         return [...merged].sort()
       })
-    } catch {} finally { setLoading(false) }
+    } catch { addToast('Client list load failed', 'error') } finally { setLoading(false) }
   }, [])
 
   useEffect(() => { loadSummary() }, [loadSummary])
@@ -94,7 +96,7 @@ export default function Clients() {
       a.download = `clients-export-${new Date().toISOString().split('T')[0]}.csv`
       a.click()
       window.URL.revokeObjectURL(url)
-    } catch {} finally { setExporting(false) }
+    } catch { addToast('Export failed', 'error') } finally { setExporting(false) }
   }
 
   const cardBase = { background: C.card, borderRadius: 10, border: `1px solid ${C.border}`, padding: '12px 16px', boxShadow: C.shadow }
@@ -184,7 +186,10 @@ export default function Clients() {
         <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, boxShadow: C.shadow, textAlign: 'center', padding: '64px 20px' }}>
           <Building2 className="w-14 h-14" style={{ margin: '0 auto 12px', color: C.secondary, opacity: 0.2 }} />
           <div style={{ fontSize: 16, fontWeight: 600, color: C.text }}>No clients found</div>
-          <div style={{ fontSize: 13, color: C.secondary, marginTop: 4 }}>Try adjusting your search or filters.</div>
+          <div style={{ fontSize: 13, color: C.secondary, marginTop: 4, marginBottom: 14 }}>Try adjusting your search or filters.</div>
+          <button onClick={() => navigate('/clients/new')} style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: C.blue, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Plus className="w-4 h-4" /> Add Client
+          </button>
         </div>
       ) : (
         <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, boxShadow: C.shadow, overflow: 'hidden' }}>

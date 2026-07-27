@@ -106,8 +106,8 @@ export default function Backlog() {
     return (
       <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: C.bg }}>
         <Navbar />
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.muted }}>
-          Loading...
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.muted, fontSize: 13 }}>
+          Loading backlog...
         </div>
       </div>
     )
@@ -115,6 +115,7 @@ export default function Backlog() {
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: C.bg }}>
+      <Link to={`/projects/${id}`} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 0', border: 'none', background: 'none', color: C.muted, fontSize: 13, cursor: 'pointer', marginBottom: 8, textDecoration: 'none' }}>← Back to Project</Link>
       <Navbar />
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
         <Sidebar project={data?.project} />

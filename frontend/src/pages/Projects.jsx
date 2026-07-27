@@ -125,7 +125,7 @@ export default function Projects() {
             </thead>
             <tbody className="divide-y divide-slate-200">
               {loading ? <tr><td colSpan={8} className="px-3 py-4"><TableSkeleton rows={5} cols={5} /></td></tr>
-              : projects.length === 0 ? <tr><td colSpan={10} className="text-center py-8 text-slate-400">No projects found</td></tr>
+              : projects.length === 0 ? <tr><td colSpan={10} className="text-center py-8"><p className="text-slate-400 mb-3">No projects found</p><button onClick={() => setShowForm(true)} className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 inline-flex items-center gap-1.5"><Plus className="w-4 h-4" /> Create Project</button></td></tr>
               : projects.map(p => (
                 <tr key={p.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => navigate(`/projects/${p.id}`)}>
                   <td className="px-3 py-2 font-semibold text-indigo-700">{p.proj_id}</td>
