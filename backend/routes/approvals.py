@@ -108,7 +108,7 @@ def create_leave_approval(current_user):
         current_level=0,
         current_approver_id=approvers[0][1],
         status='pending',
-        payload={'leave_type': leave_type, 'days': float(leave.days or 1), 'from_date': leave.from_date.isoformat() if leave.from_date else None, 'to_date': leave.to_date.isoformat() if leave.to_date else None}
+        payload={'leave_type': leave_type, 'days': float((leave.to_date - leave.from_date).days + 1) if leave.from_date and leave.to_date else 1, 'from_date': leave.from_date.isoformat() if leave.from_date else None, 'to_date': leave.to_date.isoformat() if leave.to_date else None}
     )
     db.session.add(approval)
     leave.status = 'Pending'
