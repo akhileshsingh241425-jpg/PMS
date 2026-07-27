@@ -1,0 +1,296 @@
+from flask import Blueprint, request, jsonify
+from models import db, User, LeaveRequest, ExpenseEntry, Notification
+from datetime import datetime
+from middleware.auth import login_required, role_required
+
+
+approval_bp = Blueprint('approvals', __name__, url_prefix='/api/approvals')
+
+
+# ─── Approval Model ──────────────────────────────────────────────────────────
+
+class ApprovalRequest(db.Model):
+    __tablename__ = 'approval_requests'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    request_type = db.Column(db.String(30), nullable=False, index=True)  # leave, expense, task, vendor_payment
+    requester_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    target_id = db.Column(db.Integer, nullable=True)
+    target_type = db.Column(db.String(30), nullable=True)
+    
+    current_level = db.Column(db.Integer, default=0, nullable=False)
+    status = db.Column(db.String(20), default='pending', nullable=False)  # pending, approved, rejected, cancelled
+    current_approver_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True, index=True)
+    
+    payload = db.Column(db.JSON)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    requester = db.relationship('User', foreign_keys=[requester_id])
+    current_approver = db.relationship('User', foreign_keys=[current_approver_id])
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'request_type': self.request_type,
+            'requester_id': self.requester_id,
+            'requester_name': self.requester.full_name if self.requester else None,
+            'target_id': self.target_id,
+            'target_type': self.target_type,
+            'current_level': self.current_level,
+            'status': self.status,
+            'current_approver_id': self.current_approver_id,
+            'current_approver_name': self.current_approver.full_name if self.current_approver else None,
+            'payload': self.payload,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+# ─── Approval Routing Logic ──────────────────────────────────────────────────
+
+def get_approvers(request_type, requester):
+    """Return list of (role, user_id) for approval chain"""
+    chain = []
+    
+    if request_type in ('leave', 'short_leave'):
+        if requester.reporting_manager_id:
+            chain.append(('manager', requester.reporting_manager_id))
+        # Add HR as final approver
+        hr_users = User.query.filter_by(role='hr', is_active=True).all()
+        for hr in hr_users:
+            chain.append(('hr', hr.id))
+    
+    elif request_type == 'expense':
+        if requester.reporting_manager_id:
+            chain.append(('manager', requester.reporting_manager_id))
+        # Add Finance as final approver
+        fin_users = User.query.filter_by(role='finance', is_active=True).all()
+        for fin in fin_users:
+            chain.append(('finance', fin.id))
+    
+    elif request_type == 'task':
+        pass
+    
+    elif request_type == 'vendor_payment':
+        fin_users = User.query.filter_by(role='finance', is_active=True).all()
+        for fin in fin_users:
+            chain.append(('finance', fin.id))
+    
+    # Fallback to admin
+    if not chain:
+        admins = User.query.filter(User.role.in_(['admin', 'super_admin']), User.is_active==True).all()
+        for a in admins:
+            chain.append(('admin', a.id))
+    
+    return chain
+
+
+def notify_user(user_id, title, message):
+    """Create in-app notification"""
+    n = Notification(user_id=user_id, title=title, message=message, module_type='approval')
+    db.session.add(n)
+    try:
+        db.session.flush()
+    except:
+        db.session.rollback()
+
+
+# ─── API Endpoints ────────────────────────────────────────────────────────────
+
+@approval_bp.route('/leave', methods=['POST'])
+@login_required
+def create_leave_approval(current_user):
+    data = request.get_json()
+    leave_id = data.get('leave_request_id')
+    leave_type = data.get('leave_type', 'full_day')
+    
+    leave = LeaveRequest.query.get_or_404(leave_id)
+    if leave.user_id != current_user.id:
+        return jsonify({'error': 'Not your leave request'}), 403
+    
+    if leave.status != 'Pending':
+        return jsonify({'error': 'Leave already processed'}), 400
+    
+    req_type = 'short_leave' if leave_type == 'short_leave' else 'leave'
+    approvers = get_approvers(req_type, current_user)
+    
+    if not approvers:
+        leave.status = 'Approved'
+        db.session.commit()
+        return jsonify({'message': 'Auto-approved (no approvers)'}), 201
+    
+    approval = ApprovalRequest(
+        request_type=req_type,
+        requester_id=current_user.id,
+        target_type='leave_request',
+        target_id=leave.id,
+        current_level=0,
+        current_approver_id=approvers[0][1],
+        status='pending',
+        payload={'leave_type': leave_type, 'days': float(leave.days or 1), 'from_date': leave.from_date.isoformat() if leave.from_date else None, 'to_date': leave.to_date.isoformat() if leave.to_date else None}
+    )
+    db.session.add(approval)
+    leave.status = 'Pending'
+    db.session.commit()
+    
+    if approvers:
+        notify_user(approvers[0][1], 'Leave Approval Required', f"{current_user.full_name} requested {leave_type} leave")
+    
+    return jsonify({'message': 'Approval request created', 'approval': approval.to_dict()}), 201
+
+
+@approval_bp.route('/expense', methods=['POST'])
+@login_required
+def create_expense_approval(current_user):
+    data = request.get_json()
+    expense_id = data.get('expense_id')
+    
+    expense = ExpenseEntry.query.get_or_404(expense_id)
+    if expense.user_id != current_user.id:
+        return jsonify({'error': 'Not your expense'}), 403
+    
+    if expense.status != 'Pending':
+        return jsonify({'error': 'Expense already processed'}), 400
+    
+    approvers = get_approvers('expense', current_user)
+    
+    if not approvers:
+        expense.status = 'Approved'
+        db.session.commit()
+        return jsonify({'message': 'Auto-approved (no approvers)'}), 201
+    
+    approval = ApprovalRequest(
+        request_type='expense',
+        requester_id=current_user.id,
+        target_type='expense_entry',
+        target_id=expense.id,
+        current_level=0,
+        current_approver_id=approvers[0][1],
+        status='pending',
+        payload={'amount': float(expense.amount or 0), 'category': expense.category, 'date': expense.date.isoformat() if expense.date else None}
+    )
+    db.session.add(approval)
+    expense.status = 'Pending'
+    db.session.commit()
+    
+    if approvers:
+        notify_user(approvers[0][1], 'Expense Approval Required', f"{current_user.full_name} submitted expense: ₹{expense.amount}")
+    
+    return jsonify({'message': 'Approval request created', 'approval': approval.to_dict()}), 201
+
+
+@approval_bp.route('', methods=['GET'])
+@login_required
+def list_my_approvals(current_user):
+    """Approvals where current user is the approver"""
+    approvals = ApprovalRequest.query.filter_by(
+        current_approver_id=current_user.id, status='pending'
+    ).order_by(ApprovalRequest.created_at.desc()).all()
+    return jsonify({'approvals': [a.to_dict() for a in approvals]})
+
+
+@approval_bp.route('/history', methods=['GET'])
+@login_required
+def approval_history(current_user):
+    """All approvals involving current user (as requester or approver)"""
+    approvals = ApprovalRequest.query.filter(
+        db.or_(
+            ApprovalRequest.requester_id == current_user.id,
+            ApprovalRequest.current_approver_id == current_user.id
+        )
+    ).order_by(ApprovalRequest.created_at.desc()).all()
+    return jsonify({'approvals': [a.to_dict() for a in approvals]})
+
+
+@approval_bp.route('/<int:aid>/approve', methods=['POST'])
+@login_required
+def approve_request(current_user, aid):
+    approval = ApprovalRequest.query.get_or_404(aid)
+    
+    if approval.status != 'pending':
+        return jsonify({'error': 'Already processed'}), 400
+    
+    if approval.current_approver_id != current_user.id:
+        return jsonify({'error': 'Not your approval'}), 403
+    
+    data = request.get_json() or {}
+    remarks = data.get('remarks', '')
+    
+    # Move to next level or complete
+    approvers = get_approvers(approval.request_type, approval.requester)
+    next_level = approval.current_level + 1
+    
+    if next_level < len(approvers):
+        # Send to next approver
+        approval.current_level = next_level
+        approval.current_approver_id = approvers[next_level][1]
+        approval.status = 'pending'
+        notify_user(approvers[next_level][1], 'Approval Required', f"Next level approval needed for {approval.requester.full_name}'s {approval.request_type}")
+    else:
+        # Final approval - process the request
+        approval.status = 'approved'
+        _process_final_approval(approval)
+    
+    approval.updated_at = datetime.utcnow()
+    db.session.commit()
+    
+    return jsonify({'message': 'Approved', 'approval': approval.to_dict()})
+
+
+@approval_bp.route('/<int:aid>/reject', methods=['POST'])
+@login_required
+def reject_request(current_user, aid):
+    approval = ApprovalRequest.query.get_or_404(aid)
+    
+    if approval.status != 'pending':
+        return jsonify({'error': 'Already processed'}), 400
+    
+    if approval.current_approver_id != current_user.id:
+        return jsonify({'error': 'Not your approval'}), 403
+    
+    data = request.get_json() or {}
+    remarks = data.get('remarks', '')
+    if not remarks:
+        return jsonify({'error': 'Remarks required for rejection'}), 400
+    
+    approval.status = 'rejected'
+    approval.updated_at = datetime.utcnow()
+    
+    # Update the target request status
+    _process_rejection(approval, remarks)
+    
+    # Notify requester
+    notify_user(approval.requester_id, f'{approval.request_type.title()} Rejected', f"Your {approval.request_type} request was rejected by {current_user.full_name}: {remarks}")
+    
+    db.session.commit()
+    
+    return jsonify({'message': 'Rejected', 'approval': approval.to_dict()})
+
+
+def _process_final_approval(approval):
+    """Process the actual request after all approvals complete"""
+    if approval.target_type == 'leave_request':
+        leave = LeaveRequest.query.get(approval.target_id)
+        if leave:
+            leave.status = 'Approved'
+    elif approval.target_type == 'expense_entry':
+        expense = ExpenseEntry.query.get(approval.target_id)
+        if expense:
+            expense.status = 'Approved'
+    
+    # Notify requester
+    notify_user(approval.requester_id, f'{approval.request_type.title()} Approved', f"Your {approval.request_type} request has been fully approved")
+
+
+def _process_rejection(approval, remarks):
+    if approval.target_type == 'leave_request':
+        leave = LeaveRequest.query.get(approval.target_id)
+        if leave:
+            leave.status = 'Rejected'
+            leave.reviewer_remarks = remarks
+    elif approval.target_type == 'expense_entry':
+        expense = ExpenseEntry.query.get(approval.target_id)
+        if expense:
+            expense.status = 'Rejected'
+            expense.reviewer_remarks = remarks
