@@ -3,7 +3,8 @@ import os
 sys.path.insert(0, '/var/www/pms-dev/backend')
 
 from app import create_app
-from models import db, ProjectStageTemplate, PROJECT_TYPES, PROJECT_STAGES
+from models import db, ProjectStageTemplate
+from models.project import PROJECT_TYPES, PROJECT_STAGES
 
 app = create_app()
 with app.app_context():
