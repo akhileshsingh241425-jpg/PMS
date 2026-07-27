@@ -774,7 +774,7 @@ function WorkOrdersTab({ client, navigate, loadDetail }) {
     setSaving(true)
     try {
       const r = await api.post('/api/po-in', { ...form, client_id: client.id })
-      const newPo = r.data?.project || r.data
+      const newPo = r.data?.po
       if (poFile && newPo?.id) {
         const fd = new FormData()
         fd.append('file', poFile)
