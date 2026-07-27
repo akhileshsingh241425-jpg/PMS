@@ -27,6 +27,6 @@ from .leave import LeaveRequest
 from .expense import ExpenseEntry
 from .day_end_log import DayEndLog
 from .app_setting import AppSetting, DEFAULT_SETTINGS
-from .approval import ApprovalRequest, ApprovalHistory
+from .approval import ApprovalRequest, ApprovalHistoryEntry
 from .otp import LoginOtp
 
