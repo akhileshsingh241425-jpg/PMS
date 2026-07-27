@@ -11,6 +11,7 @@ import {
 import { C } from '../components/styleConstants'
 import Breadcrumb from '../components/Breadcrumb'
 import * as clientApi from '../api/clientsApi'
+import api from '../services/api'
 import { useToast } from '../contexts/ToastContext'
 
 const STATUS_COLORS = {
@@ -270,7 +271,7 @@ export default function ClientDetailPage() {
               setEditingFollowUpId={setEditingFollowUpId}
             />
           )}
-          {activeTab === 'workorders' && <WorkOrdersTab client={client} navigate={navigate} />}
+          {activeTab === 'workorders' && <WorkOrdersTab client={client} navigate={navigate} loadDetail={loadDetail} />}
           {activeTab === 'projects' && <ProjectsTab client={client} navigate={navigate} />}
           {activeTab === 'purchaseorders' && <PurchaseOrdersTab client={client} navigate={navigate} />}
           {activeTab === 'changelogs' && <ChangeLogsTab client={client} loadDetail={loadDetail} />}
@@ -751,9 +752,39 @@ function FollowUpsTab({ client, loadDetail, showFollowUpModal, setShowFollowUpMo
   )
 }
 
-function WorkOrdersTab({ client, navigate }) {
+function WorkOrdersTab({ client, navigate, loadDetail }) {
+  const [showForm, setShowForm] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [form, setForm] = useState({ po_number: '', title: '', po_date: new Date().toISOString().split('T')[0], description: '' })
+  const { addToast } = useToast()
+
+  const openCreate = async () => {
+    try {
+      const r = await api.get('/api/po-in/next-proj-id')
+      setForm({ proj_id: r.data.proj_id, po_number: '', title: `Work Order — ${client.name}`, po_date: new Date().toISOString().split('T')[0], description: '' })
+      setShowForm(true)
+    } catch { addToast('Failed to generate ID', 'error') }
+  }
+
+  const handleCreate = async () => {
+    if (!form.title.trim()) return addToast('Title is required', 'error')
+    setSaving(true)
+    try {
+      await api.post('/api/po-in', { ...form, client_id: client.id })
+      addToast('Work order created', 'success')
+      setShowForm(false)
+      loadDetail()
+    } catch (e) { addToast(e.response?.data?.error || 'Failed to create', 'error') }
+    finally { setSaving(false) }
+  }
+
   return (
     <div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+        <button onClick={openCreate} style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: '#059669', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: C.font, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Plus className="w-3.5 h-3.5" /> New Work Order
+        </button>
+      </div>
       {(!client.po_in_list || client.po_in_list.length === 0) ? (
         <EmptyState icon={Briefcase} text="No work orders yet" />
       ) : (
@@ -779,6 +810,16 @@ function WorkOrdersTab({ client, navigate }) {
             </div>
           ))}
         </div>
+      )}
+
+      {showForm && (
+        <Modal title="New Work Order" onClose={() => setShowForm(false)} onSave={handleCreate}>
+          <ModalField label="Project ID"><input value={form.proj_id || ''} style={inputStyle} disabled /></ModalField>
+          <ModalField label="Title" required><input value={form.title || ''} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} style={inputStyle} placeholder="Work order title" /></ModalField>
+          <ModalField label="PO Number"><input value={form.po_number || ''} onChange={e => setForm(p => ({ ...p, po_number: e.target.value }))} style={inputStyle} placeholder="e.g. PO-2026-001" /></ModalField>
+          <ModalField label="PO Date"><input type="date" value={form.po_date || ''} onChange={e => setForm(p => ({ ...p, po_date: e.target.value }))} style={inputStyle} /></ModalField>
+          <ModalField label="Description"><textarea value={form.description || ''} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} style={{ ...inputStyle, minHeight: 60, resize: 'vertical' }} placeholder="Work description / scope" /></ModalField>
+        </Modal>
       )}
     </div>
   )
