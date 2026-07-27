@@ -2,7 +2,7 @@ import os
 from flask import Blueprint, request, jsonify, send_file
 from datetime import datetime
 from models import db, Project, Client, POLineItem, TDSRecord, POVersion, PoPayment
-from middleware.auth import login_required
+from middleware.auth import login_required, role_required, role_required
 from utils import generate_id
 from numbering_utils import gen_po_number as configurable_gen_po_number
 from pdf_utils import generate_po_pdf
@@ -60,7 +60,7 @@ def next_po_number(current_user):
 
 
 @po_out_bp.route('', methods=['GET'])
-@login_required
+@role_required('admin', 'finance', 'project_manager')
 def list_po_out(current_user):
     query = Project.query.filter_by(direction='OUT')
     if s := request.args.get('status'):
@@ -79,7 +79,7 @@ def list_po_out(current_user):
 
 
 @po_out_bp.route('', methods=['POST'])
-@login_required
+@role_required('admin', 'finance', 'project_manager')
 def create_po_out(current_user):
     data = request.get_json()
     vendor_id = data.get('vendor_id')
@@ -296,7 +296,7 @@ def work_complete(current_user, pid):
 
 
 @po_out_bp.route('/<int:pid>/payments', methods=['GET'])
-@login_required
+@role_required('admin', 'finance', 'project_manager')
 def list_payments(current_user, pid):
     project = Project.query.filter_by(id=pid, direction='OUT').first_or_404()
     payments = PoPayment.query.filter_by(po_id=pid).order_by(PoPayment.date.desc()).all()
@@ -315,7 +315,7 @@ def list_payments(current_user, pid):
 
 
 @po_out_bp.route('/<int:pid>/payments', methods=['POST'])
-@login_required
+@role_required('admin', 'finance')
 def add_payment(current_user, pid):
     project = Project.query.filter_by(id=pid, direction='OUT').first_or_404()
     if project.po_out_status not in ('WORK COMPLETED', 'PARTIALLY PAID'):
@@ -385,7 +385,7 @@ def add_payment(current_user, pid):
 
 
 @po_out_bp.route('/payments/<int:pay_id>', methods=['DELETE'])
-@login_required
+@role_required('admin', 'finance')
 def delete_payment(current_user, pay_id):
     payment = PoPayment.query.get_or_404(pay_id)
     pid = payment.po_id
@@ -533,7 +533,7 @@ def send_po_mail(current_user, pid):
 
 
 @po_out_bp.route('/report/tds-quarterly', methods=['GET'])
-@login_required
+@role_required('admin', 'finance')
 def tds_quarterly_report(current_user):
     fy = request.args.get('financial_year')
     quarter = request.args.get('quarter')

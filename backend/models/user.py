@@ -12,7 +12,7 @@ class User(db.Model):
     last_name = db.Column(db.String(100))
     phone = db.Column(db.String(20))
     designation = db.Column(db.String(100))
-    role = db.Column(db.String(20), default='user')  # admin, user, client
+    role = db.Column(db.String(20), default='user')  # admin, hr, finance, project_manager, user, employee, client
     department = db.Column(db.String(100))
     reporting_manager_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), index=True)
     certifications = db.Column(db.Text)  # JSON array
@@ -49,7 +49,7 @@ class User(db.Model):
         if self.certifications:
             try: certs = json.loads(self.certifications)
             except: pass
-        role_map = {'admin': 1, 'super_admin': 1, 'project_manager': 2, 'user': 5, 'employee': 5, 'client': 6}
+        role_map = {'admin': 1, 'super_admin': 1, 'hr': 2, 'finance': 2, 'project_manager': 3, 'user': 5, 'employee': 5, 'client': 6}
         role_id = role_map.get(self.role, 5)
         return {
             'id': self.id,

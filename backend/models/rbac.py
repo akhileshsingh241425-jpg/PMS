@@ -24,6 +24,17 @@ ROLE_PERMISSIONS = {
         'notification.view',
         'approve.lead_conversion',
     ],
+    'hr': [
+        'leave.view_all', 'leave.approve', 'leave.reject',
+        'attendance.view_all', 'employee.view', 'employee.edit',
+        'leave_balance.edit', 'report.hr',
+    ],
+    'finance': [
+        'payment.*', 'invoice.*', 'tds.*',
+        'expense.reimburse', 'expense.view_all',
+        'po.view_financial', 'project.view_financial',
+        'report.financial',
+    ],
     'project_manager': [
         'project.view_assigned', 'project.edit', 'project.close_request',
         'task.create', 'task.edit', 'task.view', 'task.approve',
@@ -45,6 +56,24 @@ ROLE_PERMISSIONS = {
         'meeting.view',
         'notification.view',
         'project.view_assigned',
+    ],
+    'user': [
+        'my_day.view', 'my_day.edit',
+        'task.view', 'task.edit',
+        'finding.create', 'finding.edit',
+        'leave.create', 'leave.view_own',
+        'expense.create', 'expense.view_own',
+        'attendance.view_own',
+        'meeting.view',
+    ],
+    'employee': [
+        'my_day.view', 'my_day.edit',
+        'task.view', 'task.edit',
+        'finding.create', 'finding.edit',
+        'leave.create', 'leave.view_own',
+        'expense.create', 'expense.view_own',
+        'attendance.view_own',
+        'meeting.view',
     ],
     'client': [
         'project.view', 'project.approve_deliverable',

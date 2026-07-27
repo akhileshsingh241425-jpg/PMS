@@ -2,7 +2,7 @@ import os
 from flask import Blueprint, request, jsonify
 from datetime import datetime
 from models import db, Project, Client, POLineItem
-from middleware.auth import login_required
+from middleware.auth import login_required, role_required
 from numbering_utils import gen_proj_id as configurable_gen_proj_id
 
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'uploads', 'po_in_docs')
@@ -67,7 +67,7 @@ def check_duplicate_po(current_user):
     return jsonify({'exists': exists is not None})
 
 @po_in_bp.route('', methods=['GET'])
-@login_required
+@role_required('admin', 'finance', 'project_manager')
 def list_po_in(current_user):
     query = Project.query.filter(Project.direction == 'IN', Project.po_in_status.isnot(None))
     if s := request.args.get('status'):
@@ -85,7 +85,7 @@ def list_po_in(current_user):
     return jsonify({'po_list': [p.to_dict() for p in projects]})
 
 @po_in_bp.route('', methods=['POST'])
-@login_required
+@role_required('admin', 'finance', 'project_manager')
 def create_po_in(current_user):
     data = request.get_json()
     client_id = data.get('client_id')
@@ -186,7 +186,7 @@ def create_po_in(current_user):
     return jsonify({'message': 'Work Order created', 'po': project.to_dict()}), 201
 
 @po_in_bp.route('/<int:pid>', methods=['GET'])
-@login_required
+@role_required('admin', 'finance', 'project_manager')
 def get_po_in(current_user, pid):
     project = Project.query.filter_by(id=pid, direction='IN').first_or_404()
     data = project.to_dict()
@@ -204,7 +204,7 @@ def get_po_in(current_user, pid):
     return jsonify({'po': data})
 
 @po_in_bp.route('/<int:pid>', methods=['PUT'])
-@login_required
+@role_required('admin', 'finance', 'project_manager')
 def update_po_in(current_user, pid):
     project = Project.query.filter_by(id=pid, direction='IN').first_or_404()
     data = request.get_json()
@@ -285,7 +285,7 @@ def update_po_in(current_user, pid):
     return jsonify({'po': project.to_dict()})
 
 @po_in_bp.route('/<int:pid>/status', methods=['POST'])
-@login_required
+@role_required('admin', 'finance', 'project_manager')
 def update_po_in_status(current_user, pid):
     project = Project.query.filter_by(id=pid, direction='IN').first_or_404()
     data = request.get_json()
@@ -318,7 +318,7 @@ def update_po_in_status(current_user, pid):
     return jsonify({'message': f'Status updated to {normalized}', 'po': project.to_dict()})
 
 @po_in_bp.route('/<int:pid>/attachment', methods=['POST'])
-@login_required
+@role_required('admin', 'finance', 'project_manager')
 def upload_attachment(current_user, pid):
     project = Project.query.filter_by(id=pid, direction='IN').first_or_404()
     if 'file' not in request.files:
@@ -349,7 +349,7 @@ def upload_attachment(current_user, pid):
     return jsonify({'message': 'File uploaded', 'document': doc.to_dict()})
 
 @po_in_bp.route('/<int:pid>/acknowledge', methods=['POST'])
-@login_required
+@role_required('admin', 'finance', 'project_manager')
 def send_acknowledgement(current_user, pid):
     project = Project.query.filter_by(id=pid, direction='IN').first_or_404()
     data = request.get_json(force=True, silent=True) or {}
