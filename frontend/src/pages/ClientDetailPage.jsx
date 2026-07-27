@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
   Building2, Phone, Mail, MapPin, Globe, FileText, Shield,
   UserPlus, MessageSquare, Calendar, History, Link2, ChevronRight,
-  Plus, Pencil, Trash2, CheckCircle, X, Save, AlertCircle, Pin,
+  Plus, Pencil, Trash2, CheckCircle, X, Save, AlertCircle, Pin, ArrowLeft,
   PinOff, Loader2, Clock, Ban, UserCheck, Users, ChevronDown,
   MoreVertical, Play, Pause, Archive, AlertTriangle, Download, Briefcase,
   FolderOpen, ShoppingCart
@@ -153,7 +153,11 @@ export default function ClientDetailPage() {
   return (
     <div style={{ minHeight: '100vh', fontFamily: C.font, color: C.text, WebkitFontSmoothing: 'antialiased', background: C.bg, padding: '14px 20px 24px' }}>
       <div>
-        <Breadcrumb items={[
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+          <button onClick={() => navigate(-1)} style={{ width: 28, height: 28, borderRadius: 6, border: `1px solid ${C.border}`, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.secondary, flexShrink: 0 }}>
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <Breadcrumb items={[
           { label: 'Clients', to: '/clients' },
           { label: client.name },
         ]} />
