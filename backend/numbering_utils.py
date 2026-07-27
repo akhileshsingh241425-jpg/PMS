@@ -11,10 +11,19 @@ def _resolve_template(template, **kwargs):
     now = datetime.utcnow()
     fy = f'{now.year}-{str(now.year+1)[2:]}' if now.month >= 4 else f'{now.year-1}-{str(now.year)[2:]}'
     result = template.replace('{FY}', fy)
+    import re
     for k, v in kwargs.items():
-        placeholder = '{' + k + '}'
-        if placeholder in result:
-            result = result.replace(placeholder, str(v))
+        pattern = r'\{' + re.escape(k) + r'(?::[^}]*)?\}'
+        def replacer(m):
+            spec = m.group(0)
+            if ':' in spec:
+                fmt = spec.split(':')[1].rstrip('}')
+                try:
+                    return format(v, fmt)
+                except:
+                    return str(v)
+            return str(v)
+        result = re.sub(pattern, replacer, result)
     return result
 
 def gen_po_number(vendor_id=None):
