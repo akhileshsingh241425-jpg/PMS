@@ -28,4 +28,5 @@ from .expense import ExpenseEntry
 from .day_end_log import DayEndLog
 from .app_setting import AppSetting, DEFAULT_SETTINGS
 from .task_activity import TaskActivity
+from .otp import LoginOtp
 

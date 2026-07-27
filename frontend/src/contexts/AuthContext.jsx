@@ -3,28 +3,35 @@ import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
 
 const AuthContext = createContext(null)
+const INACTIVE_TIMEOUT_MS = 2 * 60 * 60 * 1000 // 2 hours
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [otpSession, setOtpSession] = useState(null)
   const navigate = useNavigate()
 
+  // Periodic heartbeat to keep session alive
   useEffect(() => {
-    console.log('[AuthProvider] useEffect running')
+    const hb = setInterval(() => {
+      const token = localStorage.getItem('pms_token')
+      if (token) {
+        api.get('/api/auth/me').catch(() => {})
+      }
+    }, 300000)
+    return () => clearInterval(hb)
+  }, [])
+
+  useEffect(() => {
     const token = localStorage.getItem('pms_token')
-    console.log('[AuthProvider] token:', token)
     let cancelled = false
     const safety = setTimeout(() => {
-      if (!cancelled) {
-        console.log('[AuthProvider] SAFETY TIMEOUT - forcing loading=false')
-        setLoading(false)
-      }
+      if (!cancelled) setLoading(false)
     }, 5000)
     if (token) {
       api.get('/api/auth/me')
         .then(res => {
           if (cancelled) return
-          console.log('[AuthProvider] /api/auth/me success:', res.data)
           if (res.data.user?.role === 'client') {
             localStorage.removeItem('pms_token')
             window.location.href = '/client-login'
@@ -34,18 +41,15 @@ export function AuthProvider({ children }) {
         })
         .catch(err => {
           if (cancelled) return
-          console.log('[AuthProvider] /api/auth/me failed:', err.message)
           localStorage.removeItem('pms_token')
         })
         .finally(() => {
           if (cancelled) return
           clearTimeout(safety)
-          console.log('[AuthProvider] setting loading=false')
           setLoading(false)
         })
     } else {
       clearTimeout(safety)
-      console.log('[AuthProvider] no token, setting loading=false')
       setLoading(false)
     }
     return () => { cancelled = true; clearTimeout(safety) }
@@ -53,6 +57,11 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     const res = await api.post('/api/auth/login', { email, password })
+    if (res.data.requires_otp) {
+      // Step 1 complete — return OTP session info
+      return { requires_otp: true, ...res.data }
+    }
+    // Direct login (legacy/fallback)
     if (res.data.user?.role === 'client') {
       localStorage.removeItem('pms_token')
       window.location.href = '/client-login'
@@ -60,11 +69,19 @@ export function AuthProvider({ children }) {
     }
     localStorage.setItem('pms_token', res.data.token)
     setUser(res.data.user)
-    if (res.data.user.role !== 'admin') {
-      navigate('/employee')
-    } else {
-      navigate('/')
+    navigate(res.data.user.role !== 'admin' ? '/employee' : '/')
+    return {}
+  }
+
+  const verifyOtp = async (tempToken, otpCode) => {
+    const res = await api.post('/api/auth/verify-otp', { temp_token: tempToken, otp_code: otpCode })
+    const data = res.data
+    if (data.token) {
+      localStorage.setItem('pms_token', data.token)
+      setUser(data.user)
+      navigate(data.user.role !== 'admin' ? '/employee' : '/')
     }
+    return data
   }
 
   const logout = () => {
@@ -79,11 +96,10 @@ export function AuthProvider({ children }) {
     return user.roles?.some(r => roles.includes(r))
   }, [user])
 
-  console.log('[AuthProvider] render, loading:', loading)
   if (loading) return <div className="flex items-center justify-center h-screen"><p className="text-gray-400">Loading...</p></div>
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, hasRole }}>
+    <AuthContext.Provider value={{ user, login, logout, hasRole, verifyOtp, otpSession, setOtpSession }}>
       {children}
     </AuthContext.Provider>
   )

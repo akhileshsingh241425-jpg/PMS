@@ -14,6 +14,17 @@ def generate_token(user):
     return jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm='HS256')
 
 
+def generate_temp_token(user):
+    """Short-lived token for OTP verification step."""
+    payload = {
+        'user_id': user.id,
+        'email': user.email,
+        'type': 'temp_otp',
+        'exp': datetime.utcnow() + timedelta(minutes=10)
+    }
+    return jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm='HS256')
+
+
 def _get_user():
     token = request.headers.get('Authorization', '').replace('Bearer ', '')
     if not token:
@@ -37,6 +48,15 @@ def login_required(f):
         user = _get_user()
         if not user:
             return jsonify({'error': 'Authentication required'}), 401
+        # Session inactivity check — 2 hour timeout
+        if user.last_activity:
+            elapsed = (datetime.utcnow() - user.last_activity).total_seconds()
+            if elapsed > 7200:
+                return jsonify({'error': 'Session expired due to inactivity. Please login again.', 'inactive_timeout': True}), 401
+        # Update last activity
+        user.last_activity = datetime.utcnow()
+        from models import db
+        db.session.commit()
         return f(user, *args, **kwargs)
     return wrapper
 

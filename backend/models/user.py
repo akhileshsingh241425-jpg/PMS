@@ -27,6 +27,7 @@ class User(db.Model):
     reset_token = db.Column(db.String(255))
     reset_token_expiry = db.Column(db.DateTime)
     is_active = db.Column(db.Boolean, default=True)
+    last_activity = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -72,5 +73,6 @@ class User(db.Model):
             'is_active': self.is_active,
             'face_registered': self.face_registration_path is not None,
             'face_registered_at': self.face_registered_at.isoformat() if self.face_registered_at else None,
+            'last_activity': self.last_activity.isoformat() if self.last_activity else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }

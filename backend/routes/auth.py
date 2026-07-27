@@ -1,8 +1,8 @@
-import os, secrets
+import os, secrets, random
 from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify, current_app
-from models import db, User, ProjectTeam
-from middleware.auth import generate_token, login_required, role_required
+from models import db, User, ProjectTeam, LoginOtp
+from middleware.auth import generate_token, generate_temp_token, login_required, role_required
 from utils import generate_id, rate_limit
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
@@ -43,6 +43,70 @@ def login():
         return jsonify({'error': 'Account inactive'}), 403
     if user.role == 'client':
         return jsonify({'error': 'Client users must login via Client Portal at /client-login'}), 403
+
+    # Generate & send OTP
+    otp = LoginOtp.create_for_user(user.id)
+    masked = user.email[:3] + '***' + user.email[user.email.index('@'):]
+
+    try:
+        from email_utils import send_email_async
+        subject = f'{otp.otp_code} is your OTP for PMS login'
+        html = f'''
+        <div style="font-family:Arial;max-width:480px;margin:0 auto">
+            <div style="background:linear-gradient(90deg,#1e3a8a,#2563eb);padding:20px;text-align:center">
+                <h1 style="color:#fff;font-size:18px;margin:0">PMS v2 — INFOCUS-IT</h1>
+            </div>
+            <div style="padding:24px;border:1px solid #E5E7EB;border-top:none">
+                <p style="font-size:14px;color:#374151">Your OTP for login is:</p>
+                <div style="font-size:32px;font-weight:700;color:#1e3a8a;text-align:center;letter-spacing:8px;padding:16px;background:#F8FAFC;border-radius:8px;margin:12px 0">{otp.otp_code}</div>
+                <p style="font-size:12px;color:#9CA3AF">Valid for 5 minutes. Do not share this OTP.</p>
+            </div>
+        </div>'''
+        send_email_async(subject, [user.email], html)
+    except Exception:
+        pass
+
+    return jsonify({
+        'requires_otp': True,
+        'temp_token': generate_temp_token(user),
+        'email': masked,
+        'otp_sent': True,
+    })
+
+
+@auth_bp.route('/verify-otp', methods=['POST'])
+@rate_limit(max_requests=10, window_seconds=60)
+def verify_otp():
+    data = request.get_json()
+    temp_token = data.get('temp_token', '')
+    otp_code = data.get('otp_code', '').strip()
+
+    # Decode temp token
+    import jwt
+    try:
+        payload = jwt.decode(temp_token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
+        if payload.get('type') != 'temp_otp':
+            return jsonify({'error': 'Invalid token'}), 401
+        user_id = payload['user_id']
+    except Exception:
+        return jsonify({'error': 'Invalid or expired token'}), 401
+
+    # Verify OTP
+    otp = LoginOtp.query.filter_by(user_id=user_id, otp_code=otp_code, is_used=False)\
+        .order_by(LoginOtp.id.desc()).first()
+    if not otp or not otp.is_valid():
+        return jsonify({'error': 'Invalid or expired OTP'}), 401
+
+    otp.is_used = True
+    db.session.commit()
+
+    user = User.query.get(user_id)
+    if not user or not user.is_active:
+        return jsonify({'error': 'Account inactive'}), 403
+
+    user.last_activity = datetime.utcnow()
+    db.session.commit()
+
     return jsonify({'token': generate_token(user), 'user': user.to_dict()})
 
 
