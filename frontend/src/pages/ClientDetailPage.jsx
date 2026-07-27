@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
   Building2, Phone, Mail, MapPin, Globe, FileText, Shield,
   UserPlus, MessageSquare, Calendar, History, Link2, ChevronRight,
@@ -77,10 +77,12 @@ export default function ClientDetailPage() {
       clientApi.fetchClients({ per_page: 500 }).then(r => setAllClients(r.clients || [])).catch(() => {})
       clientApi.fetchClients({ per_page: 500, filter: 'main' }).then(r => setAllClients(prev => [...prev, ...(r.clients || [])])).catch(() => {})
       Promise.all([
+        clientApi.fetchClients({ per_page: 500, filter: 'main' }).then(r => r.clients || []).catch(() => []),
         fetch('/api/users').then(r => r.json()).catch(() => ({ users: [] })),
         fetch('/api/masters/sectors').then(r => r.json()).catch(() => ({ sectors: [] })),
         fetch('/api/masters/vendor-categories').then(r => r.json()).catch(() => ({ categories: [] })),
-      ]).then(([u, s, v]) => {
+      ]).then(([moreClients, u, s, v]) => {
+        setAllClients(prev => [...prev, ...(moreClients || [])])
         setUsers(u.users || [])
         setSectors(s.sectors || [])
         setVendorCategories(v.categories || [])
@@ -1077,6 +1079,8 @@ function EditClientModal({ client, editForm, setEditForm, onClose, onSaved, sect
             <EditField label="Location"><input value={editForm.location || ''} onChange={e => set('location', e.target.value)} style={inputStyle} /></EditField>
             <EditField label="Registered Address" span={2}><textarea value={editForm.registered_address || ''} onChange={e => set('registered_address', e.target.value)} style={{ ...inputStyle, minHeight: 50, resize: 'vertical' }} /></EditField>
             <EditField label="State"><input value={editForm.state || ''} onChange={e => set('state', e.target.value)} style={inputStyle} /></EditField>
+            <EditField label="City"><input value={editForm.city || ''} onChange={e => set('city', e.target.value)} style={inputStyle} /></EditField>
+            <EditField label="Country"><input value={editForm.country || ''} onChange={e => set('country', e.target.value)} style={inputStyle} /></EditField>
             <EditField label="State Code"><input value={editForm.state_code || ''} onChange={e => set('state_code', e.target.value)} style={inputStyle} /></EditField>
             <EditField label="Website"><input value={editForm.website || ''} onChange={e => set('website', e.target.value)} style={inputStyle} /></EditField>
             <EditField label="Industry"><input value={editForm.industry || ''} onChange={e => set('industry', e.target.value)} style={inputStyle} /></EditField>
