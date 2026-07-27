@@ -192,6 +192,7 @@ class Project(db.Model):
     po_amount_in_words = db.Column(db.String(500))
     po_revision_number = db.Column(db.Integer, default=0)
     po_parent_id = db.Column(db.Integer, db.ForeignKey('projects.id'))
+    linked_project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=True, index=True)
     completion_date = db.Column(db.Date)
     deliverables_received = db.Column(db.Text)
     acceptance_remarks = db.Column(db.Text)
@@ -203,6 +204,7 @@ class Project(db.Model):
 
     account = db.relationship('Account', foreign_keys=[account_id], back_populates='projects')
     client = db.relationship('Client', foreign_keys=[client_id], backref='projects')
+    linked_project = db.relationship('Project', foreign_keys=[linked_project_id], remote_side='Project.id', backref=db.backref('linked_children', lazy='dynamic'))
     pm = db.relationship('User', foreign_keys=[pm_id])
     creator = db.relationship('User', foreign_keys=[created_by])
     po_approver = db.relationship('User', foreign_keys=[po_approver_id])
@@ -287,6 +289,7 @@ class Project(db.Model):
             'po_amount_in_words': self.po_amount_in_words,
             'po_revision_number': self.po_revision_number,
             'po_parent_id': self.po_parent_id,
+            'linked_project_id': self.linked_project_id,
             'completion_date': self.completion_date.isoformat() if self.completion_date else None,
             'deliverables_received': self.deliverables_received,
             'acceptance_remarks': self.acceptance_remarks,

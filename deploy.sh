@@ -1,19 +1,48 @@
 #!/bin/bash
 # PMS Deploy Script
-# Run on server: bash deploy.sh [--force]
+# Run on server: bash deploy.sh [--force] [--branch <name>]
 
 set -e
 
 STATE_FILE=".deploy-state"
 FORCE=false
-[[ "$1" == "--force" ]] && FORCE=true
+BRANCH=""
+ARGS=("$@")
+for i in "${!ARGS[@]}"; do
+  case "${ARGS[$i]}" in
+    --force) FORCE=true ;;
+    --branch) BRANCH="${ARGS[$i+1]}" ;;
+  esac
+done
 
 echo "===== PMS DEPLOY ====="
 cd "$(dirname "$0")"
 
+# 0. Verify we're on the right branch
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+TARGET_BRANCH="${BRANCH:-$CURRENT_BRANCH}"
+if [[ "$CURRENT_BRANCH" != "$TARGET_BRANCH" ]]; then
+  echo "   ! Switching from $CURRENT_BRANCH to $TARGET_BRANCH..."
+  git checkout "$TARGET_BRANCH"
+fi
+
 # 1. Pull latest code
-echo "[1/5] Pulling latest code..."
-git pull origin master
+echo "[1/5] Pulling latest code from $TARGET_BRANCH..."
+git pull origin "$TARGET_BRANCH"
+
+# 1.5 Backup DB before deploy (optional, requires DB creds)
+if [ -f "backend/.env" ]; then
+  BACKUP_DIR="backups"
+  mkdir -p "$BACKUP_DIR"
+  BACKUP_FILE="$BACKUP_DIR/pms_$(date +%Y%m%d_%H%M%S).sql"
+  echo "   [backup] Creating DB backup: $BACKUP_FILE..."
+  source backend/.env 2>/dev/null || true
+  DB_NAME="${DB_NAME:-pms}"
+  DB_USER="${DB_USER:-root}"
+  mysqldump -u "$DB_USER" ${DB_PASSWORD:+-p"$DB_PASSWORD"} "$DB_NAME" > "$BACKUP_FILE" 2>/dev/null && echo "   ✓ DB backed up" || echo "   ! DB backup skipped (no mysqldump or bad creds)"
+  # Keep last 5 backups
+  ls -t "$BACKUP_DIR"/*.sql 2>/dev/null | tail -n +6 | xargs rm -f 2>/dev/null || true
+fi
 
 # 2. Install backend dependencies (only if requirements changed)
 echo "[2/5] Installing Python deps..."
@@ -73,8 +102,9 @@ else
     pkill -f "python run.py" 2>/dev/null || true
     sleep 1
     cd backend
-    nohup python run.py > ../pms.log 2>&1 &
-    echo "   ✓ Server started on port 5002 (nginx :9090 → :5002)"
+    PORT=${PORT:-5002}
+    nohup python run.py --port "$PORT" > ../pms.log 2>&1 &
+    echo "   ✓ Server started on port $PORT (nginx → :$PORT)"
 fi
 
 echo "===== DONE ====="

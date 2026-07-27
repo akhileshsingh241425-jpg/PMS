@@ -9,14 +9,14 @@ const nav = [
   { to: '/my-workspace', icon: UserCircle, label: 'My Workspace' },
   { to: '/leads', icon: FileText, label: 'Leads' },
   { to: '/clients', icon: Building2, label: 'Clients' },
+  { to: '/po-in', icon: BookOpen, label: 'Work Orders' },
   { to: '/projects', icon: Briefcase, label: 'Projects' },
   { to: '/po-out', icon: ClipboardList, label: 'Vendor PO' },
-  { to: '/po-in', icon: BookOpen, label: 'Work Orders' },
   { to: '/teams', icon: Users, label: 'Teams' },
-  { to: '/settings', icon: SettingsIcon, label: 'Settings', adminOnly: true },
   { to: '/attendance', icon: Clock, label: 'Attendance' },
   { to: '/vulnerabilities', icon: AlertTriangle, label: 'Vulnerabilities' },
   { to: '/chat', icon: MessageSquare, label: 'Chat' },
+  { to: '/settings', icon: SettingsIcon, label: 'Settings', adminOnly: true },
 ]
 
 function NotifBell() {

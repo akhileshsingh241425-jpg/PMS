@@ -36,7 +36,7 @@ import VulnerabilityDashboard from './pages/VulnerabilityDashboard'
 import Clients from './pages/Clients'
 import ClientOnboarding from './pages/ClientOnboarding'
 import ClientDetailPage from './pages/ClientDetailPage'
-import VendorDetailPage from './pages/VendorDetailPage'
+
 import POVendorPage from './pages/POVendor'
 import POVendorDetail from './pages/POVendorDetail'
 import POInPage from './pages/POInPage'
@@ -116,7 +116,7 @@ export default function App() {
                 <Route path="po-out/:id" element={<POVendorDetail />} />
                 <Route path="po-in" element={<POInPage />} />
                 <Route path="po-in/:id" element={<POInDetail />} />
-                <Route path="vendors/:id" element={<VendorDetailPage />} />
+                <Route path="vendors/:id" element={<ClientDetailPage />} />
                 <Route path="email" element={<EmailInbox />} />
                 <Route path="projects" element={<Projects />} />
                 <Route path="projects/:id" element={<ProjectsDetailPage />} />
