@@ -759,17 +759,36 @@ function FollowUpsTab({ client, loadDetail, showFollowUpModal, setShowFollowUpMo
 function WorkOrdersTab({ client, navigate, loadDetail }) {
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [form, setForm] = useState({ po_number: '', title: '', po_date: new Date().toISOString().split('T')[0], description: '' })
+  const defaultItem = { item_name: '', sac_hsn: '', qty: 1, rate: 0, gst_rate: 18 }
+  const [form, setForm] = useState({ po_number: '', title: '', po_date: new Date().toISOString().split('T')[0], description: '', gst_rate: 18, line_items: [{ ...defaultItem }] })
   const [poFile, setPoFile] = useState(null)
   const { addToast } = useToast()
 
   const openCreate = async () => {
     try {
       const r = await api.get('/api/po-in/next-proj-id')
-      setForm({ proj_id: r.data.proj_id, po_number: '', title: `Work Order — ${client.name}`, po_date: new Date().toISOString().split('T')[0], description: '' })
+      setForm({ proj_id: r.data.proj_id, po_number: '', title: `Work Order — ${client.name}`, po_date: new Date().toISOString().split('T')[0], description: '', gst_rate: 18, line_items: [{ ...defaultItem }] })
       setPoFile(null)
       setShowForm(true)
     } catch { addToast('Failed to generate ID', 'error') }
+  }
+
+  const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }))
+  const addItem = () => set('line_items', [...form.line_items, { ...defaultItem }])
+  const removeItem = (idx) => {
+    if (form.line_items.length <= 1) return
+    set('line_items', form.line_items.filter((_, i) => i !== idx))
+  }
+  const updateItem = (idx, field, value) => {
+    const items = [...form.line_items]
+    items[idx] = { ...items[idx], [field]: value }
+    set('line_items', items)
+  }
+  const calcTotals = () => {
+    const taxable = form.line_items.reduce((s, i) => s + ((parseFloat(i.qty) || 0) * (parseFloat(i.rate) || 0)), 0)
+    const gstRate = parseFloat(form.gst_rate) || 18
+    const gst = taxable * gstRate / 100
+    return { taxable, gst, net: taxable + gst }
   }
 
   const handleCreate = async () => {
@@ -777,7 +796,19 @@ function WorkOrdersTab({ client, navigate, loadDetail }) {
     if (!form.po_number.trim()) return addToast('PO Number is required', 'error')
     setSaving(true)
     try {
-      const r = await api.post('/api/po-in', { ...form, client_id: client.id })
+      const totals = calcTotals()
+      const payload = {
+        ...form,
+        po_amount: totals.taxable,
+        gst_rate: parseFloat(form.gst_rate) || 18,
+        line_items: form.line_items.map(i => ({
+          item_name: i.item_name, sac_hsn: i.sac_hsn,
+          qty: parseFloat(i.qty) || 0, rate: parseFloat(i.rate) || 0,
+          gst_rate: parseFloat(i.gst_rate) || 18,
+        })),
+        client_id: client.id,
+      }
+      const r = await api.post('/api/po-in', payload)
       const newPo = r.data?.po
       if (poFile && newPo?.id) {
         const fd = new FormData()
@@ -790,6 +821,8 @@ function WorkOrdersTab({ client, navigate, loadDetail }) {
     } catch (e) { addToast(e.response?.data?.error || 'Failed to create', 'error') }
     finally { setSaving(false) }
   }
+
+  const totals = calcTotals()
 
   return (
     <div>
@@ -826,15 +859,53 @@ function WorkOrdersTab({ client, navigate, loadDetail }) {
       )}
 
       {showForm && (
-        <Modal title="New Work Order" onClose={() => setShowForm(false)} onSave={handleCreate}>
+        <Modal title="New Work Order" onClose={() => setShowForm(false)} onSave={handleCreate} width={680}>
           <ModalField label="Project ID"><input value={form.proj_id || ''} style={inputStyle} disabled /></ModalField>
-          <ModalField label="Title" required><input value={form.title || ''} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} style={inputStyle} placeholder="Work order title" /></ModalField>
-          <ModalField label="PO Number" required><input value={form.po_number || ''} onChange={e => setForm(p => ({ ...p, po_number: e.target.value }))} style={inputStyle} placeholder="e.g. PO-2026-001" /></ModalField>
-          <ModalField label="PO Date"><input type="date" value={form.po_date || ''} onChange={e => setForm(p => ({ ...p, po_date: e.target.value }))} style={inputStyle} /></ModalField>
+          <ModalField label="Title" required><input value={form.title || ''} onChange={e => set('title', e.target.value)} style={inputStyle} placeholder="Work order title" /></ModalField>
+          <ModalField label="PO Number" required><input value={form.po_number || ''} onChange={e => set('po_number', e.target.value)} style={inputStyle} placeholder="e.g. PO-2026-001" /></ModalField>
+          <ModalField label="PO Date"><input type="date" value={form.po_date || ''} onChange={e => set('po_date', e.target.value)} style={inputStyle} /></ModalField>
+          <ModalField label="GST Rate">
+            <select value={form.gst_rate || 18} onChange={e => set('gst_rate', e.target.value)} style={inputStyle}>
+              <option value={0}>0%</option>
+              <option value={5}>5%</option>
+              <option value={12}>12%</option>
+              <option value={18}>18%</option>
+              <option value={28}>28%</option>
+            </select>
+          </ModalField>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6 }}>Line Items</div>
+            <div style={{ border: `1px solid ${C.border}`, borderRadius: 8, overflow: 'hidden' }}>
+              <div style={{ display: 'flex', padding: '6px 8px', background: '#F8FAFC', fontSize: 10, fontWeight: 700, color: C.secondary, borderBottom: `1px solid ${C.border}` }}>
+                <div style={{ flex: 2 }}>Item</div>
+                <div style={{ flex: 1 }}>SAC/HSN</div>
+                <div style={{ flex: 0.6, textAlign: 'right' }}>Qty</div>
+                <div style={{ flex: 1, textAlign: 'right' }}>Rate</div>
+                <div style={{ flex: 0.8, textAlign: 'right' }}>Amount</div>
+                <div style={{ width: 24 }} />
+              </div>
+              {form.line_items.map((item, idx) => (
+                <div key={idx} style={{ display: 'flex', padding: '4px 8px', borderBottom: idx < form.line_items.length - 1 ? `1px solid ${C.border}` : 'none', alignItems: 'center' }}>
+                  <input value={item.item_name} onChange={e => updateItem(idx, 'item_name', e.target.value)} style={{ flex: 2, border: 'none', padding: '4px 2px', fontSize: 12, outline: 'none', fontFamily: C.font }} placeholder="Item name" />
+                  <input value={item.sac_hsn} onChange={e => updateItem(idx, 'sac_hsn', e.target.value)} style={{ flex: 1, border: 'none', padding: '4px 2px', fontSize: 12, outline: 'none', fontFamily: C.font }} placeholder="SAC/HSN" />
+                  <input type="number" value={item.qty} onChange={e => updateItem(idx, 'qty', e.target.value)} style={{ flex: 0.6, border: 'none', padding: '4px 2px', fontSize: 12, outline: 'none', fontFamily: C.font, textAlign: 'right' }} min={0} step={1} />
+                  <input type="number" value={item.rate} onChange={e => updateItem(idx, 'rate', e.target.value)} style={{ flex: 1, border: 'none', padding: '4px 2px', fontSize: 12, outline: 'none', fontFamily: C.font, textAlign: 'right' }} min={0} />
+                  <div style={{ flex: 0.8, textAlign: 'right', fontSize: 12, fontWeight: 500, padding: '4px 2px' }}>₹{((parseFloat(item.qty) || 0) * (parseFloat(item.rate) || 0)).toLocaleString('en-IN')}</div>
+                  <button onClick={() => removeItem(idx)} style={{ width: 22, height: 22, borderRadius: 4, border: 'none', background: '#FEE2E2', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#DC2626', padding: 0, fontSize: 14, lineHeight: 1 }} disabled={form.line_items.length <= 1}>&times;</button>
+                </div>
+              ))}
+            </div>
+            <button onClick={addItem} style={{ marginTop: 4, padding: '4px 10px', borderRadius: 6, border: `1px dashed ${C.border}`, background: 'transparent', fontSize: 11, cursor: 'pointer', fontFamily: C.font, color: C.blue, display: 'flex', alignItems: 'center', gap: 4, width: '100%', justifyContent: 'center' }}>+ Add Item</button>
+            <div style={{ marginTop: 8, display: 'flex', justifyContent: 'flex-end', gap: 20, fontSize: 12 }}>
+              <span>Taxable: <strong>₹{totals.taxable.toLocaleString('en-IN')}</strong></span>
+              <span>GST ({form.gst_rate}%): <strong>₹{totals.gst.toLocaleString('en-IN')}</strong></span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: '#059669' }}>Total: ₹{totals.net.toLocaleString('en-IN')}</span>
+            </div>
+          </div>
           <ModalField label="Upload PO Document">
             <input type="file" onChange={e => setPoFile(e.target.files[0])} style={{ fontSize: 13, fontFamily: C.font }} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
           </ModalField>
-          <ModalField label="Description"><textarea value={form.description || ''} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} style={{ ...inputStyle, minHeight: 60, resize: 'vertical' }} placeholder="Work description / scope" /></ModalField>
+          <ModalField label="Description"><textarea value={form.description || ''} onChange={e => set('description', e.target.value)} style={{ ...inputStyle, minHeight: 50, resize: 'vertical' }} placeholder="Work description / scope" /></ModalField>
         </Modal>
       )}
     </div>
@@ -1311,10 +1382,10 @@ function NotFoundState() {
   )
 }
 
-function Modal({ title, children, onClose, onSave }) {
+function Modal({ title, children, onClose, onSave, width }) {
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(15,23,42,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={onClose}>
-      <div style={{ background: '#fff', borderRadius: 12, width: 500, maxWidth: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: C.shadowMd, fontFamily: C.font }} onClick={e => e.stopPropagation()}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(15,23,42,0.4)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px 10px' }} onClick={onClose}>
+      <div style={{ background: '#fff', borderRadius: 12, width: width || 500, maxWidth: '100%', maxHeight: '95vh', display: 'flex', flexDirection: 'column', boxShadow: C.shadowMd, fontFamily: C.font }} onClick={e => e.stopPropagation()}>
         <div style={{ padding: '16px 20px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0 }}>{title}</h3>
           <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.secondary }}><X className="w-4 h-4" /></button>
@@ -1324,7 +1395,7 @@ function Modal({ title, children, onClose, onSave }) {
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '14px 20px', borderTop: `1px solid ${C.border}` }}>
           <button onClick={onClose} style={{ padding: '7px 16px', borderRadius: 8, border: `1px solid ${C.border}`, background: '#fff', fontSize: 12, cursor: 'pointer', fontFamily: C.font, color: C.text, fontWeight: 500 }}>Cancel</button>
-          <button onClick={onSave} style={{ padding: '7px 16px', borderRadius: 8, border: 'none', background: C.blue, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: C.font }}>Save</button>
+          <button onClick={onSave} disabled={saving} style={{ padding: '7px 16px', borderRadius: 8, border: 'none', background: C.blue, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: C.font }}>Save</button>
         </div>
       </div>
     </div>
