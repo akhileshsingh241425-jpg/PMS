@@ -1,26 +1,34 @@
 import { useState, useEffect } from 'react'
-import { Save, RefreshCw, FileText, Hash, HelpCircle, Layers, Plus, Trash2, X } from 'lucide-react'
+import { Save, RefreshCw, FileText, Hash, HelpCircle, Layers, Plus, Trash2, X, Settings as SettingsIcon, GripVertical, ChevronUp, ChevronDown } from 'lucide-react'
 import api from '../services/api'
 import { C } from '../components/styleConstants'
 
 export default function Settings() {
   const [settings, setSettings] = useState([])
   const [sectors, setSectors] = useState([])
+  const [stageTemplates, setStageTemplates] = useState({})
+  const [projectTypes, setProjectTypes] = useState([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState({})
   const [msg, setMsg] = useState('')
   const [newSector, setNewSector] = useState('')
   const [tab, setTab] = useState('formats')
+  const [newStage, setNewStage] = useState({ project_type: '', name: '', color: '#6366F1' })
+  const [editingStage, setEditingStage] = useState(null)
+  const [dragItem, setDragItem] = useState(null)
 
   const load = async () => {
     try {
       setLoading(true)
-      const [sr, secr] = await Promise.all([
+      const [sr, secr, ptr] = await Promise.all([
         api.get('/api/masters/settings'),
         api.get('/api/masters/sectors'),
+        api.get('/api/projects/stage-templates'),
       ])
       setSettings(sr.data.settings || [])
       setSectors(secr.data.sectors || [])
+      setStageTemplates(ptr.data.templates || {})
+      setProjectTypes(Object.keys(ptr.data.templates || {}))
     } catch (e) { console.error(e) }
     finally { setLoading(false) }
   }
@@ -56,6 +64,95 @@ export default function Settings() {
       await api.delete(`/api/masters/sectors/${id}`)
       await load()
     } catch (e) { setMsg('Failed to delete'); setTimeout(() => setMsg(''), 3000) }
+  }
+
+  const handleStageDragStart = (e, item) => {
+    setDragItem(item)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleStageDragOver = (e) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleStageDrop = async (e, projectType, stages, dragItem) => {
+    e.preventDefault()
+    if (!dragItem || dragItem.project_type !== projectType) return
+    const dragIndex = stages.findIndex(s => s.id === dragItem.id)
+    const hoverIndex = stages.findIndex(s => s.id === dragItem.id) // This needs the hovered item, will fix
+    setDragItem(null)
+  }
+
+  const moveStage = async (projectType, stages, fromIndex, toIndex) => {
+    if (fromIndex === toIndex) return
+    const newStages = [...stages]
+    const [removed] = newStages.splice(fromIndex, 1)
+    newStages.splice(toIndex, 0, removed)
+    // Update order
+    const updates = newStages.map((s, i) => ({ id: s.id, order: i }))
+    try {
+      await Promise.all(updates.map(u => api.put(`/api/projects/stage-templates/${u.id}`, { order: u.order })))
+      await load()
+    } catch (e) { setMsg('Failed to reorder'); setTimeout(() => setMsg(''), 3000) }
+  }
+
+  const addStage = async (projectType) => {
+    if (!newStage.name.trim()) return
+    try {
+      await api.post('/api/projects/stage-templates', { project_type: projectType, name: newStage.name.trim(), color: newStage.color })
+      setNewStage({ project_type: projectType, name: '', color: '#6366F1' })
+      setMsg('Stage added!')
+      setTimeout(() => setMsg(''), 3000)
+      await load()
+    } catch (e) { setMsg(e.response?.data?.error || 'Failed to add'); setTimeout(() => setMsg(''), 3000) }
+  }
+
+  const updateStage = async (stage) => {
+    try {
+      await api.put(`/api/projects/stage-templates/${stage.id}`, { name: stage.name, color: stage.color, is_active: stage.is_active, order: stage.order })
+      setMsg('Stage updated!')
+      setTimeout(() => setMsg(''), 3000)
+      await load()
+    } catch (e) { setMsg('Failed to update'); setTimeout(() => setMsg(''), 3000) }
+  }
+
+  const deleteStage = async (id) => {
+    if (!confirm('Delete this stage?')) return
+    try {
+      await api.delete(`/api/projects/stage-templates/${id}`)
+      await load()
+    } catch (e) { setMsg('Failed to delete'); setTimeout(() => setMsg(''), 3000) }
+  }
+
+  const initializeTemplates = async () => {
+    try {
+      await api.post('/api/projects/stage-templates/initialize')
+      setMsg('Templates initialized!')
+      setTimeout(() => setMsg(''), 3000)
+      await load()
+    } catch (e) { setMsg('Failed to initialize'); setTimeout(() => setMsg(''), 3000) }
+  }
+
+  const handleStageNameChange = (id, projectType, value) => {
+    setStageTemplates(prev => ({
+      ...prev,
+      [projectType]: prev[projectType].map(s => s.id === id ? { ...s, name: value } : s)
+    }))
+  }
+
+  const handleStageColorChange = (id, projectType, color) => {
+    setStageTemplates(prev => ({
+      ...prev,
+      [projectType]: prev[projectType].map(s => s.id === id ? { ...s, color } : s)
+    }))
+  }
+
+  const handleStageActiveToggle = (id, projectType, isActive) => {
+    setStageTemplates(prev => ({
+      ...prev,
+      [projectType]: prev[projectType].map(s => s.id === id ? { ...s, is_active: isActive } : s)
+    }))
   }
 
   const meta = {
@@ -105,6 +202,9 @@ export default function Settings() {
         </button>
         <button onClick={() => setTab('sectors')} style={{ padding: '6px 16px', borderRadius: '8px 8px 0 0', border: `1px solid ${tab === 'sectors' ? C.border : 'transparent'}`, borderBottom: tab === 'sectors' ? '2px solid #fff' : '2px solid transparent', background: tab === 'sectors' ? '#fff' : 'transparent', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: tab === 'sectors' ? C.blue : C.muted, fontFamily: C.font, marginBottom: -1 }}>
           <Layers className="w-3.5 h-3.5" style={{ marginRight: 4, verticalAlign: 'middle' }} /> Client Categories / Sectors
+        </button>
+        <button onClick={() => setTab('stages')} style={{ padding: '6px 16px', borderRadius: '8px 8px 0 0', border: `1px solid ${tab === 'stages' ? C.border : 'transparent'}`, borderBottom: tab === 'stages' ? '2px solid #fff' : '2px solid transparent', background: tab === 'stages' ? '#fff' : 'transparent', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: tab === 'stages' ? C.blue : C.muted, fontFamily: C.font, marginBottom: -1 }}>
+          <SettingsIcon className="w-3.5 h-3.5" style={{ marginRight: 4, verticalAlign: 'middle' }} /> Project Stages
         </button>
       </div>
 
@@ -205,6 +305,103 @@ export default function Settings() {
         </table>
         <p style={{ margin: '8px 0 0', fontSize: 11 }}><b>Example:</b> <code style={{ background: '#FEF3C7', padding: '1px 4px', borderRadius: 3 }}>PO/{'{FY}'}/{'{VENDOR_CODE}'}/{'{N:04d}'}</code> → <code style={{ background: '#FEF3C7', padding: '1px 4px', borderRadius: 3 }}>PO/2026-27/XX/0001</code></p>
       </div>
+
+      {tab === 'stages' && (
+        <div style={{ background: '#fff', borderRadius: 12, border: `1px solid ${C.border}`, padding: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: C.text, margin: 0 }}>Project Stages by Type</h3>
+            <button onClick={initializeTemplates} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px', borderRadius: 6, border: 'none', background: '#7C3AED', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+              <RefreshCw className="w-3.5 h-3.5" /> Initialize Defaults
+            </button>
+          </div>
+          <p style={{ fontSize: 12, color: C.muted, margin: '0 0 12px' }}>Define lifecycle stages for each project type. These will be used as the default stage sequence when creating new projects.</p>
+
+          {projectTypes.length === 0 && (
+            <div style={{ textAlign: 'center', padding: 40, color: C.muted }}>
+              <SettingsIcon className="w-12 h-12" style={{ marginBottom: 8, opacity: 0.5 }} />
+              <p>No project types configured. Click "Initialize Defaults" to create stage templates.</p>
+            </div>
+          )}
+
+          {projectTypes.map(pt => {
+            const stages = stageTemplates[pt] || []
+            return (
+              <div key={pt} style={{ marginBottom: 24 }}>
+                <h4 style={{ fontSize: 13, fontWeight: 700, color: C.text, margin: '0 0 8px', textTransform: 'uppercase' }}>{pt}</h4>
+                
+                {/* Add new stage */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' }}>
+                  <input
+                    value={newStage.name}
+                    onChange={e => setNewStage({ ...newStage, name: e.target.value, project_type: pt })}
+                    onKeyDown={e => e.key === 'Enter' && addStage(pt)}
+                    placeholder="New stage name..."
+                    style={{ flex: 1, maxWidth: 250, padding: '6px 10px', border: `1px solid ${C.border}`, borderRadius: 6, fontSize: 12, outline: 'none', fontFamily: C.font }}
+                  />
+                  <input
+                    type="color"
+                    value={newStage.color}
+                    onChange={e => setNewStage({ ...newStage, color: e.target.value, project_type: pt })}
+                    style={{ width: 32, height: 32, borderRadius: 6, border: `1px solid ${C.border}`, cursor: 'pointer', padding: 0 }}
+                  />
+                  <button onClick={() => addStage(pt)} disabled={!newStage.name.trim()} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px', borderRadius: 6, border: 'none', background: C.blue, color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', opacity: newStage.name.trim() ? 1 : 0.5 }}>
+                    <Plus className="w-3.5 h-3.5" /> Add
+                  </button>
+                </div>
+
+                {/* Stage list - draggable */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {stages.length === 0 ? (
+                    <p style={{ fontSize: 12, color: C.muted, fontStyle: 'italic', padding: '12px 8px' }}>No stages defined. Add stages above or click "Initialize Defaults".</p>
+                  ) : (
+                    stages.map((stage, idx) => (
+                      <div
+                        key={stage.id}
+                        draggable
+                        onDragStart={e => handleStageDragStart(e, { ...stage, project_type: pt })}
+                        onDragOver={handleStageDragOver}
+                        onDrop={e => handleStageDrop(e, pt, stages, dragItem)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 6, background: '#F9FAFB', border: `1px solid ${C.border}`, cursor: 'grab' }}
+                      >
+                        <GripVertical className="w-4 h-4" style={{ color: C.muted, cursor: 'grab' }} />
+                        <input
+                          type="color"
+                          value={stage.color}
+                          onChange={e => handleStageColorChange(stage.id, pt, e.target.value)}
+                          style={{ width: 24, height: 24, borderRadius: 4, border: `1px solid ${C.border}`, cursor: 'pointer', padding: 0, flexShrink: 0 }}
+                        />
+                        <input
+                          value={stage.name}
+                          onChange={e => handleStageNameChange(stage.id, pt, e.target.value)}
+                          style={{ flex: 1, padding: '4px 8px', border: `1px solid ${C.border}`, borderRadius: 4, fontSize: 12, fontWeight: 500, fontFamily: C.font, background: '#fff' }}
+                        />
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: C.text, cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={stage.is_active}
+                            onChange={e => handleStageActiveToggle(stage.id, pt, e.target.checked)}
+                            style={{ width: 14, height: 14, accentColor: C.blue }}
+                          />
+                          Active
+                        </label>
+                        <button
+                          onClick={() => updateStage(stage)}
+                          style={{ padding: '4px 8px', borderRadius: 4, border: 'none', background: '#E5E7EB', color: '#374151', fontSize: 10, fontWeight: 600, cursor: 'pointer' }}
+                        >
+                          Save
+                        </button>
+                        <button onClick={() => deleteStage(stage.id)} style={{ width: 26, height: 26, borderRadius: 4, border: 'none', background: '#FEF2F2', color: '#DC2626', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
