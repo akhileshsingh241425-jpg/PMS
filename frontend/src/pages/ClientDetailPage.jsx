@@ -308,6 +308,7 @@ export default function ClientDetailPage() {
           allClients={allClients}
         />
       )}
+      </div>
     </div>
   )
 }
