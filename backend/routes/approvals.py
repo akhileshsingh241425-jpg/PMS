@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import db, User, LeaveRequest, ExpenseEntry, Notification, ApprovalRequest, ApprovalHistory
+from models import db, User, LeaveRequest, ExpenseEntry, Notification, ApprovalRequest, ApprovalHistoryEntry
 from datetime import datetime
 from middleware.auth import login_required, role_required
 
