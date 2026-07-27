@@ -35,7 +35,21 @@ class Account(db.Model):
     contacts = db.relationship('Contact', backref='account', lazy='dynamic', cascade='all, delete-orphan')
     referred_by = db.relationship('Account', foreign_keys=[referred_by_account_id], remote_side='Account.id')
 
-    def to_dict(self, counts=None):
+    def to_dict(self, counts=None, minimal=False):
+        if minimal:
+            return {
+                'id': self.id,
+                'acc_id': self.acc_id,
+                'company_name': self.company_name,
+                'status': self.status,
+                'account_type': self.account_type,
+                'contact_name': self.contact_name,
+                'contact_email': self.contact_email,
+                'contact_phone': self.contact_phone,
+                'gst_no': self.gst_no,
+                'referred_by_account_id': self.referred_by_account_id,
+                'referred_by_name': self.referred_by.company_name if self.referred_by else None,
+            }
         return {
             'id': self.id,
             'acc_id': self.acc_id,
