@@ -49,9 +49,9 @@ class ApprovalRequest(db.Model):
         }
 
 
-class ApprovalHistory(db.Model):
-    """Audit trail for approval actions"""
-    __tablename__ = 'approval_history'
+class ApprovalHistoryEntry(db.Model):
+    """Audit trail for approval actions - separate from enterprise ApprovalHistory"""
+    __tablename__ = 'approval_history_entries'
     
     id = db.Column(db.Integer, primary_key=True)
     approval_request_id = db.Column(db.Integer, db.ForeignKey('approval_requests.id'), nullable=False, index=True)
@@ -61,7 +61,7 @@ class ApprovalHistory(db.Model):
     remarks = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    approval_request = db.relationship('ApprovalRequest', backref='history')
+    approval_request = db.relationship('ApprovalRequest', backref='history_entries')
     actor = db.relationship('User', foreign_keys=[actor_id])
     
     def to_dict(self):

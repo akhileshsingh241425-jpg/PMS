@@ -1,53 +1,10 @@
 from flask import Blueprint, request, jsonify
-from models import db, User, LeaveRequest, ExpenseEntry, Notification
+from models import db, User, LeaveRequest, ExpenseEntry, Notification, ApprovalRequest, ApprovalHistory
 from datetime import datetime
 from middleware.auth import login_required, role_required
 
 
 approval_bp = Blueprint('approvals', __name__, url_prefix='/api/approvals')
-
-
-# ─── Approval Model ──────────────────────────────────────────────────────────
-
-class ApprovalRequest(db.Model):
-    __tablename__ = 'approval_requests'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    request_type = db.Column(db.String(30), nullable=False, index=True)  # leave, expense, task, vendor_payment
-    requester_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
-    target_id = db.Column(db.Integer, nullable=True)
-    target_type = db.Column(db.String(30), nullable=True)
-    
-    current_level = db.Column(db.Integer, default=0, nullable=False)
-    status = db.Column(db.String(20), default='pending', nullable=False)  # pending, approved, rejected, cancelled
-    current_approver_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True, index=True)
-    
-    payload = db.Column(db.JSON)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    requester = db.relationship('User', foreign_keys=[requester_id])
-    current_approver = db.relationship('User', foreign_keys=[current_approver_id])
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'request_type': self.request_type,
-            'requester_id': self.requester_id,
-            'requester_name': self.requester.full_name if self.requester else None,
-            'target_id': self.target_id,
-            'target_type': self.target_type,
-            'current_level': self.current_level,
-            'status': self.status,
-            'current_approver_id': self.current_approver_id,
-            'current_approver_name': self.current_approver.full_name if self.current_approver else None,
-            'payload': self.payload,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
-        }
-
-
-# ─── Approval Routing Logic ──────────────────────────────────────────────────
 
 def get_approvers(request_type, requester):
     """Return list of (role, user_id) for approval chain"""
