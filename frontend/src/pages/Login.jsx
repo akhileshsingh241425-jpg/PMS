@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { useNavigate, Navigate } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import api from '../services/api'
 
 export default function Login() {
@@ -15,9 +15,9 @@ export default function Login() {
   const [tempToken, setTempToken] = useState('')
   const [maskedEmail, setMaskedEmail] = useState('')
   const { login, verifyOtp, user } = useAuth()
-  const navigate = useNavigate()
 
-  if (user) return <Navigate to="/" replace />
+  const isAdmin = (r) => r === 'admin' || r === 'super_admin'
+  if (user) return <Navigate to={isAdmin(user.role) ? '/' : '/employee'} replace />
 
   const handleLogin = async (e) => {
     e.preventDefault(); setError(''); setLoading(true)

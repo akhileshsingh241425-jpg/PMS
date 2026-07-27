@@ -60,10 +60,8 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     const res = await api.post('/api/auth/login', { email, password })
     if (res.data.requires_otp) {
-      // Step 1 complete — return OTP session info
       return { requires_otp: true, ...res.data }
     }
-    // Direct login (legacy/fallback)
     if (res.data.user?.role === 'client') {
       localStorage.removeItem('pms_token')
       window.location.href = '/client-login'
@@ -71,7 +69,6 @@ export function AuthProvider({ children }) {
     }
     localStorage.setItem('pms_token', res.data.token)
     setUser(res.data.user)
-    navigate(isAdmin(res.data.user.role) ? '/' : '/employee')
     return {}
   }
 
@@ -81,7 +78,6 @@ export function AuthProvider({ children }) {
     if (data.token) {
       localStorage.setItem('pms_token', data.token)
       setUser(data.user)
-      navigate(isAdmin(data.user.role) ? '/' : '/employee')
     }
     return data
   }
