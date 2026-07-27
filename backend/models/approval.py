@@ -35,6 +35,7 @@ class ApprovalRequest(db.Model):
             'request_type': self.request_type,
             'requester_id': self.requester_id,
             'requester_name': self.requester.full_name if self.requester else None,
+            'requester_role': self.requester.role if self.requester else None,
             'target_id': self.target_id,
             'target_type': self.target_type,
             'current_level': self.current_level,
@@ -46,6 +47,7 @@ class ApprovalRequest(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'completed_at': self.completed_at.isoformat() if self.completed_at else None,
+            'history_entries': [h.to_dict() for h in self.history_entries] if self.history_entries else [],
         }
 
 

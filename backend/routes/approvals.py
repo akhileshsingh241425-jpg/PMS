@@ -55,6 +55,29 @@ def notify_user(user_id, title, message):
 
 # ─── API Endpoints ────────────────────────────────────────────────────────────
 
+@approval_bp.route('/all', methods=['GET'])
+@login_required
+def all_approvals(current_user):
+    """All pending approvals (admin/super_admin only)"""
+    if current_user.role not in ('admin', 'super_admin'):
+        return jsonify({'error': 'Not authorized'}), 403
+    approvals = ApprovalRequest.query.filter_by(
+        status='pending'
+    ).order_by(ApprovalRequest.created_at.desc()).all()
+    return jsonify({'approvals': [a.to_dict() for a in approvals]})
+
+
+@approval_bp.route('/<int:aid>', methods=['GET'])
+@login_required
+def approval_detail(current_user, aid):
+    approval = ApprovalRequest.query.get_or_404(aid)
+    hist = ApprovalHistoryEntry.query.filter_by(
+        approval_request_id=approval.id
+    ).order_by(ApprovalHistoryEntry.created_at.asc()).all()
+    d = approval.to_dict()
+    d['history'] = [h.to_dict() for h in hist]
+    return jsonify({'approval': d})
+
 @approval_bp.route('/leave', methods=['POST'])
 @login_required
 def create_leave_approval(current_user):
@@ -174,10 +197,20 @@ def approve_request(current_user, aid):
     data = request.get_json() or {}
     remarks = data.get('remarks', '')
     
-    # Move to next level or complete
+# Move to next level or complete
     approvers = get_approvers(approval.request_type, approval.requester)
     next_level = approval.current_level + 1
-    
+
+    # Record history
+    hist = ApprovalHistoryEntry(
+        approval_request_id=approval.id,
+        level=approval.current_level,
+        action='approve',
+        actor_id=current_user.id,
+        remarks=remarks
+    )
+    db.session.add(hist)
+
     if next_level < len(approvers):
         # Send to next approver
         approval.current_level = next_level
@@ -211,9 +244,19 @@ def reject_request(current_user, aid):
     if not remarks:
         return jsonify({'error': 'Remarks required for rejection'}), 400
     
-    approval.status = 'rejected'
+approval.status = 'rejected'
     approval.updated_at = datetime.utcnow()
-    
+
+    # Record history
+    hist = ApprovalHistoryEntry(
+        approval_request_id=approval.id,
+        level=approval.current_level,
+        action='reject',
+        actor_id=current_user.id,
+        remarks=remarks
+    )
+    db.session.add(hist)
+
     # Update the target request status
     _process_rejection(approval, remarks)
     

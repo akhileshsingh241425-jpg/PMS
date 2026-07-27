@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import {
   LayoutDashboard, FolderOpen, ListChecks, Calendar, FileText,
   Users, Bell, UserCircle, ArrowLeft, LogOut, Menu, X,
-  CheckSquare, Clock, Settings, MessageSquare, Mail, Sun
+  CheckSquare, Clock, Settings, MessageSquare, Mail, Sun, CheckCheck
 } from 'lucide-react'
 
 const NAV_ITEMS = [
@@ -26,7 +26,12 @@ export default function EmployeeLayout({ children }) {
   const navigate = useNavigate()
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
-  const activeKey = NAV_ITEMS.find(i => location.pathname === i.path)?.key || 'dashboard'
+
+  const items = [...NAV_ITEMS]
+  if (user?.role === 'hr' || user?.role === 'finance') {
+    items.splice(1, 0, { key: 'approvals', label: 'Approvals', icon: CheckCheck, path: '/employee/approvals' })
+  }
+  const activeKey = items.find(i => location.pathname === i.path)?.key || 'dashboard'
 
   const sidebarStyle = {
     width: 250, minHeight: '100vh', background: '#0F172A', color: '#fff',
@@ -56,7 +61,7 @@ export default function EmployeeLayout({ children }) {
           </div>
         </div>
         <nav style={{ flex: 1, padding: '12px 0', overflowY: 'auto' }}>
-          {NAV_ITEMS.map(item => {
+          {items.map(item => {
             const active = item.key === activeKey
             return (
               <div key={item.key} onClick={() => { navigate(item.path); setMobileOpen(false) }}

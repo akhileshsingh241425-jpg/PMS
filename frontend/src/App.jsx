@@ -41,6 +41,7 @@ import POVendorDetail from './pages/POVendorDetail'
 import POInPage from './pages/POInPage'
 import POInDetail from './pages/POInDetail'
 import Settings from './pages/Settings'
+import ApprovalsPage from './pages/ApprovalsPage'
 import EmailInbox from './pages/EmailInbox'
 import ChatPage from './pages/ChatPage'
 import PlanBuilderPage from './pages/PlanBuilderPage'
@@ -128,6 +129,7 @@ export default function App() {
                 <Route path="attendance/face-register" element={<FaceRegisterPage />} />
                 <Route path="users" element={<AdminRoute><UsersPage /></AdminRoute>} />
                 <Route path="settings" element={<AdminRoute><Settings /></AdminRoute>} />
+                <Route path="approvals" element={<ApprovalsPage />} />
                 <Route path="chat" element={<ChatPage />} />
               </Route>
               <Route path="/employee" element={<Protected><EmployeeRoute><EmployeeAppLayout /></EmployeeRoute></Protected>}>
@@ -144,6 +146,7 @@ export default function App() {
                 <Route path="face-register" element={<FaceRegisterPage />} />
                 <Route path="chat" element={<ChatPage />} />
                 <Route path="email" element={<EmailInbox />} />
+                <Route path="approvals" element={<ApprovalsPage />} />
               </Route>
               <Route path="/pm" element={<Protected><PMRoute><PMAppLayout /></PMRoute></Protected>}>
                 <Route path="face-register" element={<FaceRegisterPage />} />

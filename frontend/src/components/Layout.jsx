@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { LayoutDashboard, Target, FileText, Building2, Briefcase, Users, LogOut, Bell, Search, ChevronLeft, ChevronRight, UserCircle, AlertTriangle, Clock, Mail, MessageSquare, ClipboardList, BookOpen, Settings as SettingsIcon } from 'lucide-react'
+import { LayoutDashboard, Target, FileText, Building2, Briefcase, Users, LogOut, Bell, Search, ChevronLeft, ChevronRight, UserCircle, AlertTriangle, Clock, Mail, MessageSquare, ClipboardList, BookOpen, Settings as SettingsIcon, CheckCheck } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import api from '../services/api'
 
@@ -14,6 +14,7 @@ const nav = [
   { to: '/teams', icon: Users, label: 'Teams' },
   { to: '/attendance', icon: Clock, label: 'Attendance' },
   { to: '/vulnerabilities', icon: AlertTriangle, label: 'Vulnerabilities' },
+  { to: '/approvals', icon: CheckCheck, label: 'Approvals', roles: ['admin', 'super_admin', 'hr', 'finance'] },
   { to: '/chat', icon: MessageSquare, label: 'Chat' },
   { to: '/settings', icon: SettingsIcon, label: 'Settings', adminOnly: true },
 ]
@@ -154,7 +155,11 @@ export default function Layout({ children }) {
 
         {/* Nav */}
         <nav style={{ flex: 1, padding: '12px 8px', display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto' }}>
-          {[...nav, ...(user?.role === 'admin' ? [{ to: '/users', icon: Users, label: 'Users' }] : [])].filter(item => !item.adminOnly || user?.role === 'admin').map(item => {
+          {[...nav, ...(user?.role === 'admin' ? [{ to: '/users', icon: Users, label: 'Users' }] : [])].filter(item => {
+            if (item.adminOnly && user?.role !== 'admin') return false
+            if (item.roles && !item.roles.includes(user?.role)) return false
+            return true
+          }).map(item => {
             const active = pathname === item.to || (item.to !== '/' && pathname.startsWith(item.to))
             const Icon = item.icon
             return (
