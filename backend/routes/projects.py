@@ -1,7 +1,7 @@
 from datetime import datetime
 from flask import Blueprint, request, jsonify
 import os
-from models import db, Project, ProjectRemark, ProjectRemarkReaction, ProjectDocument, ProjectReport, ProjectTeam, ProjectPhase, Task, Meeting, Note, User, Notification, ProjectRisk, ProjectIssue, ProjectMilestone, ProjectInvoice, ProjectTimesheet, ProjectChangeRequest, ApprovalHistory, PlanSubmodule, PoPayment
+from models import db, Project, ProjectRemark, ProjectRemarkReaction, ProjectDocument, ProjectReport, ProjectTeam, ProjectPhase, Task, Meeting, Note, User, Notification, ProjectRisk, ProjectIssue, ProjectMilestone, ProjectInvoice, ProjectTimesheet, ProjectChangeRequest, ApprovalHistory, PlanSubmodule, PoPayment, ProjectStage, ProjectStageTemplate
 from models.client_portal import MeetingRequest, FindingQuery
 from middleware.auth import login_required, role_required
 from utils import validate_file, safe_filename, generate_id, paginate
@@ -73,11 +73,11 @@ def create_project(current_user):
         return jsonify({'error': 'Client account is required for IN projects'}), 400
     if direction == 'OUT' and not data.get('vendor_name'):
         return jsonify({'error': 'Vendor name is required for OUT projects'}), 400
-    if not data.get('pm_id'):
+    if not data.get('pm_id') and not data.get('source_po_id'):
         return jsonify({'error': 'Project Manager (pm_id) is required'}), 400
     try:
         client_id = int(data['client_id']) if data.get('client_id') else None
-        pm_id = int(data['pm_id'])
+        pm_id = int(data['pm_id']) if data.get('pm_id') else (current_user.id if data.get('source_po_id') else None)
         total_value = float(data['total_value']) if data.get('total_value') else None
         start_date = datetime.strptime(data['start_date'], '%Y-%m-%d').date() if data.get('start_date') else None
         target_date = datetime.strptime(data['target_date'], '%Y-%m-%d').date() if data.get('target_date') else None
@@ -90,11 +90,23 @@ def create_project(current_user):
         balance_outstanding = float(data['balance_outstanding']) if data.get('balance_outstanding') else None
     except (ValueError, TypeError):
         return jsonify({'error': 'Invalid format for numeric or date fields'}), 400
+
+    # Determine initial stage from project_type template if not provided
+    initial_stage = data.get('stage')
+    if not initial_stage:
+        pt = data.get('project_type')
+        if pt:
+            first_template = ProjectStageTemplate.query.filter_by(project_type=pt, is_active=True).order_by(ProjectStageTemplate.order).first()
+            if first_template:
+                initial_stage = first_template.name
+        if not initial_stage:
+            initial_stage = 'Created'
+
     proj = Project(
         proj_id=generate_id(Project, 'PRJ'),
         title=data['title'],
         description=data.get('description'),
-        stage=data.get('stage', 'Created'),
+        stage=initial_stage,
         service_type=data.get('service_type'),
         client_id=client_id,
         pm_id=pm_id,
@@ -626,6 +638,82 @@ def serve_report(current_user, rid):
 @login_required
 def stages(current_user):
     return jsonify({'stages': PROJECT_STAGES})
+
+
+@project_bp.route('/stage-templates', methods=['GET'])
+@login_required
+def list_stage_templates(current_user):
+    templates = ProjectStageTemplate.query.order_by(ProjectStageTemplate.project_type, ProjectStageTemplate.order).all()
+    # Group by project_type
+    grouped = {}
+    for t in templates:
+        if t.project_type not in grouped:
+            grouped[t.project_type] = []
+        grouped[t.project_type].append(t.to_dict())
+    return jsonify({'templates': grouped})
+
+
+@project_bp.route('/stage-templates', methods=['POST'])
+@login_required
+def create_stage_template(current_user):
+    data = request.get_json()
+    project_type = data.get('project_type')
+    name = data.get('name')
+    order = data.get('order', 0)
+    color = data.get('color', '#6366F1')
+    if not project_type or not name:
+        return jsonify({'error': 'project_type and name required'}), 400
+    if project_type not in PROJECT_TYPES:
+        return jsonify({'error': 'Invalid project_type'}), 400
+    t = ProjectStageTemplate(project_type=project_type, name=name, order=order, color=color)
+    db.session.add(t)
+    db.session.commit()
+    return jsonify({'template': t.to_dict()}), 201
+
+
+@project_bp.route('/stage-templates/<int:tid>', methods=['PUT'])
+@login_required
+def update_stage_template(current_user, tid):
+    t = ProjectStageTemplate.query.get_or_404(tid)
+    data = request.get_json()
+    for f in ['name', 'order', 'is_active', 'color']:
+        if f in data:
+            setattr(t, f, data[f])
+    db.session.commit()
+    return jsonify({'template': t.to_dict()})
+
+
+@project_bp.route('/stage-templates/<int:tid>', methods=['DELETE'])
+@login_required
+def delete_stage_template(current_user, tid):
+    t = ProjectStageTemplate.query.get_or_404(tid)
+    db.session.delete(t)
+    db.session.commit()
+    return jsonify({'message': 'Deleted'})
+
+
+@project_bp.route('/stage-templates/initialize', methods=['POST'])
+@login_required
+def initialize_stage_templates(current_user):
+    """Initialize default stage templates for all project types from PROJECT_STAGES."""
+    created = 0
+    for pt in PROJECT_TYPES:
+        existing = ProjectStageTemplate.query.filter_by(project_type=pt).first()
+        if existing:
+            continue
+        for i, stage in enumerate(PROJECT_STAGES):
+            t = ProjectStageTemplate(project_type=pt, name=stage, order=i)
+            db.session.add(t)
+            created += 1
+    db.session.commit()
+    return jsonify({'message': f'Initialized {created} stage templates'})
+
+
+@project_bp.route('/stage-templates/<project_type>', methods=['GET'])
+@login_required
+def get_stage_templates_for_type(current_user, project_type):
+    templates = ProjectStageTemplate.query.filter_by(project_type=project_type, is_active=True).order_by(ProjectStageTemplate.order).all()
+    return jsonify({'stages': [t.to_dict() for t in templates]})
 
 
 

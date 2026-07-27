@@ -11,6 +11,51 @@ PROJECT_STAGES = [
     'Awaiting Client Response', 'Awaiting Documents', 'Awaiting Payment',
 ]
 
+
+class ProjectStageTemplate(db.Model):
+    __tablename__ = 'project_stage_templates'
+    id = db.Column(db.Integer, primary_key=True)
+    project_type = db.Column(db.String(50), nullable=False, index=True)
+    name = db.Column(db.String(100), nullable=False)
+    order = db.Column(db.Integer, default=0, nullable=False)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    color = db.Column(db.String(20), default='#6366F1')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (db.UniqueConstraint('project_type', 'name', name='uq_stage_template_type_name'),)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'project_type': self.project_type,
+            'name': self.name,
+            'order': self.order,
+            'is_active': self.is_active,
+            'color': self.color,
+        }
+
+
+class ProjectStage(db.Model):
+    __tablename__ = 'project_stages'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False, unique=True)
+    order = db.Column(db.Integer, default=0, nullable=False)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    color = db.Column(db.String(20), default='#6366F1')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'order': self.order,
+            'is_active': self.is_active,
+            'color': self.color,
+        }
+
+
 PROJECT_TYPES = ['VAPT', 'IS Audit', 'ISMS Implementation', 'Technical Assessment', 'GRC', 'CS Framework Implementation']
 
 
