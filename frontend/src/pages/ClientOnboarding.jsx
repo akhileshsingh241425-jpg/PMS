@@ -50,12 +50,19 @@ export default function ClientOnboarding() {
   const [referringClients, setReferringClients] = useState([])
   const [users, setUsers] = useState([])
   const [countries, setCountries] = useState([])
-  const [states, setStates] = useState([])
+  const [allStates, setAllStates] = useState([])
   const [dupStatus, setDupStatus] = useState(null)
+
+  const filteredStates = form.country
+    ? allStates.filter(s => {
+        const c = countries.find(c => c.name === form.country)
+        return c ? s.country_id === c.id : true
+      })
+    : allStates
 
   useEffect(() => {
     api.get('/api/masters/sectors').then(r => setSectors(r.data?.sectors || [])).catch(() => {})
-    api.get('/api/masters/vendor-categories').then(r => setVendorCategories(r.data?.categories || [])).catch(() => {})
+    api.get('/api/masters/vendor-categories').then(r => setVendorCategories(r.data?.vendor_categories || [])).catch(() => {})
     api.get('/api/clients', { params: { per_page: 500 } }).then(r => {
       const list = r.data?.clients || []
       setParentClients(list)
@@ -63,21 +70,17 @@ export default function ClientOnboarding() {
     }).catch(() => {})
     api.get('/api/users').then(r => setUsers(r.data?.users || [])).catch(() => {})
     api.get('/api/masters/countries').then(r => setCountries(r.data?.countries || [])).catch(() => {})
+    api.get('/api/masters/states').then(r => setAllStates(r.data?.states || [])).catch(() => {})
   }, [])
 
-  useEffect(() => {
-    if (form.country) {
-      const c = countries.find(c => c.name === form.country)
-      if (c) {
-        api.get('/api/masters/states', { params: { country_id: c.id } })
-          .then(r => setStates(r.data?.states || [])).catch(() => {})
-      } else {
-        setStates([])
-      }
-    } else {
-      setStates([])
-    }
-  }, [form.country, countries])
+  const [allStates, setAllStates] = useState([])
+
+  const filteredStates = form.country
+    ? allStates.filter(s => {
+        const c = countries.find(c => c.name === form.country)
+        return c ? s.country_id === c.id : true
+      })
+    : allStates
 
   const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }))
 
@@ -245,7 +248,7 @@ export default function ClientOnboarding() {
               <Label>State</Label>
               <select value={form.state} onChange={e => set('state', e.target.value)} style={selectCls} disabled={!form.country}>
                 <option value="">-- Select State --</option>
-                {states.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                {filteredStates.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
               </select>
             </Field>
             <Field>
