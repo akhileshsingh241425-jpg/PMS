@@ -96,6 +96,8 @@ def create_po_in(current_user):
         return jsonify({'error': 'Client not found'}), 404
 
     po_number = data.get('po_number', '').strip()
+    if not po_number:
+        return jsonify({'error': 'PO number is required'}), 400
     if po_number:
         existing = Project.query.filter_by(client_id=client_id, po_number=po_number, direction='IN').first()
         if existing:

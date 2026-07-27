@@ -756,21 +756,30 @@ function WorkOrdersTab({ client, navigate, loadDetail }) {
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({ po_number: '', title: '', po_date: new Date().toISOString().split('T')[0], description: '' })
+  const [poFile, setPoFile] = useState(null)
   const { addToast } = useToast()
 
   const openCreate = async () => {
     try {
       const r = await api.get('/api/po-in/next-proj-id')
       setForm({ proj_id: r.data.proj_id, po_number: '', title: `Work Order — ${client.name}`, po_date: new Date().toISOString().split('T')[0], description: '' })
+      setPoFile(null)
       setShowForm(true)
     } catch { addToast('Failed to generate ID', 'error') }
   }
 
   const handleCreate = async () => {
     if (!form.title.trim()) return addToast('Title is required', 'error')
+    if (!form.po_number.trim()) return addToast('PO Number is required', 'error')
     setSaving(true)
     try {
-      await api.post('/api/po-in', { ...form, client_id: client.id })
+      const r = await api.post('/api/po-in', { ...form, client_id: client.id })
+      const newPo = r.data?.project || r.data
+      if (poFile && newPo?.id) {
+        const fd = new FormData()
+        fd.append('file', poFile)
+        await api.post(`/api/po-in/${newPo.id}/attachment`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+      }
       addToast('Work order created', 'success')
       setShowForm(false)
       loadDetail()
@@ -816,8 +825,11 @@ function WorkOrdersTab({ client, navigate, loadDetail }) {
         <Modal title="New Work Order" onClose={() => setShowForm(false)} onSave={handleCreate}>
           <ModalField label="Project ID"><input value={form.proj_id || ''} style={inputStyle} disabled /></ModalField>
           <ModalField label="Title" required><input value={form.title || ''} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} style={inputStyle} placeholder="Work order title" /></ModalField>
-          <ModalField label="PO Number"><input value={form.po_number || ''} onChange={e => setForm(p => ({ ...p, po_number: e.target.value }))} style={inputStyle} placeholder="e.g. PO-2026-001" /></ModalField>
+          <ModalField label="PO Number" required><input value={form.po_number || ''} onChange={e => setForm(p => ({ ...p, po_number: e.target.value }))} style={inputStyle} placeholder="e.g. PO-2026-001" /></ModalField>
           <ModalField label="PO Date"><input type="date" value={form.po_date || ''} onChange={e => setForm(p => ({ ...p, po_date: e.target.value }))} style={inputStyle} /></ModalField>
+          <ModalField label="Upload PO Document">
+            <input type="file" onChange={e => setPoFile(e.target.files[0])} style={{ fontSize: 13, fontFamily: C.font }} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
+          </ModalField>
           <ModalField label="Description"><textarea value={form.description || ''} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} style={{ ...inputStyle, minHeight: 60, resize: 'vertical' }} placeholder="Work description / scope" /></ModalField>
         </Modal>
       )}
