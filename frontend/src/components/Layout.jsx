@@ -6,7 +6,6 @@ import api from '../services/api'
 
 const nav = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/my-workspace', icon: UserCircle, label: 'My Workspace' },
   { to: '/leads', icon: FileText, label: 'Leads' },
   { to: '/clients', icon: Building2, label: 'Clients' },
   { to: '/po-in', icon: BookOpen, label: 'Work Orders' },

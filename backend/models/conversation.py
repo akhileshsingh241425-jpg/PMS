@@ -20,7 +20,7 @@ class ChatConversation(db.Model):
         other = None
         if self.type == 'direct' and current_user_id:
             other_p = [p for p in self.participants if p.user_id != current_user_id]
-            if other_p:
+            if other_p and other_p[0].user:
                 other = other_p[0].user.to_dict()
         unread = 0
         if current_user_id:
@@ -38,7 +38,7 @@ class ChatConversation(db.Model):
             'other_user': other,
             'last_message': last_msg.to_dict() if last_msg else None,
             'unread_count': unread,
-            'participants': [{'user_id': p.user_id, 'full_name': p.user.full_name, 'role': p.role} for p in self.participants],
+            'participants': [{'user_id': p.user_id, 'full_name': p.user.full_name if p.user else 'Deleted User', 'role': p.role} for p in self.participants],
         }
 
 
