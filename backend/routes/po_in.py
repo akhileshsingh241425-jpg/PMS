@@ -352,7 +352,7 @@ def upload_attachment(current_user, pid):
 @login_required
 def send_acknowledgement(current_user, pid):
     project = Project.query.filter_by(id=pid, direction='IN').first_or_404()
-    data = request.get_json() or {}
+    data = request.get_json(force=True, silent=True) or {}
     client = project.client
     if not client:
         return jsonify({'error': 'Client not found'}), 404
@@ -433,19 +433,15 @@ def send_acknowledgement(current_user, pid):
     </div>'''
 
     try:
-        from routes.email_integration import send_via_graph
-        from models.email_integration import EmailAccount
-        acct = EmailAccount.query.filter_by(is_active=True).first()
-        if not acct:
-            return jsonify({'error': 'No connected email account. Connect Microsoft email first.'}), 500
-        cc_email = data.get('cc', 'accounts@infocus-it.com')
-        ok, msg = send_via_graph(acct, to_email, cc_email, subject, html)
-        if ok:
-            project.po_acknowledged = True
-            project.po_acknowledged_at = datetime.utcnow()
-            project.po_acknowledgement_sent_to = to_email
-            db.session.commit()
-            return jsonify({'message': f'Acknowledgement sent to {to_email}'})
-        return jsonify({'error': msg}), 500
+        from email_utils import send_email_async
+        from flask import current_app
+        if not current_app.config.get('MAIL_SERVER'):
+            return jsonify({'error': 'SMTP not configured. Set MAIL_SERVER in .env'}), 500
+        send_email_async(subject, [to_email], html)
+        project.po_acknowledged = True
+        project.po_acknowledged_at = datetime.utcnow()
+        project.po_acknowledgement_sent_to = to_email
+        db.session.commit()
+        return jsonify({'message': f'Acknowledgement sent to {to_email}'})
     except Exception as e:
         return jsonify({'error': f'Failed to send email: {str(e)}'}), 500
