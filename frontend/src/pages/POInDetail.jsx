@@ -5,6 +5,7 @@ import api from '../services/api'
 import { C } from '../components/styleConstants'
 import Breadcrumb from '../components/Breadcrumb'
 import { useToast } from '../contexts/ToastContext'
+import { useAuth } from '../contexts/AuthContext'
 
 const STATUS_COLORS = {
   'WORK ORDER RECEIVED': { bg: '#DBEAFE', text: '#1E40AF' },
@@ -45,6 +46,7 @@ export default function POInDetail() {
   const [editForm, setEditForm] = useState({})
   const [saving, setSaving] = useState(false)
   const { addToast } = useToast()
+  const { user } = useAuth()
 
   const load = async () => {
     try {
@@ -138,6 +140,7 @@ export default function POInDetail() {
       const payload = {
         title: po.title || `Project — ${po.client?.name || ''}`,
         client_id: po.client_id,
+        pm_id: user?.id,
         po_number: po.po_number,
         po_date: po.po_date,
         po_amount: po.po_amount,
