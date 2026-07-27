@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import db, Lead, Account, Project, Contact, Opportunity
+from models import db, Lead, Client, Project, Opportunity
 from middleware.auth import login_required
 
 search_bp = Blueprint('search', __name__, url_prefix='/api/search')
@@ -21,22 +21,16 @@ def global_search(current_user):
         Lead.subject.ilike(pattern),
     )).limit(5).all()
 
-    accounts = Account.query.filter(db.or_(
-        Account.company_name.ilike(pattern),
-        Account.contact_name.ilike(pattern),
-        Account.contact_email.ilike(pattern),
-        Account.acc_id.ilike(pattern),
+    clients = Client.query.filter(db.or_(
+        Client.name.ilike(pattern),
+        Client.contact_name.ilike(pattern),
+        Client.contact_email.ilike(pattern),
+        Client.client_code.ilike(pattern),
     )).limit(5).all()
 
     projects = Project.query.filter(db.or_(
         Project.title.ilike(pattern),
         Project.proj_id.ilike(pattern),
-    )).limit(5).all()
-
-    contacts = Contact.query.filter(db.or_(
-        Contact.first_name.ilike(pattern),
-        Contact.last_name.ilike(pattern),
-        Contact.email.ilike(pattern),
     )).limit(5).all()
 
     opportunities = Opportunity.query.filter(db.or_(
@@ -49,12 +43,10 @@ def global_search(current_user):
     results = []
     for l in leads:
         results.append({'type': 'lead', 'id': l.id, 'label': l.lead_id, 'title': l.company_name, 'subtitle': l.contact_name, 'url': f'/leads/{l.id}'})
-    for a in accounts:
-        results.append({'type': 'account', 'id': a.id, 'label': a.acc_id, 'title': a.company_name, 'subtitle': a.contact_name, 'url': f'/accounts/{a.id}'})
+    for c in clients:
+        results.append({'type': 'client', 'id': c.id, 'label': c.client_code, 'title': c.name, 'subtitle': c.contact_name, 'url': f'/clients/{c.id}'})
     for p in projects:
-        results.append({'type': 'project', 'id': p.id, 'label': p.proj_id, 'title': p.title, 'subtitle': p.account.company_name if p.account else '', 'url': f'/projects/{p.id}'})
-    for c in contacts:
-        results.append({'type': 'contact', 'id': c.id, 'label': '', 'title': c.full_name, 'subtitle': c.email, 'url': f'/accounts/{c.account_id}' if c.account_id else '#'})
+        results.append({'type': 'project', 'id': p.id, 'label': p.proj_id, 'title': p.title, 'subtitle': p.client.name if p.client else '', 'url': f'/projects/{p.id}'})
     for o in opportunities:
         results.append({'type': 'opportunity', 'id': o.id, 'label': o.opp_id, 'title': o.company_name, 'subtitle': o.contact_name, 'url': f'/opportunities/{o.id}'})
 

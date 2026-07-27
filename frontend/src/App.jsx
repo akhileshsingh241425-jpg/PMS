@@ -7,12 +7,12 @@ import Layout from './components/Layout'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Leads from './pages/Leads'
-import Accounts from './pages/Accounts'
+
 import Projects from './pages/Projects'
 import UsersPage from './pages/Users'
 import { ClientLogin, ClientPortalDashboard } from './pages/ClientPortal'
 import InfocusitCRM from './pages/InfocusitCRM'
-import AccountsDetailPage from './pages/AccountsDetailPage'
+
 import LeadsDetailPage from './pages/LeadsDetailPage'
 import ProjectsDetailPage from './pages/ProjectsDetailPage'
 import Backlog from './pages/Backlog'
@@ -107,8 +107,6 @@ export default function App() {
                 <Route index element={<Dashboard />} />
                 <Route path="leads" element={<Leads />} />
                 <Route path="leads/:id" element={<LeadsDetailPage />} />
-                <Route path="accounts" element={<Accounts />} />
-                <Route path="accounts/:id" element={<AccountsDetailPage />} />
                 <Route path="clients" element={<Clients />} />
                 <Route path="clients/new" element={<ClientOnboarding />} />
                 <Route path="clients/:id" element={<ClientDetailPage />} />

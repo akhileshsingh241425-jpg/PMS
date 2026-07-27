@@ -16,13 +16,13 @@ export default function Dashboard() {
       api.get('/api/dashboard/overview').catch(() => ({ data: {} })),
       api.get('/api/opportunities').catch(() => ({ data: { opportunities: [] } })),
       api.get('/api/leads').catch(() => ({ data: { leads: [] } })),
-      api.get('/api/accounts').catch(() => ({ data: { accounts: [] } })),
+      api.get('/api/clients').catch(() => ({ data: { clients: [] } })),
       api.get('/api/projects').catch(() => ({ data: { projects: [] } })),
     ]).then(([ov, o, l, a, p]) => {
       setStats({
         opps: o.data.opportunities.length,
         leads: l.data.leads.length,
-        accounts: a.data.accounts.length,
+        accounts: a.data.clients.length,
         projects: p.data.projects.length,
         open_queries: ov.data.open_queries || 0,
         pending_meetings: ov.data.pending_meetings || 0,
@@ -34,7 +34,7 @@ export default function Dashboard() {
     { label: 'Active Projects', value: stats.projects, icon: Briefcase, color: 'from-orange-500 to-amber-600', to: '/projects' },
     { label: 'Opportunities', value: stats.opps, icon: Target, color: 'from-violet-500 to-indigo-600', to: '/leads' },
     { label: 'Leads', value: stats.leads, icon: FileText, color: 'from-blue-500 to-cyan-600', to: '/leads' },
-    { label: 'Clients', value: stats.accounts, icon: Building2, color: 'from-emerald-500 to-teal-600', to: '/accounts' },
+    { label: 'Clients', value: stats.accounts, icon: Building2, color: 'from-emerald-500 to-teal-600', to: '/clients' },
     { label: 'Open Queries', value: stats.open_queries, icon: HelpCircle, color: 'from-red-500 to-pink-600', to: '/projects' },
     { label: 'Pending Meetings', value: stats.pending_meetings, icon: Calendar, color: 'from-purple-500 to-violet-600', to: '/projects' },
   ]

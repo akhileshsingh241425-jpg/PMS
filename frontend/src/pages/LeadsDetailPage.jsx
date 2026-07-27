@@ -114,7 +114,7 @@ export default function LeadsDetailPage() {
   const [closeOutcome, setCloseOutcome] = useState(null)
   const [rejectionReason, setRejectionReason] = useState('')
   const [users, setUsers] = useState([])
-  const [accounts, setAccounts] = useState([])
+  const [clients, setClients] = useState([])
   const [showProjectForm, setShowProjectForm] = useState(false)
   const [projectForm, setProjectForm] = useState({ title: '', description: '', service_type: '', pm_id: '', total_value: '', start_date: '', target_date: '' })
   const [creatingProject, setCreatingProject] = useState(false)
@@ -193,7 +193,7 @@ export default function LeadsDetailPage() {
 
   useEffect(() => { loadDetail() }, [id])
   useEffect(() => { api.get('/api/auth/users').then(r => setUsers(r.data.users)).catch(() => {}) }, [])
-  useEffect(() => { api.get('/api/accounts').then(r => setAccounts(r.data.accounts)).catch(() => {}) }, [])
+  useEffect(() => { api.get('/api/clients').then(r => setClients(r.data.clients)).catch(() => {}) }, [])
   useEffect(() => { if (recordType === 'lead') loadProposals() }, [id, recordType])
 
   const saveProposal = async (e) => {
@@ -249,10 +249,10 @@ export default function LeadsDetailPage() {
   const convertToAccount = async () => {
     setConverting(true)
     try {
-      const ep = isOpp() ? `/api/opportunities/${id}/convert-to-account` : `/api/leads/${id}/convert-to-account`
+      const ep = isOpp() ? `/api/opportunities/${id}/convert-to-client` : `/api/leads/${id}/convert-to-client`
       const r = await api.post(ep, convertForm)
       setShowConvertModal(false)
-      toast(`Account ${r.data.account?.acc_id || r.data.acc_id} created`)
+      toast(`Client ${r.data.client?.client_code || r.data.client_code} created`)
       loadDetail()
     } catch (e) { toast(e.response?.data?.error || 'Conversion failed', 'error') }
     finally { setConverting(false) }
@@ -293,7 +293,7 @@ export default function LeadsDetailPage() {
   }
 
   const approveLead = async () => {
-    try { const r = await api.post(`/api/leads/${id}/approve`); loadDetail(); toast(`Account ${r.data.account.acc_id} + Project ${r.data.project.proj_id} created`) }
+    try { const r = await api.post(`/api/leads/${id}/approve`); loadDetail(); toast(`Client ${r.data.client.client_code} + Project ${r.data.project.proj_id} created`) }
     catch (e) { toast(e.response?.data?.error || 'Error', 'error') }
   }
 
@@ -434,9 +434,9 @@ export default function LeadsDetailPage() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
-              {l.account_name && isOpp() && (
+              {l.client_name && isOpp() && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, background: '#FEF3C7', fontSize: 12, fontWeight: 600, color: '#92400E' }}>
-                  🤝 Referred by: {l.account_name}
+                  🤝 Referred by: {l.client_name}
                 </div>
               )}
               {isOpp() && !isRefConverted() && (
@@ -454,20 +454,20 @@ export default function LeadsDetailPage() {
                 </>
               )}
               <ActionBtn icon={<EditIcon />} label="Edit" onClick={() => setShowEdit(true)} primary />
-              {!isOpp() && (l.stage === 'Lead Closed (Won)' || l.stage === 'Purchase Order') && !l.account_id && (
+              {!isOpp() && (l.stage === 'Lead Closed (Won)' || l.stage === 'Purchase Order') && !l.client_id && (
                 <ActionBtn icon={<BriefcaseIcon />} label="Convert to Account" onClick={openConvertModal} success />
               )}
               {isOpp() && (l.stage === 'Lead Closed (Won)' || l.stage === 'Closed Won') && (
                 isRefConverted() || l.referral_lead_id ? (
                   <button onClick={() => navigate(`/leads/${convertedLeadId || l.referral_lead_id}`)}
                     style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: 'none', background: '#059669', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                    View Lead to Create Account →
+                    View Lead to Create Client →
                   </button>
                 ) : (
-                  <ActionBtn icon={<BriefcaseIcon />} label="Convert to Account" onClick={openConvertModal} success />
+                  <ActionBtn icon={<BriefcaseIcon />} label="Convert to Client" onClick={openConvertModal} success />
                 )
               )}
-              {l.stage === 'Lead Closed (Won)' && l.approval_status !== 'pending_approval' && l.approval_status !== 'approved' && !l.account_id && (
+              {l.stage === 'Lead Closed (Won)' && l.approval_status !== 'pending_approval' && l.approval_status !== 'approved' && !l.client_id && (
                 <ActionBtn label="Request Approval" onClick={requestApproval} />
               )}
               {l.stage === 'Converted to Account' && (
@@ -497,7 +497,7 @@ export default function LeadsDetailPage() {
         </div>
 
         {/* ═══ LEAD SOURCE CARD (for referred leads) ═══ */}
-        {(l.referring_account_id || l.referring_account_name) && (
+        {(l.referring_client_id || l.referring_client_name) && (
           <div style={{ background: '#F0FDF4', borderRadius: 12, border: '1.5px solid #86EFAC', padding: '16px 20px', marginBottom: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
               <span style={{ fontSize: 18 }}>🟢</span>
@@ -505,7 +505,7 @@ export default function LeadsDetailPage() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
               <InfoField icon={<TagIcon />} label="Source" value="Customer Referral" />
-              <InfoField icon={<BuildingIcon />} label="Referred By" value={l.referring_account_name || '—'} />
+              <InfoField icon={<BuildingIcon />} label="Referred By" value={l.referring_client_name || '—'} />
               <InfoField icon={<CalendarIcon />} label="Referral Date" value={l.referral_date ? formatDate(l.referral_date) : '—'} />
               <InfoField icon={<FileIcon />} label="Referral Opportunity ID" value={`OPP${l.referral_opportunity_id || ''}` || '—'} />
             </div>
@@ -886,8 +886,8 @@ export default function LeadsDetailPage() {
           <div style={{ background: '#fff', borderRadius: 16, width: 520, maxWidth: '100%', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,.15)' }} onClick={e => e.stopPropagation()}>
             <div style={{ padding: '12px 16px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
-                <span style={{ fontSize: 16, fontWeight: 700, color: '#1A1A2E' }}>{convertMode === 'lead' ? 'Convert to Lead' : 'Create Account'}</span>
-                <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>{convertMode === 'lead' ? 'Create a new lead from this referral' : 'Convert to a client account'}</div>
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#1A1A2E' }}>{convertMode === 'lead' ? 'Convert to Lead' : 'Create Client'}</span>
+                <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>{convertMode === 'lead' ? 'Create a new lead from this referral' : 'Convert to a client'}</div>
               </div>
               <button onClick={() => setShowConvertModal(false)} style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', background: '#F0F2F8', cursor: 'pointer', fontSize: 14, color: '#6B7280', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
             </div>
@@ -935,7 +935,7 @@ export default function LeadsDetailPage() {
               <button disabled={(convertMode === 'lead' ? convertingOpp : converting) || !(convertForm.company_name || '').trim()}
                 style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: convertMode === 'lead' ? '#5B21B6' : '#059669', color: '#fff', fontSize: 13, fontWeight: 700, cursor: (convertMode === 'lead' ? convertingOpp : converting) || !(convertForm.company_name || '').trim() ? '' : 'pointer', opacity: (convertMode === 'lead' ? convertingOpp : converting) || !(convertForm.company_name || '').trim() ? 0.6 : 1 }}
                 onClick={convertMode === 'lead' ? convertOppToLead : convertToAccount}>
-                {convertMode === 'lead' ? (convertingOpp ? 'Converting...' : 'Convert to Lead') : (converting ? 'Creating...' : 'Create Account')}
+                {convertMode === 'lead' ? (convertingOpp ? 'Converting...' : 'Convert to Lead') : (converting ? 'Creating...' : 'Create Client')}
               </button>
             </div>
           </div>

@@ -167,7 +167,7 @@ class MeetingDocument(db.Model):
     __tablename__ = 'meeting_documents'
     id = db.Column(db.Integer, primary_key=True)
     meeting_id = db.Column(db.Integer, db.ForeignKey('meetings.id', ondelete='CASCADE'), nullable=False, index=True)
-    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), index=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), index=True)
     file_name = db.Column(db.String(255), nullable=False)
     file_path = db.Column(db.String(500), nullable=False)
     file_type = db.Column(db.String(50))

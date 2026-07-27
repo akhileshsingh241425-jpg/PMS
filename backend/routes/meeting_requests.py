@@ -17,8 +17,8 @@ def list_meeting_requests(current_user):
         query = query.filter_by(project_id=int(pid))
     if st := request.args.get('status'):
         query = query.filter_by(status=st)
-    if aid := request.args.get('account_id'):
-        query = query.filter_by(account_id=int(aid))
+    if cid := request.args.get('client_id'):
+        query = query.filter_by(client_id=int(cid))
     return jsonify({
         'meeting_requests': [m.to_dict() for m in query.order_by(MeetingRequest.created_at.desc()).all()]
     })

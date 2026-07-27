@@ -238,7 +238,7 @@ function MyProjects({ projects, onSelect }) {
                   </div>
                   <div style={{ flex: 1 }}>
                     <p style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', margin: 0 }}>{p.title}</p>
-                    <p style={{ fontSize: 12, color: '#64748B', margin: '2px 0 0' }}>{p.account_name}</p>
+                    <p style={{ fontSize: 12, color: '#64748B', margin: '2px 0 0' }}>{p.client_name}</p>
                   </div>
                   <span style={badge(st)}>{p.stage}</span>
                 </div>
@@ -297,7 +297,7 @@ function ProjectDetail({ data, onBack }) {
             </div>
             <div style={{ flex: 1 }}>
               <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0F172A', margin: 0 }}>{project.title}</h2>
-              <p style={{ fontSize: 13, color: '#64748B', margin: '2px 0 0' }}>{project.account_name} · {project.proj_id}</p>
+              <p style={{ fontSize: 13, color: '#64748B', margin: '2px 0 0' }}>{project.client_name} · {project.proj_id}</p>
             </div>
             <span style={badge(st)}>{project.stage}</span>
           </div>

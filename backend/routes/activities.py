@@ -299,7 +299,7 @@ def upload_meeting_doc(current_user, mid):
     file.save(path)
     doc = MeetingDocument(
         meeting_id=mid,
-        account_id=m.project.account_id if m.project else None,
+        client_id=m.project.client_id if m.project else None,
         file_name=file.filename, file_path=path, file_type=ext,
         description=request.form.get('description', ''),
         uploaded_by=current_user.id,

@@ -107,7 +107,7 @@ def create_user(current_user):
         last_name=data.get('last_name'), phone=data.get('phone'),
         designation=data.get('designation'), department=data.get('department'),
         role=role_val,
-        account_id=data.get('account_id'),
+        client_id=data.get('client_id'),
         client_company_name=data.get('client_company_name'),
         reporting_manager_id=data.get('manager_id') or data.get('reporting_manager_id'),
         certifications=certs,

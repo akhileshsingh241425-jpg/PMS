@@ -128,7 +128,6 @@ def create_po_in(current_user):
         description=data.get('description'),
         direction='IN',
         client_id=client_id,
-        account_id=client.account_id,
         po_number=po_number,
         po_date=po_date or datetime.utcnow().date(),
         total_value=taxable_total,

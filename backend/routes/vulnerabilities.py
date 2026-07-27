@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app
 from datetime import datetime, timedelta
-from models import db, Vulnerability, Account, User, Notification, Project
+from models import db, Vulnerability, Client, User, Notification, Project
 from middleware.auth import login_required, role_required
 
 
@@ -43,10 +43,10 @@ def _send_vuln_reminders():
             continue
         if is_overdue:
             title = '⚠ Vulnerability Overdue'
-            message = f'"{v.title}" for {v.account.company_name} was due {v.fix_deadline.strftime("%d-%b-%Y")}.'
+            message = f'"{v.title}" for {v.client.name} was due {v.fix_deadline.strftime("%d-%b-%Y")}.'
         else:
             title = '⏰ Vulnerability Follow-up Needed'
-            message = f'"{v.title}" for {v.account.company_name} is due by {v.fix_deadline.strftime("%d-%b-%Y")}.'
+            message = f'"{v.title}" for {v.client.name} is due by {v.fix_deadline.strftime("%d-%b-%Y")}.'
         _notify(user_id, title, message, 'vulnerability', v.id)
         v.last_reminded_at = now
     db.session.commit()
@@ -56,7 +56,7 @@ vuln_bp = Blueprint('vulnerabilities', __name__, url_prefix='/api/vulnerabilitie
 @vuln_bp.route('', methods=['GET'])
 @login_required
 def list_vulnerabilities(current_user):
-    account_id = request.args.get('account_id', type=int)
+    client_id = request.args.get('client_id', type=int)
     project_id = request.args.get('project_id', type=int)
     severity = request.args.get('severity')
     status = request.args.get('status')
@@ -65,8 +65,8 @@ def list_vulnerabilities(current_user):
     sort_dir = request.args.get('sort_dir', 'desc')
 
     q = Vulnerability.query
-    if account_id:
-        q = q.filter_by(account_id=account_id)
+    if client_id:
+        q = q.filter_by(client_id=client_id)
     if project_id:
         q = q.filter_by(project_id=project_id)
     if severity:
@@ -91,8 +91,8 @@ def list_vulnerabilities(current_user):
 @login_required
 def create_vulnerability(current_user):
     data = request.get_json()
-    if not data.get('title') or not data.get('account_id'):
-        return jsonify({'error': 'title and account_id are required'}), 400
+    if not data.get('title') or not data.get('client_id'):
+        return jsonify({'error': 'title and client_id are required'}), 400
     if data.get('severity') not in ('Critical', 'High', 'Medium', 'Low'):
         return jsonify({'error': 'severity must be Critical, High, Medium, or Low'}), 400
 
@@ -104,14 +104,14 @@ def create_vulnerability(current_user):
         deadline = date_found + timedelta(days=int(data['sla_days']))
 
     project_id = int(data['project_id']) if data.get('project_id') else None
-    account_id = int(data['account_id'])
+    client_id = int(data['client_id'])
     if project_id:
         proj = Project.query.get(project_id)
         if proj:
-            account_id = proj.account_id
+            client_id = proj.client_id
 
     vuln = Vulnerability(
-        account_id=account_id,
+        client_id=client_id,
         project_id=project_id,
         title=data['title'],
         description=data.get('description'),
@@ -194,7 +194,7 @@ def dashboard(current_user):
     now = datetime.utcnow()
     five_days = now + timedelta(days=5)
 
-    accounts = Account.query.order_by(Account.company_name).all()
+    clients = Client.query.order_by(Client.company_name).all()
     per_client = []
     org_open = 0
     org_overdue = 0
@@ -202,8 +202,8 @@ def dashboard(current_user):
     org_severity = {'Critical': 0, 'High': 0, 'Medium': 0, 'Low': 0}
     org_status = {'Open': 0, 'In Progress': 0, 'Patched': 0}
 
-    for acc in accounts:
-        vulns = Vulnerability.query.filter_by(account_id=acc.id).all()
+    for cl in clients:
+        vulns = Vulnerability.query.filter_by(client_id=cl.id).all()
         total = len(vulns)
         patched = sum(1 for v in vulns if v.status == 'Patched')
         open_c = sum(1 for v in vulns if v.status == 'Open')
@@ -222,8 +222,8 @@ def dashboard(current_user):
                 break
 
         per_client.append({
-            'account_id': acc.id,
-            'account_name': acc.company_name,
+            'client_id': cl.id,
+            'client_name': cl.company_name,
             'total': total,
             'patched': patched,
             'open': open_c,
@@ -271,11 +271,11 @@ def list_pm_users(current_user):
     users = User.query.filter(User.role.in_(['admin', 'project_manager', 'lead'])).order_by(User.full_name).all()
     return jsonify({'users': [{'id': u.id, 'name': u.full_name or u.first_name} for u in users]})
 
-@vuln_bp.route('/export/<int:account_id>', methods=['GET'])
+@vuln_bp.route('/export/<int:client_id>', methods=['GET'])
 @login_required
-def export_vulnerabilities(current_user, account_id):
-    acc = Account.query.get_or_404(account_id)
-    vulns = Vulnerability.query.filter_by(account_id=account_id).order_by(Vulnerability.severity.desc(), Vulnerability.fix_deadline.asc()).all()
+def export_vulnerabilities(current_user, client_id):
+    cl = Client.query.get_or_404(client_id)
+    vulns = Vulnerability.query.filter_by(client_id=client_id).order_by(Vulnerability.severity.desc(), Vulnerability.fix_deadline.asc()).all()
 
     rows = []
     for v in vulns:
@@ -301,7 +301,7 @@ def export_vulnerabilities(current_user, account_id):
         avg_days = sum((v.date_patched - v.date_found).days for v in patched_with_dates) / len(patched_with_dates)
 
     return jsonify({
-        'account_name': acc.company_name,
+        'client_name': cl.company_name,
         'total': len(vulns),
         'open': open_count,
         'patched': patched_count,

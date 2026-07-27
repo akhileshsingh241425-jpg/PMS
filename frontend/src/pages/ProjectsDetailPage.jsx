@@ -324,7 +324,7 @@ export default function ProjectsDetailPage() {
     e.preventDefault(); if (!vulnForm.title.trim()) return toast('Title required', 'error')
     setVulnSaving(true)
     try {
-      const payload = { ...vulnForm, project_id: parseInt(id), account_id: p.account_id }
+      const payload = { ...vulnForm, project_id: parseInt(id), client_id: p.client_id }
       if (payload.date_found) payload.date_found = payload.date_found + 'T00:00:00'
       if (payload.fix_deadline) payload.fix_deadline = payload.fix_deadline + 'T00:00:00'
       const slaDays = parseInt(payload.sla_days)
@@ -588,7 +588,7 @@ export default function ProjectsDetailPage() {
                   { label: 'Target Date', value: formatDate(p.target_date), empty: !p.target_date },
                   { label: 'End Date', value: formatDate(p.actual_end_date), empty: !p.actual_end_date },
                   { label: 'Last Updated', value: formatDate(p.updated_at), empty: !p.updated_at },
-                  { label: 'Account', value: p.account_name, empty: !p.account_name },
+                  { label: 'Client', value: p.client_name, empty: !p.client_name },
                   { label: 'PM', value: p.pm_name, empty: !p.pm_name },
                   { label: 'Service', value: p.service_type, empty: !p.service_type },
                   { label: 'Total Value', value: p.total_value ? `₹${p.total_value.toLocaleString()}` : null, empty: !p.total_value, accent: true },

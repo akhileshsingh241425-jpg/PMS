@@ -5,8 +5,7 @@ from datetime import datetime
 class MeetingRequest(db.Model):
     __tablename__ = 'meeting_requests'
     id = db.Column(db.Integer, primary_key=True)
-    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False, index=True)
-    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), index=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=False, index=True)
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), index=True)
     requested_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
     preferred_date = db.Column(db.DateTime, nullable=False)
@@ -19,7 +18,6 @@ class MeetingRequest(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     requester = db.relationship('User', foreign_keys=[requested_by])
-    account = db.relationship('Account', foreign_keys=[account_id])
     client = db.relationship('Client', foreign_keys=[client_id])
     project = db.relationship('Project', foreign_keys=[project_id])
     shares = db.relationship('MeetingRequestShare', backref='meeting_request', lazy='dynamic', cascade='all, delete-orphan')
@@ -27,7 +25,7 @@ class MeetingRequest(db.Model):
 
     def to_dict(self):
         return {
-            'id': self.id, 'account_id': self.account_id, 'client_id': self.client_id, 'project_id': self.project_id,
+            'id': self.id, 'client_id': self.client_id, 'project_id': self.project_id,
             'preferred_date': self.preferred_date.isoformat() if self.preferred_date else None,
             'agenda': self.agenda, 'meeting_link': self.meeting_link, 'status': self.status,
             'confirmed_date': self.confirmed_date.isoformat() if self.confirmed_date else None,
@@ -86,8 +84,7 @@ class MeetingRequestActivity(db.Model):
 class ClientUpload(db.Model):
     __tablename__ = 'client_uploads'
     id = db.Column(db.Integer, primary_key=True)
-    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False, index=True)
-    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), index=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=False, index=True)
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False, index=True)
     uploaded_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
     file_name = db.Column(db.String(255), nullable=False)
@@ -100,7 +97,6 @@ class ClientUpload(db.Model):
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     uploader = db.relationship('User', foreign_keys=[uploaded_by])
-    account = db.relationship('Account', foreign_keys=[account_id])
     client = db.relationship('Client', foreign_keys=[client_id])
     project = db.relationship('Project', foreign_keys=[project_id])
 
@@ -118,8 +114,7 @@ class ClientUpload(db.Model):
 class FindingQuery(db.Model):
     __tablename__ = 'finding_queries'
     id = db.Column(db.Integer, primary_key=True)
-    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False, index=True)
-    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), index=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=False, index=True)
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False, index=True)
     document_id = db.Column(db.Integer, db.ForeignKey('project_documents.id'), index=True)
     raised_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
@@ -132,14 +127,13 @@ class FindingQuery(db.Model):
 
     raiser = db.relationship('User', foreign_keys=[raised_by])
     responder = db.relationship('User', foreign_keys=[responded_by])
-    account = db.relationship('Account', foreign_keys=[account_id])
     client = db.relationship('Client', foreign_keys=[client_id])
     project = db.relationship('Project', foreign_keys=[project_id])
     document = db.relationship('ProjectDocument', foreign_keys=[document_id])
 
     def to_dict(self):
         return {
-            'id': self.id, 'account_id': self.account_id, 'client_id': self.client_id,
+            'id': self.id, 'client_id': self.client_id,
             'project_id': self.project_id,
             'document_id': self.document_id,
             'subject': self.subject, 'question': self.question,

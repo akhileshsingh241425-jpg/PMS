@@ -3,7 +3,7 @@ import jwt, os
 from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify, current_app
 from functools import wraps
-from models import db, User, Account, Client, Project, ProjectDocument, MeetingRequestDocument, Note, Vulnerability
+from models import db, User, Client, Project, ProjectDocument, MeetingRequestDocument, Note, Vulnerability
 from models.client_portal import MeetingRequest, ClientUpload, FindingQuery
 from utils import validate_file, safe_filename, rate_limit
 
@@ -13,7 +13,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
 def generate_client_token(client_user):
-    return jwt.encode({'user_id': client_user.id, 'account_id': client_user.account_id, 'client_id': client_user.client_id, 'type': 'client', 'exp': datetime.utcnow() + timedelta(hours=24)}, current_app.config['SECRET_KEY'], algorithm='HS256')
+    return jwt.encode({'user_id': client_user.id, 'client_id': client_user.client_id, 'type': 'client', 'exp': datetime.utcnow() + timedelta(hours=24)}, current_app.config['SECRET_KEY'], algorithm='HS256')
 
 
 def client_auth(f):
@@ -29,16 +29,8 @@ def client_auth(f):
             user = User.query.get(data['user_id'])
             if not user or not user.is_active:
                 return jsonify({'error': 'Inactive'}), 401
-            # Auto-fix missing account_id / client_id
-            if not user.account_id:
-                acc = Account.query.filter_by(company_name=user.client_company_name).first()
-                if not acc:
-                    acc = Account.query.order_by(Account.id.desc()).first()
-                if acc:
-                    user.account_id = acc.id
-                    db.session.commit()
-            if not user.client_id and user.account_id:
-                cl = Client.query.filter_by(account_id=user.account_id).first()
+            if not user.client_id:
+                cl = Client.query.first()
                 if cl:
                     user.client_id = cl.id
                     db.session.commit()
@@ -61,16 +53,8 @@ def client_login():
     if not user.is_active:
         return jsonify({'error': 'Account inactive'}), 403
 
-    # Auto-fix missing account_id / client_id
-    if not user.account_id:
-        acc = Account.query.filter_by(company_name=user.client_company_name).first()
-        if not acc:
-            acc = Account.query.order_by(Account.id.desc()).first()
-        if acc:
-            user.account_id = acc.id
-            db.session.commit()
-    if not user.client_id and user.account_id:
-        cl = Client.query.filter_by(account_id=user.account_id).first()
+    if not user.client_id:
+        cl = Client.query.first()
         if cl:
             user.client_id = cl.id
             db.session.commit()
@@ -147,7 +131,7 @@ def client_project_detail(user, pid):
 @client_auth
 def client_add_note(user, pid):
     project = Project.query.get_or_404(pid)
-    if project.account_id != user.account_id:
+    if project.client_id != user.client_id:
         return jsonify({'error': 'Access denied'}), 403
     if not project.is_client_review_enabled:
         return jsonify({'error': 'Client review not enabled'}), 403
@@ -180,7 +164,6 @@ def request_meeting(user):
     except (ValueError, TypeError):
         return jsonify({'error': 'Invalid format'}), 400
     m = MeetingRequest(
-        account_id=user.account_id,
         client_id=user.client_id,
         project_id=project_id,
         requested_by=user.id,
@@ -256,7 +239,7 @@ def upload_file(user, pid):
     path = os.path.join(UPLOAD_DIR, fname)
     file.save(path)
     upload = ClientUpload(
-        account_id=user.account_id, client_id=user.client_id, project_id=pid, uploaded_by=user.id,
+                client_id=user.client_id, project_id=pid, uploaded_by=user.id,
         file_name=file.filename, file_path=path, file_type=ext,
         file_size=os.path.getsize(path),
         category=request.form.get('category', 'Other'),
@@ -350,7 +333,6 @@ def raise_query(user):
     except (ValueError, TypeError):
         return jsonify({'error': 'Invalid project_id or document_id'}), 400
     q = FindingQuery(
-        account_id=user.account_id,
         client_id=user.client_id,
         project_id=project_id,
         document_id=document_id,

@@ -33,7 +33,7 @@ with app.app_context():
                 if 'Duplicate column' in str(e):
                     print(f'  {table}.{col} already exists')
                 else:
-                    print(f'  {table}.{col}: {e}')
+                    print('  %s.%s: %s' % (table, col, e))
         else:
             print(f'  {table}.{col} already exists')
 

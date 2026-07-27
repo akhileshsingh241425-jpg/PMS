@@ -127,7 +127,7 @@ export default function POInDetail() {
     try {
       const payload = {
         title: po.title || `Project — ${po.client?.name || ''}`,
-        account_id: po.account_id || po.client_id,
+        client_id: po.client_id,
         po_number: po.po_number,
         po_date: po.po_date,
         po_amount: po.po_amount,

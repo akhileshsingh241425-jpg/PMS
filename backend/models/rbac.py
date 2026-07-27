@@ -4,17 +4,17 @@ from datetime import datetime
 # ─── PERMISSION DEFINITIONS ────────────────────────────────────────────────
 ROLE_PERMISSIONS = {
     'super_admin': [
-        'lead.*', 'account.*', 'contact.*', 'opportunity.*', 'project.*',
+        'lead.*', 'client.*', 'contact.*', 'opportunity.*', 'project.*',
         'task.*', 'meeting.*', 'document.*', 'remark.*', 'note.*',
         'user.*', 'role.*', 'setting.*', 'report.*', 'audit.*',
-        'approve.lead', 'approve.account', 'approve.project_closure',
+        'approve.lead', 'approve.client', 'approve.project_closure',
         'approve.project', 'reject.*', 'restore.*', 'delete.*',
         'export.*', 'import.*', 'system.*',
     ],
     'admin': [
         'lead.create', 'lead.edit', 'lead.view', 'lead.assign', 'lead.close',
         'lead.convert', 'lead.approve',
-        'account.view', 'account.create',
+        'client.view', 'client.create',
         'contact.*',
         'opportunity.create', 'opportunity.edit', 'opportunity.view',
         'meeting.*',
@@ -32,7 +32,7 @@ ROLE_PERMISSIONS = {
         'meeting.create', 'meeting.view',
         'document.upload', 'document.view',
         'remark.*', 'note.*',
-        'account.view_assigned', 'contact.view_assigned',
+        'client.view_assigned', 'contact.view_assigned',
         'timesheet.*',
         'notification.view',
     ],

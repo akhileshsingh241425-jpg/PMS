@@ -18,7 +18,6 @@ class User(db.Model):
     certifications = db.Column(db.Text)  # JSON array
     experience_years = db.Column(db.Float)
     # Client-specific fields (when role='client')
-    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), index=True)
     client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), index=True)
     client_company_name = db.Column(db.String(255))
     permissions_json = db.Column(db.Text)
@@ -68,7 +67,6 @@ class User(db.Model):
             'permissions': json.loads(self.permissions_json) if self.permissions_json else {},
             'certifications': certs,
             'experience_years': self.experience_years,
-            'account_id': self.account_id,
             'client_id': self.client_id,
             'client_company_name': self.client_company_name,
             'is_active': self.is_active,

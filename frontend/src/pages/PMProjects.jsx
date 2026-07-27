@@ -78,7 +78,7 @@ export default function PMProjects() {
                 <span>Deadline: {formatDate(p.target_date)}</span>
                 <span>Team: {p.team_count || 0}</span>
                 <span style={{ color: p.stage === 'Closed' ? '#10B981' : '#3B82F6', fontWeight: 600 }}>
-                  {p.account_name || '—'}
+                  {p.client_name || '—'}
                 </span>
               </div>
               {/* Simple progress bar */}

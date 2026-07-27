@@ -1,7 +1,7 @@
 from datetime import datetime
 from flask import Blueprint, request, jsonify
 import os
-from models import db, Lead, LeadRemark, LeadDocument, LeadActivity, LeadNote, LeadAuditLog, LeadProposal, LeadRemarkReaction, Account, Notification, User, Project, ProjectRemark, Note, Opportunity
+from models import db, Lead, LeadRemark, LeadDocument, LeadActivity, LeadNote, LeadAuditLog, LeadProposal, LeadRemarkReaction, Client, Notification, User, Project, ProjectRemark, Note, Opportunity
 from middleware.auth import login_required
 from utils import validate_file, safe_filename, generate_id, paginate, safe_float, safe_int
 
@@ -68,12 +68,12 @@ def list_leads(current_user):
             Lead.contact_email.ilike(f'%{s}%'),
             Lead.lead_id.ilike(f'%{s}%'),
         ))
-        opp_query = opp_query.outerjoin(Account, Opportunity.account_id == Account.id).filter(db.or_(
+        opp_query = opp_query.outerjoin(Client, Opportunity.client_id == Client.id).filter(db.or_(
             Opportunity.company_name.ilike(f'%{s}%'),
             Opportunity.contact_name.ilike(f'%{s}%'),
             Opportunity.contact_email.ilike(f'%{s}%'),
             Opportunity.opp_id.ilike(f'%{s}%'),
-            Account.company_name.ilike(f'%{s}%'),
+            Client.name.ilike(f'%{s}%'),
         ))
     if st := request.args.get('stage'):
         lead_query = lead_query.filter_by(stage=st)
@@ -110,9 +110,9 @@ def create_lead(current_user):
     if not data.get('company_name'):
         return jsonify({'error': 'company_name is required'}), 400
 
-    if not data.get('referring_account_id'):
-        existing_account = Account.query.filter_by(company_name=data['company_name']).first()
-        if existing_account:
+    if not data.get('referring_client_id'):
+        existing_client = Client.query.filter_by(name=data['company_name']).first()
+        if existing_client:
             source = data.get('source') or 'Existing Client'
             opp = Opportunity(
                 opp_id=generate_id(Opportunity, 'OPP'),
@@ -125,14 +125,14 @@ def create_lead(current_user):
                 description=data.get('description'),
                 stage='Prospecting',
                 estimated_value=safe_float(data.get('estimated_value')),
-                account_id=existing_account.id,
+                client_id=existing_client.id,
                 assigned_to=safe_int(data.get('assigned_to')),
                 created_by=current_user.id,
             )
             db.session.add(opp)
             db.session.commit()
             return jsonify({
-                'message': 'Opportunity created from existing account',
+                'message': 'Opportunity created from existing client',
                 'opportunity': opp.to_dict(),
                 'type': 'opportunity',
             }), 201
@@ -156,8 +156,8 @@ def create_lead(current_user):
         service_type=data.get('service_type'),
         assigned_to=safe_int(data.get('assigned_to')),
         created_by=current_user.id,
-        referring_account_id=safe_int(data.get('referring_account_id')),
-        referral_date=datetime.utcnow() if data.get('referring_account_id') else None,
+        referring_client_id=safe_int(data.get('referring_client_id')),
+        referral_date=datetime.utcnow() if data.get('referring_client_id') else None,
     )
     db.session.add(lead)
     db.session.flush()
@@ -244,47 +244,49 @@ def close_lead(current_user, lid):
         manager_ids = _get_approvers(lead)
         for uid in manager_ids:
             _notify(uid, 'Lead Closed Won',
-                    f'Lead {lead.lead_id} ({lead.company_name}) has been closed won. Approval needed for account creation.',
+                    f'Lead {lead.lead_id} ({lead.company_name}) has been closed won. Approval needed for client creation.',
                     'lead', lead.id, 'approval')
 
     db.session.commit()
     return jsonify({'lead': lead.to_dict()})
 
 
-@leads_bp.route('/<int:lid>/convert-to-account', methods=['POST'])
+@leads_bp.route('/<int:lid>/convert-to-client', methods=['POST'])
 @login_required
-def convert_lead_to_account(current_user, lid):
+def convert_lead_to_client(current_user, lid):
     lead = Lead.query.get_or_404(lid)
     if lead.stage not in ('Lead Closed (Won)', 'Purchase Order'):
         return jsonify({'error': 'Lead must be in Lead Closed (Won) or Purchase Order stage to convert.'}), 400
-    if lead.account_id:
-        return jsonify({'error': 'Account already linked to this lead.'}), 400
+    if lead.client_id:
+        return jsonify({'error': 'Client already linked to this lead.'}), 400
 
     data = request.get_json() or {}
-    is_referred = lead.referral_opportunity_id is not None or lead.referring_account_id is not None
-    acc = Account(
-        acc_id=generate_id(Account, 'ACC'),
-        company_name=data.get('company_name', lead.company_name),
+    is_referred = lead.referral_opportunity_id is not None or lead.referring_client_id is not None
+    lead_type = lead.type or 'B2B'
+    client_type = 'vendor' if lead_type == 'Vendor' else 'main'
+    business_type = 'B2C' if lead_type == 'B2C' else 'B2B'
+    cl = Client(
+        name=data.get('company_name', lead.company_name),
+        business_type=business_type,
+        client_type=client_type,
+        gst_number=data.get('gst_number'),
         contact_name=data.get('contact_name', lead.contact_name),
         contact_email=data.get('contact_email', lead.contact_email),
         contact_phone=data.get('contact_phone', lead.contact_phone),
         website=data.get('website', lead.website),
-        address=data.get('address', lead.address),
+        registered_address=data.get('address', lead.address),
         state=data.get('state', lead.state),
-        pincode=data.get('pincode', lead.pincode),
         industry=data.get('industry', lead.service_type),
-        acquisition_source='Customer Referral' if is_referred else data.get('acquisition_source'),
-        referred_by_account_id=lead.referring_account_id if is_referred else None,
-        referral_opportunity_id=lead.referral_opportunity_id if is_referred else None,
-        converted_lead_id=lead.id,
-        conversion_date=datetime.utcnow(),
+        reference_source='Customer Referral' if is_referred else data.get('acquisition_source'),
+        referring_client_id=lead.referring_client_id if is_referred else None,
         created_by=current_user.id,
     )
-    db.session.add(acc)
+    cl.client_code = cl.generate_cid()
+    db.session.add(cl)
     db.session.flush()
 
-    lead.account_id = acc.id
-    lead.stage = 'Converted to Account'
+    lead.client_id = cl.id
+    lead.stage = 'Converted to Client'
     lead.account_created_by = current_user.id
     lead.account_created_at = datetime.utcnow()
     lead.is_readonly = True
@@ -295,7 +297,7 @@ def convert_lead_to_account(current_user, lid):
         description=f'Project auto-created from lead {lead.lead_id} ({lead.company_name}). {lead.description or ""}',
         stage='Created',
         service_type=lead.service_type,
-        account_id=acc.id,
+        client_id=cl.id,
         pm_id=current_user.id,
         created_by=current_user.id,
     )
@@ -337,14 +339,14 @@ def convert_lead_to_account(current_user, lid):
         db.session.add(pr)
         copied_count['documents'] += 1
 
-    summary = f'Account {acc.acc_id} and Project {proj.proj_id} created. Copied: {copied_count["remarks"]} remarks, {copied_count["notes"]} notes, {copied_count["activities"]} activities, {copied_count["proposals"]} proposals, {copied_count["documents"]} documents.'
-    _audit(lid, 'Converted to Account', lead.stage, summary, current_user.id)
+    summary = f'Client {cl.client_code} and Project {proj.proj_id} created. Copied: {copied_count["remarks"]} remarks, {copied_count["notes"]} notes, {copied_count["activities"]} activities, {copied_count["proposals"]} proposals, {copied_count["documents"]} documents.'
+    _audit(lid, 'Converted to Client', lead.stage, summary, current_user.id)
     _notify(lead.created_by, 'Lead Converted',
-            f'Lead {lead.lead_id} ({lead.company_name}) converted to account {acc.acc_id} with project {proj.proj_id}.',
+            f'Lead {lead.lead_id} ({lead.company_name}) converted to client {cl.client_code} with project {proj.proj_id}.',
             'lead', lead.id, 'success')
 
     db.session.commit()
-    return jsonify({'lead': lead.to_dict(), 'account': acc.to_dict(), 'project': proj.to_dict()}), 201
+    return jsonify({'lead': lead.to_dict(), 'client': cl.to_dict(), 'project': proj.to_dict()}), 201
 
 
 @leads_bp.route('/<int:lid>/request-approval', methods=['POST'])
@@ -363,8 +365,8 @@ def request_approval(current_user, lid):
 
     manager_ids = _get_approvers(lead)
     for uid in manager_ids:
-        _notify(uid, 'Account Creation Approval Requested',
-                f'{current_user.full_name} requested account creation for lead {lead.lead_id} ({lead.company_name}).',
+        _notify(uid, 'Client Creation Approval Requested',
+                f'{current_user.full_name} requested client creation for lead {lead.lead_id} ({lead.company_name}).',
                 'lead', lead.id, 'approval')
     if not manager_ids:
         _notify(current_user.id, 'No Approver Found',
@@ -388,37 +390,38 @@ def approve_lead(current_user, lid):
     lead.approved_by = current_user.id
     lead.approved_at = datetime.utcnow()
 
-    # Check if account already exists for this company
-    existing_acc = Account.query.filter_by(company_name=lead.company_name).first()
-    if existing_acc:
-        acc = existing_acc
-        acc_note = f'linked to existing account {acc.acc_id}'
+    # Check if client already exists for this company
+    existing_client = Client.query.filter_by(name=lead.company_name).first()
+    if existing_client:
+        cl = existing_client
+        client_note = f'linked to existing client {cl.client_code}'
     else:
-        is_referred = lead.referral_opportunity_id is not None or lead.referring_account_id is not None
-        acc = Account(
-            acc_id=generate_id(Account, 'ACC'),
-            company_name=lead.company_name,
+        is_referred = lead.referral_opportunity_id is not None or lead.referring_client_id is not None
+        lead_type = lead.type or 'B2B'
+        client_type = 'vendor' if lead_type == 'Vendor' else 'main'
+        business_type = 'B2C' if lead_type == 'B2C' else 'B2B'
+        cl = Client(
+            name=lead.company_name,
+            business_type=business_type,
+            client_type=client_type,
             contact_name=lead.contact_name,
             contact_email=lead.contact_email,
             contact_phone=lead.contact_phone,
             website=lead.website,
-            address=lead.address,
+            registered_address=lead.address,
             state=lead.state,
-            pincode=lead.pincode,
             industry=lead.service_type,
-            acquisition_source='Customer Referral' if is_referred else None,
-            referred_by_account_id=lead.referring_account_id if is_referred else None,
-            referral_opportunity_id=lead.referral_opportunity_id if is_referred else None,
-            converted_lead_id=lead.id,
-            conversion_date=datetime.utcnow(),
+            reference_source='Customer Referral' if is_referred else None,
+            referring_client_id=lead.referring_client_id if is_referred else None,
             created_by=current_user.id,
         )
-        db.session.add(acc)
+        cl.client_code = cl.generate_cid()
+        db.session.add(cl)
         db.session.flush()
-        acc_note = f'new account {acc.acc_id} created'
+        client_note = f'new client {cl.client_code} created'
 
-    lead.account_id = acc.id
-    lead.stage = 'Converted to Account'
+    lead.client_id = cl.id
+    lead.stage = 'Converted to Client'
     lead.account_created_by = current_user.id
     lead.account_created_at = datetime.utcnow()
     lead.is_readonly = True
@@ -429,7 +432,7 @@ def approve_lead(current_user, lid):
         description=f'Project auto-created from lead {lead.lead_id} ({lead.company_name}). {lead.description or ""}',
         stage='Created',
         service_type=lead.service_type,
-        account_id=acc.id,
+        client_id=cl.id,
         pm_id=current_user.id,
         created_by=current_user.id,
     )
@@ -471,16 +474,16 @@ def approve_lead(current_user, lid):
         db.session.add(pr)
         copied_count['documents'] += 1
 
-    summary = f'Approved & {acc_note}. Project {proj.proj_id} created. Copied: {copied_count["remarks"]} remarks, {copied_count["notes"]} notes, {copied_count["activities"]} activities, {copied_count["proposals"]} proposals, {copied_count["documents"]} documents.'
+    summary = f'Approved & {client_note}. Project {proj.proj_id} created. Copied: {copied_count["remarks"]} remarks, {copied_count["notes"]} notes, {copied_count["activities"]} activities, {copied_count["proposals"]} proposals, {copied_count["documents"]} documents.'
     _audit(lid, 'Approved', 'Pending Approval', summary, current_user.id)
     _notify(lead.created_by, 'Approval Approved',
-            f'Your request for lead {lead.lead_id} ({lead.company_name}) was approved. {acc_note}. Project {proj.proj_id} created.',
+            f'Your request for lead {lead.lead_id} ({lead.company_name}) was approved. {client_note}. Project {proj.proj_id} created.',
             'lead', lead.id, 'success')
 
     db.session.commit()
     return jsonify({
         'lead': lead.to_dict(),
-        'account': acc.to_dict(),
+        'client': cl.to_dict(),
         'project': proj.to_dict(),
     })
 
@@ -489,10 +492,10 @@ def approve_lead(current_user, lid):
 @login_required
 def create_project_from_lead(current_user, lid):
     lead = Lead.query.get_or_404(lid)
-    if lead.stage != 'Converted to Account':
-        return jsonify({'error': 'Lead must be converted to account first.'}), 400
-    if not lead.account_id:
-        return jsonify({'error': 'Lead has no linked account.'}), 400
+    if lead.stage != 'Converted to Client':
+        return jsonify({'error': 'Lead must be converted to client first.'}), 400
+    if not lead.client_id:
+        return jsonify({'error': 'Lead has no linked client.'}), 400
     data = request.get_json()
     if not data.get('title'):
         return jsonify({'error': 'Project title is required'}), 400
@@ -504,7 +507,7 @@ def create_project_from_lead(current_user, lid):
         description=data.get('description', lead.description),
         stage='Created',
         service_type=data.get('service_type', lead.service_type),
-        account_id=lead.account_id,
+        client_id=lead.client_id,
         pm_id=int(data['pm_id']),
         total_value=float(data['total_value']) if data.get('total_value') else lead.estimated_value,
         start_date=datetime.strptime(data['start_date'], '%Y-%m-%d').date() if data.get('start_date') else datetime.utcnow().date(),
@@ -553,7 +556,7 @@ def reopen_lead(current_user, lid):
     lead = Lead.query.get_or_404(lid)
     if current_user.role != 'admin':
         return jsonify({'error': 'Only admins can reopen leads.'}), 403
-    if lead.stage not in ('Lead Closed (Won)', 'Lead Closed (Lost)', 'Approval Rejected', 'Converted to Account'):
+    if lead.stage not in ('Lead Closed (Won)', 'Lead Closed (Lost)', 'Approval Rejected', 'Converted to Client'):
         return jsonify({'error': 'Lead is not in a closed state.'}), 400
 
     old_stage = lead.stage
@@ -564,7 +567,7 @@ def reopen_lead(current_user, lid):
     lead.approved_by = None
     lead.approved_at = None
     lead.rejection_reason = None
-    lead.account_id = None
+    lead.client_id = None
     lead.account_created_by = None
     lead.account_created_at = None
     lead.is_readonly = False

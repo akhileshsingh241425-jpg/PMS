@@ -739,7 +739,7 @@ def kanban(current_user):
 def customer_profile(current_user, mid):
     msg = EmailMessage.query.get_or_404(mid)
     sender_email = msg.sender_email
-    from models import Lead, Account, Contact
+    from models import Lead, Client, Contact
 
     previous_emails = EmailMessage.query.filter(
         EmailMessage.sender_email == sender_email, EmailMessage.id != mid
@@ -747,7 +747,7 @@ def customer_profile(current_user, mid):
 
     leads = Lead.query.filter(db.or_(Lead.email == sender_email, Lead.company_name.ilike(f'%{msg.company or ""}%'))).limit(5).all() if sender_email else []
 
-    accounts = Account.query.filter(db.or_(Account.email == sender_email, Account.company_name.ilike(f'%{msg.company or ""}%'))).limit(5).all() if sender_email else []
+    clients = Client.query.filter(db.or_(Client.email == sender_email, Client.company_name.ilike(f'%{msg.company or ""}%'))).limit(5).all() if sender_email else []
 
     contacts = Contact.query.filter(Contact.email == sender_email).limit(5).all() if sender_email else []
 
@@ -757,7 +757,7 @@ def customer_profile(current_user, mid):
         'company': msg.company,
         'previous_emails': [e.to_dict() for e in previous_emails],
         'leads': [{'id': l.id, 'name': l.lead_name, 'company': l.company_name, 'status': l.status, 'created_at': l.created_at.isoformat() if l.created_at else None} for l in leads],
-        'accounts': [{'id': a.id, 'name': a.company_name, 'email': a.email, 'phone': a.phone} for a in accounts],
+        'clients': [{'id': c.id, 'name': c.company_name, 'email': c.email, 'phone': c.phone} for c in clients],
         'contacts': [{'id': c.id, 'name': c.name, 'email': c.email, 'phone': c.phone} for c in contacts],
     })
 
@@ -767,15 +767,15 @@ def customer_profile(current_user, mid):
 @login_required
 def check_duplicate(current_user, mid):
     msg = EmailMessage.query.get_or_404(mid)
-    from models import Lead, Account
+    from models import Lead, Client
     duplicates = []
     if msg.sender_email:
         lead = Lead.query.filter(Lead.email == msg.sender_email).first()
         if lead:
             duplicates.append({'type': 'lead', 'id': lead.id, 'name': lead.lead_name, 'status': lead.status})
-        account = Account.query.filter(Account.email == msg.sender_email).first()
-        if account:
-            duplicates.append({'type': 'account', 'id': account.id, 'name': account.company_name, 'status': account.status})
+        client = Client.query.filter(Client.email == msg.sender_email).first()
+        if client:
+            duplicates.append({'type': 'client', 'id': client.id, 'name': client.company_name, 'status': client.status})
     return jsonify({'duplicates': duplicates, 'is_duplicate': len(duplicates) > 0})
 
 

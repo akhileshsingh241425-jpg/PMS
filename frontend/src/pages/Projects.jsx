@@ -30,7 +30,7 @@ export default function Projects() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [showForm, setShowForm] = useState(false)
-  const [formAccountId, setFormAccountId] = useState('')
+  const [formClientId, setFormClientId] = useState('')
   const [page, setPage] = useState(1)
   const [pagination, setPagination] = useState(null)
   const toast = useToast()
@@ -41,7 +41,7 @@ export default function Projects() {
 
   useEffect(() => {
     if (searchParams.get('create') === '1') {
-      setFormAccountId(searchParams.get('account_id') || '')
+      setFormClientId(searchParams.get('client_id') || '')
       setShowForm(true)
     }
   }, [searchParams])
@@ -53,7 +53,7 @@ export default function Projects() {
   useEffect(() => { load() }, [page])
 
   const load = async () => { try { const r = await api.get('/api/projects', { params: { search, stage: stageFilter, page, per_page: 25 } }); setProjects(r.data.projects); setPagination(r.data.pagination) } catch (e) { console.error(e) } finally { setLoading(false) } }
-  const loadAccounts = async () => { try { const r = await api.get('/api/accounts'); setAccounts(r.data.accounts) } catch (e) { console.error(e) } }
+  const loadAccounts = async () => { try { const r = await api.get('/api/clients'); setAccounts(r.data.clients) } catch (e) { console.error(e) } }
   const loadUsers = async () => { try { const r = await api.get('/api/auth/users'); setUsers(r.data.users) } catch (e) { console.error(e) } }
 
   // Stats
@@ -130,7 +130,7 @@ export default function Projects() {
                 <tr key={p.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => navigate(`/projects/${p.id}`)}>
                   <td className="px-3 py-2 font-semibold text-indigo-700">{p.proj_id}</td>
                   <td className="px-3 py-2 font-medium text-slate-900">{p.title}</td>
-                  <td className="px-3 py-2 text-slate-600">{p.account_name || '—'}</td>
+                  <td className="px-3 py-2 text-slate-600">{p.client_name || '—'}</td>
                   <td className="px-3 py-2 text-slate-600">{p.service_type || '—'}</td>
                   <td className="px-3 py-2"><span className={`px-1.5 py-0.5 text-[10px] font-medium text-white ${STAGE_COLORS[p.stage] || 'bg-slate-500'}`}>{p.stage}</span></td>
                   <td className="px-3 py-2 text-slate-600">{p.pm_name || '—'}</td>
@@ -146,15 +146,15 @@ export default function Projects() {
         {pagination && <div className="px-3 pb-2"><Pagination page={pagination.page} pages={pagination.pages} total={pagination.total} onPageChange={setPage} /></div>}
       </div>
 
-      {showForm && <ProjectForm accounts={accounts} users={users} initialAccountId={formAccountId} onClose={() => { setShowForm(false); setFormAccountId('') }} onSaved={() => { setShowForm(false); setFormAccountId(''); load() }} />}
+      {showForm && <ProjectForm accounts={accounts} users={users} initialClientId={formClientId} onClose={() => { setShowForm(false); setFormClientId('') }} onSaved={() => { setShowForm(false); setFormClientId(''); load() }} />}
     </div>
   )
 }
 
 // ═══════════ PROJECT FORM ═══════════
-function ProjectForm({ accounts, users, onClose, onSaved, initialAccountId }) {
+function ProjectForm({ accounts, users, onClose, onSaved, initialClientId }) {
   const toast = useToast()
-  const [form, setForm] = useState({ title:'', description:'', account_id: initialAccountId || '', service_type:'', service_type_other:'', project_type:'', pm_id:'', total_value:'', start_date:'', target_date:'', is_client_review_enabled: false, po_number:'', po_date:'', po_amount:'', po_terms:'', gst:'', net_amount:'' })
+  const [form, setForm] = useState({ title:'', description:'', client_id: initialClientId || '', service_type:'', service_type_other:'', project_type:'', pm_id:'', total_value:'', start_date:'', target_date:'', is_client_review_enabled: false, po_number:'', po_date:'', po_amount:'', po_terms:'', gst:'', net_amount:'' })
   const [poDocument, setPoDocument] = useState(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -188,7 +188,7 @@ function ProjectForm({ accounts, users, onClose, onSaved, initialAccountId }) {
       }
       if (!p.pm_id) { setError('Project Manager is required'); setSaving(false); return }
       p.pm_id = parseInt(p.pm_id)
-      if (p.account_id) p.account_id = parseInt(p.account_id)
+      if (p.client_id) p.client_id = parseInt(p.client_id)
       if (!p.start_date) delete p.start_date
       if (!p.target_date) delete p.target_date
       if (!p.po_date) delete p.po_date
@@ -225,7 +225,7 @@ function ProjectForm({ accounts, users, onClose, onSaved, initialAccountId }) {
             </h3>
             <div className="grid grid-cols-3 gap-3">
               <div className="col-span-3"><label className="block text-sm font-medium text-slate-700 mb-1.5">Project Title <span className="text-red-500">*</span></label><input value={form.title} onChange={e => f('title', e.target.value)} required className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" placeholder="e.g., IFCI Cloud Security Audit 2026" /></div>
-              <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Client Account <span className="text-red-500">*</span></label><select value={form.account_id} onChange={e => f('account_id', e.target.value)} required className="w-full px-4 py-3 border border-slate-300 text-sm outline-none"><option value="">-- Select Client --</option>{accounts.map(a => <option key={a.id} value={a.id}>{a.company_name} ({a.acc_id})</option>)}</select></div>
+                  <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Client Account <span className="text-red-500">*</span></label><select value={form.client_id} onChange={e => f('client_id', e.target.value)} required className="w-full px-4 py-3 border border-slate-300 text-sm outline-none"><option value="">-- Select Client --</option>{accounts.map(a => <option key={a.id} value={a.id}>{a.name} ({a.client_code})</option>)}</select></div>
               <div><label className="block text-sm font-medium text-slate-700 mb-1.5">PO Number</label><input value={form.po_number} onChange={e => f('po_number', e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" placeholder="Client PO #" /></div>
               <div><label className="block text-sm font-medium text-slate-700 mb-1.5">PO Document</label><label className="flex items-center gap-2 px-4 py-3 border border-slate-300 text-sm outline-none cursor-pointer hover:bg-slate-50"><Upload className="w-4 h-4 text-slate-400" /><span className={`${poDocument ? 'text-slate-900' : 'text-slate-400'}`}>{poDocument ? poDocument.name : 'Upload PO file...'}</span><input type="file" className="hidden" onChange={e => { const f2 = e.target.files?.[0]; if (f2) setPoDocument(f2) }} /></label></div>
               <div><label className="block text-sm font-medium text-slate-700 mb-1.5">PO Date</label><input type="date" value={form.po_date} onChange={e => f('po_date', e.target.value)} className="w-full px-4 py-3 border border-slate-300 text-sm outline-none" /></div>

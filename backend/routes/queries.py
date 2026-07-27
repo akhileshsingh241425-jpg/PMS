@@ -14,8 +14,8 @@ def list_queries(current_user):
         query = query.filter_by(project_id=int(pid))
     if st := request.args.get('status'):
         query = query.filter_by(status=st)
-    if aid := request.args.get('account_id'):
-        query = query.filter_by(account_id=int(aid))
+    if cid := request.args.get('client_id'):
+        query = query.filter_by(client_id=int(cid))
     return jsonify({'queries': [q.to_dict() for q in query.order_by(FindingQuery.created_at.desc()).all()]})
 
 

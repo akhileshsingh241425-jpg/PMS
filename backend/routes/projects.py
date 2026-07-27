@@ -34,8 +34,8 @@ def list_projects(current_user):
         query = query.filter(db.or_(Project.title.ilike(f'%{s}%'), Project.proj_id.ilike(f'%{s}%')))
     if st := request.args.get('stage'):
         query = query.filter_by(stage=st)
-    if aid := request.args.get('account_id'):
-        query = query.filter_by(account_id=int(aid))
+    if cid := request.args.get('client_id'):
+        query = query.filter_by(client_id=int(cid))
     query = query.order_by(Project.updated_at.desc())
     result = paginate(query, request)
     return jsonify({'projects': [p.to_dict() for p in result['items']], 'pagination': {'page': result['page'], 'per_page': result['per_page'], 'total': result['total'], 'pages': result['pages']}})
@@ -48,14 +48,14 @@ def create_project(current_user):
     direction = data.get('direction', 'IN')
     if not data.get('title'):
         return jsonify({'error': 'title is required'}), 400
-    if direction == 'IN' and not data.get('account_id'):
+    if direction == 'IN' and not data.get('client_id'):
         return jsonify({'error': 'Client account is required for IN projects'}), 400
     if direction == 'OUT' and not data.get('vendor_name'):
         return jsonify({'error': 'Vendor name is required for OUT projects'}), 400
     if not data.get('pm_id'):
         return jsonify({'error': 'Project Manager (pm_id) is required'}), 400
     try:
-        account_id = int(data['account_id']) if data.get('account_id') else None
+        client_id = int(data['client_id']) if data.get('client_id') else None
         pm_id = int(data['pm_id'])
         total_value = float(data['total_value']) if data.get('total_value') else None
         start_date = datetime.strptime(data['start_date'], '%Y-%m-%d').date() if data.get('start_date') else None
@@ -75,7 +75,7 @@ def create_project(current_user):
         description=data.get('description'),
         stage=data.get('stage', 'Created'),
         service_type=data.get('service_type'),
-        account_id=account_id,
+        client_id=client_id,
         pm_id=pm_id,
         total_value=total_value,
         start_date=start_date,

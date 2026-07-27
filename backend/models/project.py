@@ -136,7 +136,6 @@ class Project(db.Model):
     description = db.Column(db.Text)
     stage = db.Column(db.String(50), default='Created', index=True)
     service_type = db.Column(db.String(100))
-    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=True, index=True)
     client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=True, index=True)
     pm_id = db.Column(db.Integer, db.ForeignKey('users.id'), index=True)
     total_value = db.Column(db.Float)
@@ -202,7 +201,6 @@ class Project(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    account = db.relationship('Account', foreign_keys=[account_id], back_populates='projects')
     client = db.relationship('Client', foreign_keys=[client_id], backref='projects')
     linked_project = db.relationship('Project', foreign_keys=[linked_project_id], remote_side='Project.id', backref=db.backref('linked_children', lazy='dynamic'))
     pm = db.relationship('User', foreign_keys=[pm_id])
@@ -229,8 +227,6 @@ class Project(db.Model):
             'description': self.description,
             'stage': self.stage,
             'service_type': self.service_type,
-            'account_id': self.account_id,
-            'account_name': self.account.company_name if self.account else None,
             'client_id': self.client_id,
             'client_name': self.client.name if self.client else None,
             'pm_id': self.pm_id,

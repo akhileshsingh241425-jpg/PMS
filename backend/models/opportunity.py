@@ -30,7 +30,7 @@ class Opportunity(db.Model):
     expected_close_date = db.Column(db.Date)
     loss_reason = db.Column(db.Text)
     probability = db.Column(db.Integer, default=10)
-    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), index=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), index=True)
     assigned_to = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), index=True)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -43,7 +43,7 @@ class Opportunity(db.Model):
 
     assignee = db.relationship('User', foreign_keys=[assigned_to])
     creator = db.relationship('User', foreign_keys=[created_by])
-    account = db.relationship('Account', foreign_keys=[account_id])
+    client = db.relationship('Client', foreign_keys=[client_id])
     referral_lead = db.relationship('Lead', foreign_keys=[referral_lead_id])
 
     def to_dict(self):
@@ -62,8 +62,8 @@ class Opportunity(db.Model):
             'expected_close_date': self.expected_close_date.isoformat() if self.expected_close_date else None,
             'loss_reason': self.loss_reason,
             'probability': self.probability,
-            'account_id': self.account_id,
-            'account_name': self.account.company_name if self.account else None,
+            'client_id': self.client_id,
+            'client_name': self.client.name if self.client else None,
             'assigned_to': self.assigned_to,
             'assigned_name': self.assignee.full_name if self.assignee else None,
             'created_by': self.created_by,

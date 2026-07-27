@@ -1,7 +1,7 @@
 from datetime import datetime, date
 from flask import Blueprint, request, jsonify
 import os
-from models import db, Opportunity, OpportunityRemark, OpportunityDocument, OpportunityActivity, OpportunityNote, Lead, Account, Project, User
+from models import db, Opportunity, OpportunityRemark, OpportunityDocument, OpportunityActivity, OpportunityNote, Lead, Client, Project, User
 from middleware.auth import login_required, role_required
 from utils import generate_id, paginate, safe_int, safe_float, validate_file, safe_filename
 
@@ -61,7 +61,7 @@ def create_opportunity(current_user):
         stage=data.get('stage', 'Prospecting'),
         estimated_value=safe_float(data.get('estimated_value')),
         expected_close_date=datetime.strptime(data['expected_close_date'], '%Y-%m-%d').date() if data.get('expected_close_date') else None,
-        account_id=safe_int(data.get('account_id')),
+        client_id=safe_int(data.get('client_id')),
         assigned_to=safe_int(data.get('assigned_to')),
         created_by=current_user.id,
         referral_status=data.get('referral_status'),
@@ -248,40 +248,40 @@ def close_lost(current_user, oid):
     return jsonify({'opportunity': opp.to_dict()})
 
 
-@opp_bp.route('/<int:oid>/convert-to-account', methods=['POST'])
+@opp_bp.route('/<int:oid>/convert-to-client', methods=['POST'])
 @login_required
-def opp_to_account(current_user, oid):
+def opp_to_client(current_user, oid):
     opp = Opportunity.query.get_or_404(oid)
     if opp.stage != 'Closed Won':
         return jsonify({'error': 'Opportunity must be Closed Won first'}), 400
-    if opp.account_id:
-        return jsonify({'error': 'Account already linked to this opportunity'}), 400
-    existing = Account.query.filter_by(company_name=opp.company_name).first()
+    if opp.client_id:
+        return jsonify({'error': 'Client already linked to this opportunity'}), 400
+    existing = Client.query.filter_by(name=opp.company_name).first()
     if existing:
-        acc = existing
+        cl = existing
     else:
-        acc = Account(
-            acc_id=generate_id(Account, 'ACC'),
-            company_name=opp.company_name,
+        cl = Client(
+            name=opp.company_name,
             contact_name=opp.contact_name,
             contact_email=opp.contact_email,
             contact_phone=opp.contact_phone,
             industry=opp.service_interest,
             created_by=current_user.id,
         )
-        db.session.add(acc)
+        cl.client_code = cl.generate_cid()
+        db.session.add(cl)
         db.session.flush()
-    opp.account_id = acc.id
+    opp.client_id = cl.id
     db.session.commit()
-    return jsonify({'account': acc.to_dict(), 'opportunity': opp.to_dict()})
+    return jsonify({'client': cl.to_dict(), 'opportunity': opp.to_dict()})
 
 
 @opp_bp.route('/<int:oid>/create-project', methods=['POST'])
 @login_required
 def opp_create_project(current_user, oid):
     opp = Opportunity.query.get_or_404(oid)
-    if not opp.account_id:
-        return jsonify({'error': 'Convert to account first'}), 400
+    if not opp.client_id:
+        return jsonify({'error': 'Convert to client first'}), 400
     data = request.get_json()
     if not data.get('title'):
         return jsonify({'error': 'Project title required'}), 400
@@ -293,7 +293,7 @@ def opp_create_project(current_user, oid):
         description=data.get('description', opp.description),
         stage='Created',
         service_type=data.get('service_type', opp.service_interest),
-        account_id=opp.account_id,
+        client_id=opp.client_id,
         pm_id=int(data['pm_id']),
         total_value=float(data['total_value']) if data.get('total_value') else opp.estimated_value,
         start_date=datetime.strptime(data['start_date'], '%Y-%m-%d').date() if data.get('start_date') else None,
@@ -324,7 +324,7 @@ def convert_opp_to_lead(current_user, oid):
         stage='Prospecting',
         created_by=current_user.id,
         referral_opportunity_id=opp.id,
-        referring_account_id=opp.account_id,
+        referring_client_id=opp.client_id,
         referral_date=datetime.utcnow(),
     )
     db.session.add(lead)

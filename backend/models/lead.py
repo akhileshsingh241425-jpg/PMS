@@ -6,7 +6,7 @@ LEAD_STAGES = [
     'Prospecting', 'Lead Qualification', 'Demo or Meeting',
     'Proposal', 'Negotiation & Commitment', 'Purchase Order',
     'Lead Closed (Won)', 'Lead Closed (Lost)',
-    'Converted to Account', 'Approval Rejected',
+        'Converted to Client', 'Approval Rejected',
 ]
 
 LEAD_SOURCES = [
@@ -44,9 +44,9 @@ class Lead(db.Model):
     created_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
     closed_on = db.Column(db.DateTime)
     closed_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
-    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), index=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), index=True)
     referral_opportunity_id = db.Column(db.Integer, db.ForeignKey('opportunities.id'))
-    referring_account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'))
+    referring_client_id = db.Column(db.Integer, db.ForeignKey('clients.id'))
     referral_date = db.Column(db.DateTime)
 
     approval_status = db.Column(db.String(20))
@@ -66,7 +66,7 @@ class Lead(db.Model):
     approver = db.relationship('User', foreign_keys=[approved_by])
     account_creator = db.relationship('User', foreign_keys=[account_created_by])
     referral_opportunity = db.relationship('Opportunity', foreign_keys=[referral_opportunity_id])
-    referring_account = db.relationship('Account', foreign_keys=[referring_account_id])
+    referring_client = db.relationship('Client', foreign_keys=[referring_client_id])
 
     def to_dict(self):
         return {
@@ -94,7 +94,7 @@ class Lead(db.Model):
             'closed_on': self.closed_on.isoformat() if self.closed_on else None,
             'closed_by': self.closed_by,
             'closed_by_name': self.closer.full_name if self.closer else None,
-            'account_id': self.account_id,
+            'client_id': self.client_id,
             'approval_status': self.approval_status,
             'approved_by': self.approved_by,
             'approved_by_name': self.approver.full_name if self.approver else None,
@@ -105,8 +105,8 @@ class Lead(db.Model):
             'account_created_at': self.account_created_at.isoformat() if self.account_created_at else None,
             'is_readonly': self.is_readonly,
             'referral_opportunity_id': self.referral_opportunity_id,
-            'referring_account_id': self.referring_account_id,
-            'referring_account_name': self.referring_account.company_name if self.referring_account else None,
+            'referring_client_id': self.referring_client_id,
+            'referring_client_name': self.referring_client.name if self.referring_client else None,
             'referral_date': self.referral_date.isoformat() if self.referral_date else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
