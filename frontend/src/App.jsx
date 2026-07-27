@@ -52,17 +52,19 @@ function Protected({ children }) {
   return children
 }
 
+const isAdmin = (role) => role === 'admin' || role === 'super_admin'
+
 function AdminRoute({ children }) {
   const { user } = useAuth()
   if (!user) return <Navigate to="/login" replace />
-  if (user.role !== 'admin') return <Navigate to="/employee" replace />
+  if (!isAdmin(user.role)) return <Navigate to="/employee" replace />
   return children
 }
 
 function EmployeeRoute({ children }) {
   const { user } = useAuth()
   if (!user) return <Navigate to="/login" replace />
-  if (user.role === 'admin') return <Navigate to="/" replace />
+  if (isAdmin(user.role)) return <Navigate to="/" replace />
   if (user.role === 'project_manager') return <Navigate to="/pm" replace />
   return children
 }
@@ -70,7 +72,7 @@ function EmployeeRoute({ children }) {
 function PMRoute({ children }) {
   const { user } = useAuth()
   if (!user) return <Navigate to="/login" replace />
-  if (user.role !== 'project_manager' && user.role !== 'admin') return <Navigate to="/employee" replace />
+  if (user.role !== 'project_manager' && !isAdmin(user.role)) return <Navigate to="/employee" replace />
   return children
 }
 
@@ -78,7 +80,7 @@ function AppLayout() {
   const { user } = useAuth()
   if (!user) return <Navigate to="/login" replace />
   if (user.role === 'project_manager') return <Navigate to="/pm" replace />
-  if (user.role !== 'admin') return <Navigate to="/employee" replace />
+  if (!isAdmin(user.role)) return <Navigate to="/employee" replace />
   return <Layout><Outlet /></Layout>
 }
 

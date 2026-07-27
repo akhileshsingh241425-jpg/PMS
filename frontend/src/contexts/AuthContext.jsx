@@ -55,6 +55,8 @@ export function AuthProvider({ children }) {
     return () => { cancelled = true; clearTimeout(safety) }
   }, [])
 
+  const isAdmin = (role) => role === 'admin' || role === 'super_admin'
+
   const login = async (email, password) => {
     const res = await api.post('/api/auth/login', { email, password })
     if (res.data.requires_otp) {
@@ -69,7 +71,7 @@ export function AuthProvider({ children }) {
     }
     localStorage.setItem('pms_token', res.data.token)
     setUser(res.data.user)
-    navigate(res.data.user.role !== 'admin' ? '/employee' : '/')
+    navigate(isAdmin(res.data.user.role) ? '/' : '/employee')
     return {}
   }
 
@@ -79,7 +81,7 @@ export function AuthProvider({ children }) {
     if (data.token) {
       localStorage.setItem('pms_token', data.token)
       setUser(data.user)
-      navigate(data.user.role !== 'admin' ? '/employee' : '/')
+      navigate(isAdmin(data.user.role) ? '/' : '/employee')
     }
     return data
   }
