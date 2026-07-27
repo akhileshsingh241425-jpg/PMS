@@ -195,9 +195,9 @@ def approve_request(current_user, aid):
         return jsonify({'error': 'Not your approval'}), 403
     
     data = request.get_json() or {}
-    remarks = data.get('remarks', '')
-    
-# Move to next level or complete
+remarks = data.get('remarks', '')
+
+    # Move to next level or complete
     approvers = get_approvers(approval.request_type, approval.requester)
     next_level = approval.current_level + 1
 
@@ -244,7 +244,7 @@ def reject_request(current_user, aid):
     if not remarks:
         return jsonify({'error': 'Remarks required for rejection'}), 400
     
-approval.status = 'rejected'
+    approval.status = 'rejected'
     approval.updated_at = datetime.utcnow()
 
     # Record history
