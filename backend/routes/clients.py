@@ -198,7 +198,8 @@ def get_client(current_user, cid):
     data = client.to_dict()
     po_count = Project.query.filter(Project.vendor_name == client.name, Project.direction == 'OUT').count() if client.client_type in ('vendor', 'both') else 0
     data['project_count'] = Project.query.filter_by(client_id=cid).count() + po_count
-    data['projects'] = [p.to_dict() for p in Project.query.filter_by(client_id=cid).order_by(Project.updated_at.desc()).all()]
+    data['projects'] = [p.to_dict() for p in Project.query.filter(Project.client_id == cid, Project.direction == 'IN', Project.po_in_status == None).order_by(Project.updated_at.desc()).all()]
+    data['po_in_list'] = [p.to_dict() for p in Project.query.filter(Project.client_id == cid, Project.direction == 'IN', Project.po_in_status != None).order_by(Project.updated_at.desc()).all()]
     data['contacts'] = [c.to_dict() for c in client.contacts.order_by(ClientContact.is_primary.desc()).all()]
     data['remarks'] = [r.to_dict() for r in client.remarks.order_by(ClientRemark.is_pinned.desc(), ClientRemark.created_at.desc()).all()]
     data['follow_ups'] = [f.to_dict() for f in client.follow_ups.all()]

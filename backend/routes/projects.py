@@ -1,7 +1,7 @@
 from datetime import datetime
 from flask import Blueprint, request, jsonify
 import os
-from models import db, Project, ProjectRemark, ProjectRemarkReaction, ProjectDocument, ProjectReport, ProjectTeam, ProjectPhase, Task, Meeting, Note, User, ProjectRisk, ProjectIssue, ProjectMilestone, ProjectInvoice, ProjectTimesheet, ProjectChangeRequest, ApprovalHistory, PoPayment, PlanSubmodule
+from models import db, Project, ProjectRemark, ProjectRemarkReaction, ProjectDocument, ProjectReport, ProjectTeam, ProjectPhase, Task, Meeting, Note, User, ProjectRisk, ProjectIssue, ProjectMilestone, ProjectInvoice, ProjectTimesheet, ProjectChangeRequest, ApprovalHistory, PlanSubmodule
 from models.client_portal import MeetingRequest, FindingQuery
 from middleware.auth import login_required, role_required
 from utils import validate_file, safe_filename, generate_id, paginate
@@ -22,7 +22,7 @@ PROJECT_STAGES = [
 @project_bp.route('', methods=['GET'])
 @login_required
 def list_projects(current_user):
-    query = Project.query
+    query = Project.query.filter_by(direction='IN')
     if current_user.role != 'admin':
         user_project_ids = [t.project_id for t in ProjectTeam.query.filter_by(user_id=current_user.id).all()]
         query = query.filter(db.or_(
@@ -600,153 +600,7 @@ def stages(current_user):
     return jsonify({'stages': PROJECT_STAGES})
 
 
-# ──────── PO OUT Workflow ────────
 
-PO_OUT_STATUSES = ['Draft', 'Pending Approval', 'Rejected', 'Approved', 'Sent', 'In Progress', 'Payment Pending', 'Closed']
-
-def calc_balance(pid):
-    proj = Project.query.get(pid)
-    paid = db.session.query(db.func.coalesce(db.func.sum(PoPayment.amount), 0)).filter(PoPayment.po_id == pid).scalar()
-    bal = (proj.net_amount or proj.po_amount or 0) - paid
-    proj.advance_paid = paid
-    proj.balance_outstanding = max(bal, 0)
-    if bal <= 0:
-        proj.po_out_status = 'Closed'
-    elif proj.po_work_completed and bal > 0:
-        proj.po_out_status = 'Payment Pending'
-    db.session.commit()
-
-
-@project_bp.route('/<int:pid>/po-out/approve', methods=['POST'])
-@login_required
-def approve_po_out(current_user, pid):
-    proj = Project.query.get_or_404(pid)
-    if proj.direction != 'OUT':
-        return jsonify({'error': 'Not an OUT project'}), 400
-    if proj.po_out_status != 'Pending Approval':
-        return jsonify({'error': f'Cannot approve in status: {proj.po_out_status}'}), 400
-    proj.po_out_status = 'Approved'
-    proj.po_approver_id = current_user.id
-    proj.po_approved_at = datetime.utcnow()
-    db.session.commit()
-    return jsonify({'project': proj.to_dict()})
-
-
-@project_bp.route('/<int:pid>/po-out/reject', methods=['POST'])
-@login_required
-def reject_po_out(current_user, pid):
-    proj = Project.query.get_or_404(pid)
-    if proj.direction != 'OUT':
-        return jsonify({'error': 'Not an OUT project'}), 400
-    if proj.po_out_status != 'Pending Approval':
-        return jsonify({'error': f'Cannot reject in status: {proj.po_out_status}'}), 400
-    data = request.get_json()
-    proj.po_out_status = 'Rejected'
-    proj.po_rejected_reason = data.get('reason', '')
-    proj.po_approver_id = current_user.id
-    db.session.commit()
-    return jsonify({'project': proj.to_dict()})
-
-
-@project_bp.route('/<int:pid>/po-out/resubmit', methods=['POST'])
-@login_required
-def resubmit_po_out(current_user, pid):
-    proj = Project.query.get_or_404(pid)
-    if proj.direction != 'OUT':
-        return jsonify({'error': 'Not an OUT project'}), 400
-    if proj.po_out_status != 'Rejected':
-        return jsonify({'error': 'Can only resubmit from Rejected status'}), 400
-    proj.po_out_status = 'Pending Approval'
-    proj.po_resubmitted_at = datetime.utcnow()
-    proj.po_rejected_reason = None
-    db.session.commit()
-    return jsonify({'project': proj.to_dict()})
-
-
-@project_bp.route('/<int:pid>/po-out/send', methods=['POST'])
-@login_required
-def send_po_out(current_user, pid):
-    proj = Project.query.get_or_404(pid)
-    if proj.direction != 'OUT':
-        return jsonify({'error': 'Not an OUT project'}), 400
-    if proj.po_out_status != 'Approved':
-        return jsonify({'error': 'Must be Approved first'}), 400
-    data = request.get_json()
-    proj.po_out_status = 'Sent'
-    proj.po_sent_via = data.get('send_via', 'Download PDF')
-    proj.po_sent_date = datetime.utcnow()
-    db.session.commit()
-    return jsonify({'project': proj.to_dict()})
-
-
-@project_bp.route('/<int:pid>/po-out/work-start', methods=['POST'])
-@login_required
-def po_work_start(current_user, pid):
-    proj = Project.query.get_or_404(pid)
-    if proj.direction != 'OUT':
-        return jsonify({'error': 'Not an OUT project'}), 400
-    proj.po_out_status = 'In Progress'
-    proj.po_work_started = True
-    proj.po_work_started_at = datetime.utcnow()
-    db.session.commit()
-    return jsonify({'project': proj.to_dict()})
-
-
-@project_bp.route('/<int:pid>/po-out/work-complete', methods=['POST'])
-@login_required
-def po_work_complete(current_user, pid):
-    proj = Project.query.get_or_404(pid)
-    if proj.direction != 'OUT':
-        return jsonify({'error': 'Not an OUT project'}), 400
-    proj.po_work_completed = True
-    proj.po_work_completed_at = datetime.utcnow()
-    if (proj.balance_outstanding or 0) <= 0:
-        proj.po_out_status = 'Closed'
-    else:
-        proj.po_out_status = 'Payment Pending'
-    db.session.commit()
-    return jsonify({'project': proj.to_dict()})
-
-
-@project_bp.route('/<int:pid>/po-out/payments', methods=['GET'])
-@login_required
-def list_po_payments(current_user, pid):
-    Project.query.get_or_404(pid)
-    payments = PoPayment.query.filter_by(po_id=pid).order_by(PoPayment.date.desc()).all()
-    return jsonify({'payments': [p.to_dict() for p in payments]})
-
-
-@project_bp.route('/<int:pid>/po-out/payments', methods=['POST'])
-@login_required
-def add_po_payment(current_user, pid):
-    proj = Project.query.get_or_404(pid)
-    if proj.direction != 'OUT':
-        return jsonify({'error': 'Not an OUT project'}), 400
-    data = request.get_json()
-    amount = float(data.get('amount', 0))
-    if amount <= 0:
-        return jsonify({'error': 'Amount must be positive'}), 400
-    try:
-        pay_date = datetime.strptime(data['date'], '%Y-%m-%d').date() if data.get('date') else datetime.utcnow().date()
-    except ValueError:
-        return jsonify({'error': 'Invalid date format'}), 400
-    pay = PoPayment(po_id=pid, amount=amount, date=pay_date, mode=data.get('mode'), remarks=data.get('remarks'), created_by=current_user.id)
-    db.session.add(pay)
-    db.session.flush()
-    calc_balance(pid)
-    return jsonify({'payment': pay.to_dict(), 'project': proj.to_dict()}), 201
-
-
-@project_bp.route('/po-out/payments/<int:pay_id>', methods=['DELETE'])
-@login_required
-def delete_po_payment(current_user, pay_id):
-    pay = PoPayment.query.get_or_404(pay_id)
-    pid = pay.po_id
-    db.session.delete(pay)
-    db.session.flush()
-    calc_balance(pid)
-    proj = Project.query.get(pid)
-    return jsonify({'payment': pay.to_dict(), 'project': proj.to_dict() if proj else None})
 
 
 @project_bp.route('/documents/<int:did>/verify', methods=['POST'])

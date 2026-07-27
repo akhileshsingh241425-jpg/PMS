@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, FileText, Building2, Calendar, CheckCircle, Clock, XCircle, Ban, Send, Upload, Download, RefreshCw, Plus, ChevronDown } from 'lucide-react'
+import { ArrowLeft, FileText, Building2, Calendar, CheckCircle, Clock, XCircle, Ban, Send, Upload, Download, RefreshCw, Plus, ChevronDown, Briefcase } from 'lucide-react'
 import api from '../services/api'
 import { C } from '../components/styleConstants'
 
@@ -122,6 +122,27 @@ export default function POInDetail() {
     finally { setSaving(false) }
   }
 
+  const handleStartProject = async () => {
+    if (!confirm('Create a project from this Work Order?')) return
+    try {
+      const payload = {
+        title: po.title || `Project — ${po.client?.name || ''}`,
+        account_id: po.account_id || po.client_id,
+        po_number: po.po_number,
+        po_date: po.po_date,
+        po_amount: po.po_amount,
+        gst: po.gst,
+        net_amount: po.net_amount,
+        po_terms: po.po_terms,
+        start_date: po.start_date,
+        target_date: po.target_date,
+        description: po.description,
+      }
+      const res = await api.post('/api/projects', payload)
+      navigate(`/projects/${res.data.project.id}`)
+    } catch (e) { alert(e.response?.data?.error || 'Failed to create project') }
+  }
+
   if (loading) return <div style={{ padding: 40, color: C.muted, fontSize: 14 }}>Loading...</div>
   if (!po) return null
   if (po.notFound) {
@@ -164,6 +185,11 @@ export default function POInDetail() {
         </div>
 
         <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap', alignItems: 'center' }}>
+          {po.po_in_status === 'WORK ORDER RECEIVED' && !po.project_id && (
+            <button onClick={handleStartProject} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 14px', borderRadius: 6, border: 'none', background: '#059669', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+              <Briefcase className="w-3.5 h-3.5" /> Start Project
+            </button>
+          )}
           {nextStatuses.map(s => (
             <button key={s} onClick={() => handleStatusUpdate(s)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 14px', borderRadius: 6, border: 'none', background: s === 'CANCELLED' ? '#EF4444' : C.blue, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
               {s === 'IN PROGRESS' ? <PlayIcon /> : s === 'COMPLETED' ? <CheckCircle className="w-3.5 h-3.5" /> : s === 'CANCELLED' ? <Ban className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}

@@ -5,7 +5,7 @@ import {
   UserPlus, MessageSquare, Calendar, History, Link2, ChevronRight,
   Plus, Pencil, Trash2, CheckCircle, X, Save, AlertCircle, Pin,
   PinOff, Loader2, Clock, Ban, UserCheck, Users, ChevronDown,
-  MoreVertical, Play, Pause, Archive, AlertTriangle, Download
+  MoreVertical, Play, Pause, Archive, AlertTriangle, Download, Briefcase
 } from 'lucide-react'
 import { C } from '../components/styleConstants'
 import * as clientApi from '../api/clientsApi'
@@ -132,6 +132,7 @@ export default function ClientDetailPage() {
   const tabs = [
     { key: 'overview', label: 'Overview', icon: Building2 },
     { key: 'contacts', label: `Contacts (${client.contacts?.length || 0})`, icon: UserPlus },
+    { key: 'workorders', label: `Work Orders (${client.po_in_list?.length || 0})`, icon: Briefcase },
     { key: 'remarks', label: `Remarks (${client.remark_count || 0})`, icon: MessageSquare },
     { key: 'followups', label: `Follow-ups (${client.follow_up_count || 0})`, icon: Calendar },
     { key: 'changelogs', label: `Change Logs (${client.change_logs?.length || 0})`, icon: History },
@@ -260,6 +261,7 @@ export default function ClientDetailPage() {
               setEditingFollowUpId={setEditingFollowUpId}
             />
           )}
+          {activeTab === 'workorders' && <WorkOrdersTab client={client} navigate={navigate} />}
           {activeTab === 'changelogs' && <ChangeLogsTab client={client} loadDetail={loadDetail} />}
           {activeTab === 'references' && (
             <ReferencesTab
@@ -735,6 +737,39 @@ function FollowUpsTab({ client, loadDetail, showFollowUpModal, setShowFollowUpMo
             </ModalField>
           )}
         </Modal>
+      )}
+    </div>
+  )
+}
+
+function WorkOrdersTab({ client, navigate }) {
+  return (
+    <div>
+      {(!client.po_in_list || client.po_in_list.length === 0) ? (
+        <EmptyState icon={Briefcase} text="No work orders yet" />
+      ) : (
+        <div style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, boxShadow: C.shadow, overflow: 'hidden' }}>
+          <div style={{ display: 'flex', padding: '8px 16px', borderBottom: `1px solid ${C.border}`, background: '#F8FAFC', fontSize: 10, fontWeight: 700, color: C.secondary, textTransform: 'uppercase' }}>
+            <div style={{ flex: 1 }}>ID</div>
+            <div style={{ flex: 2 }}>Title</div>
+            <div style={{ flex: 1 }}>PO No.</div>
+            <div style={{ flex: 1 }}>Amount</div>
+            <div style={{ flex: 1 }}>Status</div>
+            <div style={{ width: 60, textAlign: 'center' }}>Action</div>
+          </div>
+          {client.po_in_list.map(wo => (
+            <div key={wo.id} style={{ display: 'flex', alignItems: 'center', padding: '10px 16px', borderBottom: `1px solid ${C.border}`, fontSize: 13, cursor: 'pointer' }} onClick={() => navigate(`/po-in/${wo.id}`)}>
+              <div style={{ flex: 1, fontWeight: 600, color: C.blue }}>{wo.proj_id}</div>
+              <div style={{ flex: 2, fontWeight: 500 }}>{wo.title || '—'}</div>
+              <div style={{ flex: 1, color: C.secondary }}>{wo.po_number || '—'}</div>
+              <div style={{ flex: 1, fontWeight: 600 }}>₹{(wo.net_amount || 0).toLocaleString('en-IN')}</div>
+              <div style={{ flex: 1 }}><span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 10, background: '#DBEAFE', color: '#1E40AF' }}>{wo.po_in_status || '—'}</span></div>
+              <div style={{ width: 60, textAlign: 'center' }}>
+                <button onClick={(e) => { e.stopPropagation(); navigate(`/po-in/${wo.id}`) }} style={{ padding: '4px 10px', borderRadius: 6, border: 'none', background: C.blue, color: '#fff', fontSize: 10, fontWeight: 600, cursor: 'pointer' }}>View</button>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   )
