@@ -161,6 +161,7 @@ export default function ClientDetailPage() {
           { label: 'Clients', to: '/clients' },
           { label: client.name },
         ]} />
+        </div>
         {/* Compact Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
@@ -308,7 +309,6 @@ export default function ClientDetailPage() {
           allClients={allClients}
         />
       )}
-      </div>
     </div>
   )
 }
