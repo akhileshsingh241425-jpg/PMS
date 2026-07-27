@@ -27,6 +27,13 @@ const STATUS_TRANSITIONS = {
 const fmtCurr = (v) => v != null ? '₹' + Number(v).toLocaleString('en-IN') : '—'
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
 
+function calcEditTotals(items, gstRate) {
+  const taxable = (items || []).reduce((s, i) => s + ((parseFloat(i.qty) || 0) * (parseFloat(i.rate) || 0)), 0)
+  const rate = parseFloat(gstRate) || 18
+  const gst = taxable * rate / 100
+  return { taxable, gst, net: taxable + gst }
+}
+
 export default function POInDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -347,7 +354,19 @@ export default function POInDetail() {
                 </div>
               </Section>
 
-              <Section title="Line Items">
+<Section title="Line Items">
+                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', marginBottom: 8 }}>
+                  <div style={{ flex: 1 }}>
+                    <Label>GST Rate (%)</Label>
+                    <select value={editForm.gst_rate || 18} onChange={e => setEditForm(f => ({ ...f, gst_rate: parseFloat(e.target.value) || 18 }))} style={inputS}>
+                      <option value={0}>0%</option>
+                      <option value={5}>5%</option>
+                      <option value={12}>12%</option>
+                      <option value={18}>18%</option>
+                      <option value={28}>28%</option>
+                    </select>
+                  </div>
+                </div>
                 {editForm.line_items?.map((item, idx) => (
                   <div key={idx} style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6 }}>
                     <input value={item.item_name} onChange={e => { const items = [...editForm.line_items]; items[idx] = { ...items[idx], item_name: e.target.value }; setEditForm(f => ({ ...f, line_items: items })) }} style={{ ...inputS, flex: 2, fontSize: 12 }} placeholder="Item" />
@@ -359,17 +378,19 @@ export default function POInDetail() {
                       <button type="button" onClick={() => setEditForm(f => ({ ...f, line_items: f.line_items.filter((_, i) => i !== idx) }))} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#EF4444', padding: 2 }}>
                         <X className="w-3.5 h-3.5" />
                       </button>
-)}
-          {po.linked_project && (
-            <Link to={`/projects/${po.linked_project.id}`} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 14px', borderRadius: 6, border: 'none', background: '#1E40AF', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', textDecoration: 'none' }}>
-              <Briefcase className="w-3.5 h-3.5" /> View Project — {po.linked_project.proj_id}
-            </Link>
-          )}
+                    )}
                   </div>
                 ))}
                 <button type="button" onClick={() => setEditForm(f => ({ ...f, line_items: [...f.line_items, { item_name: '', sac_hsn: '', qty: 1, rate: 0, gst_rate: 18 }] }))} style={{ marginTop: 6, padding: '4px 10px', border: `1px dashed ${C.border}`, borderRadius: 6, background: 'transparent', fontSize: 11, color: C.blue, cursor: 'pointer' }}>
                   + Add Item
                 </button>
+                {(() => { const t = calcEditTotals(editForm.line_items, editForm.gst_rate); return (
+                  <div style={{ marginTop: 8, display: 'flex', justifyContent: 'flex-end', gap: 20, fontSize: 12, padding: '8px 12px', background: '#F8FAFC', borderRadius: 6, border: `1px solid ${C.border}` }}>
+                    <span>Taxable: <strong>₹{t.taxable.toLocaleString('en-IN')}</strong></span>
+                    <span>GST ({editForm.gst_rate || 18}%): <strong>₹{t.gst.toLocaleString('en-IN')}</strong></span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: '#059669' }}>Total: ₹{t.net.toLocaleString('en-IN')}</span>
+                  </div>
+                )})()}
               </Section>
 
               <Section title="Delivery & Terms">
