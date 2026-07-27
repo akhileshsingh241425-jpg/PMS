@@ -170,9 +170,9 @@ def create_client(current_user):
         first_follow_up_date=datetime.strptime(data['first_follow_up_date'], '%Y-%m-%d').date() if data.get('first_follow_up_date') else None,
         onboarding_remarks=data.get('onboarding_remarks'),
     )
+    client.client_code = client.generate_cid()
     db.session.add(client)
     db.session.flush()
-    client.client_code = client.generate_cid()
 
     if data.get('contact_name'):
         db.session.add(ClientContact(client_id=client.id, name=data['contact_name'],
