@@ -195,7 +195,7 @@ def approve_request(current_user, aid):
         return jsonify({'error': 'Not your approval'}), 403
     
     data = request.get_json() or {}
-remarks = data.get('remarks', '')
+    remarks = data.get('remarks', '')
 
     # Move to next level or complete
     approvers = get_approvers(approval.request_type, approval.requester)
