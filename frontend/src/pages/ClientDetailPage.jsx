@@ -782,7 +782,7 @@ function WorkOrdersTab({ client, navigate, loadDetail }) {
       }
       addToast('Work order created', 'success')
       setShowForm(false)
-      loadDetail()
+      navigate(`/po-in/${newPo.id}`)
     } catch (e) { addToast(e.response?.data?.error || 'Failed to create', 'error') }
     finally { setSaving(false) }
   }
