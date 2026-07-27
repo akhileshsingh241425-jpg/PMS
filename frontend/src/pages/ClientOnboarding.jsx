@@ -51,6 +51,7 @@ export default function ClientOnboarding() {
   const [users, setUsers] = useState([])
   const [countries, setCountries] = useState([])
   const [states, setStates] = useState([])
+  const [cities, setCities] = useState([])
   const [dupStatus, setDupStatus] = useState(null)
 
   useEffect(() => {
@@ -65,6 +66,21 @@ export default function ClientOnboarding() {
     api.get('/api/masters/countries').then(r => setCountries(r.data?.countries || [])).catch(() => {})
     api.get('/api/masters/states').then(r => setStates(r.data?.states || [])).catch(() => {})
   }, [])
+
+  useEffect(() => {
+    if (form.state) {
+      const state = states.find(s => s.name === form.state)
+      if (state) {
+        api.get('/api/masters/cities', { params: { state_id: state.id } })
+          .then(r => setCities(r.data?.cities || []))
+          .catch(() => setCities([]))
+      } else {
+        setCities([])
+      }
+    } else {
+      setCities([])
+    }
+  }, [form.state, states])
 
   const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }))
 
@@ -237,7 +253,10 @@ export default function ClientOnboarding() {
             </Field>
             <Field>
               <Label>City</Label>
-              <input value={form.city} onChange={e => set('city', e.target.value)} style={inputCls} placeholder="e.g. Mumbai" />
+              <select value={form.city} onChange={e => set('city', e.target.value)} style={selectCls} disabled={!form.state}>
+                <option value="">-- Select City --</option>
+                {cities.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+              </select>
             </Field>
             <Field gridCol="span 2">
               <Label>Registered Address</Label>

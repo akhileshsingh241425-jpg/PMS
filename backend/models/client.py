@@ -51,6 +51,20 @@ class StateMaster(db.Model):
         return {'id': self.id, 'name': self.name, 'code': self.code, 'country_id': self.country_id, 'is_active': self.is_active}
 
 
+class CityMaster(db.Model):
+    __tablename__ = 'city_masters'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    state_id = db.Column(db.Integer, db.ForeignKey('state_masters.id'), nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    state = db.relationship('StateMaster', backref='cities')
+
+    def to_dict(self):
+        return {'id': self.id, 'name': self.name, 'state_id': self.state_id, 'is_active': self.is_active}
+
+
 CLIENT_STATUSES = ['PROSPECT', 'ACTIVE', 'DORMANT', 'HOLD', 'BLACKLISTED', 'ARCHIVED']
 CLIENT_TYPES = ['main', 'sub', 'vendor', 'both']
 

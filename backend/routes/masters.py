@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import db, SectorMaster, VendorCategoryMaster, AppSetting, DEFAULT_SETTINGS, CountryMaster, StateMaster
+from models import db, SectorMaster, VendorCategoryMaster, AppSetting, DEFAULT_SETTINGS, CountryMaster, StateMaster, CityMaster
 from middleware.auth import login_required
 
 masters_bp = Blueprint('masters', __name__, url_prefix='/api/masters')
@@ -239,5 +239,57 @@ def delete_state(current_user, sid):
         return jsonify({'error': 'Admin access required'}), 403
     state = StateMaster.query.get_or_404(sid)
     db.session.delete(state)
+    db.session.commit()
+    return jsonify({'message': 'Deleted'})
+
+
+# ─── CITIES ─────────────────────────────────────────────────
+
+@masters_bp.route('/cities', methods=['GET'])
+@login_required
+def list_cities(current_user):
+    q = CityMaster.query
+    state_id = request.args.get('state_id')
+    if state_id:
+        q = q.filter_by(state_id=int(state_id))
+    cities = q.order_by(CityMaster.name).all()
+    return jsonify({'cities': [c.to_dict() for c in cities]})
+
+
+@masters_bp.route('/cities', methods=['POST'])
+@login_required
+def create_city(current_user):
+    if not _require_admin(current_user):
+        return jsonify({'error': 'Admin access required'}), 403
+    data = request.get_json()
+    if not data or not data.get('name') or not data.get('state_id'):
+        return jsonify({'error': 'name and state_id required'}), 400
+    city = CityMaster(name=data['name'], state_id=data['state_id'], is_active=data.get('is_active', True))
+    db.session.add(city)
+    db.session.commit()
+    return jsonify({'city': city.to_dict()}), 201
+
+
+@masters_bp.route('/cities/<int:cid>', methods=['PUT'])
+@login_required
+def update_city(current_user, cid):
+    if not _require_admin(current_user):
+        return jsonify({'error': 'Admin access required'}), 403
+    city = CityMaster.query.get_or_404(cid)
+    data = request.get_json()
+    if 'name' in data: city.name = data['name']
+    if 'state_id' in data: city.state_id = data['state_id']
+    if 'is_active' in data: city.is_active = data['is_active']
+    db.session.commit()
+    return jsonify({'city': city.to_dict()})
+
+
+@masters_bp.route('/cities/<int:cid>', methods=['DELETE'])
+@login_required
+def delete_city(current_user, cid):
+    if not _require_admin(current_user):
+        return jsonify({'error': 'Admin access required'}), 403
+    city = CityMaster.query.get_or_404(cid)
+    db.session.delete(city)
     db.session.commit()
     return jsonify({'message': 'Deleted'})
