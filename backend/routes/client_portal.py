@@ -3,7 +3,7 @@ import jwt, os
 from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify, current_app
 from functools import wraps
-from models import db, User, Account, Project, ProjectDocument, MeetingRequestDocument, Note, Vulnerability
+from models import db, User, Account, Client, Project, ProjectDocument, MeetingRequestDocument, Note, Vulnerability
 from models.client_portal import MeetingRequest, ClientUpload, FindingQuery
 from utils import validate_file, safe_filename, rate_limit
 
@@ -13,7 +13,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
 def generate_client_token(client_user):
-    return jwt.encode({'user_id': client_user.id, 'account_id': client_user.account_id, 'type': 'client', 'exp': datetime.utcnow() + timedelta(hours=24)}, current_app.config['SECRET_KEY'], algorithm='HS256')
+    return jwt.encode({'user_id': client_user.id, 'account_id': client_user.account_id, 'client_id': client_user.client_id, 'type': 'client', 'exp': datetime.utcnow() + timedelta(hours=24)}, current_app.config['SECRET_KEY'], algorithm='HS256')
 
 
 def client_auth(f):
@@ -29,13 +29,18 @@ def client_auth(f):
             user = User.query.get(data['user_id'])
             if not user or not user.is_active:
                 return jsonify({'error': 'Inactive'}), 401
-            # Auto-fix missing account_id on any request
+            # Auto-fix missing account_id / client_id
             if not user.account_id:
                 acc = Account.query.filter_by(company_name=user.client_company_name).first()
                 if not acc:
                     acc = Account.query.order_by(Account.id.desc()).first()
                 if acc:
                     user.account_id = acc.id
+                    db.session.commit()
+            if not user.client_id and user.account_id:
+                cl = Client.query.filter_by(account_id=user.account_id).first()
+                if cl:
+                    user.client_id = cl.id
                     db.session.commit()
             return f(user, *args, **kwargs)
         except jwt.ExpiredSignatureError:
@@ -56,13 +61,18 @@ def client_login():
     if not user.is_active:
         return jsonify({'error': 'Account inactive'}), 403
 
-    # Auto-fix missing account_id
+    # Auto-fix missing account_id / client_id
     if not user.account_id:
         acc = Account.query.filter_by(company_name=user.client_company_name).first()
         if not acc:
             acc = Account.query.order_by(Account.id.desc()).first()
         if acc:
             user.account_id = acc.id
+            db.session.commit()
+    if not user.client_id and user.account_id:
+        cl = Client.query.filter_by(account_id=user.account_id).first()
+        if cl:
+            user.client_id = cl.id
             db.session.commit()
 
     return jsonify({'token': generate_client_token(user), 'user': user.to_dict()})
@@ -94,10 +104,10 @@ def update_profile(user):
 @portal_bp.route('/dashboard', methods=['GET'])
 @client_auth
 def dashboard(user):
-    projects = Project.query.filter_by(account_id=user.account_id).all()
+    projects = Project.query.filter_by(client_id=user.client_id).all()
     active_projects = [p for p in projects if p.stage not in ('Closed', 'Cancelled')]
-    meetings = MeetingRequest.query.filter_by(account_id=user.account_id, status='Confirmed').count()
-    queries_open = FindingQuery.query.filter_by(account_id=user.account_id, status='Open').count()
+    meetings = MeetingRequest.query.filter_by(client_id=user.client_id, status='Confirmed').count()
+    queries_open = FindingQuery.query.filter_by(client_id=user.client_id, status='Open').count()
     return jsonify({
         'active_projects': len(active_projects),
         'total_projects': len(projects),
@@ -111,7 +121,7 @@ def dashboard(user):
 @portal_bp.route('/projects', methods=['GET'])
 @client_auth
 def client_projects(user):
-    projects = Project.query.filter_by(account_id=user.account_id).order_by(Project.updated_at.desc()).all()
+    projects = Project.query.filter_by(client_id=user.client_id).order_by(Project.updated_at.desc()).all()
     return jsonify({'projects': [{'id': p.id, 'proj_id': p.proj_id, 'title': p.title, 'service_type': p.service_type, 'stage': p.stage, 'start_date': p.start_date.isoformat() if p.start_date else None, 'target_date': p.target_date.isoformat() if p.target_date else None, 'pm_name': p.pm.full_name if p.pm else None, 'updated_at': p.updated_at.isoformat() if p.updated_at else None} for p in projects]})
 
 
@@ -119,11 +129,11 @@ def client_projects(user):
 @client_auth
 def client_project_detail(user, pid):
     project = Project.query.get_or_404(pid)
-    if project.account_id != user.account_id:
+    if project.client_id != user.client_id:
         return jsonify({'error': 'Access denied'}), 403
     docs = ProjectDocument.query.filter_by(project_id=pid, is_client_visible=True, review_status='Approved').order_by(ProjectDocument.uploaded_at.desc()).all()
     notes = Note.query.filter_by(project_id=pid).order_by(Note.created_at.desc()).all()
-    uploads = ClientUpload.query.filter_by(project_id=pid, account_id=user.account_id).order_by(ClientUpload.uploaded_at.desc()).all()
+    uploads = ClientUpload.query.filter_by(project_id=pid, client_id=user.client_id).order_by(ClientUpload.uploaded_at.desc()).all()
     return jsonify({
         'project': {'id': project.id, 'proj_id': project.proj_id, 'title': project.title, 'description': project.description, 'service_type': project.service_type, 'stage': project.stage, 'start_date': project.start_date.isoformat() if project.start_date else None, 'target_date': project.target_date.isoformat() if project.target_date else None, 'pm_name': project.pm.full_name if project.pm else None, 'is_client_review_enabled': project.is_client_review_enabled},
         'documents': [d.to_dict() for d in docs],
@@ -154,7 +164,7 @@ def client_add_note(user, pid):
 @portal_bp.route('/meetings', methods=['GET'])
 @client_auth
 def list_meetings(user):
-    meetings = MeetingRequest.query.filter_by(account_id=user.account_id).order_by(MeetingRequest.created_at.desc()).all()
+    meetings = MeetingRequest.query.filter_by(client_id=user.client_id).order_by(MeetingRequest.created_at.desc()).all()
     return jsonify({'meetings': [m.to_dict() for m in meetings]})
 
 
@@ -171,6 +181,7 @@ def request_meeting(user):
         return jsonify({'error': 'Invalid format'}), 400
     m = MeetingRequest(
         account_id=user.account_id,
+        client_id=user.client_id,
         project_id=project_id,
         requested_by=user.id,
         preferred_date=preferred_date,
@@ -186,7 +197,7 @@ def request_meeting(user):
 @client_auth
 def get_meeting(user, mid):
     meeting = MeetingRequest.query.get_or_404(mid)
-    if meeting.account_id != user.account_id:
+    if meeting.client_id != user.client_id:
         return jsonify({'error': 'Access denied'}), 403
     return jsonify({'meeting': meeting.to_dict()})
 
@@ -195,7 +206,7 @@ def get_meeting(user, mid):
 @client_auth
 def update_meeting(user, mid):
     meeting = MeetingRequest.query.get_or_404(mid)
-    if meeting.account_id != user.account_id:
+    if meeting.client_id != user.client_id:
         return jsonify({'error': 'Access denied'}), 403
     data = request.get_json()
     action = data.get('action')
@@ -224,7 +235,7 @@ def update_meeting(user, mid):
 @portal_bp.route('/projects/<int:pid>/uploads', methods=['GET'])
 @client_auth
 def list_uploads(user, pid):
-    uploads = ClientUpload.query.filter_by(project_id=pid, account_id=user.account_id).order_by(ClientUpload.uploaded_at.desc()).all()
+    uploads = ClientUpload.query.filter_by(project_id=pid, client_id=user.client_id).order_by(ClientUpload.uploaded_at.desc()).all()
     return jsonify({'uploads': [u.to_dict() for u in uploads]})
 
 
@@ -232,7 +243,7 @@ def list_uploads(user, pid):
 @client_auth
 def upload_file(user, pid):
     project = Project.query.get_or_404(pid)
-    if project.account_id != user.account_id:
+    if project.client_id != user.client_id:
         return jsonify({'error': 'Access denied'}), 403
     if 'file' not in request.files:
         return jsonify({'error': 'No file'}), 400
@@ -241,11 +252,11 @@ def upload_file(user, pid):
     if not valid:
         return jsonify({'error': err}), 400
     ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
-    fname = safe_filename(f'client_{user.account_id}_{pid}', file.filename)
+    fname = safe_filename(f'client_{user.client_id}_{pid}', file.filename)
     path = os.path.join(UPLOAD_DIR, fname)
     file.save(path)
     upload = ClientUpload(
-        account_id=user.account_id, project_id=pid, uploaded_by=user.id,
+        account_id=user.account_id, client_id=user.client_id, project_id=pid, uploaded_by=user.id,
         file_name=file.filename, file_path=path, file_type=ext,
         file_size=os.path.getsize(path),
         category=request.form.get('category', 'Other'),
@@ -260,7 +271,7 @@ def upload_file(user, pid):
 @client_auth
 def delete_upload(user, uid):
     upload = ClientUpload.query.get_or_404(uid)
-    if upload.account_id != user.account_id:
+    if upload.client_id != user.client_id:
         return jsonify({'error': 'Access denied'}), 403
     if os.path.exists(upload.file_path):
         os.remove(upload.file_path)
@@ -278,7 +289,7 @@ os.makedirs(MEETING_REQ_UPLOAD_DIR, exist_ok=True)
 @client_auth
 def list_meeting_req_docs(user, mid):
     mr = MeetingRequest.query.get_or_404(mid)
-    if mr.account_id != user.account_id:
+    if mr.client_id != user.client_id:
         return jsonify({'error': 'Access denied'}), 403
     docs = MeetingRequestDocument.query.filter_by(meeting_request_id=mid).order_by(MeetingRequestDocument.uploaded_at.desc()).all()
     return jsonify({'documents': [d.to_dict() for d in docs]})
@@ -288,7 +299,7 @@ def list_meeting_req_docs(user, mid):
 @client_auth
 def upload_meeting_req_doc(user, mid):
     mr = MeetingRequest.query.get_or_404(mid)
-    if mr.account_id != user.account_id:
+    if mr.client_id != user.client_id:
         return jsonify({'error': 'Access denied'}), 403
     if 'file' not in request.files:
         return jsonify({'error': 'No file provided'}), 400
@@ -323,7 +334,7 @@ def download_meeting_req_doc(user, mid, did):
 @portal_bp.route('/queries', methods=['GET'])
 @client_auth
 def list_queries(user):
-    queries = FindingQuery.query.filter_by(account_id=user.account_id).order_by(FindingQuery.created_at.desc()).all()
+    queries = FindingQuery.query.filter_by(client_id=user.client_id).order_by(FindingQuery.created_at.desc()).all()
     return jsonify({'queries': [q.to_dict() for q in queries]})
 
 
@@ -340,6 +351,7 @@ def raise_query(user):
         return jsonify({'error': 'Invalid project_id or document_id'}), 400
     q = FindingQuery(
         account_id=user.account_id,
+        client_id=user.client_id,
         project_id=project_id,
         document_id=document_id,
         raised_by=user.id,
@@ -354,7 +366,7 @@ def raise_query(user):
 @portal_bp.route('/vulnerabilities', methods=['GET'])
 @client_auth
 def client_vulnerabilities(user):
-    query = Vulnerability.query.filter_by(account_id=user.account_id)
+    query = Vulnerability.query.filter_by(client_id=user.client_id)
     if pid := request.args.get('project_id'):
         query = query.filter_by(project_id=int(pid))
     vulns = query.order_by(Vulnerability.created_at.desc()).all()

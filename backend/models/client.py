@@ -47,6 +47,7 @@ class Client(db.Model):
     contact_email = db.Column(db.String(255))
     contact_phone = db.Column(db.String(20))
     industry = db.Column(db.String(100))
+    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), index=True)
     status = db.Column(db.String(20), default='PROSPECT')
     client_type = db.Column(db.String(20), default='main')
     parent_client_id = db.Column(db.Integer, db.ForeignKey('clients.id'))
@@ -81,6 +82,7 @@ class Client(db.Model):
     parent = db.relationship('Client', foreign_keys=[parent_client_id], remote_side='Client.id', backref='sub_clients')
     referring_client = db.relationship('Client', foreign_keys=[referring_client_id], remote_side='Client.id')
     account_owner = db.relationship('User', foreign_keys=[account_owner_id])
+    account = db.relationship('Account', foreign_keys=[account_id])
 
     contacts = db.relationship('ClientContact', backref='client', lazy='dynamic', cascade='all, delete-orphan')
     remarks = db.relationship('ClientRemark', backref='client', lazy='dynamic', cascade='all, delete-orphan', order_by='ClientRemark.created_at.desc()')
@@ -127,6 +129,8 @@ class Client(db.Model):
             'contact_email': self.contact_email,
             'contact_phone': self.contact_phone,
             'industry': self.industry,
+            'account_id': self.account_id,
+            'account_name': self.account.company_name if self.account else None,
             'status': self.status,
             'client_type': self.client_type,
             'parent_client_id': self.parent_client_id,
