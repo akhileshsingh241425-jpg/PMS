@@ -71,20 +71,6 @@ def has_permission(user_role, permission):
     return False
 
 
-def get_role_hierarchy():
-    return ['super_admin', 'admin', 'project_manager', 'team_member', 'client']
-
-
-def is_higher_role(role_a, role_b):
-    """Check if role_a is higher than role_b in hierarchy."""
-    hierarchy = get_role_hierarchy()
-    if role_a not in hierarchy:
-        return False
-    if role_b not in hierarchy:
-        return True
-    return hierarchy.index(role_a) < hierarchy.index(role_b)
-
-
 # ─── AUDIT LOG MODEL ──────────────────────────────────────────────────────
 class AuditLog(db.Model):
     __tablename__ = 'audit_logs'
@@ -114,46 +100,3 @@ class AuditLog(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
 
-
-# ─── NOTIFICATION PREFERENCES ─────────────────────────────────────────────
-NOTIFICATION_TYPES = {
-    'super_admin': [
-        'lead_created', 'lead_closed', 'approval_pending', 'approval_approved',
-        'project_created', 'project_closed', 'task_due', 'task_overdue',
-        'meeting_created', 'document_uploaded', 'remark_mention',
-        'support_ticket', 'invoice_generated', 'user_created',
-        'system_alert', 'backup_completed',
-    ],
-    'admin': [
-        'lead_created', 'lead_assigned', 'lead_closed',
-        'approval_pending', 'approval_approved', 'approval_rejected',
-        'meeting_reminder', 'opportunity_created',
-        'project_created', 'document_uploaded',
-        'remark_mention', 'invoice_generated',
-    ],
-    'project_manager': [
-        'project_assigned', 'task_assigned', 'task_due', 'task_overdue',
-        'task_approved', 'meeting_reminder', 'member_joined',
-        'document_uploaded', 'remark_mention',
-        'project_closure_requested', 'client_approved',
-    ],
-    'team_member': [
-        'task_assigned', 'task_due', 'task_overdue',
-        'meeting_reminder', 'remark_mention',
-        'document_uploaded', 'comment_added',
-    ],
-    'client': [
-        'project_created', 'document_uploaded_client',
-        'meeting_scheduled', 'invoice_generated',
-        'remark_reply', 'deliverable_ready',
-        'project_closure_request', 'support_response',
-    ],
-}
-
-
-def get_notification_types_for_role(role):
-    return NOTIFICATION_TYPES.get(role, [])
-
-
-def should_notify(role, notif_type):
-    return notif_type in get_notification_types_for_role(role)

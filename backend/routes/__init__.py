@@ -21,7 +21,6 @@ from .vulnerabilities import vuln_bp
 from .attendance import attendance_bp
 from .backlog import backlog_bp
 from .clients import client_bp
-from .vendors import vendor_bp
 from .email_integration import email_bp
 from .po_out import po_out_bp
 from .po_in import po_in_bp

@@ -43,16 +43,6 @@ def list_accounts(current_user):
     return jsonify({'accounts': accounts_data, 'pagination': {'page': result['page'], 'per_page': result['per_page'], 'total': result['total'], 'pages': result['pages']}})
 
 
-@account_bp.route('/summary', methods=['GET'])
-@login_required
-def accounts_summary(current_user):
-    total = Account.query.count()
-    active = Account.query.filter_by(status='Active').count()
-    main = Account.query.filter(Account.referred_by_account_id.is_(None)).count()
-    sub = Account.query.filter(Account.referred_by_account_id.isnot(None)).count()
-    return jsonify({'total': total, 'active': active, 'main': main, 'sub': sub})
-
-
 @account_bp.route('', methods=['POST'])
 @login_required
 def create_account(current_user):
@@ -219,58 +209,3 @@ def referral_timeline(current_user, aid):
     return jsonify({'timeline': timeline})
 
 
-@account_bp.route('/referral/reporting', methods=['GET'])
-@login_required
-def referral_reporting(current_user):
-    if current_user.role not in ('admin', 'manager'):
-        return jsonify({'error': 'Only admins and managers can view reports'}), 403
-    accounts = Account.query.all()
-    opps = Opportunity.query.all()
-    leads = Lead.query.filter(Lead.referral_opportunity_id.isnot(None)).all()
-    acc_map = {a.id: a for a in accounts}
-
-    referring_counts = {}
-    for opp in opps:
-        if opp.account_id:
-            referring_counts[opp.account_id] = referring_counts.get(opp.account_id, 0) + 1
-    top_referrers = sorted([{'account_id': aid, 'account_name': acc_map[aid].company_name if aid in acc_map else 'Unknown', 'count': cnt} for aid, cnt in referring_counts.items()], key=lambda x: x['count'], reverse=True)[:10]
-
-    ref_leads = Lead.query.filter(Lead.referral_opportunity_id.isnot(None)).all()
-    total_ref = len(opps)
-    converted_count = len(ref_leads)
-    won_count = sum(1 for l in ref_leads if l.stage == 'Converted to Account')
-    lost_count = sum(1 for o in opps if o.stage == 'Closed Lost')
-    conversion_rate = round(converted_count / total_ref * 100, 1) if total_ref else 0
-    total_revenue = sum(l.estimated_value or 0 for l in ref_leads if l.stage == 'Converted to Account')
-
-    monthly = {}
-    for o in opps:
-        if o.created_at:
-            key = o.created_at.strftime('%Y-%m')
-            monthly[key] = monthly.get(key, 0) + 1
-
-    by_exec = {}
-    for o in opps:
-        if o.assigned_to:
-            u = User.query.get(o.assigned_to)
-            name = u.full_name if u else 'Unknown'
-            if name not in by_exec:
-                by_exec[name] = {'total': 0, 'converted': 0, 'won': 0}
-            by_exec[name]['total'] += 1
-            if o.referral_lead_id:
-                by_exec[name]['converted'] += 1
-                l = Lead.query.get(o.referral_lead_id)
-                if l and l.stage == 'Converted to Account':
-                    by_exec[name]['won'] += 1
-
-    return jsonify({
-        'top_referrers': top_referrers,
-        'total_referrals': total_ref,
-        'converted_leads': converted_count,
-        'won_customers': won_count,
-        'lost_referrals': lost_count,
-        'conversion_rate': conversion_rate,
-        'total_revenue': total_revenue,
-        'monthly_trend': [{'month': k, 'count': v} for k, v in sorted(monthly.items())],
-        'performance_by_exec': [{'exec_name': k, **v} for k, v in sorted(by_exec.items(), key=lambda x: x[1]['total'], reverse=True)],
-    })
