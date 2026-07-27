@@ -1,7 +1,7 @@
 from datetime import datetime
 from flask import Blueprint, request, jsonify
 import os
-from models import db, Project, ProjectRemark, ProjectRemarkReaction, ProjectDocument, ProjectReport, ProjectTeam, ProjectPhase, Task, Meeting, Note, User, ProjectRisk, ProjectIssue, ProjectMilestone, ProjectInvoice, ProjectTimesheet, ProjectChangeRequest, ApprovalHistory, PlanSubmodule, PoPayment
+from models import db, Project, ProjectRemark, ProjectRemarkReaction, ProjectDocument, ProjectReport, ProjectTeam, ProjectPhase, Task, Meeting, Note, User, Notification, ProjectRisk, ProjectIssue, ProjectMilestone, ProjectInvoice, ProjectTimesheet, ProjectChangeRequest, ApprovalHistory, PlanSubmodule, PoPayment
 from models.client_portal import MeetingRequest, FindingQuery
 from middleware.auth import login_required, role_required
 from utils import validate_file, safe_filename, generate_id, paginate
@@ -17,6 +17,27 @@ PROJECT_STAGES = [
     'On Hold', 'Delayed', 'Cancelled', 'Escalated',
     'Awaiting Client Response', 'Awaiting Documents', 'Awaiting Payment',
 ]
+
+
+def _notify_client(proj, title, message):
+    """Send in-app notification + email to client on project event."""
+    client = proj.client
+    if not client or not client.contact_email:
+        return
+    try:
+        n = Notification(user_id=0, title=title, message=message,
+                         module_type='project', module_id=proj.id)
+        db.session.add(n)
+        db.session.flush()
+        from flask import current_app
+        from email_utils import send_notification_email
+        send_notification_email(
+            client.contact_email, client.contact_name or client.name,
+            title, message, 'project', proj.id,
+            current_app.config.get('FRONTEND_URL', 'https://93.127.194.235:9444')
+        )
+    except Exception:
+        pass
 
 
 @project_bp.route('', methods=['GET'])
@@ -218,6 +239,11 @@ def generate_plan(current_user, pid):
     proj.plan_generated = True
     if proj.stage == 'Created':
         proj.stage = 'Initiated'
+        _notify_client(proj,
+            f"Project Initiated: {proj.proj_id}",
+            f"Dear {proj.client.contact_name or 'Client'}, your project \"{proj.title}\" has been initiated. "
+            f"Project ID: {proj.proj_id}. We will begin work shortly."
+        )
     db.session.commit()
     phases = ProjectPhase.query.filter_by(project_id=pid).order_by(ProjectPhase.order).all()
     return jsonify({'message': 'Plan generated', 'phases': [p.to_dict() for p in phases]}), 201
