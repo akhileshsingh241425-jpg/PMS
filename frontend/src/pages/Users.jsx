@@ -33,7 +33,7 @@ const [showForm, setShowForm] = useState(false)
   const [allProjects, setAllProjects] = useState([])
   const [assignProject, setAssignProject] = useState({})
   const [assigning, setAssigning] = useState({})
-  const { hasRole } = useAuth()
+  const { hasRole, user } = useAuth()
   const toast = useToast()
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -83,7 +83,7 @@ const [showForm, setShowForm] = useState(false)
   const openCreate = ()=>{setEditUser(null);setError('');setUserType('employee');setForm({first_name:'',last_name:'',email:'',password:'',phone:'',designation:'',designation_other:'',department:'',department_other:'',manager_id:'',role_id:5,client_company_name:''});setShowForm(true)}
   const openEdit = (u)=>{setEditUser(u);setError('');setUserType(u.role==='client'?'client':'employee');setForm({first_name:u.first_name,last_name:u.last_name||'',email:u.email,password:'',phone:u.phone||'',designation:u.designation||'',designation_other:'',department:u.department||'',department_other:'',manager_id:u.manager_id||'',role_ids:u.role_ids||[],role_id:(u.role_ids&&u.role_ids[0])||5,client_company_name:u.client_company_name||''});setShowForm(true)}
 
-  const ROLE_CODES = {1:'super_admin',2:'project_manager',3:'team_leader',4:'sales',5:'employee',6:'client'}
+  const getRoleName = (rid) => roles.find(r => r.id === rid)?.name || 'employee'
 
   const save = async(e)=>{
     e.preventDefault();setSaving(true);setError('')
@@ -97,12 +97,15 @@ const [showForm, setShowForm] = useState(false)
       if(!p.password)delete p.password
       delete p.role_ids; delete p.role_id
       if(editUser){
+        if (editUser.id !== user?.id) {
+          p.role = userType==='client'?'client':getRoleName(form.role_id)
+        }
         await api.put(`/api/auth/users/${editUser.id}`,p)
       } else {
         if(userType==='client'){
           p.role='client'
         } else {
-          p.role=ROLE_CODES[form.role_id]||'employee'
+          p.role=getRoleName(form.role_id)
         }
         await api.post('/api/auth/users',p)
       }
