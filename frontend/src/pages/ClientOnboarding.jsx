@@ -73,15 +73,6 @@ export default function ClientOnboarding() {
     api.get('/api/masters/states').then(r => setAllStates(r.data?.states || [])).catch(() => {})
   }, [])
 
-  const [allStates, setAllStates] = useState([])
-
-  const filteredStates = form.country
-    ? allStates.filter(s => {
-        const c = countries.find(c => c.name === form.country)
-        return c ? s.country_id === c.id : true
-      })
-    : allStates
-
   const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }))
 
   const handleDupCheck = async (fields) => {
