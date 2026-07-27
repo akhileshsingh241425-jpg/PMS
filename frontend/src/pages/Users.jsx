@@ -97,7 +97,6 @@ const [showForm, setShowForm] = useState(false)
       if(!p.password)delete p.password
       delete p.role_ids; delete p.role_id
       if(editUser){
-        p.role = userType==='client'?'client':ROLE_CODES[form.role_id]||'employee'
         await api.put(`/api/auth/users/${editUser.id}`,p)
       } else {
         if(userType==='client'){
