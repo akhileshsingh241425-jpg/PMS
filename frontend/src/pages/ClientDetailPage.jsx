@@ -860,7 +860,7 @@ function WorkOrdersTab({ client, navigate, loadDetail }) {
       )}
 
       {showForm && (
-        <Modal title="New Work Order" onClose={() => setShowForm(false)} onSave={handleCreate} width={680}>
+        <Modal title="New Work Order" onClose={() => setShowForm(false)} onSave={handleCreate} width={680} saving={saving}>
           <ModalField label="Project ID"><input value={form.proj_id || ''} style={inputStyle} disabled /></ModalField>
           <ModalField label="Title" required><input value={form.title || ''} onChange={e => set('title', e.target.value)} style={inputStyle} placeholder="Work order title" /></ModalField>
           <ModalField label="PO Number" required><input value={form.po_number || ''} onChange={e => set('po_number', e.target.value)} style={inputStyle} placeholder="e.g. PO-2026-001" /></ModalField>
@@ -1383,7 +1383,7 @@ function NotFoundState() {
   )
 }
 
-function Modal({ title, children, onClose, onSave, width }) {
+function Modal({ title, children, onClose, onSave, width, saving }) {
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(15,23,42,0.4)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px 10px' }} onClick={onClose}>
       <div style={{ background: '#fff', borderRadius: 12, width: width || 500, maxWidth: '100%', maxHeight: '95vh', display: 'flex', flexDirection: 'column', boxShadow: C.shadowMd, fontFamily: C.font }} onClick={e => e.stopPropagation()}>
