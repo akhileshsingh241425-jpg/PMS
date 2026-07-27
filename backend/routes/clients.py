@@ -146,10 +146,10 @@ def create_client(current_user):
         location=data.get('location'),
         registered_address=data.get('registered_address'),
         state=data.get('state'), state_code=data.get('state_code'),
+        city=data.get('city'), country=data.get('country'),
         website=data.get('website'),
         contact_name=data.get('contact_name'), contact_email=data.get('contact_email'),
         contact_phone=data.get('contact_phone'), industry=data.get('industry'),
-        status=data.get('status', 'PROSPECT'),
         client_type=client_type,
         parent_client_id=parent_client_id,
         is_independent=is_independent,
@@ -286,7 +286,7 @@ def update_client(current_user, cid):
     client = Client.query.get_or_404(cid)
     data = request.get_json()
     allowed = ['name', 'business_type', 'client_category', 'vendor_category', 'gst_number',
-        'gst_unregistered', 'location', 'registered_address', 'state', 'state_code', 'website',
+        'gst_unregistered', 'location', 'registered_address', 'state', 'state_code', 'city', 'country', 'website',
         'contact_name', 'contact_email', 'contact_phone', 'industry', 'status', 'client_type',
         'parent_client_id', 'is_independent', 'pan_no', 'cin_number', 'msme_status',
         'payment_terms', 'credit_limit',

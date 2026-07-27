@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import db, SectorMaster, VendorCategoryMaster, AppSetting, DEFAULT_SETTINGS
+from models import db, SectorMaster, VendorCategoryMaster, AppSetting, DEFAULT_SETTINGS, CountryMaster, StateMaster
 from middleware.auth import login_required
 
 masters_bp = Blueprint('masters', __name__, url_prefix='/api/masters')
@@ -138,3 +138,106 @@ def update_setting(current_user, sid):
     setting.updated_by = current_user.id
     db.session.commit()
     return jsonify({'setting': setting.to_dict()})
+
+
+# ─── COUNTRIES ──────────────────────────────────────────────
+
+@masters_bp.route('/countries', methods=['GET'])
+@login_required
+def list_countries(current_user):
+    countries = CountryMaster.query.order_by(CountryMaster.name).all()
+    return jsonify({'countries': [c.to_dict() for c in countries]})
+
+
+@masters_bp.route('/countries', methods=['POST'])
+@login_required
+def create_country(current_user):
+    if not _require_admin(current_user):
+        return jsonify({'error': 'Admin access required'}), 403
+    data = request.get_json()
+    if not data or not data.get('name'):
+        return jsonify({'error': 'name required'}), 400
+    if CountryMaster.query.filter_by(name=data['name']).first():
+        return jsonify({'error': 'Country already exists'}), 400
+    country = CountryMaster(name=data['name'], code=data.get('code'), is_active=data.get('is_active', True))
+    db.session.add(country)
+    db.session.commit()
+    return jsonify({'country': country.to_dict()}), 201
+
+
+@masters_bp.route('/countries/<int:cid>', methods=['PUT'])
+@login_required
+def update_country(current_user, cid):
+    if not _require_admin(current_user):
+        return jsonify({'error': 'Admin access required'}), 403
+    country = CountryMaster.query.get_or_404(cid)
+    data = request.get_json()
+    if 'name' in data: country.name = data['name']
+    if 'code' in data: country.code = data['code']
+    if 'is_active' in data: country.is_active = data['is_active']
+    db.session.commit()
+    return jsonify({'country': country.to_dict()})
+
+
+@masters_bp.route('/countries/<int:cid>', methods=['DELETE'])
+@login_required
+def delete_country(current_user, cid):
+    if not _require_admin(current_user):
+        return jsonify({'error': 'Admin access required'}), 403
+    country = CountryMaster.query.get_or_404(cid)
+    db.session.delete(country)
+    db.session.commit()
+    return jsonify({'message': 'Deleted'})
+
+
+# ─── STATES ─────────────────────────────────────────────────
+
+@masters_bp.route('/states', methods=['GET'])
+@login_required
+def list_states(current_user):
+    q = StateMaster.query
+    country_id = request.args.get('country_id')
+    if country_id:
+        q = q.filter_by(country_id=int(country_id))
+    states = q.order_by(StateMaster.name).all()
+    return jsonify({'states': [s.to_dict() for s in states]})
+
+
+@masters_bp.route('/states', methods=['POST'])
+@login_required
+def create_state(current_user):
+    if not _require_admin(current_user):
+        return jsonify({'error': 'Admin access required'}), 403
+    data = request.get_json()
+    if not data or not data.get('name') or not data.get('country_id'):
+        return jsonify({'error': 'name and country_id required'}), 400
+    state = StateMaster(name=data['name'], code=data.get('code'), country_id=data['country_id'], is_active=data.get('is_active', True))
+    db.session.add(state)
+    db.session.commit()
+    return jsonify({'state': state.to_dict()}), 201
+
+
+@masters_bp.route('/states/<int:sid>', methods=['PUT'])
+@login_required
+def update_state(current_user, sid):
+    if not _require_admin(current_user):
+        return jsonify({'error': 'Admin access required'}), 403
+    state = StateMaster.query.get_or_404(sid)
+    data = request.get_json()
+    if 'name' in data: state.name = data['name']
+    if 'code' in data: state.code = data['code']
+    if 'country_id' in data: state.country_id = data['country_id']
+    if 'is_active' in data: state.is_active = data['is_active']
+    db.session.commit()
+    return jsonify({'state': state.to_dict()})
+
+
+@masters_bp.route('/states/<int:sid>', methods=['DELETE'])
+@login_required
+def delete_state(current_user, sid):
+    if not _require_admin(current_user):
+        return jsonify({'error': 'Admin access required'}), 403
+    state = StateMaster.query.get_or_404(sid)
+    db.session.delete(state)
+    db.session.commit()
+    return jsonify({'message': 'Deleted'})

@@ -24,6 +24,33 @@ class VendorCategoryMaster(db.Model):
         return {'id': self.id, 'name': self.name, 'is_active': self.is_active}
 
 
+class CountryMaster(db.Model):
+    __tablename__ = 'country_masters'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False, unique=True)
+    code = db.Column(db.String(5))
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {'id': self.id, 'name': self.name, 'code': self.code, 'is_active': self.is_active}
+
+
+class StateMaster(db.Model):
+    __tablename__ = 'state_masters'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    code = db.Column(db.String(10))
+    country_id = db.Column(db.Integer, db.ForeignKey('country_masters.id'), nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    country = db.relationship('CountryMaster', backref='states')
+
+    def to_dict(self):
+        return {'id': self.id, 'name': self.name, 'code': self.code, 'country_id': self.country_id, 'is_active': self.is_active}
+
+
 CLIENT_STATUSES = ['PROSPECT', 'ACTIVE', 'DORMANT', 'HOLD', 'BLACKLISTED', 'ARCHIVED']
 CLIENT_TYPES = ['main', 'sub', 'vendor', 'both']
 
@@ -42,6 +69,8 @@ class Client(db.Model):
     registered_address = db.Column(db.Text)
     state = db.Column(db.String(50))
     state_code = db.Column(db.String(10))
+    city = db.Column(db.String(100))
+    country = db.Column(db.String(100))
     website = db.Column(db.String(255))
     contact_name = db.Column(db.String(255))
     contact_email = db.Column(db.String(255))
@@ -123,6 +152,8 @@ class Client(db.Model):
             'registered_address': self.registered_address,
             'state': self.state,
             'state_code': self.state_code,
+            'city': self.city,
+            'country': self.country,
             'website': self.website,
             'contact_name': self.contact_name,
             'contact_email': self.contact_email,
