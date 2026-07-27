@@ -188,7 +188,7 @@ def create_user(current_user):
 def update_user(current_user, uid):
     user = User.query.get_or_404(uid)
     data = request.get_json()
-    for f in ['email', 'first_name', 'last_name', 'phone', 'designation', 'department', 'role', 'is_active', 'experience_years']:
+    for f in ['email', 'first_name', 'last_name', 'phone', 'designation', 'department', 'role', 'is_active', 'experience_years', 'emp_id', 'client_company_name']:
         if f in data:
             setattr(user, f, data[f])
     if 'manager_id' in data:
