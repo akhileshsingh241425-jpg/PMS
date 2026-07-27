@@ -172,11 +172,6 @@ export default function ClientDetailPage() {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 6, flexShrink: 0, position: 'relative' }} ref={actionsRef}>
-            {!isVendor && (
-              <Link to={`/po-in?client_id=${client.id}`} style={{ padding: '6px 12px', borderRadius: 6, border: 'none', background: '#059669', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: C.font, display: 'flex', alignItems: 'center', gap: 4, color: '#fff', textDecoration: 'none' }}>
-                <Plus className="w-3 h-3" /> New Work Order
-              </Link>
-            )}
             <button onClick={handleExport} disabled={exporting} style={{ padding: '6px 12px', borderRadius: 6, border: `1px solid ${C.border}`, background: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: C.font, display: 'flex', alignItems: 'center', gap: 4, color: C.text, opacity: exporting ? 0.6 : 1 }}>
               <Download className="w-3 h-3" /> {exporting ? 'Exporting...' : 'Export'}
             </button>
