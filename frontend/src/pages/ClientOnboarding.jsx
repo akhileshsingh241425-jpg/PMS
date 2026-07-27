@@ -50,15 +50,8 @@ export default function ClientOnboarding() {
   const [referringClients, setReferringClients] = useState([])
   const [users, setUsers] = useState([])
   const [countries, setCountries] = useState([])
-  const [allStates, setAllStates] = useState([])
+  const [states, setStates] = useState([])
   const [dupStatus, setDupStatus] = useState(null)
-
-  const filteredStates = form.country
-    ? allStates.filter(s => {
-        const c = countries.find(c => c.name === form.country)
-        return c ? s.country_id === c.id : true
-      })
-    : allStates
 
   useEffect(() => {
     api.get('/api/masters/sectors').then(r => setSectors(r.data?.sectors || [])).catch(() => {})
@@ -70,7 +63,7 @@ export default function ClientOnboarding() {
     }).catch(() => {})
     api.get('/api/users').then(r => setUsers(r.data?.users || [])).catch(() => {})
     api.get('/api/masters/countries').then(r => setCountries(r.data?.countries || [])).catch(() => {})
-    api.get('/api/masters/states').then(r => setAllStates(r.data?.states || [])).catch(() => {})
+    api.get('/api/masters/states').then(r => setStates(r.data?.states || [])).catch(() => {})
   }, [])
 
   const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }))
@@ -237,9 +230,9 @@ export default function ClientOnboarding() {
             </Field>
             <Field>
               <Label>State</Label>
-              <select value={form.state} onChange={e => set('state', e.target.value)} style={selectCls} disabled={!form.country}>
+              <select value={form.state} onChange={e => set('state', e.target.value)} style={selectCls}>
                 <option value="">-- Select State --</option>
-                {filteredStates.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                {states.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
               </select>
             </Field>
             <Field>
