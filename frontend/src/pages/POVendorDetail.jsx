@@ -266,7 +266,7 @@ export default function POVendorDetail() {
 
           {/* PDF & Mail actions */}
           <div style={{ flex: 1 }}></div>
-          {po.po_out_status === 'PO ISSUED' && (
+          {['DRAFT', 'PO ISSUED'].includes(po.po_out_status) && (
             <>
               <ActionBtn icon={Download} label="Save PDF" color="#059669" onClick={handleGeneratePDF} />
               <ActionBtn icon={Mail} label="Send Mail" color={C.blue} onClick={handleSendMail} />
