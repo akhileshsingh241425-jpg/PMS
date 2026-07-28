@@ -185,9 +185,11 @@ export default function App() {
                 <Route path="face-register" element={<FaceRegisterPage />} />
                 <Route index element={<PMDashboard />} />
                 <Route path="projects" element={<PMProjects />} />
+                <Route path="projects/:id" element={<ProjectsDetailPage />} />
                 <Route path="tasks" element={<PMTasks />} />
                 <Route path="team" element={<PMTeam />} />
                 <Route path="meetings" element={<PMMeetings />} />
+                <Route path="meeting-detail" element={<MeetingDetailPage />} />
                 <Route path="approvals" element={<PMApprovalQueue />} />
                 <Route path="reports" element={<PMReports />} />
                 <Route path="chat" element={<ChatPage />} />

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import { Info, ClipboardList, MessageSquare, Paperclip, Users, Search, Bell } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../contexts/ToastContext'
@@ -115,6 +115,8 @@ export default function ProjectsDetailPage() {
   const { user, hasRole } = useAuth()
   const toast = useToast()
   const navigate = useNavigate()
+  const location = useLocation()
+  const isPmView = location.pathname.startsWith('/pm/')
 
   const openBlob = async (url) => {
     try { const r = await api.get(url.replace('/api/', ''), { responseType: 'blob' }); const u = URL.createObjectURL(r.data); window.open(u, '_blank'); setTimeout(() => URL.revokeObjectURL(u), 60000) }
@@ -428,7 +430,7 @@ export default function ProjectsDetailPage() {
       `}</style>
       <div style={{ padding: '0 0 16px', width: '100%', maxWidth: '100%' }}>
         <Breadcrumb items={[
-          { label: 'Projects', to: '/projects' },
+          isPmView ? { label: 'PM Dashboard', to: '/pm' } : { label: 'Projects', to: '/projects' },
           { label: p.title || 'Project' },
         ]} />
 

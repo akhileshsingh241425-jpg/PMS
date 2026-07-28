@@ -133,7 +133,7 @@ export default function PMDashboard() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {data.upcoming_meetings.slice(0, 5).map(m => (
                 <div key={`${m._type}-${m.id}`} style={{ fontSize: 12, color: '#374151', display: 'flex', justifyContent: 'space-between', cursor: 'pointer' }}
-                  onClick={() => navigate(`/meetings?id=${m.id}&type=${m._type}`)}>
+                  onClick={() => navigate(`/pm/meeting-detail?id=${m.id}&type=${m._type}`)}>
                   <span style={{ fontWeight: 500 }}>{m.title || m.agenda}</span>
                   <span style={{ color: '#6B7280' }}>{formatDT(m.meeting_date || m.preferred_date)}</span>
                 </div>

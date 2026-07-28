@@ -63,7 +63,7 @@ export default function PMMeetings() {
             const isReq = m._type === 'request'
             const s = STATUS_STYLES[m.status] || { bg: '#F3F4F6', text: '#6B7280' }
             return (
-              <div key={`${m._type}-${m.id}`} onClick={() => navigate(`/meetings?id=${m.id}&type=${m._type}`)}
+              <div key={`${m._type}-${m.id}`} onClick={() => navigate(`/pm/meeting-detail?id=${m.id}&type=${m._type}`)}
                 style={{
                   background: '#fff', borderRadius: 10, border: '1px solid #E5E7EB', padding: '10px 14px',
                   cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14,

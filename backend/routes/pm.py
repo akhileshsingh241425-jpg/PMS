@@ -17,6 +17,12 @@ def _require_pm(user):
     return True
 
 
+# Real stage taxonomy (ProjectStageTemplate) has no "At Risk" stage — the
+# closest equivalents are "Escalated" / "On Hold". "Delayed" does exist.
+TERMINAL_STAGES = ('Closed', 'Cancelled')
+AT_RISK_STAGES = ('Escalated', 'On Hold')
+
+
 # ─── DASHBOARD ───
 @pm_bp.route('/dashboard', methods=['GET'])
 @login_required
@@ -30,7 +36,7 @@ def pm_dashboard(current_user):
 
     # Project health
     total_projects = len(projects)
-    active_projects = [p for p in projects if p.stage not in ('Closed', 'Cancelled', 'Delayed')]
+    active_projects = [p for p in projects if p.stage not in TERMINAL_STAGES]
     completed_projects = [p for p in projects if p.stage == 'Closed']
 
     # Tasks across all PM's projects
@@ -51,8 +57,9 @@ def pm_dashboard(current_user):
         for t in p.team:
             team_members.add(t.user_id)
 
-    # Pending approvals – tasks with status changes awaiting PM action
-    pending_approvals = [t for t in all_tasks if t.status == 'Pending']
+    # Pending approvals – tasks an employee has sent up for PM sign-off.
+    # Must match the status string the approval queue itself filters on.
+    pending_approvals = [t for t in all_tasks if t.status == 'SENT FOR APPROVAL']
 
     return jsonify({
         'stats': {
@@ -64,8 +71,8 @@ def pm_dashboard(current_user):
             'upcoming_meetings': len(upcoming_meetings) + len(upcoming_mr),
         },
         'project_health': {
-            'on_track': len([p for p in active_projects if p.stage not in ('At Risk', 'Delayed')]),
-            'at_risk': len([p for p in active_projects if p.stage == 'At Risk']),
+            'on_track': len([p for p in active_projects if p.stage not in AT_RISK_STAGES and p.stage != 'Delayed']),
+            'at_risk': len([p for p in active_projects if p.stage in AT_RISK_STAGES]),
             'delayed': len([p for p in active_projects if p.stage == 'Delayed']),
         },
         'overdue_tasks': [t.to_dict() for t in overdue_tasks[:10]],
@@ -84,7 +91,12 @@ def pm_projects(current_user):
     if not _require_pm(current_user):
         return jsonify({'error': 'Access denied'}), 403
     pids = _pm_project_ids(current_user)
-    projects = Project.query.filter(Project.id.in_(pids)).order_by(Project.target_date.asc().nullslast()).all() if pids else []
+    # nullslast() emits literal "NULLS LAST", which MySQL's parser rejects —
+    # (Project.target_date.is_(None), Project.target_date.asc()) is the
+    # portable equivalent: non-null rows (0) sort before null rows (1).
+    projects = Project.query.filter(Project.id.in_(pids)).order_by(
+        Project.target_date.is_(None), Project.target_date.asc()
+    ).all() if pids else []
     return jsonify({'projects': [p.to_dict() for p in projects]})
 
 
@@ -198,29 +210,46 @@ def pm_team(current_user):
     if not pids:
         return jsonify({'team': []})
 
-    # Get all team members across PM's projects
+    # One row per project membership (not deduped by user) so the frontend
+    # can add/remove a specific person from a specific project.
     team_records = ProjectTeam.query.filter(ProjectTeam.project_id.in_(pids)).all()
-    user_task_counts = {}
-    seen_users = {}
-    for tr in team_records:
-        uid = tr.user_id
-        if uid not in seen_users:
-            user_obj = User.query.get(uid)
-            if user_obj:
-                task_count = Task.query.filter_by(assigned_to=uid).filter(
-                    Task.project_id.in_(pids), Task.status != 'Completed'
-                ).count()
-                seen_users[uid] = {
-                    'id': uid,
-                    'full_name': user_obj.full_name,
-                    'designation': user_obj.designation,
-                    'role': user_obj.role,
-                    'role_in_project': tr.role_in_project,
-                    'project_id': tr.project_id,
-                    'active_tasks': task_count,
-                }
+    task_counts = dict(
+        db.session.query(Task.assigned_to, db.func.count(Task.id))
+        .filter(Task.project_id.in_(pids), Task.assigned_to.isnot(None), Task.status != 'Completed')
+        .group_by(Task.assigned_to).all()
+    )
+    projects_by_id = {p.id: p for p in Project.query.filter(Project.id.in_(pids)).all()}
 
-    return jsonify({'team': list(seen_users.values())})
+    team = []
+    for tr in team_records:
+        if not tr.user:
+            continue
+        proj = projects_by_id.get(tr.project_id)
+        team.append({
+            'team_id': tr.id,
+            'id': tr.user_id,
+            'full_name': tr.user.full_name,
+            'designation': tr.user.designation,
+            'role': tr.user.role,
+            'role_in_project': tr.role_in_project,
+            'project_id': tr.project_id,
+            'project_title': proj.title if proj else None,
+            'active_tasks': task_counts.get(tr.user_id, 0),
+        })
+    return jsonify({'team': team})
+
+
+@pm_bp.route('/employees', methods=['GET'])
+@login_required
+def pm_employees(current_user):
+    """Candidate employees a PM can add to one of their projects' teams."""
+    if not _require_pm(current_user):
+        return jsonify({'error': 'Access denied'}), 403
+    users = User.query.filter(User.role != 'client', User.is_active.is_(True)).order_by(User.first_name).all()
+    return jsonify({'employees': [
+        {'id': u.id, 'full_name': u.full_name, 'designation': u.designation, 'department': u.department}
+        for u in users
+    ]})
 
 
 # ─── MEETINGS ───
@@ -284,10 +313,11 @@ def pm_approvals(current_user):
     if not pids:
         return jsonify({'approvals': [], 'stats': {}})
 
+    # Task has no updated_at column — created_at is the only real timestamp.
     tasks = Task.query.filter(
         Task.project_id.in_(pids),
         Task.status == 'SENT FOR APPROVAL'
-    ).order_by(Task.updated_at.desc().nullslast(), Task.created_at.desc()).all()
+    ).order_by(Task.created_at.desc()).all()
 
     # Group by project for stats
     by_project = {}

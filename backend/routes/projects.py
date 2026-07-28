@@ -510,10 +510,16 @@ def get_team(current_user, pid):
     return jsonify({'team': [t.to_dict() for t in ProjectTeam.query.filter_by(project_id=pid).all()]})
 
 
+def _can_manage_team(user, project):
+    return user.role in ('admin', 'super_admin') or project.pm_id == user.id
+
+
 @project_bp.route('/<int:pid>/team', methods=['POST'])
 @login_required
 def add_team_member(current_user, pid):
-    Project.query.get_or_404(pid)
+    project = Project.query.get_or_404(pid)
+    if not _can_manage_team(current_user, project):
+        return jsonify({'error': 'Only this project\'s PM or an admin can manage its team'}), 403
     data = request.get_json()
     if not data.get('user_id'):
         return jsonify({'error': 'user_id required'}), 400
@@ -530,6 +536,8 @@ def add_team_member(current_user, pid):
 @login_required
 def remove_team_member(current_user, tid):
     member = ProjectTeam.query.get_or_404(tid)
+    if not _can_manage_team(current_user, member.project):
+        return jsonify({'error': 'Only this project\'s PM or an admin can manage its team'}), 403
     db.session.delete(member)
     db.session.commit()
     return jsonify({'message': 'Removed'})
