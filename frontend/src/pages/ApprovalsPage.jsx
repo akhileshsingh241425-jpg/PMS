@@ -71,6 +71,7 @@ export default function ApprovalsPage() {
   const [approvals, setApprovals] = useState([])
   const [history, setHistory] = useState([])
   const [allApprovals, setAllApprovals] = useState([])
+  const [allHistory, setAllHistory] = useState([])
   const [loading, setLoading] = useState(true)
   const [actionId, setActionId] = useState(null)
   const [remarks, setRemarks] = useState('')
@@ -79,22 +80,26 @@ export default function ApprovalsPage() {
 
   const isAdminUser = hasRole('admin', 'super_admin')
 
-  const loadData = () => {
-    setLoading(true)
-    const promises = [api.get('/api/approvals'), api.get('/api/approvals/history')]
-    if (isAdminUser) promises.push(api.get('/api/approvals/all'))
-    Promise.all(promises)
-      .then(([pendingRes, historyRes, allRes]) => {
+  const loadData = (silent) => {
+    if (!silent) setLoading(true)
+    const allPromises = [api.get('/api/approvals'), api.get('/api/approvals/history')]
+    if (isAdminUser) {
+      allPromises.push(api.get('/api/approvals/all'))
+      allPromises.push(api.get('/api/approvals/all/history'))
+    }
+    Promise.all(allPromises)
+      .then(([pendingRes, historyRes, allRes, allHistRes]) => {
         setApprovals(pendingRes.data.approvals || [])
         setHistory(historyRes.data.approvals || [])
         if (allRes) setAllApprovals(allRes.data.approvals || [])
+        if (allHistRes) setAllHistory(allHistRes.data.approvals || [])
       })
       .catch(() => addToast('Failed to load approvals', 'error'))
       .finally(() => setLoading(false))
   }
 
   useEffect(() => { loadData() }, [])
-  useEffect(() => { const iv = setInterval(loadData, 15000); return () => clearInterval(iv) }, [])
+  useEffect(() => { const iv = setInterval(() => loadData(true), 15000); return () => clearInterval(iv) }, [])
 
   const handleAction = async (id, action) => {
     if (action === 'reject' && !remarks.trim()) {
@@ -107,7 +112,7 @@ export default function ApprovalsPage() {
       addToast(`${action === 'approve' ? 'Approved' : 'Rejected'} successfully`, 'success')
       setActionId(null)
       setRemarks('')
-      loadData()
+      loadData(true)
     } catch (e) {
       addToast(e.response?.data?.error || 'Action failed', 'error')
     } finally {
@@ -126,10 +131,12 @@ export default function ApprovalsPage() {
   const pendingCount = approvals.length
   const historyCount = history.length
   const allCount = allApprovals.length
+  const allHistoryCount = allHistory.length
 
   const listData = tab === 'pending' ? approvals
     : tab === 'history' ? history
-    : allApprovals
+    : tab === 'all' ? allApprovals
+    : allHistory
 
   return (
     <div>
@@ -142,11 +149,14 @@ export default function ApprovalsPage() {
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-        {[
-          { key: 'pending', label: 'Pending', count: pendingCount, icon: Clock },
-          { key: 'history', label: 'History', count: historyCount, icon: History },
-          ...(isAdminUser ? [{ key: 'all', label: 'All Requests', count: allCount, icon: FileText }] : []),
-        ].map(t => {
+          {[
+            { key: 'pending', label: 'Pending', count: pendingCount, icon: Clock },
+            { key: 'history', label: 'History', count: historyCount, icon: History },
+            ...(isAdminUser ? [
+              { key: 'all', label: 'All Requests', count: allCount, icon: FileText },
+              { key: 'allHistory', label: 'All History', count: allHistoryCount, icon: History },
+            ] : []),
+          ].map(t => {
           const Icon = t.icon
           const active = tab === t.key
           return (
@@ -177,7 +187,7 @@ export default function ApprovalsPage() {
           <CheckCircle className="w-12 h-12" style={{ color: '#22C55E', margin: '0 auto 16px' }} />
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#0F172A' }}>All clear!</h3>
           <p style={{ margin: '4px 0 0', fontSize: 13, color: '#94A3B8' }}>
-            {tab === 'pending' ? 'No pending approvals' : 'No approval history'}
+            {tab === 'pending' ? 'No pending approvals' : tab === 'allHistory' ? 'No approval history' : 'No approval history'}
           </p>
         </div>
       ) : (

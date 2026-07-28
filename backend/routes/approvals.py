@@ -66,6 +66,17 @@ def all_approvals(current_user):
     ).order_by(ApprovalRequest.created_at.desc()).all()
     return jsonify({'approvals': [a.to_dict() for a in approvals]})
 
+@approval_bp.route('/all/history', methods=['GET'])
+@login_required
+def all_approvals_history(current_user):
+    """All approval history (admin/super_admin only)"""
+    if current_user.role not in ('admin', 'super_admin'):
+        return jsonify({'error': 'Not authorized'}), 403
+    approvals = ApprovalRequest.query.filter(
+        ApprovalRequest.status.in_(['approved', 'rejected', 'cancelled'])
+    ).order_by(ApprovalRequest.created_at.desc()).all()
+    return jsonify({'approvals': [a.to_dict() for a in approvals]})
+
 
 @approval_bp.route('/<int:aid>', methods=['GET'])
 @login_required
