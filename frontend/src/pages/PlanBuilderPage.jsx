@@ -154,7 +154,8 @@ export default function PlanBuilderPage() {
   async function handleSave() {
     setSaving(true)
     try {
-      await api.post(`/plan-builder/projects/${pid}/plan/save`, { phases: getPhasePayload() })
+      const res = await api.post(`/plan-builder/projects/${pid}/plan/save`, { phases: getPhasePayload() })
+      setPhases(res.data.phases.map(mapPhaseFromApi))
       toast.success('Plan saved as draft')
     } catch (e) {
       toast.error(e.response?.data?.error || 'Save failed')

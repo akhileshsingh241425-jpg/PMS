@@ -271,8 +271,7 @@ export default function LeadsDetailPage() {
   const toggleReaction = async (remarkId, emoji) => {
     try {
       const r = await api.post(`/api/leads/${id}/remarks/${remarkId}/react`, { emoji })
-      const updatedRemarks = data.remarks.map(rr => rr.id === remarkId ? r.data.remark : rr)
-      setData({ ...data, remarks: updatedRemarks })
+      setData(prev => ({ ...prev, remarks: prev.remarks.map(rr => rr.id === remarkId ? r.data.remark : rr) }))
     } catch (e) {}
   }
 
