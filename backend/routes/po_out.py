@@ -419,6 +419,19 @@ def cancel_po(current_user, pid):
     return jsonify({'message': 'PO cancelled', 'po': project.to_dict()})
 
 
+@po_out_bp.route('/<int:pid>', methods=['DELETE'])
+@login_required
+def delete_po_out(current_user, pid):
+    project = Project.query.filter_by(id=pid, direction='OUT').first_or_404()
+    if project.po_out_status != 'DRAFT':
+        return jsonify({'error': 'Only draft POs can be deleted'}), 400
+    POLineItem.query.filter_by(po_id=pid).delete()
+    POVersion.query.filter_by(po_id=pid).delete()
+    db.session.delete(project)
+    db.session.commit()
+    return jsonify({'message': 'PO deleted'})
+
+
 @po_out_bp.route('/<int:pid>/create-revision', methods=['POST'])
 @login_required
 def create_revision(current_user, pid):
@@ -481,7 +494,7 @@ def serve_pdf(current_user, pid):
 def send_po_mail(current_user, pid):
     project = Project.query.filter_by(id=pid, direction='OUT').first_or_404()
     data = request.get_json() or {}
-    vendor_email = data.get('vendor_email') or project.vendor_email
+    vendor_email = (data.get('vendor_email') or project.vendor_email or '').strip().lower()
     if not vendor_email:
         return jsonify({'error': 'Vendor email is required'}), 400
 
@@ -517,19 +530,19 @@ def send_po_mail(current_user, pid):
         </div>
     </div>'''
 
-    # send via Microsoft Graph API
+    # send via Microsoft Graph API (same as PO acknowledgment)
     try:
         from routes.email_integration import send_via_graph
         from models.email_integration import EmailAccount
         acct = EmailAccount.query.filter_by(is_active=True).first()
         if not acct:
-            return jsonify({'error': 'No connected email account. Connect Microsoft email first.'}), 500
-        ok, msg = send_via_graph(acct, vendor_email, 'accounts@infocus-it.com', subject, html, pdf_path=path if os.path.exists(path) else None)
+            return jsonify({'error': 'No connected email account'}), 500
+        ok, msg = send_via_graph(acct, vendor_email, None, subject, html, pdf_path=path if os.path.exists(path) else None)
         if ok:
             return jsonify({'message': f'Email sent to {vendor_email}'})
         return jsonify({'error': msg}), 500
     except Exception as e:
-        return jsonify({'error': f'Failed to send email: {str(e)}'}), 500
+        return jsonify({'error': f'Failed: {str(e)}'}), 500
 
 
 @po_out_bp.route('/report/tds-quarterly', methods=['GET'])

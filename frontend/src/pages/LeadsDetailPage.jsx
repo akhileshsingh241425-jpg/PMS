@@ -69,10 +69,10 @@ const STAGE_TABS = [
   { key: 'Negotiation & Commitment', label: 'Negotiation', icon: 'M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
   { key: 'Purchase Order', label: 'Purchase Order', icon: 'M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z' },
   { key: 'Lead Closed (Won)', label: 'Closed Won', icon: 'M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
-  { key: 'Converted to Account', label: 'Converted', icon: 'M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z' },
+  { key: 'Converted to Client', label: 'Converted', icon: 'M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z' },
 ]
 
-const TERMINAL_STAGES = ['Lead Closed (Won)','Lead Closed (Lost)','Converted to Account','Approval Rejected']
+const TERMINAL_STAGES = ['Lead Closed (Won)','Lead Closed (Lost)','Converted to Client','Approval Rejected']
 
 function StageIcon({ path, size = 16 }) {
   return <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d={path} /></svg>
@@ -164,7 +164,7 @@ export default function LeadsDetailPage() {
 
   const loadProposals = async () => {
     try { const r = await api.get(`/api/leads/${id}/proposals`); setProposals(r.data.proposals) }
-    catch (e) {}
+    catch (e) { toast('Failed to load proposals', 'error') }
   }
 
   const saveCompany = async () => {
@@ -240,7 +240,7 @@ export default function LeadsDetailPage() {
     try {
       await api.put(`/api/leads/${id}`, { stage })
       loadDetail()
-    } catch (e) {}
+    } catch (e) { toast(e.response?.data?.error || 'Failed to change stage', 'error') }
   }
 
   const closeLead = async (outcome) => {
@@ -272,7 +272,7 @@ export default function LeadsDetailPage() {
     try {
       const r = await api.post(`/api/leads/${id}/remarks/${remarkId}/react`, { emoji })
       setData(prev => ({ ...prev, remarks: prev.remarks.map(rr => rr.id === remarkId ? r.data.remark : rr) }))
-    } catch (e) {}
+    } catch (e) { toast('Failed to react', 'error') }
   }
 
   const [editRemark, setEditRemark] = useState(null)
@@ -298,12 +298,13 @@ export default function LeadsDetailPage() {
   const addActivity = async (e) => {
     e.preventDefault(); if (!activityForm.title.trim()) return
     try { await api.post(`/api/leads/${id}/activities`, { ...activityForm, activity_date: activityForm.activity_date || undefined }); setActivityForm({ activity_type: 'Meeting', title: '', description: '', activity_date: '' }); loadDetail() }
-    catch (e) {}
+    catch (e) { toast(e.response?.data?.error || 'Failed to add activity', 'error') }
   }
 
   const addNote = async (e) => {
     e.preventDefault(); if (!noteText.trim()) return
-    try { await api.post(`/api/leads/${id}/notes`, { content: noteText }); setNoteText(''); loadDetail() } catch (e) {}
+    try { await api.post(`/api/leads/${id}/notes`, { content: noteText }); setNoteText(''); loadDetail() }
+    catch (e) { toast(e.response?.data?.error || 'Failed to add note', 'error') }
   }
 
   const openActivityEditor = (a) => { setEditActivity(a); setActivityDesc(a.description || ''); setViewActivity(null); setTimeout(() => { if (editorRef.current) editorRef.current.innerHTML = a.description || '' }, 50) }
@@ -330,13 +331,13 @@ export default function LeadsDetailPage() {
   const handleUpload = async (e) => {
     const file = e.target.files?.[0]; if (!file) return; setUploading(true)
     try { const fd = new FormData(); fd.append('file', file); await api.post(`/api/leads/${id}/documents`, fd); loadDetail() }
-    catch (e) {} finally { setUploading(false) }
+    catch (e) { toast(e.response?.data?.error || 'Upload failed', 'error') } finally { setUploading(false) }
   }
 
   const handleDrop = async (e) => {
     e.preventDefault(); const file = e.dataTransfer.files?.[0]; if (!file) return; setUploading(true)
     try { const fd = new FormData(); fd.append('file', file); await api.post(`/api/leads/${id}/documents`, fd); loadDetail() }
-    catch (e) {} finally { setUploading(false) }
+    catch (e) { toast(e.response?.data?.error || 'Upload failed', 'error') } finally { setUploading(false) }
   }
 
   const formatDate = (d) => { if (!d) return '—'; return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) }
@@ -353,7 +354,7 @@ export default function LeadsDetailPage() {
 
   let { lead: l, remarks, activities, documents, notes, audit_logs } = data
   const isClosedOrConverted = TERMINAL_STAGES.includes(l.stage)
-  const winProb = l.stage === 'Lead Closed (Won)' || l.stage === 'Converted to Account' ? 100 : l.stage === 'Prospecting' ? 10 : l.stage === 'Lead Qualification' ? 20 : l.stage === 'Demo or Meeting' ? 40 : l.stage === 'Proposal' ? 60 : l.stage === 'Negotiation & Commitment' ? 75 : l.stage === 'Purchase Order' ? 90 : 0
+  const winProb = l.stage === 'Lead Closed (Won)' || l.stage === 'Converted to Client' ? 100 : l.stage === 'Prospecting' ? 10 : l.stage === 'Lead Qualification' ? 20 : l.stage === 'Demo or Meeting' ? 40 : l.stage === 'Proposal' ? 60 : l.stage === 'Negotiation & Commitment' ? 75 : l.stage === 'Purchase Order' ? 90 : 0
   const totalDocuments = (documents || []).length
 
   const timeline = [
@@ -363,7 +364,7 @@ export default function LeadsDetailPage() {
 
   return (
     <div style={{ background: C.bg, minHeight: '100vh', fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif", color: C.text, fontSize: 14 }}>
-      <Breadcrumb items={[ { label: 'Leads', to: '/leads' }, { label: lead?.name || 'Lead' } ]} />
+      <Breadcrumb items={[ { label: 'Leads', to: '/leads' }, { label: l?.company_name || 'Lead' } ]} />
       <div style={{ padding: '0 0 20px', width: '100%', maxWidth: 'none' }}>
         {/* ═══ HEADER CARD ═══ */}
         <div style={{ background: C.card, borderRadius: 14, border: `1px solid ${C.border}`, padding: '12px 16px', marginBottom: 10 }}>
@@ -388,22 +389,28 @@ export default function LeadsDetailPage() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
-              {l.client_name && isOpp() && (
+              {l.referring_client_name && isOpp() && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, background: '#FEF3C7', fontSize: 12, fontWeight: 600, color: '#92400E' }}>
-                  🤝 Referred by: {l.client_name}
+                  🤝 Referred by: {l.referring_client_name}
                 </div>
               )}
               <ActionBtn icon={<EditIcon />} label="Edit" onClick={() => setShowEdit(true)} primary />
-              {isOpp() && (l.stage === 'Lead Closed (Won)' || l.stage === 'Closed Won') && !l.client_id && (
+              {isOpp() && (l.stage === 'Lead Closed (Won)' || l.stage === 'Closed Won') && !l.client_id && l.approval_status !== 'pending_approval' && (
                 <ActionBtn icon={<BriefcaseIcon />} label="Convert to Client" onClick={openConvertModal} success />
               )}
-              {!isOpp() && (l.stage === 'Lead Closed (Won)' || l.stage === 'Purchase Order') && !l.client_id && (
+              {!isOpp() && (l.stage === 'Lead Closed (Won)' || l.stage === 'Purchase Order') && !l.client_id && l.approval_status !== 'pending_approval' && (
                 <ActionBtn icon={<BriefcaseIcon />} label="Convert to Client" onClick={openConvertModal} success />
               )}
               {l.stage === 'Lead Closed (Won)' && l.approval_status !== 'pending_approval' && l.approval_status !== 'approved' && !l.client_id && (
                 <ActionBtn label="Request Approval" onClick={requestApproval} />
               )}
-              {l.stage === 'Converted to Account' && (
+              {l.approval_status === 'pending_approval' && (
+                <>
+                  <ActionBtn icon={<BriefcaseIcon />} label="Approve" onClick={approveLead} success />
+                  <ActionBtn label="Reject" onClick={() => setCloseOutcome('reject')} danger />
+                </>
+              )}
+              {l.stage === 'Converted to Client' && (
                 <ActionBtn icon={<BriefcaseIcon />} label="Create Project" onClick={() => { setProjectForm({ title: l.subject || '', description: l.description || '', service_type: l.service_type || '', pm_id: l.assigned_to || '', total_value: l.estimated_value || '', start_date: new Date().toISOString().slice(0, 10), target_date: '' }); setShowProjectForm(true) }} primary />
               )}
               {isClosedOrConverted && user?.role === 'admin' && !isOpp() && (
@@ -426,7 +433,7 @@ export default function LeadsDetailPage() {
           <KPICard icon={<CalendarIcon />} bg="#FFF7ED" color="#D97706" label="Days Open" value={`${daysOpen(l.created_at)}d`} />
           <KPICard icon={<CalendarIcon />} bg="#EEF2FF" color="#4F46E5" label="Activities" value={timeline.length} />
           <KPICard icon={<PaperclipIcon />} bg="#FDF2F8" color="#DB2777" label="Documents" value={totalDocuments} />
-          <KPICard icon={<CheckCircleIcon />} bg="#ECFDF5" color="#059669" label="Stage" value={l.stage === 'Converted to Account' ? 'Converted' : l.stage} />
+          <KPICard icon={<CheckCircleIcon />} bg="#ECFDF5" color="#059669" label="Stage" value={l.stage === 'Converted to Client' ? 'Converted' : l.stage} />
         </div>
 
         {/* ═══ LEAD SOURCE CARD (for referred leads) ═══ */}

@@ -43,8 +43,8 @@ def _notify_client(proj, title, message):
 @project_bp.route('', methods=['GET'])
 @login_required
 def list_projects(current_user):
-    query = Project.query.filter(Project.direction == 'IN', Project.po_in_status.is_(None))
-    if current_user.role != 'admin':
+    query = Project.query.filter(Project.direction == 'IN')
+    if current_user.role not in ('admin', 'super_admin'):
         user_project_ids = [t.project_id for t in ProjectTeam.query.filter_by(user_id=current_user.id).all()]
         query = query.filter(db.or_(
             Project.pm_id == current_user.id,
@@ -510,10 +510,16 @@ def get_team(current_user, pid):
     return jsonify({'team': [t.to_dict() for t in ProjectTeam.query.filter_by(project_id=pid).all()]})
 
 
+def _can_manage_team(user, project):
+    return user.role in ('admin', 'super_admin') or project.pm_id == user.id
+
+
 @project_bp.route('/<int:pid>/team', methods=['POST'])
 @login_required
 def add_team_member(current_user, pid):
-    Project.query.get_or_404(pid)
+    project = Project.query.get_or_404(pid)
+    if not _can_manage_team(current_user, project):
+        return jsonify({'error': 'Only this project\'s PM or an admin can manage its team'}), 403
     data = request.get_json()
     if not data.get('user_id'):
         return jsonify({'error': 'user_id required'}), 400
@@ -530,6 +536,8 @@ def add_team_member(current_user, pid):
 @login_required
 def remove_team_member(current_user, tid):
     member = ProjectTeam.query.get_or_404(tid)
+    if not _can_manage_team(current_user, member.project):
+        return jsonify({'error': 'Only this project\'s PM or an admin can manage its team'}), 403
     db.session.delete(member)
     db.session.commit()
     return jsonify({'message': 'Removed'})

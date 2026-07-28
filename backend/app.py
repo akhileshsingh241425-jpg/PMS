@@ -43,10 +43,11 @@ def create_app():
         app.logger.error('500 error: %s', traceback.format_exc())
         return jsonify({'error': 'Internal server error'}), 500
 
-    from routes import auth_bp, project_bp, activity_bp, portal_bp, queries_bp, dash_bp, meeting_req_bp, notif_bp, leads_bp, enterprise_bp, admin_bp, search_bp, team_bp, me_bp, employee_bp, pm_bp, vuln_bp, attendance_bp, backlog_bp, client_bp, email_bp, po_out_bp, po_in_bp, myday_bp, masters_bp, approval_bp
+    from routes import auth_bp, project_bp, activity_bp, portal_bp, queries_bp, dash_bp, meeting_req_bp, notif_bp, leads_bp, enterprise_bp, admin_bp, search_bp, team_bp, me_bp, employee_bp, pm_bp, vuln_bp, attendance_bp, backlog_bp, client_bp, email_bp, po_out_bp, po_in_bp, myday_bp, masters_bp, approval_bp, hr_bp
     from routes.plan_builder import plan_bp
     from routes.push_routes import push_bp
     from routes.chat import chat_bp
+    from routes.work_log import work_log_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(project_bp)
     app.register_blueprint(activity_bp)
@@ -76,6 +77,8 @@ def create_app():
     app.register_blueprint(masters_bp)
     app.register_blueprint(plan_bp)
     app.register_blueprint(approval_bp)
+    app.register_blueprint(work_log_bp)
+    app.register_blueprint(hr_bp)
 
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')

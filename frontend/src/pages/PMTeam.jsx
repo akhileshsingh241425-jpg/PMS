@@ -1,24 +1,184 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import api from '../services/api'
-import { Users, Search } from 'lucide-react'
+import { useToast } from '../contexts/ToastContext'
+import { Users, Search, Plus, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import Breadcrumb from '../components/Breadcrumb'
 
+const STATUS_STYLE = {
+  Present: { bg: '#ECFDF5', text: '#065F46' },
+  Working: { bg: '#EFF6FF', text: '#1E40AF' },
+  'On Leave': { bg: '#FFFBEB', text: '#92400E' },
+  Absent: { bg: '#FEF2F2', text: '#991B1B' },
+  Upcoming: { bg: '#F1F5F9', text: '#64748B' },
+}
+const todayStr = () => new Date().toISOString().slice(0, 10)
+const fmtTime = iso => iso ? new Date(iso).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '—'
+
+function TodayStatusPanel() {
+  const toast = useToast()
+  const [date, setDate] = useState(todayStr())
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  const load = useCallback(() => {
+    setLoading(true)
+    api.get('/api/pm/team/today-status', { params: { date } })
+      .then(r => setData(r.data))
+      .catch(() => toast('Failed to load team status', 'error'))
+      .finally(() => setLoading(false))
+  }, [date])
+  useEffect(() => { load() }, [load])
+
+  const shift = delta => { const d = new Date(date); d.setDate(d.getDate() + delta); setDate(d.toISOString().slice(0, 10)) }
+
+  if (!loading && (!data || data.members.length === 0)) return null
+
+  return (
+    <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: '14px', marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', margin: 0 }}>Today's Activity</h3>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <button onClick={() => shift(-1)} style={{ border: '1px solid #E5E7EB', borderRadius: 6, background: '#fff', cursor: 'pointer', padding: 5 }}><ChevronLeft className="w-3.5 h-3.5" /></button>
+          <input type="date" value={date} onChange={e => setDate(e.target.value)} style={{ border: '1px solid #E5E7EB', borderRadius: 6, padding: '5px 8px', fontSize: 12 }} />
+          <button onClick={() => shift(1)} disabled={date >= todayStr()} style={{ border: '1px solid #E5E7EB', borderRadius: 6, background: '#fff', cursor: date >= todayStr() ? 'not-allowed' : 'pointer', padding: 5, opacity: date >= todayStr() ? 0.4 : 1 }}><ChevronRight className="w-3.5 h-3.5" /></button>
+          {date !== todayStr() && <button onClick={() => setDate(todayStr())} style={{ fontSize: 11.5, color: '#5B3DF5', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Today</button>}
+        </div>
+      </div>
+      {loading ? (
+        <p style={{ fontSize: 12, color: '#9CA3AF', textAlign: 'center', padding: 10, margin: 0 }}>Loading…</p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {data.members.map(m => {
+            const s = STATUS_STYLE[m.status] || STATUS_STYLE.Absent
+            return (
+              <div key={m.user_id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 4px', borderBottom: '1px solid #F3F4F6' }}>
+                <div style={{ fontSize: 12.5, fontWeight: 600, color: '#0F172A' }}>{m.name}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  {(m.status === 'Present' || m.status === 'Working') && (
+                    <span style={{ fontSize: 11, color: '#6B7280' }}>{fmtTime(m.clock_in)}{m.clock_out ? ` – ${fmtTime(m.clock_out)}` : ''}</span>
+                  )}
+                  {(m.status === 'Present' || m.status === 'Working') && (
+                    m.work_log_submitted
+                      ? <span style={{ fontSize: 10.5, color: '#059669', fontWeight: 600 }}>✓ Logged</span>
+                      : <span style={{ fontSize: 10.5, color: '#B45309', fontWeight: 600 }}>No log yet</span>
+                  )}
+                  <span style={{ fontSize: 10.5, fontWeight: 700, padding: '2.5px 9px', borderRadius: 10, background: s.bg, color: s.text }}>
+                    {m.status}{m.status === 'On Leave' && m.leave_type ? ` · ${m.leave_type}` : ''}
+                  </span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function AddMemberModal({ projects, employees, existingByProject, onClose, onAdded }) {
+  const toast = useToast()
+  const [projectId, setProjectId] = useState(projects[0]?.id || '')
+  const [userId, setUserId] = useState('')
+  const [role, setRole] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const takenIds = new Set((existingByProject[projectId] || []).map(m => m.id))
+  const candidates = employees.filter(e => !takenIds.has(e.id))
+
+  const submit = async e => {
+    e.preventDefault()
+    if (!projectId || !userId) return
+    setSaving(true)
+    try {
+      await api.post(`/api/projects/${projectId}/team`, { user_id: parseInt(userId), role_in_project: role || undefined })
+      toast('Member added')
+      onAdded()
+    } catch (err) { toast(err.response?.data?.error || 'Failed to add member', 'error') }
+    finally { setSaving(false) }
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 12, padding: 20, width: 360 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: '#0F172A' }}>Add team member</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF' }}><X className="w-4 h-4" /></button>
+        </div>
+        <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Project</label>
+            <select value={projectId} onChange={e => { setProjectId(e.target.value); setUserId('') }} required
+              style={{ width: '100%', marginTop: 4, padding: '8px 10px', border: '1px solid #D1D5DB', borderRadius: 7, fontSize: 13 }}>
+              {projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Employee</label>
+            <select value={userId} onChange={e => setUserId(e.target.value)} required
+              style={{ width: '100%', marginTop: 4, padding: '8px 10px', border: '1px solid #D1D5DB', borderRadius: 7, fontSize: 13 }}>
+              <option value="">-- Select --</option>
+              {candidates.map(u => <option key={u.id} value={u.id}>{u.full_name} {u.designation ? `(${u.designation})` : ''}</option>)}
+            </select>
+            {projectId && candidates.length === 0 && <p style={{ fontSize: 11, color: '#9CA3AF', margin: '4px 0 0' }}>Everyone active is already on this project's team.</p>}
+          </div>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Role on this project (optional)</label>
+            <input value={role} onChange={e => setRole(e.target.value)} placeholder="e.g. Lead Auditor"
+              style={{ width: '100%', marginTop: 4, padding: '8px 10px', border: '1px solid #D1D5DB', borderRadius: 7, fontSize: 13, boxSizing: 'border-box' }} />
+          </div>
+          <button disabled={saving || !userId} style={{ marginTop: 4, padding: '9px 14px', border: 'none', borderRadius: 8, background: '#5B3DF5', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: (saving || !userId) ? 0.6 : 1 }}>
+            {saving ? 'Adding…' : 'Add to project'}
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 export default function PMTeam() {
+  const toast = useToast()
   const [team, setTeam] = useState([])
+  const [projects, setProjects] = useState([])
+  const [employees, setEmployees] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [showAdd, setShowAdd] = useState(false)
 
-  useEffect(() => {
-    api.get('/api/pm/team')
-      .then(r => setTeam(r.data.team || []))
-      .catch(() => {})
-      .finally(() => setLoading(false))
+  const load = useCallback(() => {
+    Promise.all([
+      api.get('/api/pm/team'),
+      api.get('/api/pm/projects'),
+      api.get('/api/pm/employees'),
+    ]).then(([t, p, e]) => {
+      setTeam(t.data.team || [])
+      setProjects(p.data.projects || [])
+      setEmployees(e.data.employees || [])
+    }).catch(() => toast('Failed to load team', 'error')).finally(() => setLoading(false))
   }, [])
+  useEffect(() => { load() }, [load])
 
-  const filtered = search ? team.filter(m =>
+  const removeMember = async (teamId, name, projectTitle) => {
+    if (!window.confirm(`Remove ${name} from "${projectTitle}"?`)) return
+    try { await api.delete(`/api/projects/team/${teamId}`); toast('Removed'); load() }
+    catch (e) { toast(e.response?.data?.error || 'Failed to remove', 'error') }
+  }
+
+  // Group per-project membership rows by user for display.
+  const byUser = {}
+  for (const m of team) {
+    if (!byUser[m.id]) byUser[m.id] = { id: m.id, full_name: m.full_name, designation: m.designation, active_tasks: m.active_tasks, memberships: [] }
+    byUser[m.id].memberships.push(m)
+  }
+  const members = Object.values(byUser)
+  const filtered = search ? members.filter(m =>
     m.full_name?.toLowerCase().includes(search.toLowerCase()) ||
     m.designation?.toLowerCase().includes(search.toLowerCase())
-  ) : team
+  ) : members
+
+  const existingByProject = {}
+  for (const m of team) {
+    (existingByProject[m.project_id] ||= []).push({ id: m.id })
+  }
 
   if (loading) return (
     <div style={{ textAlign: 'center', padding: '40px' }}>
@@ -26,79 +186,92 @@ export default function PMTeam() {
     </div>
   )
 
-  if (team.length === 0) return (
-    <div style={{ textAlign: 'center', padding: '40px', color: '#9CA3AF' }}>
-      <Users className="w-16 h-16" style={{ margin: '0 auto 12px', color: '#D1D5DB' }} />
-      <p style={{ fontSize: 15, margin: 0 }}>No team members assigned yet</p>
-    </div>
-  )
-
   return (
     <div>
       <Breadcrumb items={[{ label: 'PM Dashboard', to: '/pm' }, { label: 'Team' }]} />
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+      <TodayStatusPanel />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0F172A', margin: 0 }}>Team ({filtered.length})</h1>
-        <div style={{ position: 'relative' }}>
-          <Search className="w-4 h-4" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search members..."
-            style={{ padding: '8px 10px 8px 32px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13, outline: 'none', width: 200 }} />
+        <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ position: 'relative' }}>
+            <Search className="w-4 h-4" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search members..."
+              style={{ padding: '8px 10px 8px 32px', borderRadius: 8, border: '1px solid #D1D5DB', fontSize: 13, outline: 'none', width: 200 }} />
+          </div>
+          {projects.length > 0 && (
+            <button onClick={() => setShowAdd(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', border: 'none', borderRadius: 8, background: '#5B3DF5', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+              <Plus className="w-3.5 h-3.5" /> Add Member
+            </button>
+          )}
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
-        {filtered.map(m => {
-          const overloaded = m.active_tasks > 8
-          const balanced = m.active_tasks >= 3 && m.active_tasks <= 8
-          const hasCapacity = m.active_tasks < 3
-          return (
-            <div key={m.id} style={{
-              background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: '12px',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
-                <div style={{
-                  width: 44, height: 44, borderRadius: '50%',
-                  background: overloaded ? '#FEE2E2' : balanced ? '#FEF3C7' : '#F0FDF4',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 16, fontWeight: 700, color: overloaded ? '#DC2626' : balanced ? '#D97706' : '#059669',
-                }}>
-                  {m.full_name?.[0] || '?'}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: '#0F172A' }}>{m.full_name}</div>
-                  <div style={{ fontSize: 12, color: '#6B7280' }}>{m.designation || m.role_in_project || m.role || 'Team Member'}</div>
-                </div>
-              </div>
-
-              <div style={{ fontSize: 12, color: '#374151', marginBottom: 8 }}>
-                <strong>Active Tasks:</strong> {m.active_tasks}
-              </div>
-
-              {/* Workload indicator */}
-              <div style={{ marginBottom: 8 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#6B7280', marginBottom: 4 }}>
-                  <span>Workload</span>
-                  <span style={{
-                    color: overloaded ? '#DC2626' : balanced ? '#D97706' : '#059669',
-                    fontWeight: 600,
-                  }}>
-                    {overloaded ? 'Overloaded' : balanced ? 'Balanced' : 'Has Capacity'}
-                  </span>
-                </div>
-                <div style={{ width: '100%', height: 6, background: '#E5E7EB', borderRadius: 3 }}>
+      {members.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '40px', color: '#9CA3AF' }}>
+          <Users className="w-16 h-16" style={{ margin: '0 auto 12px', color: '#D1D5DB' }} />
+          <p style={{ fontSize: 15, margin: 0 }}>No team members assigned yet</p>
+          {projects.length > 0 && <button onClick={() => setShowAdd(true)} style={{ marginTop: 10, color: '#5B3DF5', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>+ Add your first team member</button>}
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
+          {filtered.map(m => {
+            const overloaded = m.active_tasks > 8
+            const balanced = m.active_tasks >= 3 && m.active_tasks <= 8
+            return (
+              <div key={m.id} style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
                   <div style={{
-                    width: `${Math.min((m.active_tasks / 12) * 100, 100)}%`,
-                    height: 6, borderRadius: 3,
-                    background: overloaded ? '#DC2626' : balanced ? '#D97706' : '#10B981',
-                    transition: 'width 0.3s',
-                  }} />
+                    width: 44, height: 44, borderRadius: '50%',
+                    background: overloaded ? '#FEE2E2' : balanced ? '#FEF3C7' : '#F0FDF4',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 16, fontWeight: 700, color: overloaded ? '#DC2626' : balanced ? '#D97706' : '#059669',
+                  }}>
+                    {m.full_name?.[0] || '?'}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: '#0F172A' }}>{m.full_name}</div>
+                    <div style={{ fontSize: 12, color: '#6B7280' }}>{m.designation || 'Team Member'}</div>
+                  </div>
+                </div>
+
+                <div style={{ fontSize: 12, color: '#374151', marginBottom: 8 }}>
+                  <strong>Active Tasks:</strong> {m.active_tasks}
+                </div>
+
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#6B7280', marginBottom: 4 }}>
+                    <span>Workload</span>
+                    <span style={{ color: overloaded ? '#DC2626' : balanced ? '#D97706' : '#059669', fontWeight: 600 }}>
+                      {overloaded ? 'Overloaded' : balanced ? 'Balanced' : 'Has Capacity'}
+                    </span>
+                  </div>
+                  <div style={{ width: '100%', height: 6, background: '#E5E7EB', borderRadius: 3 }}>
+                    <div style={{ width: `${Math.min((m.active_tasks / 12) * 100, 100)}%`, height: 6, borderRadius: 3, background: overloaded ? '#DC2626' : balanced ? '#D97706' : '#10B981', transition: 'width 0.3s' }} />
+                  </div>
+                </div>
+
+                <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 6 }}>Projects</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {m.memberships.map(ms => (
+                    <div key={ms.team_id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#F8FAFC', borderRadius: 6, padding: '4px 8px' }}>
+                      <span style={{ fontSize: 11.5, color: '#374151', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {ms.project_title}{ms.role_in_project ? ` · ${ms.role_in_project}` : ''}
+                      </span>
+                      <button onClick={() => removeMember(ms.team_id, m.full_name, ms.project_title)} title="Remove from this project"
+                        style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#9CA3AF', fontSize: 14, padding: '0 2px', flexShrink: 0 }}>×</button>
+                    </div>
+                  ))}
                 </div>
               </div>
+            )
+          })}
+        </div>
+      )}
 
-              <div style={{ fontSize: 11, color: '#9CA3AF' }}>Role: {m.role_in_project || 'Member'}</div>
-            </div>
-          )
-        })}
-      </div>
+      {showAdd && (
+        <AddMemberModal projects={projects} employees={employees} existingByProject={existingByProject}
+          onClose={() => setShowAdd(false)} onAdded={() => { setShowAdd(false); load() }} />
+      )}
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>

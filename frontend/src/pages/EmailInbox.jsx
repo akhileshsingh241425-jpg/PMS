@@ -1,12 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Mail, Search, RefreshCw, Inbox, BarChart3, Columns, AlertTriangle, Clock, Bell, UserCheck, ChevronDown, Filter, X, Settings, Sliders, FileText, Folder, FolderOpen, ChevronRight, Send, Archive, Edit3, Trash2 } from 'lucide-react'
+import { Mail, Search, RefreshCw, Inbox, BarChart3, AlertTriangle, Clock, Bell, UserCheck, ChevronDown, Filter, X, Settings, Sliders, FileText, Folder, FolderOpen, ChevronRight, Send, Archive, Edit3, Trash2 } from 'lucide-react'
 import { C } from '../components/styleConstants'
 import { listMessages, fetchEmails, listAccounts, connectEmail, disconnectAccount, getDashboard, getNotifications, getFollowups, listFolders, syncFolders } from '../api/emailApi'
 import { TableSkeleton } from '../components/LoadingSkeleton'
 import EmailDetailPanel from '../components/EmailDetailPanel'
 import EmailRulesPanel from '../components/EmailRulesPanel'
 import EmailTemplatesPanel from '../components/EmailTemplatesPanel'
-import EmailKanban from '../components/EmailKanban'
 import { useToast } from '../contexts/ToastContext'
 
 const CATEGORIES = ['Lead', 'Client', 'Follow-up', 'Support', 'Task', 'Meeting', 'Invoice', 'Other']
@@ -35,7 +34,6 @@ export default function EmailInbox() {
   const [connecting, setConnecting] = useState(false)
   const [showRules, setShowRules] = useState(false)
   const [showTemplates, setShowTemplates] = useState(false)
-  const [view, setView] = useState('list')
   const [dashData, setDashData] = useState(null)
   const [notifs, setNotifs] = useState({})
   const [followups, setFollowups] = useState({ upcoming: [], overdue: [] })
@@ -208,10 +206,7 @@ export default function EmailInbox() {
           )}
         </div>
 
-        {view === 'kanban' ? (
-          <EmailKanban onSelect={setSelectedMsg} selectedId={selectedMsg?.id} />
-        ) : (
-          <div style={{ display: 'flex', gap: 0, flex: 1, minHeight: 0 }}>
+        <div style={{ display: 'flex', gap: 0, flex: 1, minHeight: 0 }}>
             {/* Folder Sidebar */}
             <div style={{
               width: 220, flexShrink: 0, background: C.card, borderRight: `1px solid ${C.border}`,
@@ -269,16 +264,6 @@ export default function EmailInbox() {
             <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
               {/* Filter tabs */}
               <div style={{ padding: '14px 20px 8px', display: 'flex', gap: 6, flexWrap: 'wrap', borderBottom: `1px solid ${C.border}`, overflow: 'auto', alignItems: 'center' }}>
-                <div style={{ display: 'flex', gap: 4, marginRight: 12, borderRight: `1px solid ${C.border}`, paddingRight: 12 }}>
-                  <button onClick={() => setView('list')} style={{
-                    padding: '7px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: C.font,
-                    background: view === 'list' ? C.blue : '#F1F5F9', color: view === 'list' ? '#fff' : C.text, transition: 'all 0.15s',
-                  }}>List</button>
-                  <button onClick={() => setView('kanban')} style={{
-                    padding: '7px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: C.font,
-                    background: view === 'kanban' ? C.blue : '#F1F5F9', color: view === 'kanban' ? '#fff' : C.text, display: 'flex', alignItems: 'center', gap: 4, transition: 'all 0.15s',
-                  }}><Columns className="w-3 h-3" />Kanban</button>
-                </div>
                 {tabs.map(t => (
                   <button key={t.key} onClick={() => {
                     if (['new', 'assigned', 'unassigned'].includes(t.key)) { setStatusFilter(t.key); setCategoryFilter('') }
@@ -403,7 +388,6 @@ export default function EmailInbox() {
               </div>
             </div>
           </div>
-        )}
       </div>
     </div>
   )

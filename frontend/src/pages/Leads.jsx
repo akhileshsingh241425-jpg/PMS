@@ -19,7 +19,7 @@ const STAGES = [
   { name: 'Purchase Order', color: 'bg-amber-500', light: 'bg-amber-100 text-amber-700' },
   { name: 'Lead Closed (Won)', color: 'bg-emerald-500', light: 'bg-emerald-100 text-emerald-700' },
   { name: 'Lead Closed (Lost)', color: 'bg-red-500', light: 'bg-red-100 text-red-700' },
-  { name: 'Converted to Account', color: 'bg-emerald-500', light: 'bg-emerald-100 text-emerald-700' },
+  { name: 'Converted to Client', color: 'bg-emerald-500', light: 'bg-emerald-100 text-emerald-700' },
   { name: 'Approval Rejected', color: 'bg-red-500', light: 'bg-red-100 text-red-700' },
 ]
 const STAGE_NAMES = STAGES.map(s => s.name)
@@ -38,6 +38,7 @@ export default function Leads() {
   const [stageFilter, setStageFilter] = useState('')
   const [page, setPage] = useState(1)
   const [pagination, setPagination] = useState(null)
+  const [stats, setStats] = useState(null)
   const [showForm, setShowForm] = useState(false)
   const [editLead, setEditLead] = useState(null)
 
@@ -51,12 +52,16 @@ export default function Leads() {
   const load = async () => {
     try {
       const params = { page, per_page: 25 }; if (search) params.search = search; if (stageFilter) params.stage = stageFilter
-      const r = await api.get('/api/leads', { params }); setLeads(r.data.leads); setPagination(r.data.pagination)
+      const r = await api.get('/api/leads', { params }); setLeads(r.data.leads); setPagination(r.data.pagination); setStats(r.data.stats)
     } catch (e) { addToast('Lead list load failed', 'error') } finally { setLoading(false) }
   }
   const loadUsers = async () => { try { const r = await api.get('/api/auth/users'); setUsers(r.data.users) } catch (e) { addToast('User list load failed', 'error') } }
 
-  const totalValue = leads.reduce((s, l) => s + (l.estimated_value || 0), 0)
+  const totalLeads = stats?.total ?? leads.length
+  const totalValue = stats?.pipeline_value ?? leads.reduce((s, l) => s + (l.estimated_value || 0), 0)
+  const convertedCount = stats?.converted ?? 0
+  const thisMonthCount = stats?.this_month ?? 0
+  const stageCounts = stats?.by_stage ?? {}
 
   return (
     <div className="space-y-3">
@@ -79,7 +84,7 @@ export default function Leads() {
             <Target className="w-5 h-5 text-blue-600" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-slate-900">{leads.length}</p>
+            <p className="text-2xl font-bold text-slate-900">{totalLeads}</p>
             <p className="text-xs text-slate-500 font-medium">Total Leads</p>
           </div>
         </div>
@@ -97,7 +102,7 @@ export default function Leads() {
             <CheckCircle className="w-5 h-5 text-green-600" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-slate-900">{leads.filter(l => l.stage === 'Converted to Account').length}</p>
+            <p className="text-2xl font-bold text-slate-900">{convertedCount}</p>
             <p className="text-xs text-slate-500 font-medium">Converted</p>
           </div>
         </div>
@@ -106,7 +111,7 @@ export default function Leads() {
             <Calendar className="w-5 h-5 text-violet-600" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-slate-900">{leads.filter(l => l.created_at?.startsWith(new Date().toISOString().slice(0, 7))).length}</p>
+            <p className="text-2xl font-bold text-slate-900">{thisMonthCount}</p>
             <p className="text-xs text-slate-500 font-medium">This Month</p>
           </div>
         </div>
@@ -116,7 +121,7 @@ export default function Leads() {
       <div className="bg-white rounded-lg border border-slate-200 p-3">
         <div className="flex items-center justify-between mb-2">
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Lead Pipeline Stages</p>
-          <span className="text-xs text-slate-400">{leads.length} total leads</span>
+          <span className="text-xs text-slate-400">{totalLeads} total leads</span>
         </div>
         <div className="flex gap-2 flex-wrap">
           <button onClick={() => setStageFilter('')}
@@ -125,10 +130,10 @@ export default function Leads() {
                 ? 'bg-slate-800 text-white border-slate-800 shadow-md'
                 : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
             }`}>
-            All <span className="ml-1 opacity-70">({leads.length})</span>
+            All <span className="ml-1 opacity-70">({totalLeads})</span>
           </button>
           {STAGES.map(s => {
-            const count = leads.filter(l => l.stage === s.name).length
+            const count = stageCounts[s.name] || 0
             const isActive = stageFilter === s.name
             return (
               <button key={s.name} onClick={() => setStageFilter(stageFilter === s.name ? '' : s.name)}
@@ -214,7 +219,7 @@ export default function Leads() {
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-slate-900">{l.company_name}</p>
-                        {l.client_name && <p className="text-xs text-amber-600 flex items-center gap-1 mt-0.5">🤝 Referred by {l.client_name}</p>}
+                        {l.referring_client_name && <p className="text-xs text-amber-600 flex items-center gap-1 mt-0.5">🤝 Referred by {l.referring_client_name}</p>}
                         {l.state && <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5"><MapPin className="w-3 h-3" />{l.state}</p>}
                       </div>
                     </div>

@@ -25,3 +25,4 @@ from .po_in import po_in_bp
 from .myday import myday_bp
 from .masters import masters_bp
 from .approvals import approval_bp
+from .hr import hr_bp

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { Plus, Search, X, FileText, Building2, DollarSign, Calendar, ChevronDown, Trash2, Eye, ArrowUpRight, RefreshCw, Download, Mail, CheckCircle, Clock, AlertTriangle, Ban } from 'lucide-react'
 import api from '../services/api'
 import { C } from '../components/styleConstants'
@@ -57,6 +57,7 @@ const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-dig
 
 export default function POVendorPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { addToast } = useToast()
   const [poList, setPoList] = useState([])
   const [loading, setLoading] = useState(true)
@@ -101,6 +102,45 @@ export default function POVendorPage() {
   }
 
   useEffect(() => { load(); loadVendors() }, [])
+
+  useEffect(() => {
+    const editId = searchParams.get('edit')
+    if (editId) {
+      api.get(`/api/po-out/${editId}`).then(r => {
+        const p = r.data.po
+        setForm({
+          po_number: p.po_number || '',
+          title: p.title || '',
+          po_date: p.po_date ? p.po_date.slice(0, 10) : new Date().toISOString().split('T')[0],
+          vendor_id: p.client_id || '',
+          vendor_name: p.vendor_name || '',
+          vendor_email: p.vendor_email || '',
+          vendor_gstin: p.vendor_gstin || '',
+          vendor_pan: p.vendor_pan || '',
+          vendor_address: p.vendor_address || '',
+          vendor_contact_person: p.vendor_contact_person || '',
+          vendor_phone: p.vendor_phone || '',
+          vendor_bank_account_no: p.vendor_bank_account_no || '',
+          vendor_bank_ifsc: p.vendor_bank_ifsc || '',
+          po_terms: p.po_terms || '',
+          po_delivery_period: p.po_delivery_period || '',
+          po_expected_completion_date: p.po_expected_completion_date ? p.po_expected_completion_date.slice(0, 10) : '',
+          po_special_terms: p.po_special_terms || '',
+          po_gst_type: p.po_gst_type || 'CGST+SGST',
+          gst_rate: p.line_items?.[0]?.gst_rate || 18,
+          line_items: (p.line_items || []).map(li => ({
+            item_name: li.item_name || '',
+            sac_hsn: li.sac_hsn || '',
+            qty: li.qty || 1,
+            rate: li.rate || 0,
+            taxable_value: li.taxable_value || 0,
+            gst_rate: li.gst_rate || 18,
+          })),
+        })
+        setShowForm(true)
+      }).catch(() => addToast('Failed to load PO for editing', 'error'))
+    }
+  }, [searchParams])
 
   const openTDSReport = async () => {
     try {
@@ -178,7 +218,13 @@ export default function POVendorPage() {
           rate: parseFloat(i.rate) || 0, gst_rate: parseFloat(i.gst_rate) || 18,
         })),
       }
-      await api.post('/api/po-out', payload)
+      const editId = searchParams.get('edit')
+      if (editId) {
+        await api.put(`/api/po-out/${editId}`, payload)
+        navigate(`/po-out/${editId}`)
+      } else {
+        await api.post('/api/po-out', payload)
+      }
       setShowForm(false); load()
     } catch (e) { setError(e.response?.data?.error || 'Failed to create PO') }
     finally { setSaving(false) }
@@ -287,7 +333,7 @@ export default function POVendorPage() {
               <h2 style={{ fontSize: 16, fontWeight: 700, color: C.text, margin: 0 }}>
                 {previewMode ? 'PO Preview' : 'Issue Vendor Purchase Order'}
               </h2>
-              <button onClick={() => { setShowForm(false); setPreviewMode(false) }} style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.muted }}>
+              <button onClick={() => { setShowForm(false); setPreviewMode(false); if (searchParams.get('edit')) navigate('/po-out') }} style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.muted }}>
                 <X className="w-4 h-4" />
               </button>
             </div>

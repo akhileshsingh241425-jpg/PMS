@@ -35,6 +35,23 @@ def _notify(user_id, title, message, module_type=None, module_id=None, notif_typ
         pass
 
 
+def _owns_lead(user, lead):
+    """Same visibility rule as list_leads: admins see everything, everyone
+    else only their own (assigned or created) leads."""
+    if user.role in ('admin', 'super_admin'):
+        return True
+    return lead.assigned_to == user.id or lead.created_by == user.id
+
+
+def _owns_lead_id(user, lead_id):
+    lead = Lead.query.get_or_404(lead_id)
+    return _owns_lead(user, lead)
+
+
+def _forbidden_lead():
+    return jsonify({'error': 'You do not have access to this lead.'}), 403
+
+
 def _get_approvers(lead):
     """Return list of user IDs who can approve (manager or admin)."""
     approvers = set()
@@ -47,15 +64,33 @@ def _get_approvers(lead):
     return list(approvers)
 
 
+def _leads_base_query(user):
+    q = Lead.query
+    if user.role not in ('admin', 'super_admin'):
+        q = q.filter(db.or_(
+            Lead.assigned_to == user.id,
+            Lead.created_by == user.id,
+        ))
+    return q
+
+
 @leads_bp.route('', methods=['GET'])
 @login_required
 def list_leads(current_user):
-    query = Lead.query
-    if current_user.role != 'admin':
-        query = query.filter(db.or_(
-            Lead.assigned_to == current_user.id,
-            Lead.created_by == current_user.id,
-        ))
+    # Separate instance so search/stage/type filters below (which narrow the
+    # paginated list) don't also narrow the stat totals — those should
+    # reflect the user's whole pipeline regardless of what they're viewing.
+    stats_query = _leads_base_query(current_user)
+    month_start = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    stats = {
+        'total': stats_query.count(),
+        'converted': stats_query.filter(Lead.stage == 'Converted to Client').count(),
+        'this_month': stats_query.filter(Lead.created_at >= month_start).count(),
+        'pipeline_value': stats_query.with_entities(db.func.coalesce(db.func.sum(Lead.estimated_value), 0)).scalar(),
+        'by_stage': dict(stats_query.with_entities(Lead.stage, db.func.count(Lead.id)).group_by(Lead.stage).all()),
+    }
+
+    query = _leads_base_query(current_user)
     if s := request.args.get('search'):
         query = query.filter(db.or_(
             Lead.company_name.ilike(f'%{s}%'),
@@ -72,6 +107,7 @@ def list_leads(current_user):
     items = [{'type': l.type or 'lead', **l.to_dict()} for l in result['items']]
     return jsonify({
         'leads': items,
+        'stats': stats,
         'pagination': {'page': result['page'], 'per_page': result['per_page'], 'total': result['total'], 'pages': result['pages']},
     })
 
@@ -144,6 +180,8 @@ def create_lead(current_user):
 @login_required
 def get_lead(current_user, lid):
     lead = Lead.query.get_or_404(lid)
+    if not _owns_lead(current_user, lead):
+        return _forbidden_lead()
     remarks = LeadRemark.query.filter_by(lead_id=lid, deleted_at=None).order_by(LeadRemark.created_at.desc()).all()
     documents = LeadDocument.query.filter_by(lead_id=lid).order_by(LeadDocument.uploaded_at.desc()).all()
     activities = LeadActivity.query.filter_by(lead_id=lid).order_by(LeadActivity.activity_date.desc()).all()
@@ -163,6 +201,8 @@ def get_lead(current_user, lid):
 @login_required
 def update_lead(current_user, lid):
     lead = Lead.query.get_or_404(lid)
+    if not _owns_lead(current_user, lead):
+        return _forbidden_lead()
     if lead.is_readonly:
         return jsonify({'error': 'Lead is read-only. Cannot edit closed or converted leads.'}), 403
     data = request.get_json()
@@ -190,7 +230,9 @@ def update_lead(current_user, lid):
 @login_required
 def delete_lead(current_user, lid):
     lead = Lead.query.get_or_404(lid)
-    if lead.is_readonly and current_user.role != 'admin':
+    if not _owns_lead(current_user, lead):
+        return _forbidden_lead()
+    if lead.is_readonly and current_user.role not in ('admin', 'super_admin'):
         return jsonify({'error': 'Only admins can delete closed leads.'}), 403
     db.session.delete(lead)
     db.session.commit()
@@ -201,18 +243,21 @@ def delete_lead(current_user, lid):
 @login_required
 def close_lead(current_user, lid):
     lead = Lead.query.get_or_404(lid)
+    if not _owns_lead(current_user, lead):
+        return _forbidden_lead()
     data = request.get_json()
     outcome = data.get('outcome')  # 'won' or 'lost'
     if outcome not in ('won', 'lost'):
         return jsonify({'error': 'outcome must be won or lost'}), 400
 
+    old_stage = lead.stage
     stage = 'Lead Closed (Won)' if outcome == 'won' else 'Lead Closed (Lost)'
     lead.stage = stage
     lead.closed_on = datetime.utcnow()
     lead.closed_by = current_user.id
     lead.is_readonly = True
 
-    _audit(lid, f'Closed {outcome.capitalize()}', 'In Progress', stage, current_user.id)
+    _audit(lid, f'Closed {outcome.capitalize()}', old_stage, stage, current_user.id)
 
     if outcome == 'won':
         manager_ids = _get_approvers(lead)
@@ -229,6 +274,8 @@ def close_lead(current_user, lid):
 @login_required
 def convert_lead_to_client(current_user, lid):
     lead = Lead.query.get_or_404(lid)
+    if not _owns_lead(current_user, lead):
+        return _forbidden_lead()
     if lead.stage not in ('Lead Closed (Won)', 'Purchase Order'):
         return jsonify({'error': 'Lead must be in Lead Closed (Won) or Purchase Order stage to convert.'}), 400
     if lead.client_id:
@@ -327,6 +374,8 @@ def convert_lead_to_client(current_user, lid):
 @login_required
 def request_approval(current_user, lid):
     lead = Lead.query.get_or_404(lid)
+    if not _owns_lead(current_user, lead):
+        return _forbidden_lead()
     if lead.stage != 'Lead Closed (Won)':
         return jsonify({'error': 'Lead must be Closed Won before requesting approval.'}), 400
     if lead.approval_status == 'pending_approval':
@@ -357,7 +406,7 @@ def approve_lead(current_user, lid):
     lead = Lead.query.get_or_404(lid)
     if lead.approval_status != 'pending_approval':
         return jsonify({'error': 'No pending approval request.'}), 400
-    if current_user.id not in _get_approvers(lead) and current_user.role != 'admin':
+    if current_user.id not in _get_approvers(lead) and current_user.role not in ('admin', 'super_admin'):
         return jsonify({'error': 'You are not authorized to approve this request.'}), 403
 
     lead.approval_status = 'approved'
@@ -466,6 +515,8 @@ def approve_lead(current_user, lid):
 @login_required
 def create_project_from_lead(current_user, lid):
     lead = Lead.query.get_or_404(lid)
+    if not _owns_lead(current_user, lead):
+        return _forbidden_lead()
     if lead.stage != 'Converted to Client':
         return jsonify({'error': 'Lead must be converted to client first.'}), 400
     if not lead.client_id:
@@ -500,7 +551,7 @@ def reject_lead(current_user, lid):
     lead = Lead.query.get_or_404(lid)
     if lead.approval_status != 'pending_approval':
         return jsonify({'error': 'No pending approval request.'}), 400
-    if current_user.id not in _get_approvers(lead) and current_user.role != 'admin':
+    if current_user.id not in _get_approvers(lead) and current_user.role not in ('admin', 'super_admin'):
         return jsonify({'error': 'You are not authorized to reject this request.'}), 403
 
     data = request.get_json()
@@ -528,7 +579,7 @@ def reject_lead(current_user, lid):
 @login_required
 def reopen_lead(current_user, lid):
     lead = Lead.query.get_or_404(lid)
-    if current_user.role != 'admin':
+    if current_user.role not in ('admin', 'super_admin'):
         return jsonify({'error': 'Only admins can reopen leads.'}), 403
     if lead.stage not in ('Lead Closed (Won)', 'Lead Closed (Lost)', 'Approval Rejected', 'Converted to Client'):
         return jsonify({'error': 'Lead is not in a closed state.'}), 400
@@ -554,7 +605,9 @@ def reopen_lead(current_user, lid):
 @leads_bp.route('/<int:lid>/audit', methods=['GET'])
 @login_required
 def get_audit_logs(current_user, lid):
-    Lead.query.get_or_404(lid)
+    lead = Lead.query.get_or_404(lid)
+    if not _owns_lead(current_user, lead):
+        return _forbidden_lead()
     logs = LeadAuditLog.query.filter_by(lead_id=lid).order_by(LeadAuditLog.changed_at.desc()).all()
     return jsonify({'audit_logs': [l.to_dict() for l in logs]})
 
@@ -695,6 +748,8 @@ th {{ background:#F1F5F9; font-weight:700; color:#1E3A5F; }}
 @login_required
 def get_proposal_template(current_user, lid):
     lead = Lead.query.get_or_404(lid)
+    if not _owns_lead(current_user, lead):
+        return _forbidden_lead()
     today_str = datetime.utcnow().strftime('%d %B %Y')
     html = DEFAULT_PROPOSAL_TEMPLATE.format(
         proposal_no='PROP-_____',
@@ -718,7 +773,8 @@ def get_proposal_template(current_user, lid):
 @leads_bp.route('/<int:lid>/proposals', methods=['GET'])
 @login_required
 def list_proposals(current_user, lid):
-    Lead.query.get_or_404(lid)
+    if not _owns_lead_id(current_user, lid):
+        return _forbidden_lead()
     proposals = LeadProposal.query.filter_by(lead_id=lid).order_by(LeadProposal.created_at.desc()).all()
     return jsonify({'proposals': [p.to_dict() for p in proposals]})
 
@@ -726,7 +782,8 @@ def list_proposals(current_user, lid):
 @leads_bp.route('/<int:lid>/proposals', methods=['POST'])
 @login_required
 def create_proposal(current_user, lid):
-    Lead.query.get_or_404(lid)
+    if not _owns_lead_id(current_user, lid):
+        return _forbidden_lead()
     data = request.get_json()
     if not data.get('amount'):
         return jsonify({'error': 'amount is required'}), 400
@@ -750,6 +807,8 @@ def create_proposal(current_user, lid):
 @leads_bp.route('/<int:lid>/proposals/<int:pid>', methods=['PUT'])
 @login_required
 def update_proposal(current_user, lid, pid):
+    if not _owns_lead_id(current_user, lid):
+        return _forbidden_lead()
     prop = LeadProposal.query.filter_by(id=pid, lead_id=lid).first_or_404()
     data = request.get_json()
     old_status = prop.status
@@ -765,6 +824,8 @@ def update_proposal(current_user, lid, pid):
 @leads_bp.route('/<int:lid>/proposals/<int:pid>', methods=['DELETE'])
 @login_required
 def delete_proposal(current_user, lid, pid):
+    if not _owns_lead_id(current_user, lid):
+        return _forbidden_lead()
     prop = LeadProposal.query.filter_by(id=pid, lead_id=lid).first_or_404()
     db.session.delete(prop)
     db.session.commit()
@@ -807,6 +868,8 @@ PROPOSAL_FULL_WRAPPER_BOTTOM = '\n</div></body></html>'
 @leads_bp.route('/<int:lid>/proposals/<int:pid>/preview', methods=['GET'])
 @login_required
 def preview_proposal(current_user, lid, pid):
+    if not _owns_lead_id(current_user, lid):
+        return _forbidden_lead()
     prop = LeadProposal.query.filter_by(id=pid, lead_id=lid).first_or_404()
     if prop.html_content:
         return (PROPOSAL_FULL_WRAPPER_TOP + prop.html_content + PROPOSAL_FULL_WRAPPER_BOTTOM), 200, {'Content-Type': 'text/html; charset=utf-8'}
@@ -828,7 +891,8 @@ def preview_proposal(current_user, lid, pid):
 @leads_bp.route('/<int:lid>/remarks', methods=['POST'])
 @login_required
 def add_remark(current_user, lid):
-    Lead.query.get_or_404(lid)
+    if not _owns_lead_id(current_user, lid):
+        return _forbidden_lead()
     data = request.get_json()
     if not data.get('text'):
         return jsonify({'error': 'text is required'}), 400
@@ -844,7 +908,7 @@ def add_remark(current_user, lid):
 @login_required
 def update_remark(current_user, lid, rid):
     r = LeadRemark.query.filter_by(id=rid, lead_id=lid, deleted_at=None).first_or_404()
-    if current_user.role != 'admin' and r.created_by != current_user.id:
+    if current_user.role not in ('admin', 'super_admin') and r.created_by != current_user.id:
         return jsonify({'error': 'You can only edit your own remarks'}), 403
     data = request.get_json()
     if not data.get('text'):
@@ -858,6 +922,8 @@ def update_remark(current_user, lid, rid):
 @leads_bp.route('/<int:lid>/remarks/<int:rid>/react', methods=['POST'])
 @login_required
 def toggle_reaction(current_user, lid, rid):
+    if not _owns_lead_id(current_user, lid):
+        return _forbidden_lead()
     r = LeadRemark.query.filter_by(id=rid, lead_id=lid, deleted_at=None).first_or_404()
     data = request.get_json()
     emoji = data.get('emoji', '').strip()
@@ -877,7 +943,8 @@ def toggle_reaction(current_user, lid, rid):
 @leads_bp.route('/<int:lid>/documents', methods=['POST'])
 @login_required
 def upload_document(current_user, lid):
-    Lead.query.get_or_404(lid)
+    if not _owns_lead_id(current_user, lid):
+        return _forbidden_lead()
     if 'file' not in request.files:
         return jsonify({'error': 'No file provided'}), 400
     file = request.files['file']
@@ -904,7 +971,8 @@ def upload_document(current_user, lid):
 @leads_bp.route('/<int:lid>/activities', methods=['POST'])
 @login_required
 def add_activity(current_user, lid):
-    Lead.query.get_or_404(lid)
+    if not _owns_lead_id(current_user, lid):
+        return _forbidden_lead()
     data = request.get_json()
     if not data.get('title') or not data.get('activity_type'):
         return jsonify({'error': 'title and activity_type are required'}), 400
@@ -924,6 +992,8 @@ def add_activity(current_user, lid):
 @leads_bp.route('/<int:lid>/activities/<int:aid>', methods=['PUT'])
 @login_required
 def update_activity(current_user, lid, aid):
+    if not _owns_lead_id(current_user, lid):
+        return _forbidden_lead()
     a = LeadActivity.query.filter_by(id=aid, lead_id=lid).first_or_404()
     data = request.get_json()
     if 'description' in data:
@@ -938,6 +1008,8 @@ def update_activity(current_user, lid, aid):
 @login_required
 def serve_document(current_user, did):
     d = LeadDocument.query.get_or_404(did)
+    if not _owns_lead_id(current_user, d.lead_id):
+        return _forbidden_lead()
     if not os.path.exists(d.file_path):
         return jsonify({'error': 'File not found'}), 404
     from flask import send_file
@@ -948,7 +1020,7 @@ def serve_document(current_user, did):
 @login_required
 def delete_remark(current_user, lid, rid):
     r = LeadRemark.query.filter_by(id=rid, lead_id=lid, deleted_at=None).first_or_404()
-    if current_user.role != 'admin' and r.created_by != current_user.id:
+    if current_user.role not in ('admin', 'super_admin') and r.created_by != current_user.id:
         return jsonify({'error': 'You can only delete your own remarks'}), 403
     r.soft_delete()
     db.session.commit()
@@ -958,6 +1030,8 @@ def delete_remark(current_user, lid, rid):
 @leads_bp.route('/<int:lid>/activities/<int:aid>', methods=['DELETE'])
 @login_required
 def delete_activity(current_user, lid, aid):
+    if not _owns_lead_id(current_user, lid):
+        return _forbidden_lead()
     a = LeadActivity.query.filter_by(id=aid, lead_id=lid).first_or_404()
     db.session.delete(a)
     db.session.commit()
@@ -967,6 +1041,8 @@ def delete_activity(current_user, lid, aid):
 @leads_bp.route('/<int:lid>/documents/<int:did>', methods=['DELETE'])
 @login_required
 def delete_document(current_user, lid, did):
+    if not _owns_lead_id(current_user, lid):
+        return _forbidden_lead()
     d = LeadDocument.query.filter_by(id=did, lead_id=lid).first_or_404()
     if os.path.exists(d.file_path):
         os.remove(d.file_path)
@@ -978,6 +1054,8 @@ def delete_document(current_user, lid, did):
 @leads_bp.route('/<int:lid>/notes/<int:nid>', methods=['DELETE'])
 @login_required
 def delete_note(current_user, lid, nid):
+    if not _owns_lead_id(current_user, lid):
+        return _forbidden_lead()
     n = LeadNote.query.filter_by(id=nid, lead_id=lid).first_or_404()
     db.session.delete(n)
     db.session.commit()
@@ -987,7 +1065,8 @@ def delete_note(current_user, lid, nid):
 @leads_bp.route('/<int:lid>/notes', methods=['POST'])
 @login_required
 def add_note(current_user, lid):
-    Lead.query.get_or_404(lid)
+    if not _owns_lead_id(current_user, lid):
+        return _forbidden_lead()
     data = request.get_json()
     if not data.get('content'):
         return jsonify({'error': 'content is required'}), 400

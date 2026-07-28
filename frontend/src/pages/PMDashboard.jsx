@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import {
   FolderOpen, ListChecks, Users, Calendar, AlertCircle,
-  Clock, CheckCircle, XCircle, Activity, Bell, ExternalLink
+  Clock, CheckCircle, XCircle, Activity, Bell, ExternalLink,
+  Timer, UserX, FileWarning,
 } from 'lucide-react'
 
 const formatDT = (ds) => {
@@ -133,7 +134,7 @@ export default function PMDashboard() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {data.upcoming_meetings.slice(0, 5).map(m => (
                 <div key={`${m._type}-${m.id}`} style={{ fontSize: 12, color: '#374151', display: 'flex', justifyContent: 'space-between', cursor: 'pointer' }}
-                  onClick={() => navigate(`/meetings?id=${m.id}&type=${m._type}`)}>
+                  onClick={() => navigate(`/pm/meeting-detail?id=${m.id}&type=${m._type}`)}>
                   <span style={{ fontWeight: 500 }}>{m.title || m.agenda}</span>
                   <span style={{ color: '#6B7280' }}>{formatDT(m.meeting_date || m.preferred_date)}</span>
                 </div>
@@ -141,6 +142,73 @@ export default function PMDashboard() {
             </div>
           ) : (
             <p style={{ fontSize: 13, color: '#9CA3AF', textAlign: 'center', padding: 20, margin: 0 }}>No upcoming meetings</p>
+          )}
+        </div>
+      </div>
+
+      {/* Deadline Risk + Team Today */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
+        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: '14px' }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Timer className="w-4 h-4" style={{ color: '#DC2626' }} /> Deadline Risk (next 7 days)
+          </h3>
+          {data?.deadline_risk?.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {data.deadline_risk.map(p => (
+                <div key={p.project_id} onClick={() => navigate(`/pm/projects/${p.project_id}`)}
+                  style={{ fontSize: 12, color: '#374151', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #F3F4F6', cursor: 'pointer' }}>
+                  <span style={{ fontWeight: 500 }}>{p.title}</span>
+                  <span style={{
+                    fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 10,
+                    background: p.days_left < 0 ? '#FEE2E2' : p.days_left <= 2 ? '#FFEDD5' : '#FEF3C7',
+                    color: p.days_left < 0 ? '#991B1B' : p.days_left <= 2 ? '#9A3412' : '#92400E',
+                  }}>
+                    {p.days_left < 0 ? `${Math.abs(p.days_left)}d overdue` : p.days_left === 0 ? 'Due today' : `${p.days_left}d left`}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={{ fontSize: 13, color: '#9CA3AF', textAlign: 'center', padding: 20, margin: 0 }}>Nothing due in the next 7 days</p>
+          )}
+        </div>
+
+        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Users className="w-4 h-4" style={{ color: '#059669' }} /> Team Today
+            </h3>
+            <button onClick={() => navigate('/pm/team')} style={{ fontSize: 11.5, color: '#5B3DF5', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }}>View team →</button>
+          </div>
+          {data?.team_today?.total > 0 ? (
+            <>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                <div style={{ flex: 1, textAlign: 'center', background: '#ECFDF5', borderRadius: 8, padding: '8px 4px' }}>
+                  <p style={{ fontSize: 18, fontWeight: 700, color: '#059669', margin: 0 }}>{data.team_today.present}</p>
+                  <p style={{ fontSize: 10.5, color: '#065F46', margin: 0 }}>Present</p>
+                </div>
+                <div style={{ flex: 1, textAlign: 'center', background: '#FFFBEB', borderRadius: 8, padding: '8px 4px' }}>
+                  <p style={{ fontSize: 18, fontWeight: 700, color: '#92400E', margin: 0 }}>{data.team_today.on_leave}</p>
+                  <p style={{ fontSize: 10.5, color: '#92400E', margin: 0 }}>On Leave</p>
+                </div>
+                <div style={{ flex: 1, textAlign: 'center', background: '#FEF2F2', borderRadius: 8, padding: '8px 4px' }}>
+                  <p style={{ fontSize: 18, fontWeight: 700, color: '#B91C1C', margin: 0 }}>{data.team_today.absent}</p>
+                  <p style={{ fontSize: 10.5, color: '#991B1B', margin: 0 }}>Absent</p>
+                </div>
+              </div>
+              {data.team_today.missing_work_log.length > 0 && (
+                <div style={{ fontSize: 11.5, color: '#92400E', display: 'flex', alignItems: 'center', gap: 6, marginBottom: data.team_today.absent_today.length ? 6 : 0 }}>
+                  <FileWarning className="w-3.5 h-3.5" /> {data.team_today.missing_work_log.length} present but haven't filed today's work log
+                </div>
+              )}
+              {data.team_today.absent_today.length > 0 && (
+                <div style={{ fontSize: 11.5, color: '#991B1B', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <UserX className="w-3.5 h-3.5" /> {data.team_today.absent_today.map(m => m.name).join(', ')}
+                </div>
+              )}
+            </>
+          ) : (
+            <p style={{ fontSize: 13, color: '#9CA3AF', textAlign: 'center', padding: 20, margin: 0 }}>No team members assigned yet</p>
           )}
         </div>
       </div>

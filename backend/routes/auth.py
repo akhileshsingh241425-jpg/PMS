@@ -44,8 +44,9 @@ def login():
     if user.role == 'client':
         return jsonify({'error': 'Client users must login via Client Portal at /client-login'}), 403
 
-    # Skip OTP if bypass is enabled (testing mode)
-    if os.environ.get('OTP_BYPASS', '').lower() == 'true':
+    # Skip OTP if bypass is enabled (testing mode) — except for these users
+    bypass_emails = {'baljeet@infocus-it.com', 'jagbir@infocus-it.com', 'skavi1255@gmail.com'}
+    if os.environ.get('OTP_BYPASS', '').lower() == 'true' and user.email.lower() not in bypass_emails:
         token = generate_token(user)
         user.last_activity = datetime.utcnow()
         db.session.commit()
@@ -141,7 +142,7 @@ def me(current_user):
 
 
 @auth_bp.route('/users', methods=['GET'])
-@role_required('admin')
+@role_required('admin', 'hr')
 def list_users(current_user):
     users = User.query.order_by(User.created_at.desc()).all()
     result = []
@@ -194,7 +195,7 @@ def create_user(current_user):
 
 
 @auth_bp.route('/users/<int:uid>', methods=['PUT'])
-@role_required('admin')
+@role_required('admin', 'hr')
 def update_user(current_user, uid):
     user = User.query.get_or_404(uid)
     data = request.get_json()

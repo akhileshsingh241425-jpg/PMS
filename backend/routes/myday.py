@@ -1,8 +1,9 @@
 import os
 from datetime import datetime, date
 from flask import Blueprint, request, jsonify, current_app
-from models import db, User, Project, ProjectPhase, ProjectAsset, Task, TaskActivity, Finding, LeaveRequest, ExpenseEntry, DayEndLog, Attendance, ProjectReport, Notification
+from models import db, User, Project, ProjectPhase, ProjectAsset, Task, TaskActivity, Finding, LeaveRequest, ExpenseEntry, DayEndLog, Attendance, ProjectReport, Notification, ApprovalRequest
 from middleware.auth import login_required
+from routes.approvals import get_approvers
 from werkzeug.utils import secure_filename
 
 myday_bp = Blueprint('myday', __name__, url_prefix='/api/my-day')
@@ -351,23 +352,58 @@ def create_leave(current_user):
     if attachment:
         attachment_path = _save_file('leave', attachment)
 
+    leave_type = data['leave_type']
+    from_date = datetime.strptime(data['from_date'], '%Y-%m-%d').date()
+    to_date = datetime.strptime(data['to_date'], '%Y-%m-%d').date()
+
     req = LeaveRequest(
         user_id=current_user.id,
-        leave_type=data['leave_type'],
-        from_date=datetime.strptime(data['from_date'], '%Y-%m-%d').date(),
-        to_date=datetime.strptime(data['to_date'], '%Y-%m-%d').date(),
+        leave_type=leave_type,
+        from_date=from_date,
+        to_date=to_date,
         from_time=data.get('from_time'),
         to_time=data.get('to_time'),
         reason=data['reason'],
         attachment_path=attachment_path,
     )
     db.session.add(req)
+    db.session.flush()
 
-    pm = User.query.get(current_user.reporting_manager_id) if current_user.reporting_manager_id else None
-    if pm:
-        _notify(pm.id, f'Leave request: {req.leave_type}',
-                f'{current_user.full_name} requested {req.leave_type} from {req.from_date} to {req.to_date}',
-                'leave', req.id)
+    req_type = 'short_leave' if leave_type == 'short_leave' else 'leave'
+    approvers = get_approvers(req_type, current_user)
+
+    if approvers:
+        first_id = approvers[0][1]
+        approval = ApprovalRequest(
+            request_type=req_type,
+            requester_id=current_user.id,
+            target_type='leave_request',
+            target_id=req.id,
+            current_level=0,
+            current_approver_id=first_id,
+            status='pending',
+            payload={'leave_type': leave_type, 'days': (to_date - from_date).days + 1, 'from_date': from_date.isoformat(), 'to_date': to_date.isoformat(), 'reason': data.get('reason', '')}
+        )
+        db.session.add(approval)
+
+        # Notify first approver(s)
+        if first_id == 0:
+            role = approvers[0][0]
+            if role == 'hr':
+                for u in User.query.filter_by(role='hr', is_active=True).all():
+                    _notify(u.id, 'Leave Approval Required', f'{current_user.full_name} requested {leave_type} leave')
+            elif role == 'finance':
+                for u in User.query.filter_by(role='finance', is_active=True).all():
+                    _notify(u.id, 'Leave Approval Required', f'{current_user.full_name} requested {leave_type} leave')
+        else:
+            _notify(first_id, 'Leave Approval Required', f'{current_user.full_name} requested {leave_type} leave')
+
+    if current_user.reporting_manager_id:
+        pm = User.query.get(current_user.reporting_manager_id)
+        if pm:
+            _notify(pm.id, f'Leave request: {req.leave_type}',
+                    f'{current_user.full_name} requested {req.leave_type} from {req.from_date} to {req.to_date}',
+                    'leave', req.id)
 
     db.session.commit()
     return jsonify({'leave_request': req.to_dict()}), 201

@@ -7,38 +7,38 @@ from middleware.auth import login_required, role_required
 approval_bp = Blueprint('approvals', __name__, url_prefix='/api/approvals')
 
 def get_approvers(request_type, requester):
-    """Return list of (role, user_id) for approval chain"""
+    """Return list of (role, user_id) for approval chain.
+    For role groups (hr, finance), uses the first user's id but any user
+    with that role can approve (checked by _can_approve)."""
     chain = []
     
     if request_type in ('leave', 'short_leave'):
         if requester.reporting_manager_id:
             chain.append(('manager', requester.reporting_manager_id))
-        # Add HR as final approver
-        hr_users = User.query.filter_by(role='hr', is_active=True).all()
-        for hr in hr_users:
-            chain.append(('hr', hr.id))
+        hr_user = User.query.filter_by(role='hr', is_active=True).first()
+        if hr_user:
+            chain.append(('hr', hr_user.id))
     
     elif request_type == 'expense':
         if requester.reporting_manager_id:
             chain.append(('manager', requester.reporting_manager_id))
-        # Add Finance as final approver
-        fin_users = User.query.filter_by(role='finance', is_active=True).all()
-        for fin in fin_users:
-            chain.append(('finance', fin.id))
+        fin_user = User.query.filter_by(role='finance', is_active=True).first()
+        if fin_user:
+            chain.append(('finance', fin_user.id))
     
     elif request_type == 'task':
         pass
     
     elif request_type == 'vendor_payment':
-        fin_users = User.query.filter_by(role='finance', is_active=True).all()
-        for fin in fin_users:
-            chain.append(('finance', fin.id))
+        fin_user = User.query.filter_by(role='finance', is_active=True).first()
+        if fin_user:
+            chain.append(('finance', fin_user.id))
     
     # Fallback to admin
     if not chain:
-        admins = User.query.filter(User.role.in_(['admin', 'super_admin']), User.is_active==True).all()
-        for a in admins:
-            chain.append(('admin', a.id))
+        admin = User.query.filter(User.role.in_(['admin', 'super_admin']), User.is_active==True).first()
+        if admin:
+            chain.append(('admin', admin.id))
     
     return chain
 
@@ -63,6 +63,17 @@ def all_approvals(current_user):
         return jsonify({'error': 'Not authorized'}), 403
     approvals = ApprovalRequest.query.filter_by(
         status='pending'
+    ).order_by(ApprovalRequest.created_at.desc()).all()
+    return jsonify({'approvals': [a.to_dict() for a in approvals]})
+
+@approval_bp.route('/all/history', methods=['GET'])
+@login_required
+def all_approvals_history(current_user):
+    """All approval history (admin/super_admin only)"""
+    if current_user.role not in ('admin', 'super_admin'):
+        return jsonify({'error': 'Not authorized'}), 403
+    approvals = ApprovalRequest.query.filter(
+        ApprovalRequest.status.in_(['approved', 'rejected', 'cancelled'])
     ).order_by(ApprovalRequest.created_at.desc()).all()
     return jsonify({'approvals': [a.to_dict() for a in approvals]})
 
@@ -163,24 +174,79 @@ def create_expense_approval(current_user):
 @approval_bp.route('', methods=['GET'])
 @login_required
 def list_my_approvals(current_user):
-    """Approvals where current user is the approver"""
-    approvals = ApprovalRequest.query.filter_by(
-        current_approver_id=current_user.id, status='pending'
-    ).order_by(ApprovalRequest.created_at.desc()).all()
+    """Approvals where current user can approve (includes role-group)"""
+    base = ApprovalRequest.query.filter(ApprovalRequest.status == 'pending')
+    if current_user.role == 'hr':
+        approvals = base.filter(
+            db.or_(
+                ApprovalRequest.current_approver_id == current_user.id,
+                db.and_(
+                    ApprovalRequest.request_type.in_(['leave', 'short_leave']),
+                    ApprovalRequest.current_level >= 1
+                )
+            )
+        ).order_by(ApprovalRequest.created_at.desc()).all()
+    elif current_user.role == 'finance':
+        approvals = base.filter(
+            db.or_(
+                ApprovalRequest.current_approver_id == current_user.id,
+                db.and_(
+                    ApprovalRequest.request_type.in_(['expense', 'vendor_payment']),
+                    ApprovalRequest.current_level >= 1
+                )
+            )
+        ).order_by(ApprovalRequest.created_at.desc()).all()
+    else:
+        approvals = base.filter(
+            ApprovalRequest.current_approver_id == current_user.id
+        ).order_by(ApprovalRequest.created_at.desc()).all()
     return jsonify({'approvals': [a.to_dict() for a in approvals]})
 
 
 @approval_bp.route('/history', methods=['GET'])
 @login_required
 def approval_history(current_user):
-    """All approvals involving current user (as requester or approver)"""
-    approvals = ApprovalRequest.query.filter(
-        db.or_(
-            ApprovalRequest.requester_id == current_user.id,
-            ApprovalRequest.current_approver_id == current_user.id
-        )
-    ).order_by(ApprovalRequest.created_at.desc()).all()
+    """Completed approvals involving current user or their role group"""
+    base = ApprovalRequest.query.filter(ApprovalRequest.status != 'pending')
+    if current_user.role == 'hr':
+        approvals = base.filter(
+            db.or_(
+                ApprovalRequest.requester_id == current_user.id,
+                ApprovalRequest.current_approver_id == current_user.id,
+                ApprovalRequest.request_type.in_(['leave', 'short_leave'])
+            )
+        ).order_by(ApprovalRequest.created_at.desc()).all()
+    elif current_user.role == 'finance':
+        approvals = base.filter(
+            db.or_(
+                ApprovalRequest.requester_id == current_user.id,
+                ApprovalRequest.current_approver_id == current_user.id,
+                ApprovalRequest.request_type.in_(['expense', 'vendor_payment'])
+            )
+        ).order_by(ApprovalRequest.created_at.desc()).all()
+    else:
+        approvals = base.filter(
+            db.or_(
+                ApprovalRequest.requester_id == current_user.id,
+                ApprovalRequest.current_approver_id == current_user.id
+            )
+        ).order_by(ApprovalRequest.created_at.desc()).all()
     return jsonify({'approvals': [a.to_dict() for a in approvals]})
+
+
+def _can_approve(current_user, approval, approvers):
+    """Check if user can approve at current level
+    Exact match OR role-group match (any HR can approve HR-level, etc.)"""
+    if current_user.role in ('admin', 'super_admin'):
+        return True
+    if approval.current_approver_id == current_user.id:
+        return True
+    role = approvers[approval.current_level][0] if approvers and approval.current_level < len(approvers) else ''
+    if role == 'hr' and current_user.role == 'hr':
+        return True
+    if role == 'finance' and current_user.role == 'finance':
+        return True
+    return False
 
 
 @approval_bp.route('/<int:aid>/approve', methods=['POST'])
@@ -191,14 +257,13 @@ def approve_request(current_user, aid):
     if approval.status != 'pending':
         return jsonify({'error': 'Already processed'}), 400
     
-    if approval.current_approver_id != current_user.id:
+    approvers = get_approvers(approval.request_type, approval.requester)
+    if not _can_approve(current_user, approval, approvers):
         return jsonify({'error': 'Not your approval'}), 403
     
     data = request.get_json() or {}
     remarks = data.get('remarks', '')
 
-    # Move to next level or complete
-    approvers = get_approvers(approval.request_type, approval.requester)
     next_level = approval.current_level + 1
 
     # Record history
@@ -212,11 +277,19 @@ def approve_request(current_user, aid):
     db.session.add(hist)
 
     if next_level < len(approvers):
-        # Send to next approver
         approval.current_level = next_level
         approval.current_approver_id = approvers[next_level][1]
         approval.status = 'pending'
-        notify_user(approvers[next_level][1], 'Approval Required', f"Next level approval needed for {approval.requester.full_name}'s {approval.request_type}")
+        next_role = approvers[next_level][0] if approvers else ''
+        # Notify all users in the role group when the next level is a group level
+        if next_role == 'hr':
+            for u in User.query.filter_by(role='hr', is_active=True).all():
+                notify_user(u.id, 'Approval Required', f"HR approval needed for {approval.requester.full_name}'s {approval.request_type}")
+        elif next_role == 'finance':
+            for u in User.query.filter_by(role='finance', is_active=True).all():
+                notify_user(u.id, 'Approval Required', f"Finance approval needed for {approval.requester.full_name}'s {approval.request_type}")
+        else:
+            notify_user(approvers[next_level][1], 'Approval Required', f"Next level approval needed for {approval.requester.full_name}'s {approval.request_type}")
     else:
         # Final approval - process the request
         approval.status = 'approved'
@@ -236,7 +309,8 @@ def reject_request(current_user, aid):
     if approval.status != 'pending':
         return jsonify({'error': 'Already processed'}), 400
     
-    if approval.current_approver_id != current_user.id:
+    approvers = get_approvers(approval.request_type, approval.requester)
+    if not _can_approve(current_user, approval, approvers):
         return jsonify({'error': 'Not your approval'}), 403
     
     data = request.get_json() or {}

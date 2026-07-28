@@ -62,7 +62,7 @@ export default function PMProjects() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {filtered.map(p => (
-            <div key={p.id} onClick={() => navigate(`/projects/${p.id}`)}
+            <div key={p.id} onClick={() => navigate(`/pm/projects/${p.id}`)}
               style={{
                 background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: '12px 16px',
                 cursor: 'pointer', transition: 'all 0.12s',

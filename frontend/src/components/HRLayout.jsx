@@ -2,42 +2,23 @@ import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import {
-  LayoutDashboard, FolderOpen, ListChecks, Calendar, FileText,
-  Users, Bell, UserCircle, ArrowLeft, LogOut, Menu, X,
-  CheckSquare, Clock, Settings, MessageSquare, Mail, Sun, CheckCheck,
-  BookOpen, ClipboardList
+  LayoutDashboard, CheckCheck, Users, Clock,
+  LogOut, Menu, X
 } from 'lucide-react'
 
 const NAV_ITEMS = [
-  { key: 'myday', label: 'My Day', icon: Sun, path: '/employee' },
-  { key: 'projects', label: 'My Projects', icon: FolderOpen, path: '/employee/projects' },
-  { key: 'tasks', label: 'My Tasks', icon: ListChecks, path: '/employee/tasks' },
-  { key: 'meetings', label: 'Meetings', icon: Calendar, path: '/employee/meetings' },
-  { key: 'documents', label: 'Documents', icon: FileText, path: '/employee/documents' },
-  { key: 'calendar', label: 'Calendar', icon: Clock, path: '/employee/calendar' },
-  { key: 'team', label: 'Team', icon: Users, path: '/employee/team' },
-  { key: 'performance', label: 'Performance', icon: CheckSquare, path: '/employee/performance' },
-  { key: 'chat', label: 'Chat', icon: MessageSquare, path: '/employee/chat' },
-  { key: 'notifications', label: 'Notifications', icon: Bell, path: '/employee/notifications' },
-  { key: 'profile', label: 'Profile', icon: UserCircle, path: '/employee/profile' },
+  { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/hr' },
+  { key: 'approvals', label: 'Approvals', icon: CheckCheck, path: '/hr/approvals' },
+  { key: 'employees', label: 'Employees', icon: Users, path: '/hr/employees' },
+  { key: 'attendance', label: 'Attendance', icon: Clock, path: '/hr/attendance' },
 ]
 
-const FINANCE_NAV_ITEMS = [
-  { key: 'approvals', label: 'Approvals', icon: CheckCheck, path: '/employee/approvals' },
-  { key: 'po-in', label: 'Work Orders (PO In)', icon: BookOpen, path: '/employee/po-in' },
-  { key: 'po-out', label: 'Vendor PO (PO Out)', icon: ClipboardList, path: '/employee/po-out' },
-]
-
-export default function EmployeeLayout({ children }) {
+export default function HRLayout({ children }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
-
-  const isFinance = user?.role === 'finance'
-  const items = isFinance ? FINANCE_NAV_ITEMS : NAV_ITEMS
-  const activeKey = items.find(i => location.pathname === i.path)?.key || 'dashboard'
-  const portalTitle = isFinance ? 'Finance Portal' : 'Employee Portal'
+  const activeKey = NAV_ITEMS.find(i => location.pathname === i.path)?.key || 'dashboard'
 
   const sidebarStyle = {
     width: 250, minHeight: '100vh', background: '#0F172A', color: '#fff',
@@ -51,12 +32,11 @@ export default function EmployeeLayout({ children }) {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#F1F5F9' }}>
-      {/* Sidebar */}
       <div style={{ ...sidebarStyle, ...(window.innerWidth < 768 ? mobileStyle : {}) }}>
         <div style={{ padding: '20px', borderBottom: '1px solid #1E293B' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
-              <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: '#fff' }}>{portalTitle}</h2>
+              <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: '#fff' }}>HR Portal</h2>
               <p style={{ fontSize: 11, color: '#94A3B8', margin: '2px 0 0' }}>{user?.full_name}</p>
             </div>
             {window.innerWidth < 768 && (
@@ -67,7 +47,7 @@ export default function EmployeeLayout({ children }) {
           </div>
         </div>
         <nav style={{ flex: 1, padding: '12px 0', overflowY: 'auto' }}>
-          {items.map(item => {
+          {NAV_ITEMS.map(item => {
             const active = item.key === activeKey
             return (
               <div key={item.key} onClick={() => { navigate(item.path); setMobileOpen(false) }}
@@ -85,12 +65,6 @@ export default function EmployeeLayout({ children }) {
           })}
         </nav>
         <div style={{ padding: '12px 20px', borderTop: '1px solid #1E293B' }}>
-          {!isFinance && (
-            <button onClick={() => navigate('/')}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', fontSize: 12, padding: '6px 0' }}>
-              <ArrowLeft className="w-4 h-4" /> Back to Admin
-            </button>
-          )}
           <button onClick={logout}
             style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', color: '#F87171', cursor: 'pointer', fontSize: 12, padding: '6px 0' }}>
             <LogOut className="w-4 h-4" /> Logout
@@ -98,7 +72,6 @@ export default function EmployeeLayout({ children }) {
         </div>
       </div>
 
-      {/* Mobile toggle */}
       {window.innerWidth < 768 && !mobileOpen && (
         <button onClick={() => setMobileOpen(true)}
           style={{ position: 'fixed', top: 12, left: 12, zIndex: 99, background: '#0F172A', border: 'none', color: '#fff', padding: '8px', borderRadius: 8, cursor: 'pointer' }}>
@@ -106,13 +79,11 @@ export default function EmployeeLayout({ children }) {
         </button>
       )}
 
-      {/* Overlay */}
       {mobileOpen && (
         <div onClick={() => setMobileOpen(false)}
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 999 }} />
       )}
 
-      {/* Main content */}
       <div style={{ flex: 1, marginLeft: window.innerWidth < 768 ? 0 : 250, padding: '24px', minHeight: '100vh' }}>
         {children}
       </div>

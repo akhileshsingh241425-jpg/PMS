@@ -30,4 +30,6 @@ from .app_setting import AppSetting, DEFAULT_SETTINGS
 from .task_activity import TaskActivity
 from .approval import ApprovalRequest, ApprovalHistoryEntry
 from .otp import LoginOtp
+from .daily_work_log import DailyWorkLog
+from .holiday import Holiday, HOLIDAY_TYPES
 

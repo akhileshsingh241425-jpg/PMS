@@ -37,7 +37,7 @@ const [showForm, setShowForm] = useState(false)
   const toast = useToast()
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(()=>{load();loadRoles();if(hasRole('admin'))loadPerms()},[])
+  useEffect(()=>{load();loadRoles();if(hasRole('admin','super_admin'))loadPerms()},[])
   useEffect(()=>{if(expandedUser&&allProjects.length===0)loadProjects()},[expandedUser])
   const load = async()=>{try{const r=await api.get('/api/auth/users');setUsers(r.data.users)}catch(e){}}
   const loadRoles = async()=>{try{const r=await api.get('/api/auth/roles');setRoles(r.data.roles)}catch(e){}}
@@ -149,8 +149,8 @@ const [showForm, setShowForm] = useState(false)
       <div className="flex items-center justify-between mb-2">
         <div><h1 className="text-2xl font-serif font-bold">Team & Permissions</h1><p className="text-gray-500 text-sm mt-1">Manage team members, roles, project assignments & module access</p></div>
         <div className="flex items-center gap-2">
-          <button onClick={()=>{load();if(hasRole('admin'))loadPerms()}} className="flex items-center gap-2 px-4 py-2 bg-slate-100 border border-slate-300 text-sm hover:bg-slate-200"><RefreshCw className="w-4 h-4" /> Refresh</button>
-          {hasRole('admin')&&<button onClick={openCreate} className="flex items-center gap-2 bg-blue-700 text-white px-4 py-2 hover:bg-blue-800 text-sm"><Plus className="w-4 h-4"/> Add User</button>}
+          <button onClick={()=>{load();if(hasRole('admin','super_admin'))loadPerms()}} className="flex items-center gap-2 px-4 py-2 bg-slate-100 border border-slate-300 text-sm hover:bg-slate-200"><RefreshCw className="w-4 h-4" /> Refresh</button>
+          {hasRole('admin','super_admin')&&<button onClick={openCreate} className="flex items-center gap-2 bg-blue-700 text-white px-4 py-2 hover:bg-blue-800 text-sm"><Plus className="w-4 h-4"/> Add User</button>}
         </div>
       </div>
 
@@ -232,7 +232,7 @@ const [showForm, setShowForm] = useState(false)
         {filtered.length === 0 ? (
           <p className="text-sm text-slate-400 italic text-center py-8">No users match your search</p>
         ) : filtered.map(u => {
-          const isSuperAdmin = hasRole('admin')
+          const isSuperAdmin = hasRole('admin','super_admin')
           const isExpanded = expandedUser === u.id
           return (
             <div key={u.id} className="bg-white  border border-slate-200 overflow-hidden">
@@ -299,7 +299,7 @@ const [showForm, setShowForm] = useState(false)
                         ))}
                       </div>
                     ) : <p className="text-sm text-slate-400 italic">No projects assigned</p>}
-                    {hasRole('admin', 'project_lead') && (
+                    {hasRole('admin', 'super_admin', 'project_lead') && (
                       <div className="flex items-center gap-2 mt-3">
                         <select value={assignProject[u.id] || ''} onChange={e => setAssignProject(prev => ({...prev, [u.id]: e.target.value}))}
                           className="text-xs px-2 py-1.5 border border-slate-300 bg-white outline-none flex-1 max-w-xs"
