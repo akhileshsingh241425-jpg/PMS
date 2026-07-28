@@ -195,13 +195,31 @@ def list_my_approvals(current_user):
 @approval_bp.route('/history', methods=['GET'])
 @login_required
 def approval_history(current_user):
-    """All approvals involving current user (as requester or approver)"""
-    approvals = ApprovalRequest.query.filter(
-        db.or_(
-            ApprovalRequest.requester_id == current_user.id,
-            ApprovalRequest.current_approver_id == current_user.id
-        )
-    ).order_by(ApprovalRequest.created_at.desc()).all()
+    """All approvals involving current user or their role group"""
+    base = ApprovalRequest.query
+    if current_user.role == 'hr':
+        approvals = base.filter(
+            db.or_(
+                ApprovalRequest.requester_id == current_user.id,
+                ApprovalRequest.current_approver_id == current_user.id,
+                ApprovalRequest.request_type.in_(['leave', 'short_leave'])
+            )
+        ).order_by(ApprovalRequest.created_at.desc()).all()
+    elif current_user.role == 'finance':
+        approvals = base.filter(
+            db.or_(
+                ApprovalRequest.requester_id == current_user.id,
+                ApprovalRequest.current_approver_id == current_user.id,
+                ApprovalRequest.request_type.in_(['expense', 'vendor_payment'])
+            )
+        ).order_by(ApprovalRequest.created_at.desc()).all()
+    else:
+        approvals = base.filter(
+            db.or_(
+                ApprovalRequest.requester_id == current_user.id,
+                ApprovalRequest.current_approver_id == current_user.id
+            )
+        ).order_by(ApprovalRequest.created_at.desc()).all()
     return jsonify({'approvals': [a.to_dict() for a in approvals]})
 
 

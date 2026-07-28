@@ -33,13 +33,18 @@ function PayloadDetails({ payload, request_type }) {
   if (!payload) return null
   if (request_type === 'leave' || request_type === 'short_leave') {
     return (
-      <div style={{ display: 'flex', gap: 16, fontSize: 12, color: '#64748B', flexWrap: 'wrap' }}>
-        {payload.leave_type && <span>{payload.leave_type}</span>}
-        {payload.days && <span>{payload.days} day(s)</span>}
-        {payload.from_date && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <CalendarDays className="w-3 h-3" /> {payload.from_date?.slice(0, 10)}
-        </span>}
-        {payload.to_date && <span>→ {payload.to_date?.slice(0, 10)}</span>}
+      <div style={{ fontSize: 12, color: '#64748B' }}>
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+          {payload.leave_type && <span>{payload.leave_type}</span>}
+          {payload.days && <span>{payload.days} day(s)</span>}
+          {payload.from_date && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <CalendarDays className="w-3 h-3" /> {payload.from_date?.slice(0, 10)}
+          </span>}
+          {payload.to_date && <span>→ {payload.to_date?.slice(0, 10)}</span>}
+        </div>
+        {payload.reason && <div style={{ marginTop: 4, color: '#0F172A', fontWeight: 500 }}>
+          {payload.reason}
+        </div>}
       </div>
     )
   }
@@ -89,6 +94,7 @@ export default function ApprovalsPage() {
   }
 
   useEffect(() => { loadData() }, [])
+  useEffect(() => { const iv = setInterval(loadData, 15000); return () => clearInterval(iv) }, [])
 
   const handleAction = async (id, action) => {
     if (action === 'reject' && !remarks.trim()) {

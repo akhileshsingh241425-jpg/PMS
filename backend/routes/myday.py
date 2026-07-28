@@ -382,7 +382,7 @@ def create_leave(current_user):
             current_level=0,
             current_approver_id=first_id,
             status='pending',
-            payload={'leave_type': leave_type, 'days': (to_date - from_date).days + 1, 'from_date': from_date.isoformat(), 'to_date': to_date.isoformat()}
+            payload={'leave_type': leave_type, 'days': (to_date - from_date).days + 1, 'from_date': from_date.isoformat(), 'to_date': to_date.isoformat(), 'reason': data.get('reason', '')}
         )
         db.session.add(approval)
 
