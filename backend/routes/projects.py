@@ -43,7 +43,7 @@ def _notify_client(proj, title, message):
 @project_bp.route('', methods=['GET'])
 @login_required
 def list_projects(current_user):
-    query = Project.query.filter(Project.direction == 'IN', Project.po_in_status.is_(None))
+    query = Project.query.filter(Project.direction == 'IN')
     if current_user.role != 'admin':
         user_project_ids = [t.project_id for t in ProjectTeam.query.filter_by(user_id=current_user.id).all()]
         query = query.filter(db.or_(
