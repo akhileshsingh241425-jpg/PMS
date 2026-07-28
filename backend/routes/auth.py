@@ -44,6 +44,16 @@ def login():
     if user.role == 'client':
         return jsonify({'error': 'Client users must login via Client Portal at /client-login'}), 403
 
+    # Skip OTP if bypass is enabled (testing mode)
+    if os.environ.get('OTP_BYPASS', '').lower() == 'true':
+        token = generate_token(user)
+        user.last_activity = datetime.utcnow()
+        db.session.commit()
+        return jsonify({
+            'token': token,
+            'user': user.to_dict(),
+        })
+
     # Generate & send OTP
     otp = LoginOtp.create_for_user(user.id)
     masked = user.email[:3] + '***' + user.email[user.email.index('@'):]
