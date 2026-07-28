@@ -1,4 +1,4 @@
-import threading
+import os, threading
 from flask import current_app
 from flask_mail import Mail, Message
 
@@ -9,11 +9,16 @@ def init_mail(app):
     mail.init_app(app)
 
 
-def send_email_async(subject, recipients, html_body):
+def send_email_async(subject, recipients, html_body, attachment_path=None):
     def _send(app):
         with app.app_context():
             try:
                 msg = Message(subject, recipients=recipients, html=html_body)
+                if attachment_path and os.path.exists(attachment_path):
+                    from flask_mail import Attachment
+                    fname = os.path.basename(attachment_path)
+                    with open(attachment_path, 'rb') as f:
+                        msg.attach(fname, 'application/pdf', f.read())
                 mail.send(msg)
             except Exception:
                 pass
