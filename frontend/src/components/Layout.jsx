@@ -154,7 +154,7 @@ export default function Layout({ children }) {
 
         {/* Nav */}
         <nav style={{ flex: 1, padding: '12px 8px', display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto' }}>
-          {[...nav, ...(user?.role === 'admin' ? [{ to: '/users', icon: Users, label: 'Users' }] : [])].filter(item => {
+          {[...nav, ...((user?.role === 'admin' || user?.role === 'super_admin') ? [{ to: '/users', icon: Users, label: 'Users' }] : [])].filter(item => {
             if (item.adminOnly && user?.role !== 'admin' && user?.role !== 'super_admin') return false
             if (item.roles && !item.roles.includes(user?.role)) return false
             return true
