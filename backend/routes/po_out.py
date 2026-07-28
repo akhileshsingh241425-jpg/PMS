@@ -530,13 +530,19 @@ def send_po_mail(current_user, pid):
         </div>
     </div>'''
 
-    # send via Flask-Mail SMTP (same as OTP / notification emails)
+    # send via Microsoft Graph API (same as PO acknowledgment)
     try:
-        from email_utils import send_email_async
-        send_email_async(subject, [vendor_email], html, attachment_path=path if os.path.exists(path) else None)
-        return jsonify({'message': f'Email sent to {vendor_email}'})
+        from routes.email_integration import send_via_graph
+        from models.email_integration import EmailAccount
+        acct = EmailAccount.query.filter_by(is_active=True).first()
+        if not acct:
+            return jsonify({'error': 'No connected email account'}), 500
+        ok, msg = send_via_graph(acct, vendor_email, None, subject, html, pdf_path=path if os.path.exists(path) else None)
+        if ok:
+            return jsonify({'message': f'Email sent to {vendor_email}'})
+        return jsonify({'error': msg}), 500
     except Exception as e:
-        return jsonify({'error': f'Failed to send email: {str(e)}'}), 500
+        return jsonify({'error': f'Failed: {str(e)}'}), 500
 
 
 @po_out_bp.route('/report/tds-quarterly', methods=['GET'])
