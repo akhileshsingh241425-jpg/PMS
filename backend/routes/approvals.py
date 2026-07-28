@@ -226,14 +226,13 @@ def approve_request(current_user, aid):
     if approval.status != 'pending':
         return jsonify({'error': 'Already processed'}), 400
     
-    if not _can_approve(current_user, approval, []):
+    approvers = get_approvers(approval.request_type, approval.requester)
+    if not _can_approve(current_user, approval, approvers):
         return jsonify({'error': 'Not your approval'}), 403
     
     data = request.get_json() or {}
     remarks = data.get('remarks', '')
 
-    # Move to next level or complete
-    approvers = get_approvers(approval.request_type, approval.requester)
     next_level = approval.current_level + 1
 
     # Record history
@@ -279,7 +278,8 @@ def reject_request(current_user, aid):
     if approval.status != 'pending':
         return jsonify({'error': 'Already processed'}), 400
     
-    if not _can_approve(current_user, approval, []):
+    approvers = get_approvers(approval.request_type, approval.requester)
+    if not _can_approve(current_user, approval, approvers):
         return jsonify({'error': 'Not your approval'}), 403
     
     data = request.get_json() or {}
