@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, date
 from flask import Blueprint, request, jsonify, current_app
-from models import db, User, Project, ProjectPhase, ProjectAsset, Task, TaskActivity, Finding, LeaveRequest, ExpenseEntry, DayEndLog, Attendance, ProjectReport, Notification
+from models import db, User, Project, ProjectPhase, ProjectAsset, Task, TaskActivity, Finding, LeaveRequest, ExpenseEntry, DayEndLog, Attendance, ProjectReport, Notification, ApprovalRequest
 from middleware.auth import login_required
 from werkzeug.utils import secure_filename
 
@@ -351,17 +351,50 @@ def create_leave(current_user):
     if attachment:
         attachment_path = _save_file('leave', attachment)
 
+    leave_type = data['leave_type']
+    from_date = datetime.strptime(data['from_date'], '%Y-%m-%d').date()
+    to_date = datetime.strptime(data['to_date'], '%Y-%m-%d').date()
+
     req = LeaveRequest(
         user_id=current_user.id,
-        leave_type=data['leave_type'],
-        from_date=datetime.strptime(data['from_date'], '%Y-%m-%d').date(),
-        to_date=datetime.strptime(data['to_date'], '%Y-%m-%d').date(),
+        leave_type=leave_type,
+        from_date=from_date,
+        to_date=to_date,
         from_time=data.get('from_time'),
         to_time=data.get('to_time'),
         reason=data['reason'],
         attachment_path=attachment_path,
     )
     db.session.add(req)
+    db.session.flush()
+
+    # Build approval chain: manager -> HR
+    approvers = []
+    if current_user.reporting_manager_id:
+        approvers.append(('manager', current_user.reporting_manager_id))
+    hr_users = User.query.filter_by(role='hr', is_active=True).all()
+    for hr in hr_users:
+        approvers.append(('hr', hr.id))
+
+    req_type = 'short_leave' if leave_type == 'short_leave' else 'leave'
+
+    if approvers:
+        approval = ApprovalRequest(
+            request_type=req_type,
+            requester_id=current_user.id,
+            target_type='leave_request',
+            target_id=req.id,
+            current_level=0,
+            current_approver_id=approvers[0][1],
+            status='pending',
+            payload={'leave_type': leave_type, 'days': (to_date - from_date).days + 1, 'from_date': from_date.isoformat(), 'to_date': to_date.isoformat()}
+        )
+        db.session.add(approval)
+
+        # Notify first approver
+        _notify(approvers[0][1], f'Leave Approval Required',
+                f'{current_user.full_name} requested {leave_type} leave from {from_date} to {to_date}',
+                'approval', approval.id)
 
     pm = User.query.get(current_user.reporting_manager_id) if current_user.reporting_manager_id else None
     if pm:
