@@ -1,31 +1,21 @@
 import os, threading
 from flask import current_app
-from flask_mail import Mail, Message
-
-mail = Mail()
-
-
-def init_mail(app):
-    mail.init_app(app)
 
 
 def send_email_async(subject, recipients, html_body, attachment_path=None):
-    def _send(app):
-        with app.app_context():
-            try:
-                msg = Message(subject, recipients=recipients, html=html_body)
-                if attachment_path and os.path.exists(attachment_path):
-                    from flask_mail import Attachment
-                    fname = os.path.basename(attachment_path)
-                    with open(attachment_path, 'rb') as f:
-                        msg.attach(fname, 'application/pdf', f.read())
-                mail.send(msg)
-            except Exception:
-                pass
+    def _send():
+        try:
+            from routes.email_integration import send_via_graph
+            from models.email_integration import EmailAccount
+            acct = EmailAccount.query.filter_by(is_active=True).first()
+            if not acct:
+                return
+            to = recipients[0] if recipients else ''
+            send_via_graph(acct, to, None, subject, html_body, pdf_path=attachment_path if attachment_path and os.path.exists(attachment_path) else None)
+        except Exception:
+            pass
 
-    import flask
-    app = flask.current_app._get_current_object()
-    threading.Thread(target=_send, args=(app,), daemon=True).start()
+    threading.Thread(target=_send, daemon=True).start()
 
 
 def send_notification_email(user_email, user_name, title, message, module_type=None, module_id=None, frontend_url='http://localhost:5174'):
