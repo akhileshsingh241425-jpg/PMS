@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { LayoutDashboard, Target, FileText, Building2, Briefcase, Users, LogOut, Bell, Search, ChevronLeft, ChevronRight, UserCircle, AlertTriangle, Clock, Mail, MessageSquare, ClipboardList, BookOpen, Settings as SettingsIcon, CheckCheck } from 'lucide-react'
+import { LayoutDashboard, Target, FileText, Building2, Briefcase, Users, LogOut, Bell, Search, ChevronLeft, ChevronRight, UserCircle, Clock, Mail, MessageSquare, ClipboardList, BookOpen, Settings as SettingsIcon, CheckCheck } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import api from '../services/api'
 
@@ -13,7 +13,6 @@ const nav = [
   { to: '/po-out', icon: ClipboardList, label: 'Vendor PO' },
   { to: '/teams', icon: Users, label: 'Teams' },
   { to: '/attendance', icon: Clock, label: 'Attendance' },
-  { to: '/vulnerabilities', icon: AlertTriangle, label: 'Vulnerabilities' },
   { to: '/approvals', icon: CheckCheck, label: 'Approvals', roles: ['admin', 'super_admin', 'hr', 'finance'] },
   { to: '/chat', icon: MessageSquare, label: 'Chat' },
   { to: '/settings', icon: SettingsIcon, label: 'Settings', adminOnly: true },

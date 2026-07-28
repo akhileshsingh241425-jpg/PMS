@@ -33,7 +33,6 @@ import PMTeam from './pages/PMTeam'
 import PMMeetings from './pages/PMMeetings'
 import PMReports from './pages/PMReports'
 import PMApprovalQueue from './pages/PMApprovalQueue'
-import VulnerabilityDashboard from './pages/VulnerabilityDashboard'
 import Clients from './pages/Clients'
 import ClientOnboarding from './pages/ClientOnboarding'
 import ClientDetailPage from './pages/ClientDetailPage'
@@ -191,7 +190,6 @@ export default function App() {
                 <Route path="chat" element={<ChatPage />} />
                 <Route path="email" element={<EmailInbox />} />
               </Route>
-              <Route path="/vulnerabilities" element={<Protected><Layout><VulnerabilityDashboard /></Layout></Protected>} />
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
             <FloatingChat />
