@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { FileText, Building2, Calendar, CheckCircle, Clock, XCircle, Ban, Send, Play, Download, Mail, Plus, RefreshCw, History, Pencil, Briefcase } from 'lucide-react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import { FileText, Building2, Calendar, CheckCircle, Clock, XCircle, Ban, Send, Play, Download, Mail, Plus, RefreshCw, History, Pencil, Briefcase, Trash2 } from 'lucide-react'
 import api from '../services/api'
 import { C } from '../components/styleConstants'
 import Breadcrumb from '../components/Breadcrumb'
@@ -30,6 +30,7 @@ const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-dig
 
 export default function POVendorDetail() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const { addToast } = useToast()
   const [po, setPo] = useState(null)
   const [payments, setPayments] = useState([])
@@ -64,6 +65,15 @@ export default function POVendorDetail() {
       await api.post(`/api/po-out/${id}/${action}`, body)
       await load()
     } catch (e) { addToast(e.response?.data?.error || 'Failed', 'error') }
+  }
+
+  const handleDeleteDraft = async () => {
+    if (!window.confirm('Delete this draft PO permanently?')) return
+    try {
+      await api.delete(`/api/po-out/${id}`)
+      addToast('PO deleted', 'success')
+      navigate('/po-out')
+    } catch (e) { addToast(e.response?.data?.error || 'Delete failed', 'error') }
   }
 
   const openEditVendor = () => {
@@ -226,7 +236,11 @@ export default function POVendorDetail() {
         {/* Action buttons */}
         <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
           {po.po_out_status === 'DRAFT' && (
-            <ActionBtn icon={Send} label="Submit PO" color={C.blue} onClick={() => handleAction('submit')} />
+            <>
+              <ActionBtn icon={Pencil} label="Edit" color={C.blue} onClick={() => navigate(`/po-out?edit=${id}`)} />
+              <ActionBtn icon={Send} label="Submit PO" color={C.blue} onClick={() => handleAction('submit')} />
+              <ActionBtn icon={Trash2} label="Delete" color="#EF4444" onClick={handleDeleteDraft} />
+            </>
           )}
           {po.po_out_status === 'PO ISSUED' && (
             <>

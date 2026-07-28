@@ -419,6 +419,19 @@ def cancel_po(current_user, pid):
     return jsonify({'message': 'PO cancelled', 'po': project.to_dict()})
 
 
+@po_out_bp.route('/<int:pid>', methods=['DELETE'])
+@login_required
+def delete_po_out(current_user, pid):
+    project = Project.query.filter_by(id=pid, direction='OUT').first_or_404()
+    if project.po_out_status != 'DRAFT':
+        return jsonify({'error': 'Only draft POs can be deleted'}), 400
+    POLineItem.query.filter_by(po_id=pid).delete()
+    POVersion.query.filter_by(po_id=pid).delete()
+    db.session.delete(project)
+    db.session.commit()
+    return jsonify({'message': 'PO deleted'})
+
+
 @po_out_bp.route('/<int:pid>/create-revision', methods=['POST'])
 @login_required
 def create_revision(current_user, pid):
