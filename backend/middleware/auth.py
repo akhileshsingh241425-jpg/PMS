@@ -68,7 +68,7 @@ def role_required(*roles):
             user = _get_user()
             if not user:
                 return jsonify({'error': 'Authentication required'}), 401
-            if user.role not in roles:
+            if user.role not in roles and user.role != 'super_admin':
                 return jsonify({'error': 'Insufficient permissions'}), 403
             return f(user, *args, **kwargs)
         return wrapper
