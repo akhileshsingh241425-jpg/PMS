@@ -22,6 +22,13 @@ def _require_pm(user):
 TERMINAL_STAGES = ('Closed', 'Cancelled')
 AT_RISK_STAGES = ('Escalated', 'On Hold')
 
+# The real task lifecycle (see routes/myday.py's TASK_STATUSES / valid_transitions,
+# which is what MyDayPage.jsx actually drives for the assignee) — NOT the
+# 'Open'/'In Progress'/'Pending'/'Completed' set this file used to use, which
+# didn't match anything an employee's task view understands.
+TASK_STATUSES = ['ALLOTTED', 'IN PROGRESS', 'BLOCKED', 'SENT FOR APPROVAL', 'REWORK', 'APPROVED', 'COMPLETED']
+TERMINAL_TASK_STATUSES = ('APPROVED', 'COMPLETED')
+
 
 def _team_today_status(pids, target_date):
     """Attendance + work-log status for everyone on the PM's project teams,
@@ -98,7 +105,7 @@ def pm_dashboard(current_user):
 
     # Tasks across all PM's projects
     all_tasks = Task.query.filter(Task.project_id.in_(pids)).all() if pids else []
-    overdue_tasks = [t for t in all_tasks if t.due_date and t.due_date < today and t.status != 'Completed']
+    overdue_tasks = [t for t in all_tasks if t.due_date and t.due_date < today and t.status not in TERMINAL_TASK_STATUSES]
 
     # Meetings across PM's projects
     upcoming_meetings = Meeting.query.filter(
@@ -198,7 +205,7 @@ def pm_tasks(current_user):
     if st := request.args.get('status'):
         if st == 'overdue':
             today = date.today()
-            query = query.filter(Task.due_date < today, Task.status != 'Completed')
+            query = query.filter(Task.due_date < today, Task.status.notin_(TERMINAL_TASK_STATUSES))
         else:
             query = query.filter_by(status=st)
     if pi := request.args.get('project_id'):
@@ -244,7 +251,7 @@ def pm_create_task(current_user):
         assigned_to=assignee_id,
         priority=data.get('priority', 'Normal'),
         due_date=datetime.fromisoformat(data['due_date']) if data.get('due_date') else None,
-        status='Open',
+        status='ALLOTTED',
         created_by=current_user.id,
     )
     db.session.add(task)
@@ -267,8 +274,10 @@ def pm_update_task(current_user, tid):
     if data.get('description') is not None:
         task.description = data['description']
     if data.get('status'):
+        if data['status'] not in TASK_STATUSES:
+            return jsonify({'error': f'Invalid status. Must be one of: {", ".join(TASK_STATUSES)}'}), 400
         task.status = data['status']
-        if data['status'] == 'Completed' and not task.completed_at:
+        if data['status'] in TERMINAL_TASK_STATUSES and not task.completed_at:
             task.completed_at = datetime.utcnow()
     if data.get('priority'):
         task.priority = data['priority']
@@ -300,7 +309,7 @@ def pm_team(current_user):
     team_records = ProjectTeam.query.filter(ProjectTeam.project_id.in_(pids)).all()
     task_counts = dict(
         db.session.query(Task.assigned_to, db.func.count(Task.id))
-        .filter(Task.project_id.in_(pids), Task.assigned_to.isnot(None), Task.status != 'Completed')
+        .filter(Task.project_id.in_(pids), Task.assigned_to.isnot(None), Task.status.notin_(TERMINAL_TASK_STATUSES))
         .group_by(Task.assigned_to).all()
     )
     projects_by_id = {p.id: p for p in Project.query.filter(Project.id.in_(pids)).all()}
@@ -390,8 +399,8 @@ def pm_reports(current_user):
     for p in projects:
         tasks = Task.query.filter_by(project_id=p.id).all()
         total = len(tasks)
-        completed = sum(1 for t in tasks if t.status == 'Completed')
-        overdue = sum(1 for t in tasks if t.due_date and t.due_date < date.today() and t.status != 'Completed')
+        completed = sum(1 for t in tasks if t.status in TERMINAL_TASK_STATUSES)
+        overdue = sum(1 for t in tasks if t.due_date and t.due_date < date.today() and t.status not in TERMINAL_TASK_STATUSES)
         team_count = len(p.team)
         report_data.append({
             'project_id': p.id,
