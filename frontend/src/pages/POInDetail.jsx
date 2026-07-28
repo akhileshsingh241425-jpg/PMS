@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { FileText, Building2, Calendar, CheckCircle, Clock, XCircle, Ban, Send, Upload, Download, RefreshCw, Plus, ChevronDown, Briefcase } from 'lucide-react'
+import { FileText, Building2, Calendar, CheckCircle, Clock, XCircle, Ban, Send, Upload, Download, RefreshCw, Plus, ChevronDown, Briefcase, X } from 'lucide-react'
 import api from '../services/api'
 import { C } from '../components/styleConstants'
 import Breadcrumb from '../components/Breadcrumb'
