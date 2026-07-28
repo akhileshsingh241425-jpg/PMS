@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { X, MessageSquare, Activity, User, Bell, Flag, Tag, Clock, AlertTriangle, CheckCircle, FileText, ChevronDown, Search, UserCheck, Calendar, BookOpen, Briefcase, AtSign, Phone, Building, Star, Send, MoreHorizontal, Mail } from 'lucide-react'
 import { C } from './styleConstants'
-import { categorizeMessage, assignMessage, updateStatus, setPriority, setTags, snoozeMessage, listNotes, addNote, listActivities, getCustomerProfile, checkDuplicate, createFollowup, listTemplates } from '../api/emailApi'
+import { categorizeMessage, assignMessage, updateStatus, setPriority, setTags, snoozeMessage, listNotes, addNote, listActivities, getCustomerProfile, checkDuplicate, createFollowup, listTemplates, markRead } from '../api/emailApi'
 
 const CATEGORIES = ['Lead', 'Client', 'Follow-up', 'Support', 'Task', 'Meeting', 'Invoice', 'Other']
 const STATUSES = ['New', 'Assigned', 'Working', 'Waiting Customer', 'Completed', 'Closed']
@@ -34,6 +34,13 @@ export default function EmailDetailPanel({ msg, employees, onClose, onRefresh })
   }, [msg.id])
 
   useEffect(() => { loadDetails() }, [loadDetails])
+
+  useEffect(() => {
+    if (!msg.is_read) {
+      markRead(msg.id).then(() => { msg.is_read = true; onRefresh() }).catch(() => {})
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [msg.id])
 
   const handleCategorize = async (cat) => { await categorizeMessage(msg.id, cat); msg.category = cat; onRefresh() }
   const handleAssign = async (uid) => {

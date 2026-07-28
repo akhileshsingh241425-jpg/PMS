@@ -292,7 +292,7 @@ def _fetch_messages(account, token, folder_id=None):
         _apply_auto_rules(email_msg)
         db.session.add(email_msg)
         db.session.flush()
-        _add_activity(email_msg.id, current_user.id, 'Received', 'Email received from ' + sender_email)
+        _add_activity(email_msg.id, account.user_id, 'Received', 'Email received from ' + sender_email)
         fetched += 1
     return fetched
 
