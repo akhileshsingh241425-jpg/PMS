@@ -11,15 +11,14 @@ class Config:
     MAX_CONTENT_LENGTH = int(os.environ.get('MAX_UPLOAD_MB', 16)) * 1024 * 1024
     FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://93.127.194.235:9443')
 
-    DB_TYPE = os.environ.get('DB_TYPE', 'sqlite')
-
-    if DB_TYPE == 'mysql':
-        SQLALCHEMY_DATABASE_URI = os.environ.get(
-            'DATABASE_URL',
-            'mysql+pymysql://pms_user:pms_pass@localhost:3306/pms_v2'
-        )
-    else:
-        SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///pms_v2.db')
+    SQLALCHEMY_DATABASE_URI = os.environ.get(
+        'DATABASE_URL',
+        'mysql+pymysql://pms_user:pms_pass@localhost:3306/pms_v2'
+    )
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,
+        'pool_recycle': 280,
+    }
 
     MAIL_SERVER = os.environ.get('MAIL_SERVER', '')
     MAIL_PORT = int(os.environ.get('MAIL_PORT', 587))

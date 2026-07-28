@@ -52,7 +52,7 @@ export default function Projects() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load() }, [page])
 
-  const load = async () => { try { const r = await api.get('/api/projects', { params: { search, stage: stageFilter, page, per_page: 25 } }); setProjects(r.data.projects); setPagination(r.data.pagination) } catch (e) { console.error(e) } finally { setLoading(false) } }
+  const load = async () => { try { const r = await api.get('/api/projects', { params: { search, stage: stageFilter, page, per_page: 25 } }); setProjects(r.data.projects); setPagination(r.data.pagination) } catch (e) { toast('Project list load failed', 'error') } finally { setLoading(false) } }
   const loadAccounts = async () => { try { const r = await api.get('/api/clients'); setAccounts(r.data.clients) } catch (e) { console.error(e) } }
   const loadUsers = async () => { try { const r = await api.get('/api/auth/users'); setUsers(r.data.users) } catch (e) { console.error(e) } }
 
