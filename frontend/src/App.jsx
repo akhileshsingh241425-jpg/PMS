@@ -24,6 +24,8 @@ import EmployeeLayout from './components/EmployeeLayout'
 import EmployeePortal from './pages/EmployeePortal'
 import MyDayPage from './pages/MyDayPage'
 import PMLayout from './components/PMLayout'
+import HRLayout from './components/HRLayout'
+import HRDashboard from './pages/HRDashboard'
 import PMDashboard from './pages/PMDashboard'
 import PMProjects from './pages/PMProjects'
 import PMTasks from './pages/PMTasks'
@@ -47,6 +49,12 @@ import ChatPage from './pages/ChatPage'
 import PlanBuilderPage from './pages/PlanBuilderPage'
 import FloatingChat from './components/FloatingChat'
 
+function EmployeePortalFinanceRedirect() {
+  const { user } = useAuth()
+  if (user?.role === 'finance') return <Navigate to="/employee/approvals" replace />
+  return <MyDayPage />
+}
+
 function Protected({ children }) {
   const { user } = useAuth()
   if (!user) return <Navigate to="/login" replace />
@@ -67,6 +75,7 @@ function EmployeeRoute({ children }) {
   if (!user) return <Navigate to="/login" replace />
   if (isAdmin(user.role)) return <Navigate to="/" replace />
   if (user.role === 'project_manager') return <Navigate to="/pm" replace />
+  if (user.role === 'hr') return <Navigate to="/hr" replace />
   return children
 }
 
@@ -77,10 +86,18 @@ function PMRoute({ children }) {
   return children
 }
 
+function HRRoute({ children }) {
+  const { user } = useAuth()
+  if (!user) return <Navigate to="/login" replace />
+  if (user.role !== 'hr' && !isAdmin(user.role)) return <Navigate to="/employee" replace />
+  return children
+}
+
 function AppLayout() {
   const { user } = useAuth()
   if (!user) return <Navigate to="/login" replace />
   if (user.role === 'project_manager') return <Navigate to="/pm" replace />
+  if (user.role === 'hr') return <Navigate to="/hr" replace />
   if (!isAdmin(user.role)) return <Navigate to="/employee" replace />
   return <Layout><Outlet /></Layout>
 }
@@ -91,6 +108,10 @@ function EmployeeAppLayout() {
 
 function PMAppLayout() {
   return <PMLayout><Outlet /></PMLayout>
+}
+
+function HRAppLayout() {
+  return <HRLayout><Outlet /></HRLayout>
 }
 
 export default function App() {
@@ -133,7 +154,7 @@ export default function App() {
                 <Route path="chat" element={<ChatPage />} />
               </Route>
               <Route path="/employee" element={<Protected><EmployeeRoute><EmployeeAppLayout /></EmployeeRoute></Protected>}>
-                <Route index element={<MyDayPage />} />
+                <Route index element={<EmployeePortalFinanceRedirect />} />
                 <Route path="projects" element={<EmployeePortal activeTab="projects" />} />
                 <Route path="tasks" element={<EmployeePortal activeTab="tasks" />} />
                 <Route path="meetings" element={<EmployeePortal activeTab="meetings" />} />
@@ -147,6 +168,16 @@ export default function App() {
                 <Route path="chat" element={<ChatPage />} />
                 <Route path="email" element={<EmailInbox />} />
                 <Route path="approvals" element={<ApprovalsPage />} />
+                <Route path="po-in" element={<POInPage />} />
+                <Route path="po-in/:id" element={<POInDetail />} />
+                <Route path="po-out" element={<POVendorPage />} />
+                <Route path="po-out/:id" element={<POVendorDetail />} />
+              </Route>
+              <Route path="/hr" element={<Protected><HRRoute><HRAppLayout /></HRRoute></Protected>}>
+                <Route index element={<HRDashboard />} />
+                <Route path="approvals" element={<ApprovalsPage />} />
+                <Route path="employees" element={<UsersPage />} />
+                <Route path="attendance" element={<AttendancePage />} />
               </Route>
               <Route path="/pm" element={<Protected><PMRoute><PMAppLayout /></PMRoute></Protected>}>
                 <Route path="face-register" element={<FaceRegisterPage />} />

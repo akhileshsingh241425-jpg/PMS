@@ -141,7 +141,7 @@ def me(current_user):
 
 
 @auth_bp.route('/users', methods=['GET'])
-@role_required('admin')
+@role_required('admin', 'hr')
 def list_users(current_user):
     users = User.query.order_by(User.created_at.desc()).all()
     result = []
@@ -194,7 +194,7 @@ def create_user(current_user):
 
 
 @auth_bp.route('/users/<int:uid>', methods=['PUT'])
-@role_required('admin')
+@role_required('admin', 'hr')
 def update_user(current_user, uid):
     user = User.query.get_or_404(uid)
     data = request.get_json()
