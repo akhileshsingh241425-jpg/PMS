@@ -246,8 +246,7 @@ export default function ProjectsDetailPage() {
   const toggleReaction = async (remarkId, emoji) => {
     try {
       const r = await api.post(`/api/projects/${id}/remarks/${remarkId}/react`, { emoji })
-      const updated = data.remarks.map(rr => rr.id === remarkId ? r.data.remark : rr)
-      setData({ ...data, remarks: updated })
+      setData(prev => ({ ...prev, remarks: prev.remarks.map(rr => rr.id === remarkId ? r.data.remark : rr) }))
     } catch (e) {}
   }
 
