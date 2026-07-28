@@ -206,8 +206,8 @@ def list_my_approvals(current_user):
 @approval_bp.route('/history', methods=['GET'])
 @login_required
 def approval_history(current_user):
-    """All approvals involving current user or their role group"""
-    base = ApprovalRequest.query
+    """Completed approvals involving current user or their role group"""
+    base = ApprovalRequest.query.filter(ApprovalRequest.status != 'pending')
     if current_user.role == 'hr':
         approvals = base.filter(
             db.or_(
@@ -237,6 +237,8 @@ def approval_history(current_user):
 def _can_approve(current_user, approval, approvers):
     """Check if user can approve at current level
     Exact match OR role-group match (any HR can approve HR-level, etc.)"""
+    if current_user.role in ('admin', 'super_admin'):
+        return True
     if approval.current_approver_id == current_user.id:
         return True
     role = approvers[approval.current_level][0] if approvers and approval.current_level < len(approvers) else ''

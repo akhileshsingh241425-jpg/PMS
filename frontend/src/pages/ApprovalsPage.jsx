@@ -238,6 +238,7 @@ export default function ApprovalsPage() {
 
                   {/* Action buttons for pending items where user can approve */}
                   {a.status === 'pending' && (
+                    user?.role === 'admin' || user?.role === 'super_admin' ||
                     a.current_approver_id === user?.id ||
                     (user?.role === 'hr' && ['leave', 'short_leave'].includes(a.request_type)) ||
                     (user?.role === 'finance' && ['expense', 'vendor_payment'].includes(a.request_type))
