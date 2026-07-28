@@ -3,6 +3,7 @@ from datetime import datetime, date
 from flask import Blueprint, request, jsonify, current_app
 from models import db, User, Project, ProjectPhase, ProjectAsset, Task, TaskActivity, Finding, LeaveRequest, ExpenseEntry, DayEndLog, Attendance, ProjectReport, Notification, ApprovalRequest
 from middleware.auth import login_required
+from routes.approvals import get_approvers
 from werkzeug.utils import secure_filename
 
 myday_bp = Blueprint('myday', __name__, url_prefix='/api/my-day')
@@ -368,39 +369,41 @@ def create_leave(current_user):
     db.session.add(req)
     db.session.flush()
 
-    # Build approval chain: manager -> HR
-    approvers = []
-    if current_user.reporting_manager_id:
-        approvers.append(('manager', current_user.reporting_manager_id))
-    hr_users = User.query.filter_by(role='hr', is_active=True).all()
-    for hr in hr_users:
-        approvers.append(('hr', hr.id))
-
     req_type = 'short_leave' if leave_type == 'short_leave' else 'leave'
+    approvers = get_approvers(req_type, current_user)
 
     if approvers:
+        first_id = approvers[0][1]
         approval = ApprovalRequest(
             request_type=req_type,
             requester_id=current_user.id,
             target_type='leave_request',
             target_id=req.id,
             current_level=0,
-            current_approver_id=approvers[0][1],
+            current_approver_id=first_id,
             status='pending',
             payload={'leave_type': leave_type, 'days': (to_date - from_date).days + 1, 'from_date': from_date.isoformat(), 'to_date': to_date.isoformat()}
         )
         db.session.add(approval)
 
-        # Notify first approver
-        _notify(approvers[0][1], f'Leave Approval Required',
-                f'{current_user.full_name} requested {leave_type} leave from {from_date} to {to_date}',
-                'approval', approval.id)
+        # Notify first approver(s)
+        if first_id == 0:
+            role = approvers[0][0]
+            if role == 'hr':
+                for u in User.query.filter_by(role='hr', is_active=True).all():
+                    _notify(u.id, 'Leave Approval Required', f'{current_user.full_name} requested {leave_type} leave')
+            elif role == 'finance':
+                for u in User.query.filter_by(role='finance', is_active=True).all():
+                    _notify(u.id, 'Leave Approval Required', f'{current_user.full_name} requested {leave_type} leave')
+        else:
+            _notify(first_id, 'Leave Approval Required', f'{current_user.full_name} requested {leave_type} leave')
 
-    pm = User.query.get(current_user.reporting_manager_id) if current_user.reporting_manager_id else None
-    if pm:
-        _notify(pm.id, f'Leave request: {req.leave_type}',
-                f'{current_user.full_name} requested {req.leave_type} from {req.from_date} to {req.to_date}',
-                'leave', req.id)
+    if current_user.reporting_manager_id:
+        pm = User.query.get(current_user.reporting_manager_id)
+        if pm:
+            _notify(pm.id, f'Leave request: {req.leave_type}',
+                    f'{current_user.full_name} requested {req.leave_type} from {req.from_date} to {req.to_date}',
+                    'leave', req.id)
 
     db.session.commit()
     return jsonify({'leave_request': req.to_dict()}), 201
