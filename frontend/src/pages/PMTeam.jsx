@@ -1,8 +1,79 @@
 import { useState, useEffect, useCallback } from 'react'
 import api from '../services/api'
 import { useToast } from '../contexts/ToastContext'
-import { Users, Search, Plus, X } from 'lucide-react'
+import { Users, Search, Plus, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import Breadcrumb from '../components/Breadcrumb'
+
+const STATUS_STYLE = {
+  Present: { bg: '#ECFDF5', text: '#065F46' },
+  Working: { bg: '#EFF6FF', text: '#1E40AF' },
+  'On Leave': { bg: '#FFFBEB', text: '#92400E' },
+  Absent: { bg: '#FEF2F2', text: '#991B1B' },
+  Upcoming: { bg: '#F1F5F9', text: '#64748B' },
+}
+const todayStr = () => new Date().toISOString().slice(0, 10)
+const fmtTime = iso => iso ? new Date(iso).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '—'
+
+function TodayStatusPanel() {
+  const toast = useToast()
+  const [date, setDate] = useState(todayStr())
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  const load = useCallback(() => {
+    setLoading(true)
+    api.get('/api/pm/team/today-status', { params: { date } })
+      .then(r => setData(r.data))
+      .catch(() => toast('Failed to load team status', 'error'))
+      .finally(() => setLoading(false))
+  }, [date])
+  useEffect(() => { load() }, [load])
+
+  const shift = delta => { const d = new Date(date); d.setDate(d.getDate() + delta); setDate(d.toISOString().slice(0, 10)) }
+
+  if (!loading && (!data || data.members.length === 0)) return null
+
+  return (
+    <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', padding: '14px', marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', margin: 0 }}>Today's Activity</h3>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <button onClick={() => shift(-1)} style={{ border: '1px solid #E5E7EB', borderRadius: 6, background: '#fff', cursor: 'pointer', padding: 5 }}><ChevronLeft className="w-3.5 h-3.5" /></button>
+          <input type="date" value={date} onChange={e => setDate(e.target.value)} style={{ border: '1px solid #E5E7EB', borderRadius: 6, padding: '5px 8px', fontSize: 12 }} />
+          <button onClick={() => shift(1)} disabled={date >= todayStr()} style={{ border: '1px solid #E5E7EB', borderRadius: 6, background: '#fff', cursor: date >= todayStr() ? 'not-allowed' : 'pointer', padding: 5, opacity: date >= todayStr() ? 0.4 : 1 }}><ChevronRight className="w-3.5 h-3.5" /></button>
+          {date !== todayStr() && <button onClick={() => setDate(todayStr())} style={{ fontSize: 11.5, color: '#5B3DF5', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Today</button>}
+        </div>
+      </div>
+      {loading ? (
+        <p style={{ fontSize: 12, color: '#9CA3AF', textAlign: 'center', padding: 10, margin: 0 }}>Loading…</p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {data.members.map(m => {
+            const s = STATUS_STYLE[m.status] || STATUS_STYLE.Absent
+            return (
+              <div key={m.user_id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 4px', borderBottom: '1px solid #F3F4F6' }}>
+                <div style={{ fontSize: 12.5, fontWeight: 600, color: '#0F172A' }}>{m.name}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  {(m.status === 'Present' || m.status === 'Working') && (
+                    <span style={{ fontSize: 11, color: '#6B7280' }}>{fmtTime(m.clock_in)}{m.clock_out ? ` – ${fmtTime(m.clock_out)}` : ''}</span>
+                  )}
+                  {(m.status === 'Present' || m.status === 'Working') && (
+                    m.work_log_submitted
+                      ? <span style={{ fontSize: 10.5, color: '#059669', fontWeight: 600 }}>✓ Logged</span>
+                      : <span style={{ fontSize: 10.5, color: '#B45309', fontWeight: 600 }}>No log yet</span>
+                  )}
+                  <span style={{ fontSize: 10.5, fontWeight: 700, padding: '2.5px 9px', borderRadius: 10, background: s.bg, color: s.text }}>
+                    {m.status}{m.status === 'On Leave' && m.leave_type ? ` · ${m.leave_type}` : ''}
+                  </span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
 
 function AddMemberModal({ projects, employees, existingByProject, onClose, onAdded }) {
   const toast = useToast()
@@ -118,6 +189,7 @@ export default function PMTeam() {
   return (
     <div>
       <Breadcrumb items={[{ label: 'PM Dashboard', to: '/pm' }, { label: 'Team' }]} />
+      <TodayStatusPanel />
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0F172A', margin: 0 }}>Team ({filtered.length})</h1>
         <div style={{ display: 'flex', gap: 8 }}>

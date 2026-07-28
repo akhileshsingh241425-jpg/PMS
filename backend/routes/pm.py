@@ -1,6 +1,6 @@
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from flask import Blueprint, request, jsonify
-from models import db, User, Project, ProjectTeam, Task, TaskActivity, Meeting, MeetingRequest, MeetingShare, MeetingRequestShare, Notification
+from models import db, User, Project, ProjectTeam, Task, TaskActivity, Meeting, MeetingRequest, MeetingShare, MeetingRequestShare, Notification, Attendance, LeaveRequest, DailyWorkLog
 from middleware.auth import login_required
 
 pm_bp = Blueprint('pm', __name__, url_prefix='/api/pm')
@@ -21,6 +21,63 @@ def _require_pm(user):
 # closest equivalents are "Escalated" / "On Hold". "Delayed" does exist.
 TERMINAL_STAGES = ('Closed', 'Cancelled')
 AT_RISK_STAGES = ('Escalated', 'On Hold')
+
+
+def _team_today_status(pids, target_date):
+    """Attendance + work-log status for everyone on the PM's project teams,
+    for a single date. Scoped-down version of what HR sees company-wide."""
+    user_ids = {t.user_id for t in ProjectTeam.query.filter(ProjectTeam.project_id.in_(pids)).all()}
+    if not user_ids:
+        return []
+    users = {u.id: u for u in User.query.filter(User.id.in_(user_ids)).all()}
+
+    att_by_user = {}
+    for rec in Attendance.query.filter(
+        Attendance.date == target_date, Attendance.user_id.in_(user_ids),
+    ).order_by(Attendance.clock_in.asc()).all():
+        prev = att_by_user.get(rec.user_id)
+        if prev is None or (rec.clock_out and (not prev.clock_out or rec.clock_out > prev.clock_out)):
+            att_by_user[rec.user_id] = rec
+
+    leave_by_user = {}
+    for lv in LeaveRequest.query.filter(
+        LeaveRequest.status == 'Approved',
+        LeaveRequest.from_date <= target_date, LeaveRequest.to_date >= target_date,
+        LeaveRequest.user_id.in_(user_ids),
+    ).all():
+        leave_by_user[lv.user_id] = lv
+
+    logged_ids = {
+        row[0] for row in db.session.query(DailyWorkLog.user_id).filter(
+            DailyWorkLog.date == target_date, DailyWorkLog.user_id.in_(user_ids),
+        ).all()
+    }
+
+    is_today = target_date == date.today()
+    out = []
+    for uid, u in users.items():
+        rec = att_by_user.get(uid)
+        leave = leave_by_user.get(uid)
+        if rec and rec.clock_in:
+            status = 'Working' if is_today and not rec.clock_out else 'Present'
+        elif leave:
+            status = 'On Leave'
+        elif is_today or target_date < date.today():
+            status = 'Absent'
+        else:
+            status = 'Upcoming'
+        out.append({
+            'user_id': uid,
+            'name': u.full_name,
+            'designation': u.designation,
+            'status': status,
+            'clock_in': rec.clock_in.strftime('%Y-%m-%dT%H:%M:%SZ') if rec and rec.clock_in else None,
+            'clock_out': rec.clock_out.strftime('%Y-%m-%dT%H:%M:%SZ') if rec and rec.clock_out else None,
+            'leave_type': leave.leave_type if leave else None,
+            'work_log_submitted': uid in logged_ids,
+        })
+    out.sort(key=lambda m: m['name'] or '')
+    return out
 
 
 # ─── DASHBOARD ───
@@ -61,6 +118,25 @@ def pm_dashboard(current_user):
     # Must match the status string the approval queue itself filters on.
     pending_approvals = [t for t in all_tasks if t.status == 'SENT FOR APPROVAL']
 
+    # Deadline risk — computed straight from target_date rather than relying
+    # on someone remembering to flip a project's stage to "Escalated"/"Delayed".
+    deadline_risk = []
+    for p in active_projects:
+        if p.target_date:
+            days_left = (p.target_date - today).days
+            if days_left <= 7:
+                deadline_risk.append({
+                    'project_id': p.id, 'title': p.title, 'stage': p.stage,
+                    'target_date': p.target_date.isoformat(), 'days_left': days_left,
+                })
+    deadline_risk.sort(key=lambda x: x['days_left'])
+
+    # Today's team activity — who's present/on-leave/absent and who hasn't
+    # filed today's work log yet, scoped to this PM's own project team.
+    team_status = _team_today_status(pids, date.today()) if pids else []
+    missing_log = [m for m in team_status if m['status'] in ('Present', 'Working') and not m['work_log_submitted']]
+    absent_today = [m for m in team_status if m['status'] == 'Absent']
+
     return jsonify({
         'stats': {
             'active_projects': len(active_projects),
@@ -80,6 +156,15 @@ def pm_dashboard(current_user):
         'upcoming_meetings': [
             {**m.to_dict(), '_type': 'meeting'} for m in upcoming_meetings
         ] + [{**m.to_dict(), '_type': 'request'} for m in upcoming_mr],
+        'deadline_risk': deadline_risk[:10],
+        'team_today': {
+            'present': len([m for m in team_status if m['status'] in ('Present', 'Working')]),
+            'on_leave': len([m for m in team_status if m['status'] == 'On Leave']),
+            'absent': len(absent_today),
+            'total': len(team_status),
+            'missing_work_log': missing_log,
+            'absent_today': absent_today,
+        },
         'notifications': [],
     })
 
@@ -250,6 +335,27 @@ def pm_employees(current_user):
         {'id': u.id, 'full_name': u.full_name, 'designation': u.designation, 'department': u.department}
         for u in users
     ]})
+
+
+@pm_bp.route('/team/today-status', methods=['GET'])
+@login_required
+def pm_team_today_status(current_user):
+    """Who on my project teams is present/on-leave/absent, and who hasn't
+    filed today's work log — the "is my team actually working" view."""
+    if not _require_pm(current_user):
+        return jsonify({'error': 'Access denied'}), 403
+    pids = _pm_project_ids(current_user)
+    if not pids:
+        return jsonify({'date': date.today().isoformat(), 'members': []})
+
+    target = request.args.get('date')
+    try:
+        target_date = date.fromisoformat(target) if target else date.today()
+    except ValueError:
+        return jsonify({'error': 'Invalid date'}), 400
+
+    members = _team_today_status(pids, target_date)
+    return jsonify({'date': target_date.isoformat(), 'members': members})
 
 
 # ─── MEETINGS ───
