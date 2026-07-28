@@ -163,10 +163,32 @@ def create_expense_approval(current_user):
 @approval_bp.route('', methods=['GET'])
 @login_required
 def list_my_approvals(current_user):
-    """Approvals where current user is the approver"""
-    approvals = ApprovalRequest.query.filter_by(
-        current_approver_id=current_user.id, status='pending'
-    ).order_by(ApprovalRequest.created_at.desc()).all()
+    """Approvals where current user can approve (includes role-group)"""
+    base = ApprovalRequest.query.filter(ApprovalRequest.status == 'pending')
+    if current_user.role == 'hr':
+        approvals = base.filter(
+            db.or_(
+                ApprovalRequest.current_approver_id == current_user.id,
+                db.and_(
+                    ApprovalRequest.request_type.in_(['leave', 'short_leave']),
+                    ApprovalRequest.current_level >= 1
+                )
+            )
+        ).order_by(ApprovalRequest.created_at.desc()).all()
+    elif current_user.role == 'finance':
+        approvals = base.filter(
+            db.or_(
+                ApprovalRequest.current_approver_id == current_user.id,
+                db.and_(
+                    ApprovalRequest.request_type.in_(['expense', 'vendor_payment']),
+                    ApprovalRequest.current_level >= 1
+                )
+            )
+        ).order_by(ApprovalRequest.created_at.desc()).all()
+    else:
+        approvals = base.filter(
+            ApprovalRequest.current_approver_id == current_user.id
+        ).order_by(ApprovalRequest.created_at.desc()).all()
     return jsonify({'approvals': [a.to_dict() for a in approvals]})
 
 
