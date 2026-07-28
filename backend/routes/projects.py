@@ -44,7 +44,7 @@ def _notify_client(proj, title, message):
 @login_required
 def list_projects(current_user):
     query = Project.query.filter(Project.direction == 'IN')
-    if current_user.role != 'admin':
+    if current_user.role not in ('admin', 'super_admin'):
         user_project_ids = [t.project_id for t in ProjectTeam.query.filter_by(user_id=current_user.id).all()]
         query = query.filter(db.or_(
             Project.pm_id == current_user.id,
