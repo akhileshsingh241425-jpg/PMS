@@ -220,8 +220,12 @@ export default function ApprovalsPage() {
                     </div>
                   </div>
 
-                  {/* Action buttons for pending items where user is the approver */}
-                  {a.status === 'pending' && a.current_approver_id === user?.id && (
+                  {/* Action buttons for pending items where user can approve */}
+                  {a.status === 'pending' && (
+                    a.current_approver_id === user?.id ||
+                    (user?.role === 'hr' && ['leave', 'short_leave'].includes(a.request_type)) ||
+                    (user?.role === 'finance' && ['expense', 'vendor_payment'].includes(a.request_type))
+                  ) && (
                     <div style={{ display: 'flex', gap: 6, marginLeft: 12, flexShrink: 0, flexDirection: 'column' }}>
                       <button onClick={() => handleAction(a.id, 'approve')} disabled={acting}
                         style={{ padding: '7px 16px', borderRadius: 8, border: 'none', background: '#15803D', color: '#fff', cursor: acting ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
