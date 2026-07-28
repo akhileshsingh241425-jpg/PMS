@@ -494,7 +494,7 @@ def serve_pdf(current_user, pid):
 def send_po_mail(current_user, pid):
     project = Project.query.filter_by(id=pid, direction='OUT').first_or_404()
     data = request.get_json() or {}
-    vendor_email = data.get('vendor_email') or project.vendor_email
+    vendor_email = (data.get('vendor_email') or project.vendor_email or '').strip().lower()
     if not vendor_email:
         return jsonify({'error': 'Vendor email is required'}), 400
 
@@ -530,19 +530,42 @@ def send_po_mail(current_user, pid):
         </div>
     </div>'''
 
-    # send via Microsoft Graph API
+    # try Microsoft Graph API, fallback to SMTP
     try:
         from routes.email_integration import send_via_graph
         from models.email_integration import EmailAccount
         acct = EmailAccount.query.filter_by(is_active=True).first()
-        if not acct:
-            return jsonify({'error': 'No connected email account. Connect Microsoft email first.'}), 500
-        ok, msg = send_via_graph(acct, vendor_email, 'accounts@infocus-it.com', subject, html, pdf_path=path if os.path.exists(path) else None)
-        if ok:
-            return jsonify({'message': f'Email sent to {vendor_email}'})
-        return jsonify({'error': msg}), 500
-    except Exception as e:
-        return jsonify({'error': f'Failed to send email: {str(e)}'}), 500
+        if acct:
+            ok, msg = send_via_graph(acct, vendor_email, None, subject, html, pdf_path=path if os.path.exists(path) else None)
+            if ok:
+                return jsonify({'message': f'Email sent to {vendor_email}'})
+    except Exception:
+        pass
+
+    # fallback: SMTP
+    try:
+        import smtplib
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+        from email.mime.base import MIMEBase
+        from email import encoders
+        msg = MIMEMultipart()
+        msg['Subject'] = subject
+        msg['From'] = 'noreply@infocus-it.com'
+        msg['To'] = vendor_email
+        msg.attach(MIMEText(html, 'html'))
+        if os.path.exists(path):
+            with open(path, 'rb') as f:
+                part = MIMEBase('application', 'pdf')
+                part.set_payload(f.read())
+                encoders.encode_base64(part)
+                part.add_header('Content-Disposition', 'attachment', filename=os.path.basename(path))
+                msg.attach(part)
+        with smtplib.SMTP('localhost', 25, timeout=10) as s:
+            s.sendmail('noreply@infocus-it.com', [vendor_email], msg.as_string())
+        return jsonify({'message': f'Email sent to {vendor_email} (via SMTP)'})
+    except Exception as e2:
+        return jsonify({'error': f'SMTP also failed: {str(e2)}'}), 500
 
 
 @po_out_bp.route('/report/tds-quarterly', methods=['GET'])
