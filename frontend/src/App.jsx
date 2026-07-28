@@ -10,6 +10,7 @@ import Leads from './pages/Leads'
 
 import Projects from './pages/Projects'
 import UsersPage from './pages/Users'
+import DailyWorkLogPage from './pages/DailyWorkLogPage'
 import { ClientLogin, ClientPortalDashboard } from './pages/ClientPortal'
 import InfocusitCRM from './pages/InfocusitCRM'
 
@@ -26,6 +27,7 @@ import MyDayPage from './pages/MyDayPage'
 import PMLayout from './components/PMLayout'
 import HRLayout from './components/HRLayout'
 import HRDashboard from './pages/HRDashboard'
+import HRAttendancePage from './pages/HRAttendancePage'
 import PMDashboard from './pages/PMDashboard'
 import PMProjects from './pages/PMProjects'
 import PMTasks from './pages/PMTasks'
@@ -164,6 +166,7 @@ export default function App() {
                 <Route path="notifications" element={<EmployeePortal activeTab="notifications" />} />
                 <Route path="profile" element={<EmployeePortal activeTab="profile" />} />
                 <Route path="face-register" element={<FaceRegisterPage />} />
+                <Route path="daily-log" element={<DailyWorkLogPage />} />
                 <Route path="chat" element={<ChatPage />} />
                 <Route path="email" element={<EmailInbox />} />
                 <Route path="approvals" element={<ApprovalsPage />} />
@@ -176,7 +179,7 @@ export default function App() {
                 <Route index element={<HRDashboard />} />
                 <Route path="approvals" element={<ApprovalsPage />} />
                 <Route path="employees" element={<UsersPage />} />
-                <Route path="attendance" element={<AttendancePage />} />
+                <Route path="attendance" element={<HRAttendancePage />} />
               </Route>
               <Route path="/pm" element={<Protected><PMRoute><PMAppLayout /></PMRoute></Protected>}>
                 <Route path="face-register" element={<FaceRegisterPage />} />

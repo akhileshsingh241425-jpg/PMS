@@ -1,5 +1,6 @@
 from datetime import datetime, date
 from flask import Blueprint, request, jsonify
+from sqlalchemy import func
 from models import db, Attendance, User, Project, ProjectTeam, LocationLog
 from middleware.auth import login_required
 from face_utils import register_face, verify_face, save_attendance_face, face_detected, get_face_path, delete_face
@@ -92,10 +93,22 @@ def active_sessions(current_user):
     return jsonify({'active': [r.to_dict() for r in records]})
 
 
+@attendance_bp.route('/today-count', methods=['GET'])
+@login_required
+def today_count(current_user):
+    # distinct(col) is Postgres-only DISTINCT ON; on MySQL it de-dupes the whole
+    # row, so a second clock-in by the same person would be counted twice.
+    count = db.session.query(func.count(func.distinct(Attendance.user_id))).filter(
+        Attendance.date == date.today(),
+        Attendance.clock_in.isnot(None),
+    ).scalar() or 0
+    return jsonify({'count': count})
+
+
 @attendance_bp.route('/report', methods=['GET'])
 @login_required
 def report(current_user):
-    if current_user.role not in ('admin', 'pm'):
+    if current_user.role not in ('admin', 'super_admin', 'project_manager', 'hr'):
         return jsonify({'error': 'Access denied'}), 403
     user_id = request.args.get('user_id', type=int)
     start = request.args.get('start_date')

@@ -28,4 +28,12 @@ DEFAULT_SETTINGS = {
         'value': 'INF/PRJ/{FY}/{N:03d}',
         'description': 'PO IN project ID format. Placeholders: {FY}=Financial Year, {N}=Number (use {N:03d} for 3-digit)',
     },
+    'hr_weekly_offs': {
+        'value': '[6]',
+        'description': 'Weekly off days as a JSON list of weekday numbers (Mon=0 ... Sun=6). Employees are not marked Absent on these days. Example: [5,6] for Sat+Sun.',
+    },
+    'hr_full_day_hours': {
+        'value': '8',
+        'description': 'Hours an employee is expected to log for a full working day. Used to flag short days in HR attendance reports.',
+    },
 }
